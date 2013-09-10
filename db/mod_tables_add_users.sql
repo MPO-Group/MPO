@@ -1,6 +1,17 @@
+alter table mpousers OWNER TO mpoadmin;
+alter table workflow OWNER TO mpoadmin;
+alter table dataobject OWNER TO mpoadmin;
+ALTER TABLE activity OWNER to mpoadmin;
+ALTER TABLE comment OWNER to mpoadmin;
+ALTER TABLE workflow_connectivity OWNER TO mpoadmin;
+ALTER TABLE metadata OWNER TO mpoadmin;
+
+
+alter table workflow  ADD column comp_seq integer;
 alter table dataobject ADD column u_guid uuid;
 alter table comment    ADD column u_guid uuid;
 alter table metadata   ADD column u_guid uuid;
+alter table activity   ADD column u_guid uuid;
 alter table workflow  ALTER column w_guid TYPE uuid using CAST(regexp_replace(w_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
 alter table workflow  ALTER column ws_guid TYPE uuid using CAST(regexp_replace(ws_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
 alter table workflow  ALTER column u_guid TYPE uuid using CAST(regexp_replace(u_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
@@ -11,6 +22,7 @@ alter table activity ALTER column a_guid TYPE uuid using CAST(regexp_replace(a_g
 alter table activity ALTER column av_guid TYPE uuid using CAST(regexp_replace(av_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
 alter table activity ALTER column w_guid TYPE uuid using CAST(regexp_replace(w_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
 alter table comment ALTER column wc_guid TYPE uuid using CAST(regexp_replace(wc_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
+alter table comment ALTER column cm_guid TYPE uuid using CAST(regexp_replace(cm_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
 alter table comment ALTER column w_guid TYPE uuid using CAST(regexp_replace(w_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
 alter table comment ALTER column parent_guid TYPE uuid using CAST(regexp_replace(parent_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
 alter table comment ALTER column child_guid TYPE uuid using CAST(regexp_replace(child_guid, '([A-Z0-9]{4})([A-Z0-9]{12})', E'\\1-\\2') as uuid);
