@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}MPO Home{% endblock %}
+{% block index_active %} class="active" {% endblock %}
+{% block container %}
+
+      <!-- Main hero unit for a primary marketing message or call to action -->
+      <div class="leaderboard">
+	<div>
+	  <span class="pull-right"><a href="search" role="button" class="btn btn-success"><i class="icon-search icon-white"></i>&nbsp;Search</a></span>
+	  <h1> MPO Workflows </h1>
+	</div>
+	<table class="main">
+	  <tr>
+	    <th>CompID</th><th>Name</th><th>Description</th><th>Creation Time</th><th>UID</th><th>User</th><th>Comments</th>
+	  </tr>
+	    <div id="accordion2" class="accordion">
+	    {% for item in results %}
+	      <tr>
+		<td>{{item.alias}}</td>
+		<td> <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.name }}</a></td>
+<td>{{ item.description }}</td><td class="xsmall">{{ item.time }}</td><td class="xsmall">{{ item.uid }}</td><td>{{ item.username }}</td>
+		
+		<td>
+		    <div class="accordion-group">
+		      <div class="accordion-heading">
+			<a href="#commentDrop{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
+			  {% if item.num_comments %}
+			    {{ item.num_comments }}
+			  {% else %}
+			    0
+			  {% endif %}
+			</a>
+			&nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
+		      </div>
+		    </div>
+		</td>
+	      </tr>
+	      <tr>
+		<td colspan="7" class="comments"> 
+		  <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
+		    <div class="accordion-inner no-border bot-border">
+		      <form action="{{ url_for("submit_comment") }}" method="post">
+			<div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
+			<div><textarea rows="2" class="span6" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+		      </form>
+		    </div>
+		  </div>
+		</td>
+	      </tr>	      
+	      <!-- Comment Drop -->
+	      <tr>
+	          <td colspan="7" class="comments"> 
+		    <div class="accordion-body collapse {{ item.show_comments }}" id="commentDrop{{ item.uid }}">
+		      <div class="accordion-inner no-border bot-border">
+		      {% for i in item.comments %}
+			<blockquote>
+			  <p style="font-size: 12px">{{ i.content }}</p>
+			  <small>by <cite title="Source Title">username - {{i.time}}</cite></small>
+			</blockquote>
+			<hr>
+		      {% endfor %}
+		      </div>
+		    </div>
+		  </td>
+	      </tr>
+	      <!-- END Comment Drop -->
+
+  	    {% endfor %}
+	    </div> <!-- end accordian -->
+	</table>
+    <div class="pagination pagination-mini pull-right">
+    <ul>
+    <li><a href="#">Prev</a></li>
+    <li><a href="#">1</a></li>
+    <li><a href="#">2</a></li>
+    <li><a href="#">3</a></li>
+    <li><a href="#">4</a></li>
+    <li><a href="#">5</a></li>
+    <li><a href="#">Next</a></li>
+    </ul>
+    </div>
+    
+      </div>
+{% endblock %}

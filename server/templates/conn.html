@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}MPO Workflow Detail{% endblock %}
+
+{% block hscripts %}
+<script>
+//  function svgElementClicked(theElement)
+ // {
+//    var newcomment=prompt("enter a new comment for "+theElement.parentElement.id+";");
+ //   var url = "{{ url_for("submit_comment") }}";
+ //   var params = "parent_uid="+theElement.parentElement.id+"&text=\""+newcomment+"\"";
+ //   var xmlhttp;
+
+//    if (newcomment.length > 0) {
+//      if (window.XMLHttpRequest)
+//      {// code for IE7+, Firefox, Chrome, Opera, Safari
+//        xmlhttp=new XMLHttpRequest();
+//      }
+//      else
+ //     {// code for IE6, IE5
+//        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+//      }
+//
+//      xmlhttp.open("POST",url,true);
+//      xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+//      xmlhttp.send(params);
+//    }
+ // }
+
+/////////////////////////////////////////////////
+
+function closepop(id) {
+	$('#'+id).popover('hide');
+}
+
+//handles the svg workflow plot functionality
+$(document).ready(function () {
+		var lastPopover='';
+		var currentPopover='';
+
+		//$("#test").popover({title: "this is a popover", html: true, container: 'body', content: '<ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li></ul>', trigger: 'hover'});
+		//checks and adjusts svg width/height if needed
+		var workflowWidth=620; //in pixels
+
+		var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
+		var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
+		var width=parseInt(w.replace("pt",""));
+		var height=parseInt(h.replace("pt",""));
+		
+		if(width > workflowWidth) {
+			var wnew=Math.round(width*(workflowWidth/width));
+			var hnew=Math.round(height*(workflowWidth/width));
+			w=wnew.toString() + "pt";
+			h=hnew.toString() + "pt";
+			document.getElementsByTagName("svg").item(0).setAttribute("width",w);
+			document.getElementsByTagName("svg").item(0).setAttribute("height",h);
+		}
+		//end svg size adjust
+				
+		//get list of nodes for svg xml tag "g" w/ class "node"
+		var nodelist = document.querySelectorAll("g.node");
+				
+		//parse nodelist object and add click event function to each node (w/ respective data)
+		for (var key in nodelist) {
+		  if (nodelist.hasOwnProperty(key)) {
+		    var node=nodelist[key];
+			var id="";
+		
+			//get id of "g" element of class=nodes
+			if(key==0)
+				id="node1";
+			else
+				id=node.childNodes[0].textContent;	
+			
+			//get current text content of node and add a link -- *use svg xlink instead*
+			//var nodeText=node.childNodes[4].textContent;
+			//node.childNodes[4].textContent='<a href="/">' + nodeText + '</a>';
+			
+			//create new ID attribute for <text> v.1
+			//var addTextID = document.createAttribute('id');
+			//addTextID.value = "text_" + id;
+			//node.childNodes[4].setAttributeNode(addTextID);
+
+			//create new ID attribute for <text> v.2
+			node.childNodes[2].setAttribute("fill","white"); //shapes fill color
+			node.childNodes[4].setAttribute("style",'fill:rgb(0,76,153);cursor:pointer;'); //text styles
+			node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
+			//node.childNodes[4].id = "text_" + id; 
+			
+			//link popover to new text_id
+			$("#text_"+id).popover({container:'body', html: true, content: '<div><a class="label label-inverse pull-right" onclick="closepop(\'text_'+id+'\')" >x</a></div><ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li><li>' + node.childNodes[4].id + '</li></ul>', trigger: 'manual'});
+			//on click 'text' event for each element -- toggle popover menu
+			$("#text_"+id).click(function(e){
+					//closes last clicked popover and opens the new one that was clicked
+					if(currentPopover.length==0) {					
+						currentPopover=e.target.id;						
+					}
+					else {
+						lastPopover=currentPopover;
+						currentPopover=e.target.id;
+					}
+					if(lastPopover != currentPopover) {
+						closepop(lastPopover);
+						$(this).popover('show');
+					}
+				});
+			
+			//on click 'text' event for each element -- toggle popover menu
+		    /*node.addEventListener(
+			"click",
+			(function(id) {
+				return function(event) {
+					//alert(node.childNodes[4].textContent + " (" + node.childNodes[0].textContent + ")" + " node clicked.");
+					$("#text_"+id).popover('toggle')
+				}
+			})(id),
+			false
+		    );*/
+		  }
+		}
+
+}); //end document.ready
+
+
+</script>
+
+{% endblock %}
+
+{% block container %}
+
+   <div class="leaderboard">
+    <noscript>This page requires a javascript enabled browser.</noscript>
+	<div align="center">
+	  	<h3> Workflow: {{ wid }} </h3>
+	</div>
+	<div>
+		{{ svg|safe }}
+	</div>
+    <div><small><a href="{{ url_for("graph", wid=wid) }}/jpg"><span id="img" class="label">jpg</span></a></small></div>
+	{% if meta %}
+		<div><Strong>Related Metadata</Strong></div>
+		<div>
+			<table class="main">
+          		<tr>
+            			<th>Name</th><th>Value</th><th>URI</th><th> Parent Type</th>
+          		</tr>
+	  		{% for item in meta %}
+                    	<tr class="xsmall"><td>{{ item.name }}</td><td>{{ item.value }}</td><td>{{ item.uri }}</td><td>{{ item.parent_type }}</td> </tr>
+          		{% endfor %}
+			</table>
+		</div>
+	{% endif %}
+<p id="demo"></p>
+
+      </div>
+
+
+{% endblock %} 

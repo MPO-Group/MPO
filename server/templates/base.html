@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Prototype Implementation of MPO Project">
+    <meta name="author" content="">
+    <!-- Le styles -->
+    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/css/main.css" rel="stylesheet">
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="/static/bootstrap/images/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/bootstrap/images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/static/bootstrap/images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/static/bootstrap/images/apple-touch-icon-114x114.png">
+    <!-- <script src="/static/js/jquery.min.js"></script> -->
+    <script src="/static/bootstrap/js/jquery.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-transition.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-alert.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-modal.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-dropdown.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-scrollspy.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-tab.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-tooltip.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-popover.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-button.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-collapse.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-carousel.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-typeahead.js"></script>
+    {% block hscripts %}{% endblock %}
+  </head>
+
+  <body>
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <!-- <a class="brand" href="#"><img src="/static/img/mpo.png" width="111" height="20" alt="MPO logo" /></a>  -->
+          <div class="nav-collapse">
+            <ul class="nav">
+                <li {% block index_active %}{% endblock %}><a href="{{ url_for("index") }}">Home</a></li>
+                <li {% block search_active %}{% endblock %}><a href="{{ url_for("search") }}">Search</a></li>
+            </ul>
+            <ul class="nav pull-right">
+            	<li><a href="#"><i class="icon-user"></i> Username</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+    {% block container %}
+    {% endblock %}
+
+
+      <hr>
+
+      <footer>
+        <div><span class="pull-left muted"><a class="muted" href="{{ url_for("about") }}">&copy; MPO Team 2013</a></span><span class="pull-right muted"><a class="muted" href="{{ url_for("index") }}">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("search") }}">Search</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("about") }}">About Us</a> </span></div>    
+      </footer>
+
+    </div> <!-- /container -->
+  </body>
+</html>

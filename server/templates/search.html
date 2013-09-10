@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}MPO Search{% endblock %}
+{% block search_active %} class="active" {% endblock %}
+{% block container %}
+	<form class="form-horizontal leaderboard searchform" action="#">
+        <h1>Search</h1>
+      <legend>Search Parameters</legend>
+        <div class="control-group">
+          <label class="control-label" for="param1">1</label>
+          <div class="controls">
+              <select name="p1type" class="span2">
+                <option>Select...</option>
+                <option value="name">name</option>
+                <option value="desc">description</option>
+                <option value="time">time</option>
+                <option value="dataID">id</option>
+                <option value="comment">comments</option>
+              </select>
+            <input type="text" class="span5" id="param1" placeholder="">
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="param2">2</label>
+            <div class="controls">
+              <select name="p2type" class="span2">
+                <option>Select...</option>
+                <option value="name">name</option>
+                <option value="desc">description</option>
+                <option value="time">time</option>
+                <option value="dataID">id</option>
+                <option value="comment">comments</option>
+              </select>            
+              <input type="text" class="span5" id="param2" placeholder="">
+            </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="param3">3</label>
+            <div class="controls">
+              <select name="p3type" class="span2">
+                <option>Select...</option>
+                <option value="name">name</option>
+                <option value="desc">description</option>
+                <option value="time">time</option>
+                <option value="dataID">id</option>
+                <option value="comment">comments</option>
+              </select> 
+              <input type="text" class="span5" id="param3" placeholder="">
+            </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="param4">4</label>
+            <div class="controls">
+              <select name="p4type" class="span2">
+                <option>Select...</option>
+                <option value="name">name</option>
+                <option value="desc">description</option>
+                <option value="time">time</option>
+                <option value="dataID">id</option>
+                <option value="comment">comments</option>
+              </select>             
+              <input type="text" class="span5" id="param4" placeholder="">
+            </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="param5">5</label>
+            <div class="controls">
+              <select name="p5type" class="span2">
+                <option>Select...</option>
+                <option value="name">name</option>
+                <option value="desc">description</option>
+                <option value="time">time</option>
+                <option value="dataID">id</option>
+                <option value="comment">comments</option>
+              </select>               
+              <input type="text" class="span5" id="param5" placeholder="">
+            </div>
+        </div>      
+       <div class="control-group">
+       	 <div class="controls span7"><button type="submit" class="btn btn-large btn-success pull-right">Search</button></div>
+       </div>
+        
+      </form>
+<!-- 
+<div class="leaderboard">
+    <h1>Search</h1>
+    <div class="row-fluid">
+    	<div class="span12">
+        <form class="form-inline searchform">
+            <input type="text" class="span7 offset2" placeholder="search"> <button type="submit" class="btn btn-success">Go</button>
+            <div class="offset2" style="padding-top:7px;"><small><a href="#">Advanced Search</a></small></div>
+        </form>
+        </div>
+    </div>
+</div>
+-->
+{% endblock %}

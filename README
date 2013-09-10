@@ -1,0 +1,156 @@
+MPO Software distribution
+
+Contents:
+  README - this file
+
+  Directories
+     db - the database interface (python)
+     server - the api_server and web_server (python - flask)
+     client - the language specific apis each in their own subdirectory
+
+  Certificates - for demo purposes only
+    MPO Demo User.p12       - a demo user certificate (see directions below for 
+                              installing in browser, and filesystem)
+    mpo.psfc.mit.edu-ca.crt - file containing the public keys of the certificate 
+                              authorities we are willing to accept
+    mpo.psfc.mit.edu.crt    - certificate identifying the mpo web server for https access
+    mpo.psfc.mit.edu.key    - private key for this certificate
+    MPO-UI-SERVER.crt       - A client certificate for the WEB_SERVER to identify itself 
+                              to the API_SERVER
+    MPO-UI-SERVER.key       - private key for this certificate
+NOTE:  The .key files must be chmod 600 and SVN does not do this.  So after updates execute:
+             chmod 600 *.key
+
+Scripts
+   functions.sh     - support shell functions
+   api_server.sh    - script to run the api web server using uwsgi
+   web_server.sh    - script to run the web gui server using uwsgi
+   mposvn.wsgi      - NEEDS MODIFICATION - script to be used by 
+                      apache to run the web server(s)
+                      NOTE:  for apache to serve these pages to safari you may need to add:
+                      SSLInsecureRenegotiation ON
+                      to the apache config file - at least for this directory.
+To run the api_server:
+   ./api_server.sh 
+   This will fire up the api server listening for https on port 8443, 
+  for a different port specify the port number as the 1st argument.
+
+  Available as https://localhost:8443
+
+To run the web_server:
+   ./web_server.sh
+   This will fire up the web server listening for https on port 9443, 
+  for a different port specify the port number as the 1st argument.
+  Note if your api_server is not running on localhost:8443  then specify 
+  the url for the api_server as the 2nd argument. 
+   ./web_server.sh 9999 https://localhost:8888/
+
+  Available as https://localhost:9443
+
+To access the live apache served servers *
+   For the mpo web pages:
+       https://mpo.psfc.mit.edu/mpo
+   For the api json responses
+       https://mpo.psfc.mit.edu/api **
+
+* note: you will need to have a certificate installed in your browser to access either of these.
+  see the certificate directions below.
+** note the api server's top route is not defined, try: https://mpo.psfc.mit.edu/api/workflow
+
+Server use cases:
+
+a. You want to access the api server running on mpo.psfc.mit.edu under apache but run your own
+   
+
+############## Demo User Certificate Directions ##############
+
+The file MPO Demo User.p12 contains a user certificate that can be used for 
+testing the MPO API and WEB GUI.  In order to use it to access either of these 
+servers from a browser, it must be installed.  The exact procedure varies depending 
+on the browser and operating system.
+
+Windows/Chrome: 
+1) from the menu (upper right) choose Settings or browse to: chrome://settings/
+2) at the bottom of the page click 'Show advanced settings...'
+3) under HTTPS/SSL click 'Manage certificates...'
+4)  A dialog will appear that will let you import this certificate.
+5) the password is 'mpo demo' (without the quotes)
+
+Linux/Firefox:
+1) Go to Preferences/Advanced/View Certificates
+2) at the bottom of the new window click on Import
+3) A dialog will appear that will let you import this certificate.
+4) the password is 'mpo demo' (without the quotes)
+PLEASE add the recipe for your OS/Browser combination...
+
+OSX/Safari:
+1) open KeyChain
+2) File/Import Items
+   Select the MPO p12 key and import it, enter password when prompted, 'mpo demo'
+3) select 'My Certficates' in left pane of KeyChain
+4) right click and select 'New Identify Preference'
+   Enter the mpo website 'https://mpo.psfc.mit.edu'
+5) Test by opening http://mpo.psfc.mit.edu/mpo
+   Select 'Always Allow' for keychain access by this website
+6) Done. Now Safari will identify as MPO User at this site.
+   Follow a similar procedure if you receive a new certificate for this site
+
+
+Commandline with curl or for using mpo api commandline tool:
+1) convert to PEM format
+openssl pkcs12 -in MPO\ Demo\ User.p12 -out MPO\ Demo\ User.pem -nodes
+
+2) test api with curl
+curl -k --cert ./MPO\ Demo\ User.pem https://localhost:8443/v0/workflow
+
+3) use with command line tool
+export MPO_AUTH=path_to_key/keyStore.pem
+
+
+############## INSTALLATION and STARTUP #############
+
+#initial setup of postgres
+cd <to your mpo checkout>
+export MPO_HOME=$PWD
+export PGDATA=$MPO_HOME/db/data
+initdb -D $PGDATA
+# Startup postgresql, make sure postgresql bin is in PATH
+shared memory can be a problem with postgres91 (93 fixes this), if so trying increasing:
+: sudo sysctl -w kern.sysv.shmall=65536
+: sudo sysctl -w kern.sysv.shmmax=16777216
+
+# Start database if not already running
+#this works  postgres -D $PGDATA > logfile
+#but this is preferable
+pg_ctl start -D $PGDATA
+
+# setup database for MPO
+createdb mpoDB
+# create tables
+psql -d mpoDB -a -f $MPO_HOME/db/create_tables.sql 
+
+## Start up all services
+
+#set host for client and other env variables
+#cd to mpo working directory
+export MPO_HOME=$PWD
+export MPO_VERSION=v0
+export MPO_HOST=https://localhost:8443
+export MPO=$MPO_HOME/client/python/mpo_testing.py
+alias mpo=$MPO #if you like
+export MPO_AUTH='~/Desktop/keyStore.pem' #p12 support to be added. requires autogeneration of pem file
+#or
+export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem' #to use cert that comes with mpo
+export MPO_RC='path to optional resources file' # not implemented
+export PGDATA=$MPO_HOME/db/data
+export PYTHONPATH=$MPO_HOME/db:$PYTHONPATH
+cd $MPO_HOME
+
+#start the data server / web client
+postgres -D $PGDATA > logfile
+./api_server.sh&
+./web_server.sh &
+
+
+# pre wsgi 
+./server/python server.py &

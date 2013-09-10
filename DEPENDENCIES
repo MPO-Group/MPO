@@ -1,0 +1,82 @@
+######## REQUIREMENTS #########
+python >= 2.7: needed for adequate SSL support, not tested with python3
+
+#Internal Python Packages used
+json - comes with python
+re,os,time,datetime,pprint
+
+##Internal packages:
+$HOME/mposvn/db
+
+##External python packages
+simplejson >2.2 #provides namedtuple->json in db.py
+Flask >= 0.9
+requests >= 1.0.3
+psycopg2 #for postgres
+pydot 1.5.7 < 2.0.0 (for python 3) #for static graph creation. 
+      : sudo pip install https://pypi.python.org/packages/source/p/pyparsing/pyparsing-1.5.7.tar.gz
+      : sudo pip install -U pydot  pyparsing==1.5.7
+
+uwsgi > 1.3 - web services for api server. tested with version 1.9.13
+              Note that as of Aug 2013 with Ubuntu Precise Pangolin, apt-get installs 1.0
+              We recommend 'sudo pip install uwsgi' which should grab and build the most 
+	      recent release from source. Note that libssl should be installed for https support before the install.
+
+
+### Not in production pymongo.py, BSON
+
+
+#db support
+postgresql >9.1 support (development support) 9.3 has better memory management
+
+#mongo db support   (alternative db, not primary devlopment path)
+mongodb >=2.1
+
+
+#HTML pages/templates
+Twitter Bootstrap
+Jquery
+
+
+############## INSTALLATION and STARTUP #############
+
+#initial setup of postgres
+export MPO_HOME=~/Codes/mposvn  #eg
+export PGDATA=$MPO_HOME/db/data
+initdb -D $PGDATA
+# Startup postgresql, make sure postgresql bin is in PATH
+shared memory can be a problem with postgres91 (93 fixes this), if so trying increasing:
+: sudo sysctl -w kern.sysv.shmall=65536
+: sudo sysctl -w kern.sysv.shmmax=16777216
+
+# Start database if not already running
+postgres -D $PGDATA > logfile
+# setup database for MPO
+createdb mpoDB
+# create tables
+psql -d mpoDB -a -f $MPO_HOME/db/create_tables.sql 
+
+## Start up all services
+
+#set host for client and other env variables
+export MPO_HOME=/Users/jwright/Codes/mpo
+export MPO_VERSION=v0
+export MPO_HOST=https://localhost:8443
+export MPO=$MPO_HOME/client/python/mpo_testing.py
+alias mpo=$MPO #if you like
+export MPO_AUTH='~/Desktop/keyStore.pem' #p12 support to be added. requires autogeneration of pem file
+#or
+export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem' #to use cert that comes with mpo
+export MPO_RC='path to optional resources file' # not implemented
+export PGDATA=$MPO_HOME/db/data
+export PYTHONPATH=$MPO_HOME/db:$PYTHONPATH
+cd $MPO_HOME
+
+#start the data server / web client
+postgres -D $PGDATA > logfile
+./api_server.sh&
+./web_server.sh &
+
+
+# pre wsgi 
+./server/python server.py &

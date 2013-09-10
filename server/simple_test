@@ -1,0 +1,2 @@
+curl -X POST -H "Content-Type:application/json" -s -d  '{"name":"myname", "description":"mydescription"}' 'http://localhost:8080/workflow'
+

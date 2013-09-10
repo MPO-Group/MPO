@@ -1,0 +1,5 @@
+Test implementation of the MPO dataserver and database
+It uses node.js with express and mongodb modules.
+You'll also need mongod installed and running.
+Then invoke with 
+> node mpo_server.js

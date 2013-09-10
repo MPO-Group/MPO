@@ -1,0 +1,6 @@
+svn co https://www.psfc.mit.edu/mposvn/trunk mpo
+export MPO_HOME=$PWD/mpo
+cd $MPO_HOME
+chmod +x $MPO_HOME/client/python/mpo_testing.py
+chmod 600 $MPO_HOME/*.key
+ 
