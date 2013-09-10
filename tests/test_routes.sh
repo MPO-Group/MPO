@@ -39,6 +39,11 @@ then
   export MPO_VERSION=v0
 fi
 
+if ! [ -n "${MPO:+x}" ]
+then
+  export MPO=$MPO_HOME/client/python/mpo_testing.py
+fi
+
 export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem'
 
 #start our own database

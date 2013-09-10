@@ -1,6 +1,9 @@
 svn co https://www.psfc.mit.edu/mposvn/trunk mpo
 export MPO_HOME=$PWD/mpo
 cd $MPO_HOME
-chmod +x $MPO_HOME/client/python/mpo_testing.py
 chmod 600 $MPO_HOME/*.key
- 
+#below only if you want to run local copy of database
+export PGDATA=$MPO_HOME/db/data 
+mkdir $PGDATA
+pg_ctl start -D $PGDATA
+

@@ -51,7 +51,7 @@ fi
 
 if ! [ -n "${MPO:+x}" ]
 then
-  MPO="../mpo_testing.py"
+  export MPO="$MPO_HOME/client/python/mpo_testing.py"
 fi
 
 swift_root=http://localhost:8080/v1/AUTH_0d63fa5f677f4042b7c359598c2e25bb
