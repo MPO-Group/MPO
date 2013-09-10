@@ -203,11 +203,19 @@ def getsvgxml(wid):
     return ans
 
 # adds the raw svg xml to the html template <svg></svg>
-@app.route('/connections/<wid>')
+@app.route('/connections/<wid>', methods=['GET'])
 def connections(wid):
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}	
     svgdoc=getsvgxml(wid)
     svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
-    return render_template('conn.html', **locals())
+    r=requests.get("%s/dataobject/%s"%(API_PREFIX,wid,), **certargs) #get metadata on each workflow element
+    dataobj = r.json()
+    if webdebug:
+        print("workflow data objects")
+        pprint(dataobj)
+    return render_template('conn.html', data=dataobj, **locals())
 
 @app.route('/about')
 def about():
