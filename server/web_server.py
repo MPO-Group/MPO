@@ -17,7 +17,7 @@ MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
 MPO_WEB_CLIENT_KEY=os.environ['MPO_WEB_CLIENT_KEY']
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
-webdebug=True
+webdebug=False
 
 @app.route("/")
 def index():
@@ -80,7 +80,8 @@ def index():
 		results[index]['time']=time
                 cid=requests.get("%s/workflow/%s/alias"%(API_PREFIX,pid), **certargs)
                 cid=cid.json()
-                print ('web ',cid,cid)
+                if webdebug:
+                    print ('web ',cid,cid)
                 cid=cid['alias']
                 results[index]['alias']=cid
 		index+=1
@@ -269,7 +270,8 @@ def signup():
         form = request.form.to_dict() #gets POSTed form fields as dict
         form['user_dn'] = dn
         r = json.dumps(form) #convert to json
-        print(r)
+	if webdebug:
+            print(r)
         submit = requests.post("%s/user"%API_PREFIX, r, **certargs)
     except:
         pass
