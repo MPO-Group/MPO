@@ -125,6 +125,13 @@ shared memory can be a problem with postgres91 (93 fixes this), if so trying inc
 pg_ctl start -D $PGDATA
 
 # setup database for MPO
+# Note Bene: on systems where postgres process is owned by postgres user, 
+#            you have to add yourself as a 'role' in postgres:
+# sudo su postgres
+# psql
+# psql> create user <$USER> createdb superuser;
+# psql> ^D
+
 createdb mpoDB
 # create tables
 psql -d mpoDB -a -f $MPO_HOME/db/create_tables.sql 
@@ -143,6 +150,9 @@ export MPO_AUTH='~/Desktop/keyStore.pem' #p12 support to be added. requires auto
 export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem' #to use cert that comes with mpo
 export MPO_RC='path to optional resources file' # not implemented
 export PGDATA=$MPO_HOME/db/data
+#on mpo.psfc.mit.edu or any other system where postgres is already running an it is not
+#practical to start another postgres, then
+export PGDATA=/var/lib/postgresql/9.1/main
 export PYTHONPATH=$MPO_HOME/db:$PYTHONPATH
 cd $MPO_HOME
 

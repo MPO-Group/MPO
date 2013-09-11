@@ -21,12 +21,14 @@ fi
 export MPO_HOST=https://localhost:$api_port
 
 #test that postgres is running and test for needed environmental variables
-st=`pg_ctl status -D $PGDATA`
-if [[ "$st" != *PID* ]]
-then
-   echo ERROR: postgres not running or pg_ctl not in path or PGDATA not correctly set, exiting.
-   exit
-fi
+#pg_ctl should be in path, eg /usr/lib/postgresql/9.1/bin/pg_ctl
+#This creates problems on systems with postgres user
+#st=`pg_ctl status -D $PGDATA`
+#if [[ "$st" != *PID* ]]
+#then
+#   echo ERROR: postgres not running or pg_ctl not in path or PGDATA not correctly set, exiting.
+#   exit
+#fi
 
 if ! [ -n "${MPO_HOME:+x}" ]
 then
