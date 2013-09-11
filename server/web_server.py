@@ -17,7 +17,7 @@ MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
 MPO_WEB_CLIENT_KEY=os.environ['MPO_WEB_CLIENT_KEY']
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
-webdebug=False
+webdebug=True
 
 @app.route("/")
 def index():
@@ -40,6 +40,10 @@ def index():
         if webdebug:
             print("results in index")
             pprint(results)
+	
+	#pagination control
+	num_wf=len(results) # number of workflows returned from api call
+	
 	index=0
 	for i in results:	#i is dict
 		if wid:
@@ -85,7 +89,7 @@ def index():
 	print err
 #        pass
 
-    return render_template('index.html', results = results)
+    return render_template('index.html', results = results, num_wf = num_wf)
 
 
 @app.route('/graph/<wid>', methods=['GET'])

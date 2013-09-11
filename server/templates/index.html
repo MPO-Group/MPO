@@ -1,26 +1,73 @@
 {% extends "base.html" %}
 {% block title %}MPO Home{% endblock %}
+
+{# pagination controls #}
+{% set recs_per_page = 15 %}
+{% set num_pages = num_wf//recs_per_page %}
+{% if ((num_wf%recs_per_page) != 0) %}
+	{% set num_pages = num_pages+1 %}
+{% endif %}
+
+{% block hscripts %}
+<script>
+var total_pages={{num_pages}};
+var current_page=1;
+var last_page=0;
+
+function showPage(num) {
+	last_page=current_page.toString();
+	current_page=num.toString();
+	$("#page"+last_page).hide();
+	$("#page"+current_page).show();
+}
+$(document).ready(function () {
+	$('#pages a').click(function() {
+		$('ul li.disabled').removeClass('disabled');
+		$(this).closest('li').addClass('disabled');
+	});
+});
+
+</script>
+{% endblock %}
 {% block index_active %} class="active" {% endblock %}
 {% block container %}
 
       <!-- Main hero unit for a primary marketing message or call to action -->
-      <div class="leaderboard">
+<div class="leaderboard">
 	<div>
 	  <span class="pull-right"><a href="search" role="button" class="btn btn-success"><i class="icon-search icon-white"></i>&nbsp;Search</a></span>
 	  <h1> MPO Workflows </h1>
 	</div>
-	<table class="main">
-	  <tr>
-	    <th>CompID</th><th>Name</th><th>Description</th><th>Creation Time</th><th>UID</th><th>User</th><th>Comments</th>
-	  </tr>
-	    <div id="accordion2" class="accordion">
-	    {% for item in results %}
-	      <tr>
-		<td>{{item.alias}}</td>
-		<td> <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.name }}</a></td>
-<td>{{ item.description }}</td><td class="xsmall">{{ item.time }}</td><td class="xsmall">{{ item.uid }}</td><td>{{ item.username }}</td>
-		
-		<td>
+    <div class="row-fluid">
+    <div class="span12">
+{% set page=0 %}
+{% for item in results %}
+	{% if (page == 0) %}
+	    {% set page=page+1 %}
+        <!--start page{{page}} div--> 
+		<div id="page{{page}}">
+			<table class="main">
+			  <tr>
+			    <th>&nbsp;</th><th>CompID</th><th>Name</th><th>Description</th><th>Creation Time</th><th>UID</th><th>User</th><th>Comments</th>
+			  </tr>
+    {% elif ((page > 0) and ((loop.index%recs_per_page) == 0)) %}    	
+			</table>
+	    </div><!--end page{{page}} div--> 
+        {% set page=page+1 %}
+        <!--start page{{page}} div--> 
+    	<div id="page{{page}}" style="display: none;">
+			<table class="main">
+			  <tr>
+			   <th>&nbsp;</th><th>CompID</th><th>Name</th><th>Description</th><th>Creation Time</th><th>UID</th><th>User</th><th>Comments</th>
+			  </tr>           
+    {% endif %}
+			<div id="accordion2" class="accordion">
+			<tr>
+				<td class="muted">{{loop.index}}</td><td>{{item.alias}}</td>
+				<td> <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.name }}</a></td>
+                <td>{{ item.description }}</td><td class="xsmall">{{ item.time }}</td>
+                <td class="xsmall">{{ item.uid }}</td><td>{{ item.username }}</td>
+				<td>
 		    <div class="accordion-group">
 		      <div class="accordion-heading">
 			<a href="#commentDrop{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
@@ -33,7 +80,7 @@
 			&nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
 		      </div>
 		    </div>
-		</td>
+			</td>
 	      </tr>
 	      <tr>
 		<td colspan="7" class="comments"> 
@@ -64,21 +111,24 @@
 		  </td>
 	      </tr>
 	      <!-- END Comment Drop -->
-
-  	    {% endfor %}
 	    </div> <!-- end accordian -->
-	</table>
-    <div class="pagination pagination-mini pull-right">
-    <ul>
-    <li><a href="#">Prev</a></li>
-    <li><a href="#">1</a></li>
-    <li><a href="#">2</a></li>
-    <li><a href="#">3</a></li>
-    <li><a href="#">4</a></li>
-    <li><a href="#">5</a></li>
-    <li><a href="#">Next</a></li>
-    </ul>
+ {% endfor %}
+			</table>            
+	    </div><!--end last page div-->
+    <div class="pagination pagination-mini pull-right"> 
+        <ul id="pages" style="vertical-align:middle;">
+        
+        {% for cnt in range(0,num_pages) %}
+        	{% if (loop.index==1) %}
+            	<li class="disabled"><a href="#" onclick="showPage({{loop.index}});">{{loop.index}}</a></li>
+            {% else %}
+            	<li><a href="#" onclick="showPage({{loop.index}});">{{loop.index}}</a></li>
+            {% endif %}
+		{% endfor %}
+        </ul>
+        &nbsp;<span class="muted"><em><small>{{ num_wf }} workflows</small></em></span>
     </div>
-    
-      </div>
+    </div>
+    </div> <!-- end row fluid -->
+</div>
 {% endblock %}
