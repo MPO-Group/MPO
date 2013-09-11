@@ -17,7 +17,7 @@ MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
 MPO_WEB_CLIENT_KEY=os.environ['MPO_WEB_CLIENT_KEY']
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
-webdebug=False
+webdebug=True
 
 @app.route("/")
 def index():
@@ -215,7 +215,9 @@ def connections(wid):
               'verify':False, 'headers':{'Real-User-DN':dn}}	
     svgdoc=getsvgxml(wid)
     svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
-    r=requests.get("%s/dataobject/%s"%(API_PREFIX,wid,), **certargs) #get metadata on each workflow element
+    #r=requests.get("%s/dataobject/%s"%(API_PREFIX,wid,), **certargs) #get data on each workflow element
+    r=requests.get("%s/dataobject?workflow=%s"%(API_PREFIX,wid,), **certargs) #get data on each workflow element
+    
     dataobj = r.json()
     if webdebug:
         print("workflow data objects")

@@ -62,11 +62,13 @@ line-height: 27px;
 }
 
 table {
+	width: 100%;
 	margin: 0 auto;
 }
 
 table .main {
 	border-collapse: collapse;
+	table-layout:fixed;
 }
 
 .main th { 
