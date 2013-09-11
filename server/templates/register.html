@@ -7,40 +7,48 @@
           <h1> MPO Registration </h1>
         </div>
         	<hr/>
-            <form id="reg_form" class="form-horizontal" action="{{ url_for("signup") }}" method="post">
+        <div class="row-fluid">
+        <div class="span6 offset3">
+            <form id="reg_form" class="form-horizontal span12" action="{{ url_for("signup") }}" method="post">
             	<div class="control-group">
                 	<label class="control-label"><small><em>*required fields</em></small></label>
                 </div>   
                 <div class="control-group">
                     <label class="control-label" for="firstname">*First Name</label>
                     <div class="controls">
-                        <input type="text" id="fname" name="fname" placeholder="first name" class="span4">
+                        <input type="text" id="fname" name="fname" placeholder="first name" class="span10">
                     </div>
                 </div>
                 <div class="control-group">
                     <label class="control-label" for="lastname">*Last Name</label>
                     <div class="controls">
-                        <input type="text" id="lname" name="lname" placeholder="last name" class="span4">
+                        <input type="text" id="lname" name="lname" placeholder="last name" class="span10">
                     </div>
                 </div>     
                 <div class="control-group">
                     <label class="control-label" for="inst">*Institution</label>
                     <div class="controls">
-                        <input type="text" id="inst" name="inst" placeholder="institution" class="span4">
+                        <input type="text" id="inst" name="inst" placeholder="institution" class="span10">
                     </div>
                 </div>                              
                  <div class="control-group">
                     <label class="control-label" for="email">*Email</label>
                     <div class="controls">
-                        <input type="text" id="email" name="email" placeholder="email" class="span4">
+                        <input type="text" id="email" name="email" placeholder="email" class="span10">
                     </div>
                 </div>
                  <div class="control-group">
                     <label class="control-label" for="tele">*Telephone</label>
                     <div class="controls">
-                        <input type="text" id="tele" name="tele" placeholder="telephone" class="span3">
+                        <input type="text" id="tele" name="tele" placeholder="telephone" class="span8">
                     </div>
                 </div>
+                 <div class="control-group">
+                    <label class="control-label" for="tele">*Username</label>
+                    <div class="controls">
+                        <input type="text" id="usn" name="usn" placeholder="username" class="span8">
+                    </div>
+                </div>                
                 <div class="control-group">
                     <div class="controls">
                         <button type="submit" class="btn btn-success" id="submit">submit</button>
@@ -48,5 +56,7 @@
                 </div> 
 		<input type="hidden" id="dest_url" name="dest_url" value="{{ dest_url }}">
             </form>
-      </div>
+       </div>
+       </div>
+    </div>
 {% endblock %}

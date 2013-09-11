@@ -154,9 +154,10 @@ $(document).ready(function () {
                 <li><strong><small>{{ item.name }}</small></strong>
                 	<ul>
                     	<li><small><em>{{ item.description }}</em></small></li>
-                        {% if item.uri != "???" %}
-                        <li><small><em>{{ item.uri }}</em></small></li>
+                        {% if(item.time) %}
+                        <li><small><em>time: {{ item.time }}</em></small></li>
                         {% endif %}
+                        <li class="muted"><span style="font-size:9px;">UID: <em>{{ item.uid }}</em></span></li>
                     </ul>
                 </li>
                 {% endfor %}
