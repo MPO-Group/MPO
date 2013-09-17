@@ -9,7 +9,7 @@
         	<hr/>
         <div class="row-fluid">
         <div class="span6 offset3">
-            <form id="reg_form" class="form-horizontal span12" action="{{ url_for("signup") }}" method="post">
+            <form id="reg_form" class="form-horizontal span12" action="{{ url_for("register") }}" method="post">         
             	<div class="control-group">
                 	<label class="control-label"><small><em>*required fields</em></small></label>
                 </div>   
@@ -26,7 +26,7 @@
                     </div>
                 </div>     
                 <div class="control-group">
-                    <label class="control-label" for="inst">*Institution</label>
+                    <label class="control-label" for="organization">*Institution</label>
                     <div class="controls">
                         <input type="text" id="organization" name="organization" placeholder="institution" class="span10">
                     </div>
@@ -38,7 +38,7 @@
                     </div>
                 </div>
                  <div class="control-group">
-                    <label class="control-label" for="tele">*Telephone</label>
+                    <label class="control-label" for="phone">*Telephone</label>
                     <div class="controls">
                         <input type="text" id="phone" name="phone" placeholder="telephone" class="span8">
                     </div>
@@ -54,7 +54,6 @@
                         <button type="submit" class="btn btn-success" id="submit">submit</button>
                     </div>
                 </div> 
-		<input type="hidden" id="dest_url" name="dest_url" value="{{ dest_url }}">
             </form>
        </div>
        </div>

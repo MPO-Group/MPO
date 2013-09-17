@@ -17,7 +17,7 @@ MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
 MPO_WEB_CLIENT_KEY=os.environ['MPO_WEB_CLIENT_KEY']
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
-webdebug=False
+webdebug=True
 
 @app.route("/")
 def index():
@@ -257,28 +257,39 @@ def submit_comment():
 def login():
     return render_template('login.html')
 
-@app.route('/register')
+@app.route('/register', methods=['GET', 'POST'])
 def register():
-    if webdebug:
-        print request
-    return render_template('register.html', dest_url=request.args.get('dest_url'))
-
-@app.route('/signup', methods=['POST'])
-def signup():
-    dn = get_user_dn(request)
-    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
-              'verify':False, 'headers':{'Real-User-DN':dn}}
-    try:
-        form = request.form.to_dict() #gets POSTed form fields as dict
-        form['user_dn'] = dn
-        r = json.dumps(form) #convert to json
-	if webdebug:
-            print(r)
-        submit = requests.post("%s/user"%API_PREFIX, r, **certargs)
-    except:
-        pass
+    if request.method == 'POST':
+	try:
+	    form = request.form.to_dict() #gets POSTed form fields as dict
+	    #form['user_dn'] = dn
+	    r = json.dumps(form) #convert to json
+	    if webdebug:
+		print(r)
+	    #submit = requests.post("%s/user"%API_PREFIX, r, **certargs)
+	    submit = requests.post("%s/user"%API_PREFIX, r)
+	except:
+	    pass    
     
-    return redirect(form['dest_url'])
+    return render_template('register.html')
+
+#@app.route('/signup', methods=['POST'])
+#def signup():
+    #dn = get_user_dn(request)
+    #certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),'verify':False, 'headers':{'Real-User-DN':dn}}
+#    try:
+#        form = request.form.to_dict() #gets POSTed form fields as dict
+        #form['user_dn'] = dn
+#        r = json.dumps(form) #convert to json
+#	if webdebug:
+#            print(r)
+        #submit = requests.post("%s/user"%API_PREFIX, r, **certargs)
+#	submit = requests.post("%s/user"%API_PREFIX, r)
+ #   except:
+ #       pass
+    
+    #return redirect(form['dest_url'])
+ #   return render_template('register.html')
 
 if __name__ == "__main__":
     #adding debug option here, so we can see what is going on.	
