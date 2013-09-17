@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}MPO Welcome{% endblock %}
+{% block about_active %} class="active" {% endblock %}
+{% block container %}
+
+      <!-- Main hero unit for a primary marketing message or call to action -->
+      <div class="leaderboard">
+      	<div class="row-fluid">
+        	<div class="span12">
+        	<h1>METADATA, PROVENANCE, & ONTOLOGY</h1>
+            </div>
+        </div> <!-- end row fluid -->
+        <hr/>
+        <br/>
+        <div class="row-fluid">
+            <div class="span12">
+                <div class="row-fluid">
+                    <div class="span6">
+                        <ul class="thumbnails">
+                        <li class="span10 offset1">
+                        <a href="/static/img/screenshot1.png" class="thumbnail" target="_blank">
+                        <img src="/static/img/screenshot1.png" data-src="holder.js/300x200" alt="">
+                        </a>
+                        </li>
+                        </ul>            
+                    </div>
+                    <div class="span6">
+                        <ul class="thumbnails">
+                        <li class="span10 offset1">
+                        <a href="/static/img/workflow_detail.png" class="thumbnail" target="_blank">
+                        <img src="/static/img/workflow_detail.png" data-src="holder.js/300x200" alt="">
+                        </a>
+                        </li>
+                        </ul>            
+                    </div>
+                </div> <!-- end row fluid -->
+            </div> 
+        </div> <!-- end row fluid --> 
+        <div class="row-fluid">
+            <div class="span12">
+                <h2> AUTOMATED METADATA, PROVENANCE CATALOG, AND NAVIGABLE INTERFACES: </h2>
+                <h3> ENSURING THE USEFULNESS OF EXTREME-SCALE DATA </h3><br/>
+                <p>This project combines research on integrated metadata, provenance, and ontology storage along with research on user interfaces, including graphical navigation to build tools for real world science. The goal of this research is to create a data model, infrastructure, and a set of tools that support data tracking, cataloging, and integration across a broad scientific domain. Our system would document workflow and data provenance in the widest sense, provide information about the connections and dependences between the data elements and allow human or automatic annotation for any data element. Data, from large-scale experiments and extreme-scale computing is expensive to produce and may be used for high-consequence applications. However, it is not the mere existence of data that is important, but our ability to make use of it.</p>
+                <p>These tools would be demonstrated in large fusion sciences collaborations - from which user experience would be collected and lessons-learned tabulated to provide feedback for improved design. To carry out the proposed three-year effort, a closely coordinated, multi-institutional team <strong>[General Atomics (Lead Institution), Lawrence Berkeley National Laboratory (LBNL), and Massachusetts Institute of Technology (MIT)]</strong> has been formed, consisting of researchers from computer science and fusion science.</p>
+            </div>
+        </div> <!-- end row fluid --> 
+        <br/>
+        <div class="row-fluid">   
+            <div class="span2 offset5">
+            	<span class="text-center"><a href="{{ url_for("register") }}" role="button" class="btn btn-success btn-large"> Register </a></span>
+            </div>
+            <div class="span2 offset3">
+            	<span class="pull-right"><a href="{{ url_for("index") }}" role="button" class="btn"> <i class="icon-home"></i> Home </a></span>
+            </div>          
+        </div> <!-- end row fluid -->
+     </div> <!-- end leaderboard -->
+{% endblock %}

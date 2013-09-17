@@ -19,7 +19,11 @@ MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
 webdebug=True
 
-@app.route("/")
+@app.route('/')
+def landing():
+    return render_template('landing.html')
+
+@app.route('/home')
 def index():
     #Need to get the latest information from MPO database here
     #and pass it to index.html template 
@@ -33,7 +37,7 @@ def index():
 	r=requests.get("%s/workflow"%API_PREFIX, **certargs)
         # need to check the status code
         if r.status_code == 401:
-            return redirect(url_for('register', dest_url=request.path))
+            return redirect(url_for('landing', dest_url=request.path))
         else:
 	#results = json.loads(r) #results is json object
             results = r.json()
@@ -238,7 +242,7 @@ def submit_comment():
               'verify':False, 'headers':{'Real-User-DN':dn}}
     try:
         form = request.form.to_dict() #gets POSTed form fields as dict; fields: 'parent_uid','comment'
-        form['user_dn'] = dn
+        form['dn'] = dn
         r = json.dumps(form) #convert to json
         if webdebug:
             print('submit comment', r)
@@ -260,7 +264,7 @@ def login():
 def register():
     dn = get_user_dn(request) 
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY), 
-              'verify':False, 'headers':{'Real-User-DN':dn}}     
+              'verify':False, 'headers':{'Real-User-DN':dn}}
 
     if request.method == 'POST':
 	try:
