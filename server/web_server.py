@@ -269,8 +269,7 @@ def register():
 	    r = json.dumps(form) #convert to json
 	    if webdebug:
 		print(r)
-	    #submit = requests.post("%s/user"%API_PREFIX, r, **certargs)
-	    submit = requests.post("%s/user"%API_PREFIX, r)
+	    submit = requests.post("%s/user"%API_PREFIX, r, **certargs)
 	except:
 	    pass
     
