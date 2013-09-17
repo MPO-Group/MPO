@@ -215,7 +215,6 @@ def connections(wid):
               'verify':False, 'headers':{'Real-User-DN':dn}}	
     svgdoc=getsvgxml(wid)
     svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
-    #r=requests.get("%s/dataobject/%s"%(API_PREFIX,wid,), **certargs) #get data on each workflow element
     r=requests.get("%s/dataobject?workflow=%s"%(API_PREFIX,wid,), **certargs) #get data on each workflow element
     
     dataobj = r.json()
@@ -272,24 +271,6 @@ def register():
 	    pass    
     
     return render_template('register.html')
-
-#@app.route('/signup', methods=['POST'])
-#def signup():
-    #dn = get_user_dn(request)
-    #certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),'verify':False, 'headers':{'Real-User-DN':dn}}
-#    try:
-#        form = request.form.to_dict() #gets POSTed form fields as dict
-        #form['user_dn'] = dn
-#        r = json.dumps(form) #convert to json
-#	if webdebug:
-#            print(r)
-        #submit = requests.post("%s/user"%API_PREFIX, r, **certargs)
-#	submit = requests.post("%s/user"%API_PREFIX, r)
- #   except:
- #       pass
-    
-    #return redirect(form['dest_url'])
- #   return render_template('register.html')
 
 if __name__ == "__main__":
     #adding debug option here, so we can see what is going on.	
