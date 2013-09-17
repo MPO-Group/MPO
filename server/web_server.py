@@ -258,17 +258,21 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    dn = get_user_dn(request) 
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY), 
+              'verify':False, 'headers':{'Real-User-DN':dn}}     
+
     if request.method == 'POST':
 	try:
 	    form = request.form.to_dict() #gets POSTed form fields as dict
-	    #form['user_dn'] = dn
+	    form['user_dn'] = dn
 	    r = json.dumps(form) #convert to json
 	    if webdebug:
 		print(r)
 	    #submit = requests.post("%s/user"%API_PREFIX, r, **certargs)
 	    submit = requests.post("%s/user"%API_PREFIX, r)
 	except:
-	    pass    
+	    pass
     
     return render_template('register.html')
 
