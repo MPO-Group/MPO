@@ -265,7 +265,7 @@ def register():
     if request.method == 'POST':
 	try:
 	    form = request.form.to_dict() #gets POSTed form fields as dict
-	    form['user_dn'] = dn
+	    form['dn'] = dn
 	    r = json.dumps(form) #convert to json
 	    if webdebug:
 		print(r)
