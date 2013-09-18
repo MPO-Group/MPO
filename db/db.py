@@ -140,6 +140,11 @@ def addUser(json_request,dn):
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = psycopg2.connect(conn_string)
 	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+        # if the dn is already in the db we shouldn't even be here. make sure the username doesn't exist already
+        cursor.execute("select username from mpousers where username=%s",(objs['username'],))
+        username = cursor.fetchone()
+        if (username):
+                return '{"status":"error","error_mesg":"username already exists"}'
 	q = "insert into mpousers (" + ",".join([query_map['mpousers'][x] for x in reqkeys]) + ") values ("+",".join(["%s" for x in reqkeys])+")"
 	cursor.execute(q, tuple([objs[x] for x in reqkeys]) )
 #	records = cursor.fetchall()
