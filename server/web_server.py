@@ -44,7 +44,7 @@ def index():
         if webdebug:
             print("results in index")
             pprint(results)
-	
+
 	#pagination control
 	num_wf=len(results) # number of workflows returned from api call
 	
@@ -216,16 +216,22 @@ def getsvgxml(wid):
 def connections(wid):
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
-              'verify':False, 'headers':{'Real-User-DN':dn}}	
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    wf_data=requests.get("%s/workflow/%s/graph"%(API_PREFIX,wid,), **certargs)
+    wf_data=wf_data.json()
+    nodes=wf_data['nodes']
     svgdoc=getsvgxml(wid)
     svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
     r=requests.get("%s/dataobject?workflow=%s"%(API_PREFIX,wid,), **certargs) #get data on each workflow element
-    
     dataobj = r.json()
+    
     if webdebug:
         print("workflow data objects")
         pprint(dataobj)
-    return render_template('conn.html', data=dataobj, **locals())
+        print("workflow nodes")
+        pprint(nodes)
+
+    return render_template('conn.html', **locals())
 
 @app.route('/about')
 def about():

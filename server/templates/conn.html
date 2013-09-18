@@ -144,13 +144,42 @@ $(document).ready(function () {
             	<div><small><a href="{{ url_for("graph", wid=wid) }}/jpg"><span id="img" class="label label-info">jpg</span></a></small>
                 </div>    
                 {{ svg|safe }}
+                
+                {% if nodes %}
+                <div>
+                	<a href="#comment_acc" data-parent="#accordion2" data-toggle="collapse"><h6>Comments</h6></a>
+                    <div id="accordion2" class="accordion">
+                    	<div class="accordion-group">
+                        	<div class="accordion-body collapse" id="comment_acc">
+                                <table style="padding:0;margin:0;border:1px solid #eee;border-collapse:collapse;">
+                                {% for v in nodes.iteritems() %}
+                                
+                                <tr style="padding:0;margin:0;border-bottom:1px solid #eee;">                  	
+                                    {% for n in v %}
+                                    	{% if n.name %}
+                                        <td style="padding:3px;margin:0;" onmouseover="this.style.background='#eee'" onMouseOut="this.style.background='white'">
+                                            <a href="#"><small>{{ n.name }}</small></a>
+                                            <span class="pull-right">
+                                            	<a href="#submitComment" data-parent="#accordion2" data-toggle="collapse">+ </a>
+                                            </span>
+                                        </td>
+                                        {% endif %}
+                                    {% endfor %}
+                                 </tr>                                             
+                                {% endfor %}
+                                </table>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            {% if data %}
+            {% if dataobj %}
             <div class="span3 offset1">
                 <div><small>&nbsp;</small>
                 </div>
                 <ul>
-                {% for item in data %}
+                {% for item in dataobj %}
                 <li><strong><small>{{ item.name }}</small></strong>
                 	<ul>
                     	<li><small><em>{{ item.description }}</em></small></li>
