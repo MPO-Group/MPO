@@ -9,7 +9,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=False
+dbdebug=True
 try:
 	conn_string = os.environ['MPO_DB_CONNECTION']
 except Exception, e:
@@ -140,12 +140,11 @@ def addUser(json_request,dn):
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = psycopg2.connect(conn_string)
 	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
-
-	q = "insert into mpousers (" + ",".join(reqkeys) + ") values (%s,%s,%s,%s,%s)"
-	cursor.execute(q, tuple(objs.values()) )
-	records = cursor.fetchall()
-	if dbdebug:
-		print('adduser records',str(records))
+	q = "insert into mpousers (" + ",".join([query_map['mpousers'][x] for x in reqkeys]) + ") values ("+",".join(["%s" for x in reqkeys])+")"
+	cursor.execute(q, tuple([objs[x] for x in reqkeys]) )
+#	records = cursor.fetchall()
+#	if dbdebug:
+#		print('adduser records',str(records))
 	conn.commit()
 	cursor.close()
 	conn.close()
