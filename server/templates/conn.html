@@ -40,7 +40,8 @@ $(document).ready(function () {
 
 		//$("#test").popover({title: "this is a popover", html: true, container: 'body', content: '<ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li></ul>', trigger: 'hover'});
 		//checks and adjusts svg width/height if needed
-		var workflowWidth=560; //in pixels
+		//var workflowWidth=560; //in pixels
+		var workflowWidth=550;
 
 		var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
 		var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
@@ -140,59 +141,57 @@ $(document).ready(function () {
 	</div>
     <div class="row-fluid">
     	<div class="span12">
-            <div class="span8">
-            	<div><small><a href="{{ url_for("graph", wid=wid) }}/jpg"><span id="img" class="label label-info">jpg</span></a></small>
-                </div>    
-                {{ svg|safe }}
-                
+        	<div class="row-fluid">
+                <div id="left-container" class="span8">
+                    <div>
+                    	<small><a href="{{ url_for("graph", wid=wid) }}/jpg"><span id="img" class="label label-info">jpg</span></a></small>
+                    </div>    
+                    {{ svg|safe }}
+                </div> <!-- end span8 -->
                 {% if nodes %}
-                <div>
-                	<a href="#comment_acc" data-parent="#accordion2" data-toggle="collapse"><h6>Comments</h6></a>
-                    <div id="accordion2" class="accordion">
-                    	<div class="accordion-group">
-                        	<div class="accordion-body collapse" id="comment_acc">
-                                <table style="padding:0;margin:0;border:1px solid #eee;border-collapse:collapse;">
-                                {% for v in nodes.iteritems() %}
-                                
-                                <tr style="padding:0;margin:0;border-bottom:1px solid #eee;">                  	
-                                    {% for n in v %}
-                                    	{% if n.name %}
-                                        <td style="padding:3px;margin:0;" onmouseover="this.style.background='#eee'" onMouseOut="this.style.background='white'">
-                                            <a href="#"><small>{{ n.name }}</small></a>
-                                            <span class="pull-right">
-                                            	<a href="#submitComment" data-parent="#accordion2" data-toggle="collapse">+ </a>
-                                            </span>
-                                        </td>
-                                        {% endif %}
-                                    {% endfor %}
-                                 </tr>                                             
-                                {% endfor %}
-                                </table>
-                             </div>
-                        </div>
-                    </div>
-                </div>
+                <div class="span3 offset1">
+                <h4>Workflow Objects:</h4>
+                	<div id="accordion" class="accordion">
+                    {% for obj in nodes.iteritems() %}
+                        {% for n in obj %}
+                            {% if (n.name and n.type != "workflow") %}
+                                    <div>
+                                        <a href="#acc_{{ n.uid }}" data-parent="#accordion" data-toggle="collapse"><strong>{{ n.name }}</strong></a> <span class="muted"><em><small>({{ n.type }})</small></em></span> 
+                                            <div class="accordion-body collapse" id="acc_{{ n.uid }}">
+                                                <div class="accordion-inner no-border">
+                                                    <ul>
+                                                        {% if n.data %}
+                                                            {% for x in n.data %}
+                                                                <li><small>{{ x.description }}</small></li>
+                                                                {% if x.time %}                                                	
+                                                                <li><small>timestamp: {{ x.time }}</small></li>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                        {% if n.metadata %}
+                                                            <li><small>Metadata:</small>
+                                                            <ul>
+                                                            {% for md in n.metadata %}
+                                                                <li>
+                                                                    <small>{{ md.key }}: {{ md.value }}</small>
+                                                                    {% if md.time %}                                                	
+                                                                    <ul><li><small>timestamp: {{ md.time }}</small></li></ul>
+                                                                    {% endif %}
+                                                                </li>
+                                                            {% endfor %}
+                                                            </ul></li>
+                                                        {% endif %}                                           
+                                                    </ul>
+                                                </div>
+                                            </div><!-- end accordion-body -->
+                                     </div>
+                            {% endif %}
+                         {% endfor %}
+                    {% endfor %}
+                    </div> <!--end accordion parent -->
+                </div> <!-- end span3 offset1 -->
                 {% endif %}
-            </div>
-            {% if dataobj %}
-            <div class="span3 offset1">
-                <div><small>&nbsp;</small>
-                </div>
-                <ul>
-                {% for item in dataobj %}
-                <li><strong><small>{{ item.name }}</small></strong>
-                	<ul>
-                    	<li><small><em>{{ item.description }}</em></small></li>
-                        {% if(item.time) %}
-                        <li><small><em>time: {{ item.time }}</em></small></li>
-                        {% endif %}
-                        <li class="muted"><span style="font-size:9px;">UID: <em>{{ item.uid }}</em></span></li>
-                    </ul>
-                </li>
-                {% endfor %}
-                </ul>
-            </div>
-            {% endif %} 
+             </div> <!-- end row-fluid -->
         </div> <!-- end span12 -->
     </div><!-- end row-fluid -->
   </div> <!-- end leaderboard -->

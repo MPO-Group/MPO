@@ -47,11 +47,13 @@
         <br/>
         <div class="row-fluid">   
             <div class="span2 offset5">
-            	<span class="text-center"><a href="{{ url_for("register") }}" role="button" class="btn btn-success btn-large"> Register </a></span>
+            	<span class="text-center"><a href="{{ url_for("register") }}" role="button" class="btn btn-success btn-large">&nbsp;Register&nbsp;</a></span>
             </div>
-           <!-- <div class="span2 offset3">
-            	<span class="pull-right"><a href="{{ url_for("index") }}" role="button" class="btn"> <i class="icon-home"></i> Home </a></span>
-            </div>         --> 
         </div> <!-- end row fluid -->
+        <div class="row-fluid">   
+            <div class="span2 offset5">
+                <div style="padding-top:6px;margin:0 auto;width:100%;">&nbsp;&nbsp;&nbsp;&nbsp;<a href="{{ url_for("index") }}">I'm registered.</a></div>
+            </div>
+        </div>        
      </div> <!-- end leaderboard -->
 {% endblock %}

@@ -198,17 +198,30 @@ def getsvgxml(wid):
     nodes = r['nodes']
     #add workflow node explicitly since in is not a child
     graph.add_node( pydot.Node(wid,label=nodes[wid]['name'],shape=nodeshape[nodes[wid]['type']]))
+    
+    object_order={} #stores numerical order of workflow objects.  used for object list display order on workflow detail page
+    object_order[0]={ 'uid':wid, 'name':nodes[wid]['name'], 'type':nodes[wid]['type'] }
+    count=1
+    prev_name=""
     for item in r['connectivity']:
         pid=item['parent_uid']
         cid=item['child_uid']
         name=nodes[cid]['name']
+	if prev_name != name:
+	    #print(str(count) + " " + name)
+	    object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'] }
+	    prev_name=name
+	    count+=1
+	
         theshape=nodeshape[nodes[cid]['type']]
 #        graph.add_node( pydot.Node(cid, label=name, shape=theshape, URL='javascript:postcomment("\N")') )
         graph.add_node( pydot.Node(cid, id=cid, label=name, shape=theshape) )
         if item['child_type']!='workflow':
                 graph.add_edge( pydot.Edge(pid, cid) )
-
-    ans = graph.create_svg()
+	
+    ans ={}
+    ans[0] = graph.create_svg()
+    ans[1] = object_order
     return ans
 
 # adds the raw svg xml to the html template <svg></svg>
@@ -217,20 +230,39 @@ def connections(wid):
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
-    wf_data=requests.get("%s/workflow/%s/graph"%(API_PREFIX,wid,), **certargs)
-    wf_data=wf_data.json()
-    nodes=wf_data['nodes']
-    svgdoc=getsvgxml(wid)
-    svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
-    r=requests.get("%s/dataobject?workflow=%s"%(API_PREFIX,wid,), **certargs) #get data on each workflow element
-    dataobj = r.json()
     
-    if webdebug:
-        print("workflow data objects")
-        pprint(dataobj)
-        print("workflow nodes")
-        pprint(nodes)
+    #get workflow svg xml and object order
+    getsvg=getsvgxml(wid)
+    svgdoc=getsvg[0]
+    wf_objects=getsvg[1] #dict of workflow elements: name & type
+    svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
+ 
+    #wf_data=requests.get("%s/workflow/%s/graph"%(API_PREFIX,wid,), **certargs)
+    #wf_data=wf_data.json()
+    #nodes=wf_data['nodes'] #dict node data
+    
+    #get all data of each activity and dataobject of workflow <wid>
+    for key,value in wf_objects.iteritems():
+	if value['type'] == "activity":
+	    req=requests.get("%s/activity/%s"%(API_PREFIX,value['uid'],), **certargs)
+	    data=req.json()
+	    wf_objects[key]['data']=data
+	elif value['type'] == "dataobject":
+	    req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs) #get data on each workflow element
+	    data=req.json()
+	    wf_objects[key]['data']=data
+	
+	meta_req=requests.get("%s/metadata?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+	if meta_req.text != "[]":
+	    wf_objects[key]['metadata']=meta_req.json()
+	
+	
 
+    if webdebug:
+        print("workflow objects")
+        pprint(wf_objects)
+    
+    nodes=wf_objects
     return render_template('conn.html', **locals())
 
 @app.route('/about')
