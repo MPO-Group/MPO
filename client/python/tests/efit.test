@@ -1,0 +1,67 @@
+#!/bin/sh
+#specify MPO server address. The API will read this value.
+#defaults are used if environment is not set
+if ! [ -n "${MPO_HOST:+x}" ]
+then
+  export MPO_HOST=https://localhost/api
+fi
+
+if ! [ -n "${MPO_VERSION:+x}" ]
+then
+  export MPO_VERSION=v0
+fi
+
+if ! [ -n "${MPO:+x}" ]
+then
+  MPO=~/source/new/mposvn/client/python/mpo_testing.py
+fi
+
+if ! [ -n "${MPO_AUTH:+x}" ]
+then
+  export MPO_AUTH=~/source/new/mposvn/MPODemoUser.pem
+fi
+
+if [ $# -ne 1 ]
+then
+  echo "Usage: $0 SHOT"
+  exit 1
+fi
+
+shot=$1
+
+#use API methods to create a workflow
+wid=`$MPO init --name=EFIT --desc="EFIT01 for $shot"`
+oid1=`$MPO add  $wid $wid --name=Shot --desc="Plasma shot number" --uri=$shot`
+oid2=`$MPO add  $wid $wid --name="Snap file" --desc="EFIT input file" --uri="\\efit01:namelist"`
+oid3=`$MPO add  $wid $wid --name="Green's table" --desc="Green's table files" --uri="/link/efit/ec6565.ddd"`
+oid4=`$MPO add  $wid $wid --name="Magnetic probes list" --desc="Magnetic probes list and geometric configuration" --uri="/link/efit/dprobe.dat"`
+oid5=`$MPO add  $wid $wid --name="Setup and configuration files" --desc="Setup and configuration files" --uri="???"`
+ignore=`$MPO meta $oid5 'Experimental_data_compensation_Ccoil' '/link/efit/ccoil.ddd'`
+ignore=`$MPO meta $oid5 'Experimental_data_compensation_N1coil' '/link/efit/n1coil.ddd'`
+ignore=`$MPO meta $oid5 'Fitting weight data' '/link/efit/fitweight.dat'`
+ignore=`$MPO comment $oid5 "Fitting weights updated 2013-06-01"`
+
+aid1=`$MPO step $wid $oid1 --input=$oid2 --input=$oid3 --input=$oid4 --input=$oid5 --name="Read Input Files" --desc="Read shot number, snap file etc..."`
+
+oid7=`$MPO add  $wid $wid --name="PTDATA pointnames" --desc="Point Data" --uri="???"`
+
+aid2=`$MPO step $wid $oid7 --name="Read PTDATA and calibrate" --desc="Read PTDATA pointnames and calibrate" --uri=EFIT`
+
+aid3=`$MPO step $wid $aid1 --input $aid2 --name="Diagmagnetic flux correction" --desc="Diagmagnetic flux correction contained within EFIT" --uri=EFIT`
+ignore=`$MPO meta $aid3 'compilation_date' '2013-06-05'`
+
+aid4=`$MPO step $wid $aid3 --name="EFIT Data averaging" --desc="Average EFIT Data" --uri=EFIT`
+ignore=`$MPO meta $aid4 'av_time (ms)' '10'`
+ignore=`$MPO comment $aid4 "Backwards averaging"`
+
+aid5=`$MPO step $wid $aid4 --name="Coil corrections" --desc="Perform coil corrections on C and N1 coil" --uri=EFIT`
+ignore=`$MPO meta $aid5 'compilation_date' '2013-06-05'`
+
+aid6=`$MPO step $wid $aid5 --name="Run EFIT" --desc="Fit equilibrium and compute plasma parameters" --uri=EFIT`
+aid7=`$MPO step $wid $aid6  --name="Write EFIT Outputs" --desc="Write the EFIT output files" --uri=EFIT`
+
+oid8=`$MPO add  $wid $aid7 --name="A File" --desc="A EQDSK File" --uri="\\efit01::results:aeqdsk"`
+oid9=`$MPO add  $wid $aid7 --name="G File" --desc="G EQDSK File" --uri="\\efit01::results:geqdsk"`
+oid10=`$MPO add  $wid $aid7 --name="M File" --desc="M File" --uri="\\efit01::measurements"`
+
+aid8=`$MPO step $wid $oid8 --input $oid9 --input $oid10 --name="Archive data" --desc="Load data to MDSplus" --uri=EFIT`
