@@ -17,7 +17,7 @@ MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
 MPO_WEB_CLIENT_KEY=os.environ['MPO_WEB_CLIENT_KEY']
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
-webdebug=True
+webdebug=False
 
 @app.route('/')
 def landing():
@@ -315,10 +315,12 @@ def register():
 	    form = request.form.to_dict() #gets POSTed form fields as dict
 	    form['dn'] = dn
 	    r = json.dumps(form) #convert to json
-	    result = requests.post("%s/user"%API_PREFIX, r, **certargs)
+	    result_post = requests.post("%s/user"%API_PREFIX, r, **certargs)
+            result=result_post.json() #Convert body Response to json datastructure
 
 	    if webdebug:
 		print("get form")
+                print(form)
 		pprint(result)
 	    
 	    if result['status']=="error":

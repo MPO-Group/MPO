@@ -9,7 +9,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=True
+dbdebug=False
 try:
 	conn_string = os.environ['MPO_DB_CONNECTION']
 except Exception, e:
@@ -108,9 +108,9 @@ def getUser(queryargs=None,dn=None):
 	for key in query_map['mpousers']:
 		if queryargs.has_key(key):
                         if (s):
-                                s+=" and "+ "%s='%s'" % (user_query_map[key],queryargs[key])
+                                s+=" and "+ "%s='%s'" % (query_map['mpousers'][key],queryargs[key])
                         else:
-                                s+=" where "+ "%s='%s'" % (user_query_map[key],queryargs[key])
+                                s+=" where "+ "%s='%s'" % (query_map['mpousers'][key],queryargs[key])
         
         if (s): q+=s
 	# execute our Query
@@ -140,21 +140,33 @@ def addUser(json_request,dn):
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = psycopg2.connect(conn_string)
 	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+
         # if the dn is already in the db we shouldn't even be here. make sure the username doesn't exist already
         cursor.execute("select username from mpousers where username=%s",(objs['username'],))
         username = cursor.fetchone()
         if (username):
-                return '{"status":"error","error_mesg":"username already exists"}'
+		msg ={"status":"error","error_mesg":"username already exists", "username":username}
+		print(msg)
+                return json.dumps(msg)
+
 	q = "insert into mpousers (" + ",".join([query_map['mpousers'][x] for x in reqkeys]) + ") values ("+",".join(["%s" for x in reqkeys])+")"
-	cursor.execute(q, tuple([objs[x] for x in reqkeys]) )
-#	records = cursor.fetchall()
-#	if dbdebug:
-#		print('adduser records',str(records))
+	v= tuple([objs[x] for x in reqkeys])
+	cursor.execute(q,v)
+	#JCW Example of returning created record. By calling get getUser() method we also get translation to api labels.
+	#	cursor.execute('select * from mpousers where uuid=%s ',(objs['uid'],) )
+	#records = cursor.fetchone()
 	conn.commit()
 	cursor.close()
 	conn.close()
+	#must close cursor BEFORE invoking another db method.
+	records = getUser( {'uid':unicode(objs['uid'])} ) #JCW for some strange reason, this only works with a unicode string
+	if dbdebug:
+		print('query is ',q,str(v))
+		print('uid is ', objs['uid'])
+		print('adduser records',str(records))
 
-	return json.dumps(objs)
+	return json.dumps(records)
+	#	return json.dumps(objs)
 
 def validUser(dn):
         #make sure the user exists in the db. return true/false
@@ -292,7 +304,7 @@ def addWorkflow(json_request,dn=None):
 	cursor.execute(q,v)
 	# Make the changes to the database persistent
 	conn.commit()
-	records = {}
+	records = {} #JCW we are not returning the full record here.
 	records['uid'] = w_guid
 
 	# Close communication with the database
