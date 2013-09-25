@@ -4,30 +4,6 @@
 
 {% block hscripts %}
 <script>
-//  function svgElementClicked(theElement)
- // {
-//    var newcomment=prompt("enter a new comment for "+theElement.parentElement.id+";");
- //   var url = "{{ url_for("submit_comment") }}";
- //   var params = "parent_uid="+theElement.parentElement.id+"&text=\""+newcomment+"\"";
- //   var xmlhttp;
-
-//    if (newcomment.length > 0) {
-//      if (window.XMLHttpRequest)
-//      {// code for IE7+, Firefox, Chrome, Opera, Safari
-//        xmlhttp=new XMLHttpRequest();
-//      }
-//      else
- //     {// code for IE6, IE5
-//        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-//      }
-//
-//      xmlhttp.open("POST",url,true);
-//      xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-//      xmlhttp.send(params);
-//    }
- // }
-
-/////////////////////////////////////////////////
 
 function closepop(id) {
 	$('#'+id).popover('hide');
@@ -94,7 +70,7 @@ $(document).ready(function () {
 			$("#text_"+id).click(function(e){
 					//closes last clicked popover and opens the new one that was clicked
 					if(currentPopover.length==0) {					
-						currentPopover=e.target.id;						
+						currentPopover=e.target.id;
 					}
 					else {
 						lastPopover=currentPopover;
@@ -102,13 +78,17 @@ $(document).ready(function () {
 					}
 					if(lastPopover == currentPopover) { //close same popover on 2nd click
 						closepop(lastPopover);
+						$("#acc_"+lastPopover.substring(5)).collapse('hide');
 						currentPopover='';
 						lastPopover='';
 					}
 					else {  // close other popover and open new one
 						closepop(lastPopover);
 						$(this).popover('show');
+						$("#acc_"+lastPopover.substring(5)).collapse('hide');
+						$("#acc_"+e.target.id.substring(5)).collapse('show');
 					}
+					
 				});
 			
 			//on click 'text' event for each element -- toggle popover menu
@@ -124,6 +104,22 @@ $(document).ready(function () {
 		    );*/
 		  }
 		}
+
+$('.expandcollapse').click(function () {
+        if ($(this).html() == "<i class=\"icon-plus-sign\"></i> Expand All") {
+            $('.collapse:not(.in)').each(function () {
+                $(this).collapse("toggle");
+            });
+            $(this).html("<i class=\"icon-minus-sign\"></i> Collapse All");
+        }
+        else {
+            $('.collapse.in').each(function () {
+                $(this).collapse("toggle");
+            });
+            $(this).html("<i class=\"icon-plus-sign\"></i> Expand All");
+        };
+    });
+
 
 }); //end document.ready
 
@@ -151,12 +147,13 @@ $(document).ready(function () {
                 {% if nodes %}
                 <div class="span3 offset1">
                 <h4>Workflow Objects:</h4>
+                <button class="btn btn-mini btn-link expandcollapse"><i class="icon-plus-sign"></i> Expand All</button>
                 	<div id="accordion" class="accordion">
                     {% for obj in nodes.iteritems() %}
                         {% for n in obj %}
                             {% if (n.name and n.type != "workflow") %}
                                     <div>
-                                        <a href="#acc_{{ n.uid }}" data-parent="#accordion" data-toggle="collapse"><strong>{{ n.name }}</strong></a> <span class="muted"><em><small>({{ n.type }})</small></em></span> 
+                                        <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a> <span class="muted"><em><small>({{ n.type }})</small></em></span> 
                                             <div class="accordion-body collapse" id="acc_{{ n.uid }}">
                                                 <div class="accordion-inner no-border">
                                                     <ul>
@@ -179,8 +176,19 @@ $(document).ready(function () {
                                                                     {% endif %}
                                                                 </li>
                                                             {% endfor %}
-                                                            </ul></li>
-                                                        {% endif %}                                           
+                                                            </ul>
+                                                            </li>
+                                                        {% endif %}
+                                                        {% if n.comment %}
+                                                            <li><small>Comments:</small>
+                                                            <ul>
+                                                            {% for c in n.comment %}
+                                                                <li><small>{{ c.content }} | <em>by [username] - {{ c.time }}</em></small> 
+                                                                </li>
+                                                            {% endfor %}
+                                                            </ul>
+                                                            </li>
+                                                        {% endif %}                                        
                                                     </ul>
                                                 </div>
                                             </div><!-- end accordion-body -->

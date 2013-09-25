@@ -32,9 +32,17 @@ def index():
               'verify':False, 'headers':{'Real-User-DN':dn}}
     results = False
     try:
-	wid=request.args.get('wid', '')
-
-	r=requests.get("%s/workflow"%API_PREFIX, **certargs)
+	wid=request.args.get('wid')
+	wf_name=request.args.get('wf_name')
+	#req=request.args.to_dict()
+	
+	if wf_name:
+	    #get workflows by specified name
+	    r=requests.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,), **certargs)
+	else:
+	    #get all workflows
+	    r=requests.get("%s/workflow"%API_PREFIX, **certargs)
+	    
         # need to check the status code
         if r.status_code == 401:
             return redirect(url_for('landing', dest_url=request.path))
@@ -87,7 +95,7 @@ def index():
                 if webdebug:
                     print ('web ',cid,cid)
                 cid=cid['alias']
-                results[index]['alias']=cid
+                results[index]['alias']=cid		
 		index+=1
     except Exception, err:
 	print "web_server.index()- there was an exception"
@@ -236,11 +244,7 @@ def connections(wid):
     svgdoc=getsvg[0]
     wf_objects=getsvg[1] #dict of workflow elements: name & type
     svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
- 
-    #wf_data=requests.get("%s/workflow/%s/graph"%(API_PREFIX,wid,), **certargs)
-    #wf_data=wf_data.json()
-    #nodes=wf_data['nodes'] #dict node data
-    
+   
     #get all data of each activity and dataobject of workflow <wid>
     for key,value in wf_objects.iteritems():
 	if value['type'] == "activity":
@@ -256,8 +260,10 @@ def connections(wid):
 	if meta_req.text != "[]":
 	    wf_objects[key]['metadata']=meta_req.json()
 	
+	comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+	if comment.text != "[]":
+	    wf_objects[key]['comment']=comment.json()	
 	
-
     if webdebug:
         print("workflow objects")
         pprint(wf_objects)
@@ -309,13 +315,31 @@ def register():
 	    form = request.form.to_dict() #gets POSTed form fields as dict
 	    form['dn'] = dn
 	    r = json.dumps(form) #convert to json
+	    result = requests.post("%s/user"%API_PREFIX, r, **certargs)
+
 	    if webdebug:
-		print(r)
-	    submit = requests.post("%s/user"%API_PREFIX, r, **certargs)
+		print("get form")
+		pprint(result)
+	    
+	    if result['status']=="error":
+		msg = result['error_mesg']
+		if webdebug:
+		    print("error")
+		    pprint(msg)		
+		return render_template('register.html', msg, form)
+	    else:
+		msg="Thank you for registering."
+		return render_template('profile.html', msg, result)
 	except:
 	    pass
-    
-    return render_template('register.html')
+
+    if request.method == 'GET':
+        return render_template('register.html')
+
+@app.route('/profile')
+def profile():
+    #retrieve user info and display
+    return render_template('profile.html')
 
 if __name__ == "__main__":
     #adding debug option here, so we can see what is going on.	

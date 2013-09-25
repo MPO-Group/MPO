@@ -48,7 +48,7 @@ $(document).ready(function () {
 		<div id="page{{page}}">
 			<table class="main">
 			  <tr>
-			    <th width="3%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">User</th><th width="8%">Comments</th>
+			    <th width="3%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><!-- <th width="8%">User</th> --><th width="8%">Comments</th>
 			  </tr>
     {% elif ((page > 0) and ((loop.index%recs_per_page) == 0)) %}    	
 			</table>
@@ -64,10 +64,10 @@ $(document).ready(function () {
 			<div id="accordion2" class="accordion">
 			<tr>
 				<td class="muted">{{loop.index}}</td>
-                <td><a href="{{ url_for("connections", wid=item.uid) }}">{{item.alias}}</a></td>
+                <td><a href="#">{{ item.username }}</a> / <a href="{{ url_for("index", wf_name=item.name) }}">{{ item.name }}</a> / <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.comp_seq }}</a></td>
                 <td>{{ item.description }}</a></td>
                 <td class="xsmall">{{ item.time }}</td>
-                <td>{{ item.username }}</td>
+                <!-- <td>{{ item.username }}</td> -->
 				<td>
 		    <div class="accordion-group">
 		      <div class="accordion-heading">
@@ -116,6 +116,7 @@ $(document).ready(function () {
  {% endfor %}
 			</table>            
 	    </div><!--end last page div-->
+    <span><small><a href="{{ url_for("index") }}">show all</a></small></span>
     <div class="pagination pagination-mini pull-right"> 
         <ul id="pages" style="vertical-align:middle;">
         

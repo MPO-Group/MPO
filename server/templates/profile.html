@@ -1,63 +1,65 @@
 {% extends "base.html" %}
-{% block title %}MPO Registration{% endblock %}
+{% block title %}MPO My Profile{% endblock %}
 {% block container %}
 
       <div class="leaderboard">
         <div>
-          <h1> MPO Registration </h1>
+          <h1> My Profile </h1>
         </div>
         	<hr/>
         <div class="row-fluid">
+            <div>{% if msg %}
+                    {{ msg }}
+                 {% endif %}
+            </div>
         <div class="span6 offset3">
-            <form id="reg_form" class="form-horizontal span12" action="{{ url_for("register") }}" method="post">         
+            <form id="reg_form" class="form-horizontal span12" action="#" method="post">
+            	{% if result %}      
             	<div class="control-group">
                 	<label class="control-label"><small><em>*required fields</em></small></label>
                 </div>   
                 <div class="control-group">
                     <label class="control-label" for="firstname">*First Name</label>
                     <div class="controls">
-                        <input type="text" id="firstname" name="firstname" placeholder="first name" class="span10">
+                        <input type="text" id="firstname" name="firstname" class="span10" value="{{ result.firstname }}">
                     </div>
                 </div>
                 <div class="control-group">
                     <label class="control-label" for="lastname">*Last Name</label>
                     <div class="controls">
-                        <input type="text" id="lastname" name="lastname" placeholder="last name" class="span10">
+                        <input type="text" id="lastname" name="lastname" class="span10"  value="{{ result.lastname }}">
                     </div>
                 </div>     
                 <div class="control-group">
                     <label class="control-label" for="organization">*Organization</label>
                     <div class="controls">
-                        <input type="text" id="organization" name="organization" placeholder="organization" class="span10">
+                        <input type="text" id="organization" name="organization" class="span10"  value="{{ result.organization }}">
                     </div>
                 </div>                              
                  <div class="control-group">
                     <label class="control-label" for="email">*Email</label>
                     <div class="controls">
-                        <input type="text" id="email" name="email" placeholder="email" class="span10">
+                        <input type="text" id="email" name="email" class="span10" value="{{ result.email }}">
                     </div>
                 </div>
                  <div class="control-group">
                     <label class="control-label" for="phone">*Telephone</label>
                     <div class="controls">
-                        <input type="text" id="phone" name="phone" placeholder="telephone" class="span8">
+                        <input type="text" id="phone" name="phone" class="span8" value="{{ result.phone }}">
                     </div>
                 </div>
                  <div class="control-group">
                     <label class="control-label" for="username">*Username</label>
                     <div class="controls">
-                        <input type="text" name="username" placeholder="username" class="span8">
+                        <input type="text" name="username" class="span8" value="{{ result.username }}">
                     </div>
                 </div>                
                 <div class="control-group">
                     <div class="controls">
-                        <button type="submit" class="btn btn-success" id="submit">submit</button>
-                    </div>
-                    <div>{% if msg %}
-                    		{{ msg }}
-                         {% endif %}
+                        <button type="submit" class="btn btn-success" id="submit">Update</button>
                     </div>
                 </div>
+                {% endif %}
              </form>
        </div>
        </div>
