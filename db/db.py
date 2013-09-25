@@ -94,7 +94,7 @@ def getRecord(table,queryargs=None, dn=None):
 
 
 
-def getUser(queryargs=None):
+def getUser(queryargs=None,dn=None):
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = psycopg2.connect(conn_string)
 
