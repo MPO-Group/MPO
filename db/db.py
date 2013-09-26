@@ -9,7 +9,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=False
+dbdebug=True
 try:
 	conn_string = os.environ['MPO_DB_CONNECTION']
 except Exception, e:
@@ -158,12 +158,25 @@ def addUser(json_request,dn):
 	conn.commit()
 	cursor.close()
 	conn.close()
+
+        #Retrieve the just created record to return it.
 	#must close cursor BEFORE invoking another db method.
 	records = getUser( {'uid':unicode(objs['uid'])} ) #JCW for some strange reason, this only works with a unicode string
+        #get methods always return a list, but we 'know' this should be one item
+	records = json.loads(records)
+	if isinstance(records,list):
+		if len(records)==1:
+			records = records[0]
+		else:
+			print('DB ERROR: in addUser, record retrieval failed')
+			msg ={"status":"error","error_mesg":"record retrieval failed", "username":username,"uid":objs['uid']}
+			print(msg)
+			return json.dumps(msg)
+
 	if dbdebug:
 		print('query is ',q,str(v))
 		print('uid is ', objs['uid'])
-		print('adduser records',str(records))
+		print('adduser records',records)
 
 	return json.dumps(records)
 	#	return json.dumps(objs)

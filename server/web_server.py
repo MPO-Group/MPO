@@ -17,7 +17,8 @@ MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
 MPO_WEB_CLIENT_KEY=os.environ['MPO_WEB_CLIENT_KEY']
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
-webdebug=False
+webdebug=True
+app.debug = True
 
 @app.route('/')
 def landing():
@@ -319,20 +320,36 @@ def register():
             result=result_post.json() #Convert body Response to json datastructure
 
 	    if webdebug:
-		print("get form")
+		print("WEB DEBUG: get form")
                 print(form)
 		pprint(result)
-	    
-	    if result['status']=="error":
-		msg = result['error_mesg']
-		if webdebug:
-		    print("error")
-		    pprint(msg)		
-		return render_template('register.html', msg, form)
-	    else:
-		msg="Thank you for registering."
-		return render_template('profile.html', msg, result)
-	except:
+                print(str(type(result)),len(result))
+
+            if result.has_key('status'): #JCW for now, check this. But we should have some sort of completion status on all route responses
+                if result['status']=="error":
+                    msg = result['error_mesg']
+                    if webdebug:
+                        print("WEB DEBUG error")
+                        pprint(msg)
+                    return render_template('register.html', msg=msg, form=form)
+                else:
+                    msg="Thank you for registering."
+                    if webdebug:
+                        print (msg)
+                    return render_template('profile.html', msg=msg, result=result)
+            else:
+                if webdebug:
+                    print('WARNING: in /register no status field in reply')
+
+                #JCW Should just fail at this point, but for now act as if successful
+                msg="Thank you for registering."
+                if webdebug:
+                    print (msg)
+                return render_template('profile.html', msg=msg, result=result)
+
+
+	except Exception, err:
+            print('/register exception', Exception, err) #JCW should redirect to an error handling template here
 	    pass
 
     if request.method == 'GET':
