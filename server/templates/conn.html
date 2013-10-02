@@ -3,21 +3,55 @@
 {% block title %}MPO Workflow Detail{% endblock %}
 
 {% block hscripts %}
+
 <script>
 
 function closepop(id) {
 	$('#'+id).popover('hide');
 }
 
+function showComments() {
+	$( "#node_comments" ).toggle();
+}
+
 //handles the svg workflow plot functionality
-$(document).ready(function () {
+$(document).ready(function () {	
+		var jsondata = '{{ nodes|tojson }}';  //single quote issue
+		var tmp_str=jsondata.replace(/&#34;/g,'"');
+		var jdata=tmp_str.replace(/&#39;/g,'\'');
+		var dataObjs=jQuery.parseJSON(jdata);
+		//alert(JSON.stringify(dataObjs[4].data));
+		
+		var dataElements = {}; //for name - desc in popover
+		
+		name='';
+		desc='';
+		for (var key in dataObjs) {
+		  if (dataObjs.hasOwnProperty(key)) {
+			var tmp = dataObjs[key];
+			for(var j in tmp) {
+				if(j=="data") {
+					//alert(JSON.stringify(tmp[j]));
+					var tmp2=tmp[j];
+					var tmp3=tmp2[0];
+					if(tmp3['time'])
+						dataElements[tmp3['name']]=tmp3['description'] + ' - ' + tmp3['time'];
+					else
+						dataElements[tmp3['name']]=tmp3['description'];
+				}
+			}
+		  }
+		}
+		//alert(JSON.stringify(dataElements));
+			
 		var lastPopover='';
 		var currentPopover='';
 
 		//$("#test").popover({title: "this is a popover", html: true, container: 'body', content: '<ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li></ul>', trigger: 'hover'});
 		//checks and adjusts svg width/height if needed
 		//var workflowWidth=560; //in pixels
-		var workflowWidth=550;
+		//var workflowWidth=550;
+		var workflowWidth=500;
 
 		var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
 		var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
@@ -65,7 +99,11 @@ $(document).ready(function () {
 			//node.childNodes[4].id = "text_" + id; 
 			
 			//link popover to new text_id
-			$("#text_"+id).popover({container:'body', html: true, content: '<div><span>'+ node.childNodes[4].textContent +'</span><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span></div><hr/><div><small><a href="#">add comment</a> &nbsp;|&nbsp; <a href="#">show comments</a></small></div>', trigger: 'manual'});
+			//var popcontent='<div><span>'+ node.childNodes[4].textContent +': <br/><small><em>' + dataElements[node.childNodes[4].textContent] + '</em></small></span><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span></div><hr/><div><small><a href="#">add comment</a> &nbsp;|&nbsp; <a href="#">show comments</a></small></div>'
+
+			var popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + dataElements[node.childNodes[4].textContent] + '</em></small></span></div><hr/><div><small><a href="#">add comment</a> &nbsp;|&nbsp; <a href="#">show comments</a></small></div>'
+			
+			$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
 			//on click 'text' event for each element -- toggle popover menu
 			$("#text_"+id).click(function(e){
 					//closes last clicked popover and opens the new one that was clicked
@@ -105,31 +143,38 @@ $(document).ready(function () {
 		  }
 		}
 
-$('.expandcollapse').click(function () {
+	$('.expandcollapse').click(function () {
         if ($(this).html() == "<i class=\"icon-plus-sign\"></i> Expand All") {
-            $('.collapse:not(.in)').each(function () {
+            $('#acc-container .collapse:not(.in)').each(function () {
                 $(this).collapse("toggle");
             });
-            $(this).html("<i class=\"icon-minus-sign\"></i> Collapse All");
+            $(this).html("<i class=\"icon-minus-sign\"></i> Collapse All (scroll)");
         }
         else {
-            $('.collapse.in').each(function () {
+            $('#acc-container .collapse.in').each(function () {
                 $(this).collapse("toggle");
             });
             $(this).html("<i class=\"icon-plus-sign\"></i> Expand All");
         };
     });
-
-
+	
+	$('#acc-container').slimScroll({
+		height: 'auto',
+		position: 'right',
+		alwaysVisible: true,
+		railOpacity: 0.1,
+		distance: '0px',
+		color: '#ccc',
+		wheelStep: 5
+	});
 }); //end document.ready
 
 
 </script>
-
+<script type="text/javascript" src="/static/js/jquery.slimscroll.min.js"></script>
 {% endblock %}
 
 {% block container %}
-
    <div class="leaderboard">
     <noscript>This page requires a javascript enabled browser.</noscript>
 	<div align="center">
@@ -138,22 +183,79 @@ $('.expandcollapse').click(function () {
     <div class="row-fluid">
     	<div class="span12">
         	<div class="row-fluid">
-                <div id="left-container" class="span8">
+                <div id="left-container" class="span7">
                     <div>
                     	<small><a href="{{ url_for("graph", wid=wid) }}/jpg"><span id="img" class="label label-info">jpg</span></a></small>
-                    </div>    
+                    </div>
+                    <!-- svg start -->
                     {{ svg|safe }}
-                </div> <!-- end span8 -->
+                    <!-- svg end -->
+
+                    <div id="node_comments">
+                        <div id="accordion2" class="accordion">
+                        <div class="accordion-group">
+                            <div class="accordian-heading">
+                                <div style="padding-top:10px;padding-bottom:10px;">
+                                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne"><small><i class="icon-plus-sign"></i> comments {% if num_comment %}({{ num_comment }}){% endif %}</small></a>
+                                </div>                            
+                            </div>
+                            <div id="collapseOne" class="accordion-body collapse">
+                        {% for obj in nodes.iteritems() %}
+                            {% for n in obj %}
+                                {% if (n.name and n.type != "workflow") %}
+                                        <div>
+                                            {% if n.comment %}
+                                                {% for c in n.comment %}
+                                                    {% if loop.length %}
+                                                        <small>
+                                                        	<a href="#com_{{ n.uid }}" data-toggle="collapse">({{ loop.length }}) {{ n.name }}&nbsp;&nbsp;</a>
+                                                            <a href="#submitComment_" class="text-success">(add)</a>
+                                                        </small>
+                                                        <div class="accordion-body collapse" id="com_{{ n.uid }}">
+                                                            <div class="accordion-inner no-border">
+                                                                <ul>
+                                                                    {% if n.comment %}
+                                                                        {% for c in n.comment %}
+                                                                            <li><small>{{ c.content }}  <span class="muted"><em>{{ c.user }} - {{ c.time }}</em></span> <a href="#" class="text-success">(reply)</a></small> 
+                                                                            </li>
+                                                                        {% endfor %}
+                                                                    {% endif %}                                        
+                                                                </ul>
+                                                            </div>
+                                                        </div><!-- end accordion-body -->
+                                                    {% endif %}
+                                                {% endfor %}
+                                             {% else %}
+                                                <span class="muted"><small><em>{{ n.name }}</em></small></span>
+                                            {% endif %}
+                                         </div>
+                                         
+                                {% endif %}
+                             {% endfor %}
+                        {% endfor %}
+                        	</div><!-- end collapseone -->
+                        </div>
+                        </div> <!--end accordion parent --> 
+                    </div>           	                    
+                </div> <!-- end span7 -->
                 {% if nodes %}
-                <div class="span3 offset1">
-                <h4>Workflow Objects:</h4>
+                <div class="span4 offset1">
+                <h4>Workflow Nodes:</h4>
                 <button class="btn btn-mini btn-link expandcollapse"><i class="icon-plus-sign"></i> Expand All</button>
+                	<div id="acc-container">
                 	<div id="accordion" class="accordion">
                     {% for obj in nodes.iteritems() %}
                         {% for n in obj %}
                             {% if (n.name and n.type != "workflow") %}
                                     <div>
-                                        <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a> <span class="muted"><em><small>({{ n.type }})</small></em></span> 
+                                        <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a> <!-- <span class="muted"><em><small>({{ n.type }})</small></em></span>  -->
+                                                        {% if n.data %}
+                                                            {% for x in n.data %}
+                                                                 {% if x.time %}                                                	
+                                                                <span class="muted"><small><small><em>- {{ x.time }}</em></small></small></span>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% endif %}                                     
                                             <div class="accordion-body collapse" id="acc_{{ n.uid }}">
                                                 <div class="accordion-inner no-border">
                                                     <ul>
@@ -180,14 +282,14 @@ $('.expandcollapse').click(function () {
                                                             </li>
                                                         {% endif %}
                                                         {% if n.comment %}
-                                                            <li><small>Comments:</small>
+                                                         <!--   <li><small>Comments:</small>
                                                             <ul>
                                                             {% for c in n.comment %}
                                                                 <li><small>{{ c.content }} | <em>by [username] - {{ c.time }}</em></small> 
                                                                 </li>
                                                             {% endfor %}
                                                             </ul>
-                                                            </li>
+                                                            </li> -->
                                                         {% endif %}                                        
                                                     </ul>
                                                 </div>
@@ -197,9 +299,15 @@ $('.expandcollapse').click(function () {
                          {% endfor %}
                     {% endfor %}
                     </div> <!--end accordion parent -->
+                    </div> <!-- end acc-container -->
                 </div> <!-- end span3 offset1 -->
                 {% endif %}
              </div> <!-- end row-fluid -->
+		<div class="row-fluid">
+        	<div class="span7">
+
+            </div><!-- end span7 -->
+        </div> <!-- end row-fluid -->
         </div> <!-- end span12 -->
     </div><!-- end row-fluid -->
   </div> <!-- end leaderboard -->

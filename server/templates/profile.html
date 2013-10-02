@@ -8,60 +8,64 @@
         </div>
         	<hr/>
         <div class="row-fluid">
-            <div>{% if msg %}
-                    {{ msg }}
-                 {% endif %}
-            </div>
-        <div class="span6 offset3">
-            <form id="reg_form" class="form-horizontal span12" action="#" method="post">
-            	{% if result %}      
-            	<div class="control-group">
-                	<label class="control-label"><small><em>*required fields</em></small></label>
-                </div>   
-                <div class="control-group">
-                    <label class="control-label" for="firstname">*First Name</label>
-                    <div class="controls">
-                        <input type="text" id="firstname" name="firstname" class="span10" value="{{ result.firstname }}">
+            <div class="span6">
+                <form id="reg_form" class="form-horizontal span12" action="#" method="post">
+                    {% if result %}      
+                    <div class="control-group">
+                        <label class="control-label"><small><em>*required fields</em></small></label>
+                    </div>   
+                    <div class="control-group">
+                        <label class="control-label" for="firstname">*First Name</label>
+                        <div class="controls">
+                            <input type="text" id="firstname" name="firstname" class="span10" value="{{ result.firstname }}">
+                        </div>
                     </div>
-                </div>
-                <div class="control-group">
-                    <label class="control-label" for="lastname">*Last Name</label>
-                    <div class="controls">
-                        <input type="text" id="lastname" name="lastname" class="span10"  value="{{ result.lastname }}">
+                    <div class="control-group">
+                        <label class="control-label" for="lastname">*Last Name</label>
+                        <div class="controls">
+                            <input type="text" id="lastname" name="lastname" class="span10"  value="{{ result.lastname }}">
+                        </div>
+                    </div>     
+                    <div class="control-group">
+                        <label class="control-label" for="organization">*Organization</label>
+                        <div class="controls">
+                            <input type="text" id="organization" name="organization" class="span10"  value="{{ result.organization }}">
+                        </div>
+                    </div>                              
+                     <div class="control-group">
+                        <label class="control-label" for="email">*Email</label>
+                        <div class="controls">
+                            <input type="text" id="email" name="email" class="span10" value="{{ result.email }}">
+                        </div>
                     </div>
-                </div>     
-                <div class="control-group">
-                    <label class="control-label" for="organization">*Organization</label>
-                    <div class="controls">
-                        <input type="text" id="organization" name="organization" class="span10"  value="{{ result.organization }}">
+                     <div class="control-group">
+                        <label class="control-label" for="phone">*Telephone</label>
+                        <div class="controls">
+                            <input type="text" id="phone" name="phone" class="span8" value="{{ result.phone }}">
+                        </div>
                     </div>
-                </div>                              
-                 <div class="control-group">
-                    <label class="control-label" for="email">*Email</label>
-                    <div class="controls">
-                        <input type="text" id="email" name="email" class="span10" value="{{ result.email }}">
-                    </div>
-                </div>
-                 <div class="control-group">
-                    <label class="control-label" for="phone">*Telephone</label>
-                    <div class="controls">
-                        <input type="text" id="phone" name="phone" class="span8" value="{{ result.phone }}">
-                    </div>
-                </div>
-                 <div class="control-group">
-                    <label class="control-label" for="username">*Username</label>
-                    <div class="controls">
-                        <input type="text" name="username" class="span8" value="{{ result.username }}">
-                    </div>
-                </div>                
-                <div class="control-group">
-                    <div class="controls">
-                        <button type="submit" class="btn btn-success" id="submit">Update</button>
-                    </div>
-                </div>
-                {% endif %}
-             </form>
-       </div>
+                     <div class="control-group">
+                        <label class="control-label" for="username">*Username</label>
+                        <div class="controls">
+                            <input type="text" name="username" class="span8" value="{{ result.username }}">
+                        </div>
+                    </div>                
+                    <!-- <div class="control-group">
+                        <div class="controls">
+                            <button type="submit" class="btn btn-success" id="submit">Update</button>
+                        </div>
+                    </div> -->
+                     <div class="control-group">
+                        <div class="controls">
+                        {% if msg %}
+                            <span class="text-error"><em>{{ msg|safe }}</em></span>
+                        {% endif %}
+                        </div>
+                    </div>                    
+                    {% endif %}
+                 </form>
+           </div>
+           <!-- add in links to "my workflows" "most recent workflow" "recent comments" ... (this page could be like a user dashboard and user profile editor) -->
        </div>
     </div>
 {% endblock %}

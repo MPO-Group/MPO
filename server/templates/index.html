@@ -3,14 +3,19 @@
 
 {# pagination controls #}
 {% set recs_per_page = 15 %}
-{% set num_pages = num_wf//recs_per_page %}
-{% if ((num_wf%recs_per_page) != 0) %}
-	{% set num_pages = num_pages+1 %}
+{% if num_wf %}
+    {% set num_pages = num_wf//recs_per_page %}
+    {% if ((num_wf%recs_per_page) != 0) %}
+        {% set num_pages = num_pages+1 %}
+    {% endif %}
 {% endif %}
 
 {% block hscripts %}
 <script>
+var total_pages=1;
+{% if num_pages %}
 var total_pages={{num_pages}};
+{% endif %}
 var current_page=1;
 var last_page=0;
 
@@ -41,92 +46,97 @@ $(document).ready(function () {
     <div class="row-fluid">
     <div class="span12">
 {% set page=0 %}
-{% for item in results %}
-	{% if (page == 0) %}
-	    {% set page=page+1 %}
-        <!--start page{{page}} div--> 
-		<div id="page{{page}}">
-			<table class="main">
-			  <tr>
-			    <th width="3%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><!-- <th width="8%">User</th> --><th width="8%">Comments</th>
-			  </tr>
-    {% elif ((page > 0) and ((loop.index%recs_per_page) == 0)) %}    	
+{% if results %}
+    {% for item in results %}
+        {% if (page == 0) %}
+            {% set page=page+1 %}
+            <!--start page{{page}} div--> 
+            <div id="page{{page}}">
+                <table class="main">
+                  <tr>
+                    <th width="3%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th>
+                  </tr>
+        {% elif ((page > 0) and ((loop.index%recs_per_page) == 0)) %}    	
+                </table>
+            </div><!--end page{{page}} div--> 
+            {% set page=page+1 %}
+            <!--start page{{page}} div--> 
+            <div id="page{{page}}" style="display: none;">
+                <table class="main">
+                  <tr>
+                    <th width="3%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th>
+                  </tr>           
+        {% endif %}
+                <div id="accordion2" class="accordion">
+                <tr>
+                    <td class="muted">{{loop.index}}</td>
+                    <td><a href="#">{{ item.username }}</a> / <a href="{{ url_for("index", wf_name=item.name) }}">{{ item.name }}</a> / <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.comp_seq }}</a></td>
+                    <td>{{ item.description }}</a></td>
+                    <td class="xsmall">{{ item.time }}</td>
+                    <!-- <td>{{ item.username }}</td> -->
+                    <td>
+                <div class="accordion-group">
+                  <div class="accordion-heading">
+                <a href="#commentDrop{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
+                  {% if item.num_comments %}
+                    {{ item.num_comments }}
+                  {% else %}
+                    0
+                  {% endif %}
+                </a>
+                &nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
+                  </div>
+                </div>
+                </td>
+              </tr>
+              <tr>
+            <td colspan="7" class="comments"> 
+              <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
+                <div class="accordion-inner no-border bot-border">
+                  <form action="{{ url_for("submit_comment") }}" method="post">
+                <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
+                <div><textarea rows="2" class="span6" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                  </form>
+                </div>
+              </div>
+            </td>
+              </tr>	      
+              <!-- Comment Drop -->
+              <tr>
+                  <td colspan="7" class="comments"> 
+                <div class="accordion-body collapse {{ item.show_comments }}" id="commentDrop{{ item.uid }}">
+                  <div class="accordion-inner no-border bot-border">
+                  {% for i in item.comments %}
+                <blockquote>
+                  <p style="font-size: 12px">{{ i.content }}</p>
+                  <small>by <cite title="Source Title">username - {{i.time}}</cite></small>
+                </blockquote>
+                <hr>
+                  {% endfor %}
+                  </div>
+                </div>
+              </td>
+              </tr>
+              <!-- END Comment Drop -->
+            </div> <!-- end accordian -->
+     {% endfor %}
 			</table>
-	    </div><!--end page{{page}} div--> 
-        {% set page=page+1 %}
-        <!--start page{{page}} div--> 
-    	<div id="page{{page}}" style="display: none;">
-			<table class="main">
-			  <tr>
-			    <th width="3%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">User</th><th width="8%">Comments</th>
-			  </tr>           
-    {% endif %}
-			<div id="accordion2" class="accordion">
-			<tr>
-				<td class="muted">{{loop.index}}</td>
-                <td><a href="#">{{ item.username }}</a> / <a href="{{ url_for("index", wf_name=item.name) }}">{{ item.name }}</a> / <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.comp_seq }}</a></td>
-                <td>{{ item.description }}</a></td>
-                <td class="xsmall">{{ item.time }}</td>
-                <!-- <td>{{ item.username }}</td> -->
-				<td>
-		    <div class="accordion-group">
-		      <div class="accordion-heading">
-			<a href="#commentDrop{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
-			  {% if item.num_comments %}
-			    {{ item.num_comments }}
-			  {% else %}
-			    0
-			  {% endif %}
-			</a>
-			&nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
-		      </div>
-		    </div>
-			</td>
-	      </tr>
-	      <tr>
-		<td colspan="7" class="comments"> 
-		  <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
-		    <div class="accordion-inner no-border bot-border">
-		      <form action="{{ url_for("submit_comment") }}" method="post">
-			<div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
-			<div><textarea rows="2" class="span6" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
-		      </form>
-		    </div>
-		  </div>
-		</td>
-	      </tr>	      
-	      <!-- Comment Drop -->
-	      <tr>
-	          <td colspan="7" class="comments"> 
-		    <div class="accordion-body collapse {{ item.show_comments }}" id="commentDrop{{ item.uid }}">
-		      <div class="accordion-inner no-border bot-border">
-		      {% for i in item.comments %}
-			<blockquote>
-			  <p style="font-size: 12px">{{ i.content }}</p>
-			  <small>by <cite title="Source Title">username - {{i.time}}</cite></small>
-			</blockquote>
-			<hr>
-		      {% endfor %}
-		      </div>
-		    </div>
-		  </td>
-	      </tr>
-	      <!-- END Comment Drop -->
-	    </div> <!-- end accordian -->
- {% endfor %}
-			</table>            
+{% endif %}     
 	    </div><!--end last page div-->
-    <span><small><a href="{{ url_for("index") }}">show all</a></small></span>
+    {% if wf_name %}
+    	<span><small><a href="{{ url_for("index") }}">show all</a></small></span>
+    {% endif %}
     <div class="pagination pagination-mini pull-right"> 
         <ul id="pages" style="vertical-align:middle;">
-        
-        {% for cnt in range(0,num_pages) %}
-        	{% if (loop.index==1) %}
-            	<li class="disabled"><a href="#" onclick="showPage({{loop.index}});">{{loop.index}}</a></li>
-            {% else %}
-            	<li><a href="#" onclick="showPage({{loop.index}});">{{loop.index}}</a></li>
-            {% endif %}
-		{% endfor %}
+        {% if num_pages %}
+            {% for cnt in range(0,num_pages) %}
+                {% if (loop.index==1) %}
+                    <li class="disabled"><a href="#" onclick="showPage({{loop.index}});">{{loop.index}}</a></li>
+                {% else %}
+                    <li><a href="#" onclick="showPage({{loop.index}});">{{loop.index}}</a></li>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
         </ul>
         &nbsp;<span class="muted"><em><small>{{ num_wf }} workflows</small></em></span>
     </div>

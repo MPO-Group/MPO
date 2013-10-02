@@ -31,7 +31,9 @@ def index():
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
-    results = False
+    results=False
+    num_wf=0
+    wf_name=False
     try:
 	wid=request.args.get('wid')
 	wf_name=request.args.get('wf_name')
@@ -103,7 +105,7 @@ def index():
 	print err
 #        pass
 
-    return render_template('index.html', results = results, num_wf = num_wf)
+    return render_template('index.html', results = results, num_wf = num_wf, wf_name = wf_name)
 
 
 @app.route('/graph/<wid>', methods=['GET'])
@@ -247,6 +249,7 @@ def connections(wid):
     svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
    
     #get all data of each activity and dataobject of workflow <wid>
+    num_comment=0
     for key,value in wf_objects.iteritems():
 	if value['type'] == "activity":
 	    req=requests.get("%s/activity/%s"%(API_PREFIX,value['uid'],), **certargs)
@@ -263,7 +266,18 @@ def connections(wid):
 	
 	comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
 	if comment.text != "[]":
-	    wf_objects[key]['comment']=comment.json()	
+	    cm=comment.json()
+	    k=0
+	    for i in cm:
+		if i['user']:
+		    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user'],), **certargs)
+		    user_info=user_req.json();
+		    username=user_info[0]['username']
+		    #pprint(user_info[0]['username'])
+		    cm[k]['user']=username
+		    k+=1
+	    num_comment+=k
+	    wf_objects[key]['comment']=cm
 	
     if webdebug:
         print("workflow objects")
@@ -315,37 +329,57 @@ def register():
 	try:
 	    form = request.form.to_dict() #gets POSTed form fields as dict
 	    form['dn'] = dn
+	    
+	    #validate input
+	    check="<strong>Missing required fields: </strong>"
+	    n=0
+	    for k,v in form.iteritems():
+		tmp=v.strip();
+		if not tmp:
+		    if n>0:
+			check+=', '
+		    if k=='firstname':
+			check+="first name"
+		    elif k=='lastname':
+			check+="last name"
+		    else:
+			check+=k
+		    n+=1
+		
 	    r = json.dumps(form) #convert to json
 	    result_post = requests.post("%s/user"%API_PREFIX, r, **certargs)
             result=result_post.json() #Convert body Response to json datastructure
-
+	    
 	    if webdebug:
 		print("WEB DEBUG: get form")
                 print(form)
 		pprint(result)
                 print(str(type(result)),len(result))
 
-            if result.has_key('status'): #JCW for now, check this. But we should have some sort of completion status on all route responses
-                if result['status']=="error":
-                    msg = result['error_mesg']
-                    if webdebug:
-                        print("WEB DEBUG error")
-                        pprint(msg)
-                    return render_template('register.html', msg=msg, form=form)
-                else:
-                    msg="Thank you for registering."
-                    if webdebug:
-                        print (msg)
-                    return render_template('profile.html', msg=msg, result=result)
-            else:
-                if webdebug:
-                    print('WARNING: in /register no status field in reply')
-
-                #JCW Should just fail at this point, but for now act as if successful
-                msg="Thank you for registering."
-                if webdebug:
-                    print (msg)
-                return render_template('profile.html', msg=msg, result=result)
+	    if n==0:
+		if result.has_key('status'): #JCW for now, check this. But we should have some sort of completion status on all route responses
+		    if result['status']=="error":
+			msg = result['error_mesg']
+			if webdebug:
+			    print("WEB DEBUG error")
+			    pprint(msg)
+			return render_template('register.html', msg=msg, form=form)
+		    else:
+			msg="Thank you for registering."
+			if webdebug:
+			    print (msg)
+			return render_template('profile.html', msg=msg, result=result)
+		else:
+		    if webdebug:
+			print('WARNING: in /register no status field in reply')
+    
+		    #JCW Should just fail at this point, but for now act as if successful
+		    msg="Thank you for registering."
+		    if webdebug:
+			print (msg)
+		    return render_template('profile.html', msg=msg, result=result)
+	    else:
+		return render_template('register.html', msg=check, form=form)
 
 
 	except Exception, err:
@@ -353,12 +387,20 @@ def register():
 	    pass
 
     if request.method == 'GET':
-        return render_template('register.html')
+        return render_template('register.html', form="_")
 
-@app.route('/profile')
-def profile():
-    #retrieve user info and display
-    return render_template('profile.html')
+#@app.route('/profile')
+#def profile():
+#    #retrieve user info and display
+#    return render_template('profile.html')
+
+def is_email(email):
+    pattern = '[\.\w]{1,}[@]\w+[.]\w+'
+    if re.match(pattern, email):
+        return True
+    else:
+        return False
+
 
 if __name__ == "__main__":
     #adding debug option here, so we can see what is going on.	
