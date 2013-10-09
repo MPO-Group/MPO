@@ -16,8 +16,6 @@ except Exception, e:
 	print('MPO_DB_CONNECTION not found: %s' % e)
 	conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
 
-default_user_id='bc789de3-7484-49dc-a498-3b5a3aad3c80' #romosan
-
 #list of valid query fields and their mapped name in the table,
 #  Use of a dictionary permits different fields in the query than are in the database tables
 #  query_map is a dictionary of dictionaries indexed by the table name.
@@ -292,7 +290,7 @@ def getWorkflowElements(id):
 	return json.dumps(records)
 
 
-def addWorkflow(json_request,dn=None):
+def addWorkflow(json_request,dn):
 	objs = json.loads(json_request)
 
 	# get a connection, if a connect cannot be made an exception will be raised here
@@ -300,10 +298,14 @@ def addWorkflow(json_request,dn=None):
 	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
 	w_guid = str(uuid.uuid4())
 
+        #get the user id
+
+        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+        user_id = cursor.fetchone()
 
 	#determine max composite sequence for incrementing.
 	cursor.execute("select MAX(comp_seq) from workflow where name=%s and U_GUID=%s",
-		       (objs['name'], default_user_id ) )
+		       (objs['name'], user_id ) )
 	count=cursor.fetchone()
 	
 	print ("#############count is",str(count),str(count.max))
@@ -313,7 +315,7 @@ def addWorkflow(json_request,dn=None):
 		seq_no=1
 
 	q="insert into workflow (w_guid, name, description, u_guid, creation_time, comp_seq) values (%s,%s,%s,%s,%s,%s)"
-	v= (w_guid, objs['name'], objs['description'], default_user_id, datetime.datetime.now(),seq_no)
+	v= (w_guid, objs['name'], objs['description'], user_id, datetime.datetime.now(),seq_no)
 	cursor.execute(q,v)
 	# Make the changes to the database persistent
 	conn.commit()
@@ -370,11 +372,16 @@ def addActivity(json_request):
 	conn.close()
 	return json.dumps(records)
 
-def addComment(json_request,dn=None):
+def addComment(json_request,dn):
 	objs = json.loads(json_request)
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = psycopg2.connect(conn_string)
 	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+
+        #get the user id
+
+        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+        user_id = cursor.fetchone()
 
 	#get parent object type
 	q=textwrap.dedent("""\
@@ -390,7 +397,7 @@ def addComment(json_request,dn=None):
 
 	q="insert into comment (cm_guid,content,parent_guid,parent_type,u_guid,creation_time) values (%s,%s,%s,%s,%s,%s)"
 	cm_guid = str(uuid.uuid4())
-	v= (cm_guid, objs['content'], records.uid, records.type,default_user_id, datetime.datetime.now())
+	v= (cm_guid, objs['content'], records.uid, records.type,user_id, datetime.datetime.now())
 	cursor.execute(q,v)
 	# Make the changes to the database persistent
 	conn.commit()
