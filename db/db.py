@@ -324,18 +324,22 @@ def addWorkflow(json_request,dn):
 	return json.dumps(records)
 
 
-def addDataObject(json_request):
+def addDataObject(json_request,dn):
 	objs = json.loads(json_request)
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = psycopg2.connect(conn_string)
 	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+        #get the user id
+        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+        user_id = cursor.fetchone()
+
 	do_guid = str(uuid.uuid4())
-	cursor.execute("insert into dataobject (do_guid, name, w_guid, description, uri) values (%s,%s,%s,%s,%s)", (do_guid, objs['name'], objs['work_uid'], objs['description'], objs['uri']))
+	cursor.execute("insert into dataobject (do_guid, name, w_guid, creation_time, u_guid, description, uri) values (%s,%s,%s,%s,%s,%s,%s)", (do_guid, objs['name'], objs['work_uid'], datetime.datetime.now(), user_id, objs['description'], objs['uri']))
 	wc_guid = str(uuid.uuid4())
 	parent_type = 'activity'
 	if objs['parent_uid'] == objs['work_uid']:
 		parent_type = 'workflow'
-	cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type) values (%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], objs['parent_uid'], parent_type , do_guid, 'dataobject'))
+	cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], objs['parent_uid'], parent_type , do_guid, 'dataobject',datetime.datetime.now()))
 	# Make the changes to the database persistent
 	conn.commit()
 
@@ -346,18 +350,22 @@ def addDataObject(json_request):
 	conn.close()
 	return json.dumps(records)
 
-def addActivity(json_request):
+def addActivity(json_request,dn):
 	objs = json.loads(json_request)
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = psycopg2.connect(conn_string)
 	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+        #get the user id
+        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+        user_id = cursor.fetchone()
+
 	a_guid = str(uuid.uuid4())
-	cursor.execute("insert into activity (a_guid,name,w_guid,description,uri,creation_time) values (%s,%s,%s,%s,%s,%s)", (a_guid, objs['name'], objs['work_uid'], objs['description'], objs['uri'], datetime.datetime.now()))
+	cursor.execute("insert into activity (a_guid,name,w_guid,description,uri,creation_time,u_guid) values (%s,%s,%s,%s,%s,%s,%s)", (a_guid, objs['name'], objs['work_uid'], objs['description'], objs['uri'], datetime.datetime.now(),user_id))
 	wc_guid = str(uuid.uuid4())
 	for parent in objs['parent_uid']:
 		cursor.execute("select w_guid as uid, 'workflow' as type from workflow where w_guid=%s union select a_guid as uid, 'activity' as type from activity where a_guid=%s union select do_guid as uid, 'dataobject' as type from dataobject where do_guid=%s",(parent,parent,parent))
 		records = cursor.fetchone()
-		cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type) values (%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], parent, records.type, a_guid, 'activity'))
+		cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type,creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], parent, records.type, a_guid, 'activity',datetime.datetime.now()))
 	# Make the changes to the database persistent
 	conn.commit()
 
@@ -373,9 +381,7 @@ def addComment(json_request,dn):
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = psycopg2.connect(conn_string)
 	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
-
         #get the user id
-
         cursor.execute("select uuid from mpousers where dn=%s", (dn,))
         user_id = cursor.fetchone()
 
@@ -406,11 +412,14 @@ def addComment(json_request,dn):
 	return json.dumps(records)
 
 
-def addMetadata(json_request,dn=None): #JCW SEP 2013, does not enter user yet
+def addMetadata(json_request,dn):
 	objs = json.loads(json_request)
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = psycopg2.connect(conn_string)
 	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+        #get the user id
+        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+        user_id = cursor.fetchone()
 
 	#get parent object type
 	q=textwrap.dedent("""\
@@ -425,8 +434,8 @@ def addMetadata(json_request,dn=None): #JCW SEP 2013, does not enter user yet
 
 	#insert record
 	md_guid = str(uuid.uuid4())
-	q="insert into metadata (md_guid,name,value,type,parent_guid,parent_type,creation_time) values (%s,%s,%s,%s,%s,%s,%s)"
-	v= (md_guid, objs['key'], objs['value'], 'text', records.uid, records.type, datetime.datetime.now())
+	q="insert into metadata (md_guid,name,value,type,parent_guid,parent_type,creation_time,u_guid) values (%s,%s,%s,%s,%s,%s,%s,%s)"
+	v= (md_guid, objs['key'], objs['value'], 'text', records.uid, records.type, datetime.datetime.now(),user_id)
 	cursor.execute(q,v)
 	# Make the changes to the database persistent
 	conn.commit()
