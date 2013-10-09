@@ -69,7 +69,7 @@ testing the MPO API and WEB GUI.  In order to use it to access either of these
 servers from a browser, it must be installed.  The exact procedure varies depending 
 on the browser and operating system.
 
-Windows/Chrome: 
+Windows/Linux/Chrome: 
 1) from the menu (upper right) choose Settings or browse to: chrome://settings/
 2) at the bottom of the page click 'Show advanced settings...'
 3) under HTTPS/SSL click 'Manage certificates...'
