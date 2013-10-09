@@ -109,7 +109,7 @@ $(document).ready(function () {
                   {% for i in item.comments %}
                 <blockquote>
                   <p style="font-size: 12px">{{ i.content }}</p>
-                  <small>by <cite title="Source Title">username - {{i.time}}</cite></small>
+                  <small>by <cite title="Source Title">{{i.username}} - {{i.time}}</cite></small>
                 </blockquote>
                 <hr>
                   {% endfor %}

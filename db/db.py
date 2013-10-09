@@ -65,19 +65,15 @@ def getRecord(table,queryargs=None, dn=None):
 	qm = query_map[table]
 	for key in qm:
 		q+=' a.'+qm[key]+' AS '+key+','
-	q=q[:-1]+' FROM '+table+' a' #remove trailing comma
-		 #when user is added, add this: +' b.username FROM metadata a, mpousers b WHERE a.u_guid=b.uuid'
+	q=q[:-1]+', b.username FROM '+table+' a, mpousers b ' #remove trailing comma
 
 	if dbdebug:
 		print('get query for route '+table+': '+q)
 
-        s=""
+        s="where a.u_guid=b.uuid"
 	for key in query_map[table]:
 		if queryargs.has_key(key):
-                        if (s):
-                                s+=" and "+ "%s='%s'" % (qm[key],queryargs[key])
-                        else:
-                                s+=" where "+ "%s='%s'" % (qm[key],queryargs[key])
+                        s+=" and "+ "%s='%s'" % (qm[key],queryargs[key])
         
         if (s): q+=s
 	# execute our Query
