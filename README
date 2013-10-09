@@ -25,11 +25,12 @@ Scripts
    functions.sh     - support shell functions
    api_server.sh    - script to run the api web server using uwsgi
    web_server.sh    - script to run the web gui server using uwsgi
-   mposvn.wsgi      - NEEDS MODIFICATION - script to be used by 
-                      apache to run the web server(s)
+   api_server.wsgi  - scripts to be used by 
+   web_server.wsgi    apache to run the web server(s)
                       NOTE:  for apache to serve these pages to safari you may need to add:
                       SSLInsecureRenegotiation ON
                       to the apache config file - at least for this directory.
+
 To run the api_server:
    ./api_server.sh 
    This will fire up the api server listening for https on port 8443, 

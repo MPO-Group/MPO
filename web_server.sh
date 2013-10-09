@@ -22,9 +22,9 @@
 #        - private key for WEB server (must be owned by you and 600)
 #   The second two for the certificate that this server uses to identify itself
 #   to the API server.
-#     MPO_WEB_SERVER_CERT - MPO-UI-SERVER.crt
+#     MPO_WEB_CLIENT_CERT - MPO-UI-SERVER.crt
 #        - public certificate for the WEB server to identify itself to the API server
-#     MPO_WEB_SERVER_KEY - MPO-UI-SERVER.key
+#     MPO_WEB_CLIENT_KEY - MPO-UI-SERVER.key
 #        - private key for the WEB server to idenfify itself to the API server
 #          (must be owned by you and 600)
 #   MPO_CA_CERT - mpo.psfc.mit.edu-ca.crt

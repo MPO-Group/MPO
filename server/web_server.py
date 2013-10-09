@@ -53,7 +53,7 @@ def index():
 	#results = json.loads(r) #results is json object
             results = r.json()
         if webdebug:
-            print("results in index")
+            print("WEBDEBUG: results in index")
             pprint(results)
 
 	#pagination control
@@ -68,13 +68,7 @@ def index():
 			results[index]['show_comments'] = ''
                 pid=i['uid']
                 c=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid), **certargs)
-                #comments = json.loads(c)
 		comments = c.json()
-
-                if webdebug:
-                    print("i and c",i,c)
-                    print(str(type(c)))
-                    print("index:",comments)
 
 		num_comments=0
                 if comments == None: #replace null reply in requests body with empty list so below logic still works
@@ -96,7 +90,7 @@ def index():
                 cid=requests.get("%s/workflow/%s/alias"%(API_PREFIX,pid), **certargs)
                 cid=cid.json()
                 if webdebug:
-                    print ('web ',cid,cid)
+                    print ('webdebug ',cid,cid)
                 cid=cid['alias']
                 results[index]['alias']=cid		
 		index+=1
@@ -280,7 +274,7 @@ def connections(wid):
 	    wf_objects[key]['comment']=cm
 	
     if webdebug:
-        print("workflow objects")
+        print("WEBDEBUG: workflow objects")
         pprint(wf_objects)
     
     nodes=wf_objects
@@ -304,7 +298,7 @@ def submit_comment():
         form['dn'] = dn
         r = json.dumps(form) #convert to json
         if webdebug:
-            print('submit comment', r)
+            print('WEBDEBUG: submit comment', r)
 
         submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
     except:
@@ -351,7 +345,7 @@ def register():
             result=result_post.json() #Convert body Response to json datastructure
 	    
 	    if webdebug:
-		print("WEB DEBUG: get form")
+		print("WEBDEBUG: get form")
                 print(form)
 		pprint(result)
                 print(str(type(result)),len(result))
@@ -361,7 +355,7 @@ def register():
 		    if result['status']=="error":
 			msg = result['error_mesg']
 			if webdebug:
-			    print("WEB DEBUG error")
+			    print("WEBDEBUG error")
 			    pprint(msg)
 			return render_template('register.html', msg=msg, form=form)
 		    else:
@@ -371,7 +365,7 @@ def register():
 			return render_template('profile.html', msg=msg, result=result)
 		else:
 		    if webdebug:
-			print('WARNING: in /register no status field in reply')
+			print('WEBDEBUG: WARNING: in /register no status field in reply')
     
 		    #JCW Should just fail at this point, but for now act as if successful
 		    msg="Thank you for registering."

@@ -9,7 +9,7 @@ MPO_API_VERSION = 'v0'
 
 app = Flask(__name__)
 app.debug=True
-debug=False
+apidebug=False
 
 routes={'workflow':'workflow', 'dataobject':'dataobject', 'activity': 'activity',
 	'comment':'comment', 'metadata':'metadata', 'ontology':'ontology', 'user':'user',
@@ -27,10 +27,9 @@ else:
 @app.route(routes['workflow'],  methods=['GET', 'POST'])
 def workflow(id=None):
 	dn=get_user_dn(request)
-	if debug:
-		print ('You are: %s'% dn )
-		print ('workflow url request is',request.url)
-		print('app in workflow',app.SERVER_NAME,request.url_root)
+	if apidebug:
+		print ('APIDEBUG: You are: %s'% dn )
+		print ('APIDEBUG: workflow url request is',request.url)
         if not rdb.validUser(dn):
                 return Response(None, status=401)
 

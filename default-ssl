@@ -1,4 +1,8 @@
 <IfModule mod_ssl.c>
+
+    ErrorLog /var/log/apache2/ssl_engine.log
+    LogLevel debug
+
 <VirtualHost _default_:443>
 	ServerAdmin webmaster@localhost
 
@@ -21,26 +25,8 @@
 		Order allow,deny
 		Allow from all
 	</Directory>
-        <Directory "/usr/local/roam/html">
-                AllowOverride None
-                Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
-                Order allow,deny
-                Allow from all
-		SSLVerifyClient require
-	</Directory>
-	WSGIDaemonProcess flasktest2 user=twf group=twf threads=5
-    	WSGIScriptAlias /flask2 /var/www/flasktest2/flasktest.wsgi
 
-    	<Directory /var/www/flasktest2>
-        	WSGIProcessGroup flasktest2
-        	WSGIApplicationGroup %{GLOBAL}
-        	Order deny,allow
-        	Allow from all
-		SSLVerifyClient require
-                SSLOptions StdEnvVars
-    	</Directory>
-
-        WSGIDaemonProcess mposvn user=jas group=jas threads=5
+        WSGIDaemonProcess mposvn user=mpo  group=mpo  threads=5
         WSGIScriptAlias /api /var/www/mposvn/api_server.wsgi
 	WSGIScriptAlias /mpo /var/www/mposvn/web_server.wsgi
         SSLInsecureRenegotiation ON
@@ -53,16 +39,6 @@
                 SSLOptions StdEnvVars
         </Directory>
 
-
-	<Directory /var/www/phpki>
-#                WSGIProcessGroup flasktest2
-#                WSGIApplicationGroup %{GLOBAL}
-                Order deny,allow
-                Allow from all
-                SSLOptions StdEnvVars
-		AllowOverride All
-                SSLVerifyClient require
-        </Directory>
 
 
 	ErrorLog ${APACHE_LOG_DIR}/ssl-error.log
@@ -82,8 +58,9 @@
 	#   /usr/share/doc/apache2.2-common/README.Debian.gz for more info.
 	#   If both key and certificate are stored in the same file, only the
 	#   SSLCertificateFile directive is needed.
-	SSLCertificateFile    /etc/ssl/certs/psfcwild.crt
-	SSLCertificateKeyFile /etc/ssl/private/psfcwild.key
+	SSLCertificateFile    /etc/ssl/certs/ssl-cert-snakeoil.pem
+	SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+
 	#   Server Certificate Chain:
 	#   Point SSLCertificateChainFile at a file containing the
 	#   concatenation of PEM encoded CA certificates which form the
