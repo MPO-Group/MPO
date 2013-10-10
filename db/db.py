@@ -32,7 +32,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
 		       'phone':'phone','dn':'dn'},
 	     'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
 			   'work_uid':'w_guid', 'description':'description',
-			   'time':'creation_time','start':'start_time::text','end':'end_time::text',
+			   'time':'creation_time','u_guid':'u_guid','start':'start_time::text','end':'end_time::text',
 			   'status':'completion_status'},
 	     'activity_short' : {'w':'w_guid'},
 	     'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid', 
@@ -78,6 +78,7 @@ def getRecord(table,queryargs=None, dn=None):
                         s+=" and "+ "%s='%s'" % (qm[key],queryargs[key])
         
         if (s): q+=s
+        print q
 	# execute our Query
 	cursor.execute(q)
 	# retrieve the records from the database
