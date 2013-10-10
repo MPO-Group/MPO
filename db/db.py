@@ -15,7 +15,6 @@ try:
 except Exception, e:
 	print('MPO_DB_CONNECTION not found: %s' % e)
 	conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
-	conn_string =  "host='localhost' dbname='mpo_test' user='mpoadmin' password='mpo2013'"
 
 #list of valid query fields and their mapped name in the table,
 #  Use of a dictionary permits different fields in the query than are in the database tables
@@ -68,6 +67,8 @@ def getRecord(table,queryargs=None, dn=None):
                 if qm[key]=='creation_time':
                         qm[key]+='::text'
 		q+=' a.'+qm[key]+' AS '+key+','
+
+	#do we want this line now? username is not in the API interface except for mpousers
 	q=q[:-1]+', b.username FROM '+table+' a, mpousers b ' #remove trailing comma
 
 	if dbdebug:
