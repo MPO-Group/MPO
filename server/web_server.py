@@ -31,12 +31,19 @@ def index():
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
+    if webdebug:
+	print('WEBDEBUG: certargs',certargs)
+
     results=False
     num_wf=0
     wf_name=False
     try:
 	wid=request.args.get('wid')
 	wf_name=request.args.get('wf_name')
+
+
+        if webdebug:
+	    print('WEBDEBUG: requests in index route',API_PREFIX,wf_name)
 	#req=request.args.to_dict()
 	
 	if wf_name:
@@ -45,6 +52,10 @@ def index():
 	else:
 	    #get all workflows
 	    r=requests.get("%s/workflow"%API_PREFIX, **certargs)
+
+	
+        if webdebug:
+	    print('WEBDEBUG: after requests in index route',API_PREFIX,wf_name)
 	    
         # need to check the status code
         if r.status_code == 401:
@@ -263,12 +274,12 @@ def connections(wid):
 	    cm=comment.json()
 	    k=0
 	    for i in cm:
-		if i['user']:
-		    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user'],), **certargs)
+		if i['user_uid']: #get the username from the user UID field.
+		    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
 		    user_info=user_req.json();
 		    username=user_info[0]['username']
 		    #pprint(user_info[0]['username'])
-		    cm[k]['user']=username
+		    cm[k]['user']=username #we are adding this field here
 		    k+=1
 	    num_comment+=k
 	    wf_objects[key]['comment']=cm

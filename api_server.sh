@@ -20,7 +20,7 @@
 function usage {
   echo "Usage: $0 -h | [port [db_connection_string]]
   -h                   - print this message
-  port                 - network port to listen on [9443]
+  port                 - network port to listen on [8443]
   db_connection_string - string to connect to the database
 
   for example:

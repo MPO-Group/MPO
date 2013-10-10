@@ -9,7 +9,7 @@ MPO_API_VERSION = 'v0'
 
 app = Flask(__name__)
 app.debug=True
-apidebug=False
+apidebug=True
 
 routes={'workflow':'workflow', 'dataobject':'dataobject', 'activity': 'activity',
 	'comment':'comment', 'metadata':'metadata', 'ontology':'ontology', 'user':'user',
