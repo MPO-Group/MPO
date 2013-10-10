@@ -15,6 +15,7 @@ try:
 except Exception, e:
 	print('MPO_DB_CONNECTION not found: %s' % e)
 	conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
+	conn_string =  "host='localhost' dbname='mpo_test' user='mpoadmin' password='mpo2013'"
 
 #list of valid query fields and their mapped name in the table,
 #  Use of a dictionary permits different fields in the query than are in the database tables
@@ -26,19 +27,19 @@ except Exception, e:
 query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
 			 'composite_seq':'comp_seq', 'time':'creation_time::text' },
 	     'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time::text','type':'comment_type',
-			  'parent_uid':'parent_GUID','ptype':'parent_type','user':'u_guid'},
+			  'parent_uid':'parent_GUID','ptype':'parent_type','user_uid':'u_guid'},
 	     'mpousers' : {'username':'username', 'uid':'uuid', 'firstname': 'firstname',
 		       'lastname':'lastname','email':'email','organization':'organization',
 		       'phone':'phone','dn':'dn'},
 	     'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
 			   'work_uid':'w_guid', 'description':'description',
-			   'time':'creation_time','u_guid':'u_guid','start':'start_time::text','end':'end_time::text',
+			   'time':'creation_time','user_uid':'u_guid','start':'start_time::text','end':'end_time::text',
 			   'status':'completion_status'},
 	     'activity_short' : {'w':'w_guid'},
 	     'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid', 
-			      'time':'creation_time', 'u_guid':'u_guid','work_uid':'w_guid', 'uri':'uri'},
+			      'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid', 'uri':'uri'},
 	     'dataobject_short': {'w':'w_guid'},
-	     'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 
+	     'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 'user_uid':'u_guid',
 			   'time':'creation_time::text', 'parent_uid':'parent_guid', 'parent_type':'parent_type'},
 	     'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time::text' }
 	     }
