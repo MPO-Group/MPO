@@ -62,7 +62,7 @@ def getWorkflowCompositeID(id):
 def dataobject(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
-		r = rdb.addDataObject(request.data,dn)
+                r = rdb.addRecord('dataobject',request.data,dn)
  	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('dataobject',{'uid':id})
@@ -76,7 +76,7 @@ def dataobject(id=None):
 def activity(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
-		r = rdb.addActivity(request.data,dn)
+		r = rdb.addRecord('activity',request.data,dn)
  	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('activity', {'uid':id})

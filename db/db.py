@@ -31,12 +31,12 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
 		       'lastname':'lastname','email':'email','organization':'organization',
 		       'phone':'phone','dn':'dn'},
 	     'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
-			   'workflow':'w_guid', 'description':'description',
-			   'time':'creation_time::text','start':'start_time::text','end':'end_time::text',
+			   'work_uid':'w_guid', 'description':'description',
+			   'time':'creation_time','start':'start_time::text','end':'end_time::text',
 			   'status':'completion_status'},
 	     'activity_short' : {'w':'w_guid'},
 	     'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid', 
-			      'time':'creation_time::text', 'workflow':'w_guid'},
+			      'time':'creation_time', 'u_guid':'u_guid','work_uid':'w_guid', 'uri':'uri'},
 	     'dataobject_short': {'w':'w_guid'},
 	     'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 
 			   'time':'creation_time::text', 'parent_uid':'parent_guid', 'parent_type':'parent_type'},
@@ -64,6 +64,8 @@ def getRecord(table,queryargs=None, dn=None):
 	q = 'SELECT'
 	qm = query_map[table]
 	for key in qm:
+                if qm[key]=='creation_time':
+                        qm[key]+='::text'
 		q+=' a.'+qm[key]+' AS '+key+','
 	q=q[:-1]+', b.username FROM '+table+' a, mpousers b ' #remove trailing comma
 
@@ -285,6 +287,41 @@ def getWorkflowElements(id):
 	conn.close()
 	return json.dumps(records)
 
+def addRecord(table,request,dn):
+        objs = json.loads(request)
+        objs['uid']=str(uuid.uuid4())
+        objs['time']=datetime.datetime.now()
+	# get a connection, if a connect cannot be made an exception will be raised here
+        conn = psycopg2.connect(conn_string)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+        #get the user id
+        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+        user_id = cursor.fetchone()
+        objs['u_guid'] = user_id.uuid
+        objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
+
+        q = "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) + ") values ("+",".join(["%s" for x in objkeys])+")"
+        v = tuple(objs[x] for x in objkeys)
+        cursor.execute(q,v)
+        #connectivity table
+	wc_guid = str(uuid.uuid4())
+	for parent in objs['parent_uid']:
+                if objs['parent_uid'] == objs['work_uid']:
+                        parent_type = 'workflow'
+                else:
+                        cursor.execute("select w_guid as uid, 'workflow' as type from workflow where w_guid=%s union select a_guid as uid, 'activity' as type from activity where a_guid=%s union select do_guid as uid, 'dataobject' as type from dataobject where do_guid=%s",(parent,parent,parent))
+                        records = cursor.fetchone()
+                        parent_type = records.type
+                cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'], 'dataobject',datetime.datetime.now()))
+	# Make the changes to the database persistent
+	conn.commit()
+
+	records = {}
+	records['uid'] = objs['uid']
+	# Close communication with the database
+	cursor.close()
+	conn.close()
+	return json.dumps(records)
 
 def addWorkflow(json_request,dn):
 	objs = json.loads(json_request)
@@ -318,59 +355,6 @@ def addWorkflow(json_request,dn):
 	records = {} #JCW we are not returning the full record here.
 	records['uid'] = w_guid
 
-	# Close communication with the database
-	cursor.close()
-	conn.close()
-	return json.dumps(records)
-
-
-def addDataObject(json_request,dn):
-	objs = json.loads(json_request)
-	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
-        #get the user id
-        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-        user_id = cursor.fetchone()
-
-	do_guid = str(uuid.uuid4())
-	cursor.execute("insert into dataobject (do_guid, name, w_guid, creation_time, u_guid, description, uri) values (%s,%s,%s,%s,%s,%s,%s)", (do_guid, objs['name'], objs['work_uid'], datetime.datetime.now(), user_id, objs['description'], objs['uri']))
-	wc_guid = str(uuid.uuid4())
-	parent_type = 'activity'
-	if objs['parent_uid'] == objs['work_uid']:
-		parent_type = 'workflow'
-	cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], objs['parent_uid'], parent_type , do_guid, 'dataobject',datetime.datetime.now()))
-	# Make the changes to the database persistent
-	conn.commit()
-
-	records = {}
-	records['uid'] = do_guid
-	# Close communication with the database
-	cursor.close()
-	conn.close()
-	return json.dumps(records)
-
-def addActivity(json_request,dn):
-	objs = json.loads(json_request)
-	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
-        #get the user id
-        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-        user_id = cursor.fetchone()
-
-	a_guid = str(uuid.uuid4())
-	cursor.execute("insert into activity (a_guid,name,w_guid,description,uri,creation_time,u_guid) values (%s,%s,%s,%s,%s,%s,%s)", (a_guid, objs['name'], objs['work_uid'], objs['description'], objs['uri'], datetime.datetime.now(),user_id))
-	wc_guid = str(uuid.uuid4())
-	for parent in objs['parent_uid']:
-		cursor.execute("select w_guid as uid, 'workflow' as type from workflow where w_guid=%s union select a_guid as uid, 'activity' as type from activity where a_guid=%s union select do_guid as uid, 'dataobject' as type from dataobject where do_guid=%s",(parent,parent,parent))
-		records = cursor.fetchone()
-		cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type,creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], parent, records.type, a_guid, 'activity',datetime.datetime.now()))
-	# Make the changes to the database persistent
-	conn.commit()
-
-	records = {}
-	records['uid'] = a_guid
 	# Close communication with the database
 	cursor.close()
 	conn.close()

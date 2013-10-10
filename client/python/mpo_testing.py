@@ -277,7 +277,7 @@ class mpo_methods(object):
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.DATAOBJECT_RT
         payload={"name":name,"description":desc,"uri":uri}
 
-        return self.mpo_post(urlcon,workflow_ID,parentobj_ID,payload,**kwargs)
+        return self.mpo_post(urlcon,workflow_ID,[parentobj_ID],payload,**kwargs)
 
 
     def mpo_step(self,url,workflow_ID,parentobj_ID,*args,**kwargs):
