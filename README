@@ -165,3 +165,13 @@ postgres -D $PGDATA > logfile
 
 # pre wsgi 
 ./server/python server.py &
+
+
+## Reset database
+As database owner:
+> dropdb 'mpoDB'
+> createdb  mpoDB
+> psql mpoDB < db/mpoDB_reference
+
+This will reset the default database to the reference DB from GA with 75 workflows 
+that was introduced in the summer of 2013.
