@@ -15,10 +15,16 @@ function showComments() {
 }
 
 //handles the svg workflow plot functionality
-$(document).ready(function () {	
+$(document).ready(function () {
+		wf_desc="{{ wid_info[0].description }}";	
 		var jsondata = '{{ nodes|tojson }}';  //single quote issue
 		var tmp_str=jsondata.replace(/&#34;/g,'"');
-		var jdata=tmp_str.replace(/&#39;/g,'\'');
+		tmp_str=tmp_str.replace(/(\r\n|\n|\r)/g,'<br/>');
+		tmp_str=tmp_str.replace(/&#39;/g,'\'');
+		tmp_str=tmp_str.replace(/\\/g, "\\\\");
+		var jdata=tmp_str;
+		console.log(jdata);
+
 		var dataObjs=jQuery.parseJSON(jdata);
 		//alert(JSON.stringify(dataObjs[4].data));
 		
@@ -35,9 +41,21 @@ $(document).ready(function () {
 					var tmp2=tmp[j];
 					var tmp3=tmp2[0];
 					if(tmp3['time'])
-						dataElements[tmp3['name']]=tmp3['description'] + ' - ' + tmp3['time'];
+						dataElements[tmp['name']]=tmp3['description'] + ' - ' + tmp3['time'];
 					else
-						dataElements[tmp3['name']]=tmp3['description'];
+						dataElements[tmp['name']]=tmp3['description'];
+				}
+				else if(j=="metadata") {
+					var tmp2=tmp[j];
+					dataElements[tmp['name']]=dataElements[tmp['name']]+"<div>metadata:<ul>";
+					for (var z in tmp2)
+					{
+						var tmp3=tmp2[z];
+						if(tmp3['key']) {
+							dataElements[tmp['name']]=dataElements[tmp['name']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
+						}
+					}
+					dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></div>";
 				}
 			}
 		  }
@@ -76,10 +94,13 @@ $(document).ready(function () {
 		  if (nodelist.hasOwnProperty(key)) {
 		    var node=nodelist[key];
 			var id="";
-		
+			
+			var sub_content="";
 			//get id of "g" element of class=nodes
-			if(key==0)
+			if(key==0) {
 				id="node1";
+				sub_content=wf_desc;
+			}
 			else
 				id=node.childNodes[0].textContent;	
 			
@@ -100,8 +121,14 @@ $(document).ready(function () {
 			
 			//link popover to new text_id
 			//var popcontent='<div><span>'+ node.childNodes[4].textContent +': <br/><small><em>' + dataElements[node.childNodes[4].textContent] + '</em></small></span><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span></div><hr/><div><small><a href="#">add comment</a> &nbsp;|&nbsp; <a href="#">show comments</a></small></div>'
+			
+			
+			if(typeof(dataElements[node.childNodes[4].textContent]) != 'undefined') {
+				sub_content = dataElements[node.childNodes[4].textContent];
+			}
 
-			var popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + dataElements[node.childNodes[4].textContent] + '</em></small></span></div><hr/><div><small><a href="#">add comment</a> &nbsp;|&nbsp; <a href="#">show comments</a></small></div>'
+
+			var popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content + '</em></small></span></div><hr/><div><small><a href="#">add comment</a> &nbsp;|&nbsp; <a href="#">show comments</a></small></div>'
 			
 			$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
 			//on click 'text' event for each element -- toggle popover menu
@@ -178,7 +205,10 @@ $(document).ready(function () {
    <div class="leaderboard">
     <noscript>This page requires a javascript enabled browser.</noscript>
 	<div align="center">
-	  	<h3> Workflow: {{ wid }} </h3>
+	  	<!-- <h3> Workflow: {{ wid }} </h3> -->
+        <h2> {{ wid_info[0].username }} / {{ wid_info[0].name }} / {{ wid_info[0].comp_seq }} </h2>
+        <div><span class="text-center">{{ wid_info[0].description }}</span></div>
+        <div><span class="text-center muted"><small>workflow ID: {{ wid }}</small></span></div>
 	</div>
     <div class="row-fluid">
     	<div class="span12">
@@ -208,15 +238,15 @@ $(document).ready(function () {
                                                 {% for c in n.comment %}
                                                     {% if loop.length %}
                                                         <small>
-                                                        	<a href="#com_{{ n.uid }}" data-toggle="collapse">({{ loop.length }}) {{ n.name }}&nbsp;&nbsp;</a>
-                                                            <a href="#submitComment_" class="text-success">(add)</a>
+                                                        	<a href="#com_{{ n.uid }}" data-toggle="collapse">({{ loop.length }}) {{ n.name }} </a>
+                                                            <a href="#submitComment_" class="text-success"><em>(add)</em></a>
                                                         </small>
                                                         <div class="accordion-body collapse" id="com_{{ n.uid }}">
                                                             <div class="accordion-inner no-border">
                                                                 <ul>
                                                                     {% if n.comment %}
                                                                         {% for c in n.comment %}
-                                                                            <li><small>{{ c.content }}  <span class="muted"><em>{{ c.user }} - {{ c.time }}</em></span> <a href="#" class="text-success">(reply)</a></small> 
+                                                                            <li><small>{{ c.content }}  <span class="muted"><em>{{ c.user }} - {{ c.time }}</em></span> <a href="#" class="text-success"><em>(reply)</em></a></small> 
                                                                             </li>
                                                                         {% endfor %}
                                                                     {% endif %}                                        
@@ -263,7 +293,7 @@ $(document).ready(function () {
                                                             {% for x in n.data %}
                                                                 <li><small>{{ x.description }}</small></li>
                                                                 {% if x.time %}                                                	
-                                                                <li><small>timestamp: {{ x.time }}</small></li>
+                                                                <li><small>time: {{ x.time }}</small></li>
                                                                 {% endif %}
                                                             {% endfor %}
                                                         {% endif %}
@@ -274,7 +304,7 @@ $(document).ready(function () {
                                                                 <li>
                                                                     <small>{{ md.key }}: {{ md.value }}</small>
                                                                     {% if md.time %}                                                	
-                                                                    <ul><li><small>timestamp: {{ md.time }}</small></li></ul>
+                                                                    <ul><li><small>time: {{ md.time }}</small></li></ul>
                                                                     {% endif %}
                                                                 </li>
                                                             {% endfor %}
@@ -282,14 +312,14 @@ $(document).ready(function () {
                                                             </li>
                                                         {% endif %}
                                                         {% if n.comment %}
-                                                         <!--   <li><small>Comments:</small>
+                                                        <li><small>Comments:</small>
                                                             <ul>
                                                             {% for c in n.comment %}
-                                                                <li><small>{{ c.content }} | <em>by [username] - {{ c.time }}</em></small> 
+                                                                <li><small>{{ c.content }} | <em>by {{ c.user }} - {{ c.time }}</em></small> 
                                                                 </li>
                                                             {% endfor %}
                                                             </ul>
-                                                            </li> -->
+                                                        </li>
                                                         {% endif %}                                        
                                                     </ul>
                                                 </div>

@@ -252,17 +252,27 @@ def connections(wid):
     svgdoc=getsvg[0]
     wf_objects=getsvg[1] #dict of workflow elements: name & type
     svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
-   
+    
+    #get workflow info/alias
+    wid_req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
+    wid_info=wid_req.json()
+       
     #get all data of each activity and dataobject of workflow <wid>
     num_comment=0
     for key,value in wf_objects.iteritems():
 	if value['type'] == "activity":
 	    req=requests.get("%s/activity/%s"%(API_PREFIX,value['uid'],), **certargs)
 	    data=req.json()
+	    if data[0]['time']:
+		obj_time=data[0]['time']
+		data[0]['time']=obj_time[:16]	    
 	    wf_objects[key]['data']=data
 	elif value['type'] == "dataobject":
 	    req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs) #get data on each workflow element
 	    data=req.json()
+	    if data[0]['time']:
+		obj_time=data[0]['time']
+		data[0]['time']=obj_time[:16]	    
 	    wf_objects[key]['data']=data
 	
 	meta_req=requests.get("%s/metadata?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
@@ -272,15 +282,21 @@ def connections(wid):
 	comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
 	if comment.text != "[]":
 	    cm=comment.json()
+	    pprint(cm)
 	    k=0
 	    for i in cm:
-		if i['user_uid']: #get the username from the user UID field.
-		    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
-		    user_info=user_req.json();
-		    username=user_info[0]['username']
-		    #pprint(user_info[0]['username'])
-		    cm[k]['user']=username #we are adding this field here
+		if i['parent_uid'] != wid:
+		    if i['user_uid']:
+			user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
+			user_info=user_req.json();
+			username=user_info[0]['username']
+			#pprint(user_info[0]['username'])
+			cm[k]['user']=username
+		    if i['time']:
+			cm_time=i['time']
+			cm[k]['time']=cm_time[:16]
 		    k+=1
+
 	    num_comment+=k
 	    wf_objects[key]['comment']=cm
 	
