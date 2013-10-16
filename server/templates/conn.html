@@ -20,8 +20,8 @@ $(document).ready(function () {
 		var jsondata = '{{ nodes|tojson }}';  //single quote issue
 		var tmp_str=jsondata.replace(/&#34;/g,'"');
 		tmp_str=tmp_str.replace(/(\r\n|\n|\r)/g,'<br/>');
-		tmp_str=tmp_str.replace(/&#39;/g,'\'');
-		tmp_str=tmp_str.replace(/\\/g, "\\\\");
+		tmp_str=tmp_str.replace(/&#39;/g,'\''); //replace single quote with \'
+		tmp_str=tmp_str.replace(/\\/g, "\\\\");  //replace single backslash with double \\
 		var jdata=tmp_str;
 		console.log(jdata);
 
@@ -99,6 +99,7 @@ $(document).ready(function () {
 			//get id of "g" element of class=nodes
 			if(key==0) {
 				id="node1";
+				var wid=node.childNodes[0].textContent;
 				sub_content=wf_desc;
 			}
 			else
@@ -128,7 +129,11 @@ $(document).ready(function () {
 			}
 
 
-			var popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content + '</em></small></span></div><hr/><div><small><a href="#">add comment</a> &nbsp;|&nbsp; <a href="#">show comments</a></small></div>'
+			var popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;
+			if(id=="node1")
+				popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">view/add comments</a></small></div>';
+			else
+				popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
 			
 			$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
 			//on click 'text' event for each element -- toggle popover menu
@@ -232,35 +237,62 @@ $(document).ready(function () {
                             <div id="collapseOne" class="accordion-body collapse">
                         {% for obj in nodes.iteritems() %}
                             {% for n in obj %}
-                                {% if (n.name and n.type != "workflow") %}
-                                        <div>
+                                <div>
+                                    <small>
+                                            <a href="#modal_{{ n.uid }}"  data-toggle="modal">{{ n.name }}
                                             {% if n.comment %}
                                                 {% for c in n.comment %}
-                                                    {% if loop.length %}
-                                                        <small>
-                                                        	<a href="#com_{{ n.uid }}" data-toggle="collapse">({{ loop.length }}) {{ n.name }} </a>
-                                                            <a href="#submitComment_" class="text-success"><em>(add)</em></a>
-                                                        </small>
-                                                        <div class="accordion-body collapse" id="com_{{ n.uid }}">
-                                                            <div class="accordion-inner no-border">
-                                                                <ul>
-                                                                    {% if n.comment %}
-                                                                        {% for c in n.comment %}
-                                                                            <li><small>{{ c.content }}  <span class="muted"><em>{{ c.user }} - {{ c.time }}</em></span> <a href="#" class="text-success"><em>(reply)</em></a></small> 
-                                                                            </li>
-                                                                        {% endfor %}
-                                                                    {% endif %}                                        
-                                                                </ul>
-                                                            </div>
-                                                        </div><!-- end accordion-body -->
-                                                    {% endif %}
+                                                    {% if loop.last %} ({{ loop.length }}) {% endif %}
                                                 {% endfor %}
-                                             {% else %}
-                                                <span class="muted"><small><em>{{ n.name }}</em></small></span>
                                             {% endif %}
-                                         </div>
-                                         
-                                {% endif %}
+                                            </a>                                                	
+                                    </small>
+                                    <div id="modal_{{ n.uid }}" class="modal hide" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                            <h4>{{ n.name }}
+                                            {% if n.comment %}
+                                                {% for c in n.comment %}
+                                                    {% if loop.last %} ({{ loop.length }}) {% endif %}
+                                                {% endfor %}
+                                            {% else %}
+                                                (0)
+                                            {% endif %}
+                                            </h4>
+                                            <small><a href="#add_{{ n.uid }}" data-parent="#accordion{{ n.uid }}" data-toggle="collapse">(+) add comment</a></small>
+                                        </div>
+                                        <div class="modal-body">
+                                              <div class="accordion-body collapse" id="add_{{ n.uid }}">
+                                                <div class="accordion-inner no-border bot-border">
+                                                  <form action="{{ url_for("submit_comment") }}" method="post">
+                                                <div><input type="hidden" name="parent_uid" value="{{ n.uid }}" /></div> 
+                                                <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                                                  </form>
+                                                </div>
+                                              </div>
+                                            <ul>
+                                                {% if n.comment %}
+                                                    {% for c in n.comment %}
+                                                        <li><small>{{ c.content }}  <span class="muted"><em>{{ c.user }} - {{ c.time }}</em></span> <a href="#add_{{ c.uid }}" class="text-success" data-parent="#accordion{{ c.uid }}" data-toggle="collapse"><em>(reply)</em></a></small> 
+                                                           	 <div class="accordion-body collapse" id="add_{{ c.uid }}">
+                                                                <div class="accordion-inner no-border bot-border">
+                                                                  <form action="{{ url_for("submit_comment") }}" method="post">
+                                                                  <!-- comment's uid -->
+                                                                <div><input type="hidden" name="parent_uid" value="{{ c.uid }}" /></div> 
+                                                                <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                                                                  </form>
+                                                                </div>
+                                                              </div>
+                                                        </li>
+                                                    {% endfor %}
+                                                {% endif %}                                        
+                                            </ul>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button class="btn btn-mini" data-dismiss="modal" aria-hidden="true">Close</button>
+                                        </div>
+                                    </div>
+                                 </div>
                              {% endfor %}
                         {% endfor %}
                         	</div><!-- end collapseone -->

@@ -95,7 +95,7 @@ $(document).ready(function () {
                 <div class="accordion-inner no-border bot-border">
                   <form action="{{ url_for("submit_comment") }}" method="post">
                 <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
-                <div><textarea rows="2" class="span6" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
                   </form>
                 </div>
               </div>
@@ -109,7 +109,7 @@ $(document).ready(function () {
                   {% for i in item.comments %}
                 <blockquote>
                   <p style="font-size: 12px">{{ i.content }}</p>
-                  <small>by <cite title="Source Title">{{i.username}} - {{i.time}}</cite></small>
+                  <small>by <cite title="Source Title">{{i.username}} {% if i.time %} - {{i.time}} {% endif %}</cite></small>
                 </blockquote>
                 <hr>
                   {% endfor %}

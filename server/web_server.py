@@ -63,9 +63,10 @@ def index():
         else:
 	#results = json.loads(r) #results is json object
             results = r.json()
-        if webdebug:
-            print("WEBDEBUG: results in index")
-            pprint(results)
+        
+	#if webdebug:
+        #    print("WEBDEBUG: results in index")
+        #    pprint(results)
 
 	#pagination control
 	num_wf=len(results) # number of workflows returned from api call
@@ -105,6 +106,11 @@ def index():
                 cid=cid['alias']
                 results[index]['alias']=cid		
 		index+=1
+
+        if webdebug:
+            print("WEBDEBUG: results sent to index")
+            pprint(results)
+		
     except Exception, err:
 	print "web_server.index()- there was an exception"
 	print err
@@ -285,17 +291,15 @@ def connections(wid):
 	    pprint(cm)
 	    k=0
 	    for i in cm:
-		if i['parent_uid'] != wid:
-		    if i['user_uid']:
-			user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
-			user_info=user_req.json();
-			username=user_info[0]['username']
-			#pprint(user_info[0]['username'])
-			cm[k]['user']=username
-		    if i['time']:
-			cm_time=i['time']
-			cm[k]['time']=cm_time[:16]
-		    k+=1
+		if i['user_uid']:
+		    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
+		    user_info=user_req.json();
+		    username=user_info[0]['username']
+		    cm[k]['user']=username
+		if i['time']:
+		    cm_time=i['time']
+		    cm[k]['time']=cm_time[:16]
+		k+=1
 
 	    num_comment+=k
 	    wf_objects[key]['comment']=cm
