@@ -24,24 +24,36 @@ except Exception, e:
 # If it is not is this dictionary, it is ignored. This provides some protection from SQL injection
 
 query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
-			 'composite_seq':'comp_seq', 'time':'creation_time::text' },
-	     'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time::text','type':'comment_type',
+			 'composite_seq':'comp_seq', 'time':'creation_time' },
+	     'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time','type':'comment_type',
 			  'parent_uid':'parent_GUID','ptype':'parent_type','user_uid':'u_guid'},
 	     'mpousers' : {'username':'username', 'uid':'uuid', 'firstname': 'firstname',
 		       'lastname':'lastname','email':'email','organization':'organization',
 		       'phone':'phone','dn':'dn'},
 	     'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
 			   'work_uid':'w_guid', 'description':'description',
-			   'time':'creation_time','user_uid':'u_guid','start':'start_time::text','end':'end_time::text',
+			   'time':'creation_time','user_uid':'u_guid','start':'start_time','end':'end_time',
 			   'status':'completion_status'},
 	     'activity_short' : {'w':'w_guid'},
 	     'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid', 
 			      'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid', 'uri':'uri'},
 	     'dataobject_short': {'w':'w_guid'},
 	     'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 'user_uid':'u_guid',
-			   'time':'creation_time::text', 'parent_uid':'parent_guid', 'parent_type':'parent_type'},
-	     'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time::text' }
+			   'time':'creation_time', 'parent_uid':'parent_guid', 'parent_type':'parent_type'},
+	     'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' }
 	     }
+
+
+class MPOSetEncoder(json.JSONEncoder):
+	"""
+	This class autoconverts datetime.datetime class types returned from postgres.
+	Add any new types not handled by json.dumps() by default.
+	"""
+	def default(self, obj):
+		if isinstance(obj, datetime.datetime):
+			return str(obj)
+		return json.JSONEncoder.default(self, obj)
+
 
 def getRecord(table,queryargs=None, dn=None):
 	'''
@@ -64,23 +76,25 @@ def getRecord(table,queryargs=None, dn=None):
 	q = 'SELECT'
 	qm = query_map[table]
 	for key in qm:
-                if qm[key]=='creation_time':
-                        qm[key]+='::text'
 		q+=' a.'+qm[key]+' AS '+key+','
 
 	#do we want this line now? username is not in the API interface except for mpousers
+	#this line adds a username field to each record returned in addition to the user_uid
+	#currently, this is not defined in the API
 	q=q[:-1]+', b.username FROM '+table+' a, mpousers b ' #remove trailing comma
 
-	if dbdebug:
-		print('get query for route '+table+': '+q)
 
+		#map user and filter by query
         s="where a.u_guid=b.uuid"
 	for key in query_map[table]:
 		if queryargs.has_key(key):
                         s+=" and "+ "%s='%s'" % (qm[key],queryargs[key])
         
         if (s): q+=s
-        print q
+
+	if dbdebug:
+		print('get query for route '+table+': '+q)
+
 	# execute our Query
 	cursor.execute(q)
 	# retrieve the records from the database
@@ -89,7 +103,7 @@ def getRecord(table,queryargs=None, dn=None):
 	cursor.close()
 	conn.close()
 
-        return json.dumps(records)
+        return json.dumps(records,cls=MPOSetEncoder)
 
 
 
@@ -113,6 +127,9 @@ def getUser(queryargs=None,dn=None):
         
         if (s): q+=s
 	# execute our Query
+	if dbdebug:
+		print('get query for route '+'user'+': '+q)
+
 	cursor.execute(q)
 	# retrieve the records from the database
 	records = cursor.fetchall()
@@ -120,7 +137,7 @@ def getUser(queryargs=None,dn=None):
 	cursor.close()
 	conn.close()
 
-        return json.dumps(records)
+        return json.dumps(records,cls=MPOSetEncoder)
 
 def addUser(json_request,dn):
 	objs = json.loads(json_request)
@@ -146,7 +163,7 @@ def addUser(json_request,dn):
         if (username):
 		msg ={"status":"error","error_mesg":"username already exists", "username":username}
 		print(msg)
-                return json.dumps(msg)
+                return json.dumps(msg,cls=MPOSetEncoder)
 
 	q = "insert into mpousers (" + ",".join([query_map['mpousers'][x] for x in reqkeys]) + ") values ("+",".join(["%s" for x in reqkeys])+")"
 	v= tuple([objs[x] for x in reqkeys])
@@ -170,14 +187,14 @@ def addUser(json_request,dn):
 			print('DB ERROR: in addUser, record retrieval failed')
 			msg ={"status":"error","error_mesg":"record retrieval failed", "username":username,"uid":objs['uid']}
 			print(msg)
-			return json.dumps(msg)
+			return json.dumps(msg,cls=MPOSetEncoder)
 
 	if dbdebug:
 		print('query is ',q,str(v))
 		print('uid is ', objs['uid'])
 		print('adduser records',records)
 
-	return json.dumps(records)
+	return json.dumps(records,cls=MPOSetEncoder)
 	#	return json.dumps(objs)
 
 def validUser(dn):
@@ -209,7 +226,7 @@ def getWorkflow(queryargs=None,dn=None):
 
 	#build our Query, base query is a join between the workflow and user tables to get the username
 	q = textwrap.dedent("""\
-                            SELECT w_guid as uid, a.name, a.description, a.creation_time::text as time, 
+                            SELECT w_guid as uid, a.name, a.description, a.creation_time as time, 
                             a.comp_seq, b.firstname, b.lastname, b.username, b.uuid as userid 
                             FROM workflow a, mpousers b WHERE a.u_guid=b.uuid
 			    """)
@@ -220,7 +237,7 @@ def getWorkflow(queryargs=None,dn=None):
 	#to protect from sql injection
 	for key in query_map['workflow']:
 		if dbdebug:
-			print ('key',key,queryargs.has_key(key),queryargs.keys())
+			print ('DBDEBUG workflow key',key,queryargs.has_key(key),queryargs.keys())
 		if queryargs.has_key(key):
 			q+=" and a.%s='%s'" % (query_map['workflow'][key],queryargs[key])
 
@@ -246,7 +263,7 @@ def getWorkflow(queryargs=None,dn=None):
 	# retrieve the records from the database and rearrange
 	records = cursor.fetchall()
 	#regroup user fields, first convert records from namedtuple to dict
-        jr=json.loads(json.dumps(records))
+        jr=json.loads(json.dumps(records,cls=MPOSetEncoder))
 	for r in jr:
 		r['user']={'firstname':r['firstname'], 'lastname':r['lastname'],
 			   'userid':r['userid'],'username':r['username']}
@@ -257,15 +274,16 @@ def getWorkflow(queryargs=None,dn=None):
 	cursor.close()
 	conn.close()
 	
-        return json.dumps(jr)
+        return json.dumps(jr,cls=MPOSetEncoder)
 
 
 def getWorkflowCompositeID(id):
 	"Returns composite id of the form user/workflow_name/composite_seq"
 	wf=json.loads(getWorkflow({'uid':id}))[0]
 	compid = {'alias':wf['user']['username']+'/'+wf['name']+'/'+str(wf['comp_seq']),'uid':id}
-	print('compid',wf,compid)
-	return json.dumps(compid)
+	if dbdebug:
+		print('DBDEBUG: compid ',wf,compid)
+	return json.dumps(compid,cls=MPOSetEncoder)
 
 
 def getWorkflowElements(id):
@@ -288,7 +306,7 @@ def getWorkflowElements(id):
 	# Close communication with the database
 	cursor.close()
 	conn.close()
-	return json.dumps(records)
+	return json.dumps(records,cls=MPOSetEncoder)
 
 def addRecord(table,request,dn):
         objs = json.loads(request)
@@ -300,7 +318,8 @@ def addRecord(table,request,dn):
         #get the user id
         cursor.execute("select uuid from mpousers where dn=%s", (dn,))
         user_id = cursor.fetchone()
-        objs['u_guid'] = user_id.uuid
+
+        objs['user_uid'] = user_id.uuid
         objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
 
         q = "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) + ") values ("+",".join(["%s" for x in objkeys])+")"
@@ -324,7 +343,7 @@ def addRecord(table,request,dn):
 	# Close communication with the database
 	cursor.close()
 	conn.close()
-	return json.dumps(records)
+	return json.dumps(records,cls=MPOSetEncoder)
 
 def addWorkflow(json_request,dn):
 	objs = json.loads(json_request)
@@ -361,7 +380,7 @@ def addWorkflow(json_request,dn):
 	# Close communication with the database
 	cursor.close()
 	conn.close()
-	return json.dumps(records)
+	return json.dumps(records,cls=MPOSetEncoder)
 
 def addComment(json_request,dn):
 	objs = json.loads(json_request)
@@ -396,7 +415,7 @@ def addComment(json_request,dn):
 	# Close communication with the database
 	cursor.close()
 	conn.close()
-	return json.dumps(records)
+	return json.dumps(records,cls=MPOSetEncoder)
 
 
 def addMetadata(json_request,dn):
@@ -432,4 +451,4 @@ def addMetadata(json_request,dn):
 	# Close communication with the database
 	cursor.close()
 	conn.close()
-	return json.dumps(records)
+	return json.dumps(records,cls=MPOSetEncoder)

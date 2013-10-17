@@ -378,6 +378,7 @@ def register():
 	    if webdebug:
 		print("WEBDEBUG: get form")
                 print(form)
+                print('WEB DEBUG: result of register request')
 		pprint(result)
                 print(str(type(result)),len(result))
 
