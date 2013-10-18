@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 #specify MPO server address. The API will read this value.
 #defaults are used if environment is not set
 if ! [ -n "${MPO_HOST:+x}" ]
 then
-  export MPO_HOST=https://localhost/api
+  export MPO_HOST=https://mpo.gat.com:9443
 fi
 
 if ! [ -n "${MPO_VERSION:+x}" ]
@@ -11,28 +11,41 @@ then
   export MPO_VERSION=v0
 fi
 
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+  echo "Error: Must have MPO_HOME set"
+  exit
+fi
+
 if ! [ -n "${MPO:+x}" ]
 then
-  MPO=~/source/new/mposvn/client/python/mpo_testing.py
+    MPO=$MPO_HOME/client/python/mpo_testing.py
 fi
 
 if ! [ -n "${MPO_AUTH:+x}" ]
 then
-  export MPO_AUTH=~/source/new/mposvn/MPODemoUser.pem
+  export MPO_AUTH=$MPO_HOME/MPODemoUser.pem
 fi
 
-if [ $# -ne 1 ]
+if [ $# -lt 1 ]
 then
   echo "Usage: $0 SHOT"
   exit 1
 fi
 
+if [ "$2" == '' ]
+then
+  efitnum='01'
+else
+  efitnum=$2
+fi
+
 shot=$1
 
 #use API methods to create a workflow
-wid=`$MPO init --name=EFIT --desc="EFIT01 for $shot"`
+wid=`$MPO init --name=EFIT --desc="EFIT$efitnum for $shot"`
 oid1=`$MPO add  $wid $wid --name=Shot --desc="Plasma shot number" --uri=$shot`
-oid2=`$MPO add  $wid $wid --name="Snap file" --desc="EFIT input file" --uri="\\efit01:namelist"`
+oid2=`$MPO add  $wid $wid --name="Snap file" --desc="EFIT input file" --uri="\\efit$efitnum:namelist"`
 oid3=`$MPO add  $wid $wid --name="Green's table" --desc="Green's table files" --uri="/link/efit/ec6565.ddd"`
 oid4=`$MPO add  $wid $wid --name="Magnetic probes list" --desc="Magnetic probes list and geometric configuration" --uri="/link/efit/dprobe.dat"`
 oid5=`$MPO add  $wid $wid --name="Setup and configuration files" --desc="Setup and configuration files" --uri="???"`
@@ -54,14 +67,22 @@ aid4=`$MPO step $wid $aid3 --name="EFIT Data averaging" --desc="Average EFIT Dat
 ignore=`$MPO meta $aid4 'av_time (ms)' '10'`
 ignore=`$MPO comment $aid4 "Backwards averaging"`
 
-aid5=`$MPO step $wid $aid4 --name="Coil corrections" --desc="Perform coil corrections on C and N1 coil" --uri=EFIT`
-ignore=`$MPO meta $aid5 'compilation_date' '2013-06-05'`
+if [ "$efitnum" == '02' ]
+then
+  aid5=`$MPO step $wid $aid4 --name="Call MSE library" --desc="Call MSE library" --uri=EFIT`
+  aid6=`$MPO step $wid $aid5 --name="Process and return MSE data" --desc="Process and return MSE data" --uri=EFIT`
+  aid7=`$MPO step $wid $aid5 --name="Coil corrections" --desc="Perform coil corrections on C and N1 coil" --uri=EFIT`
+else
+  aid7=`$MPO step $wid $aid4 --name="Coil corrections" --desc="Perform coil corrections on C and N1 coil" --uri=EFIT`
+fi
 
-aid6=`$MPO step $wid $aid5 --name="Run EFIT" --desc="Fit equilibrium and compute plasma parameters" --uri=EFIT`
-aid7=`$MPO step $wid $aid6  --name="Write EFIT Outputs" --desc="Write the EFIT output files" --uri=EFIT`
+ignore=`$MPO meta $aid7 'compilation_date' '2013-06-05'`
 
-oid8=`$MPO add  $wid $aid7 --name="A File" --desc="A EQDSK File" --uri="\\efit01::results:aeqdsk"`
-oid9=`$MPO add  $wid $aid7 --name="G File" --desc="G EQDSK File" --uri="\\efit01::results:geqdsk"`
-oid10=`$MPO add  $wid $aid7 --name="M File" --desc="M File" --uri="\\efit01::measurements"`
+aid8=`$MPO step $wid $aid7 --name="Run EFIT" --desc="Fit equilibrium and compute plasma parameters" --uri=EFIT`
+aid9=`$MPO step $wid $aid8  --name="Write EFIT Outputs" --desc="Write the EFIT output files" --uri=EFIT`
 
-aid8=`$MPO step $wid $oid8 --input $oid9 --input $oid10 --name="Archive data" --desc="Load data to MDSplus" --uri=EFIT`
+oid8=`$MPO add  $wid $aid9 --name="A File" --desc="A EQDSK File" --uri="\\efit$efitnum::results:aeqdsk"`
+oid9=`$MPO add  $wid $aid9 --name="G File" --desc="G EQDSK File" --uri="\\efit$efitnum::results:geqdsk"`
+oid10=`$MPO add  $wid $aid9 --name="M File" --desc="M File" --uri="\\efit$efitnum::measurements"`
+
+aid10=`$MPO step $wid $oid8 --input $oid9 --input $oid10 --name="Archive data" --desc="Load data to MDSplus" --uri=EFIT`
