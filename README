@@ -172,6 +172,9 @@ As database owner:
 > dropdb 'mpoDB'
 > createdb  mpoDB
 > psql mpoDB < db/mpoDB_reference
+##update reference database
+pg_dump mpoDB > $MPO_HOME/db/mpoDB_reference
+
 
 This will reset the default database to the reference DB from GA with 75 workflows 
 that was introduced in the summer of 2013.

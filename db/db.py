@@ -88,7 +88,7 @@ def getRecord(table,queryargs=None, dn=None):
         s="where a.u_guid=b.uuid"
 	for key in query_map[table]:
 		if queryargs.has_key(key):
-                        s+=" and "+ "%s='%s'" % (qm[key],queryargs[key])
+                        s+=" and "+ "CAST(%s as text) LIKE '%%%s%%'" % (qm[key],queryargs[key])
         
         if (s): q+=s
 
@@ -121,9 +121,9 @@ def getUser(queryargs=None,dn=None):
 	for key in query_map['mpousers']:
 		if queryargs.has_key(key):
                         if (s):
-                                s+=" and "+ "%s='%s'" % (query_map['mpousers'][key],queryargs[key])
+                                s+=" and "+ "CAST(%s as text) LIKE '%%%s%%'" % (query_map['mpousers'][key],queryargs[key])
                         else:
-                                s+=" where "+ "%s='%s'" % (query_map['mpousers'][key],queryargs[key])
+                                s+=" where "+ "CAST(%s as text) LIKE '%%%s%%'" % (query_map['mpousers'][key],queryargs[key])
         
         if (s): q+=s
 	# execute our Query
@@ -239,7 +239,7 @@ def getWorkflow(queryargs=None,dn=None):
 		if dbdebug:
 			print ('DBDEBUG workflow key',key,queryargs.has_key(key),queryargs.keys())
 		if queryargs.has_key(key):
-			q+=" and a.%s='%s'" % (query_map['workflow'][key],queryargs[key])
+			q+=" and CAST(a.%s as text) LIKE '%%%s%%'" % (query_map['workflow'][key],queryargs[key])
 
 	if queryargs.has_key('alias'):  #handle composite id queries
 	#logic here to extract composite_seq,user, and workflow name from composite ID
