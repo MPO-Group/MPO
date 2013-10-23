@@ -2,6 +2,8 @@
 {% block title %}MPO Search{% endblock %}
 {% block search_active %} class="active" {% endblock %}
 {% block container %}
+
+<!--
 	<form class="form-horizontal leaderboard searchform" action="#">
         <h1>Search</h1>
       <legend>Search Parameters</legend>
@@ -79,18 +81,88 @@
        	 <div class="controls span7"><button type="submit" class="btn btn-large btn-success pull-right">Search</button></div>
        </div>
         
-      </form>
-<!-- 
+      </form> -->
+
 <div class="leaderboard">
+	<div id="top">
     <h1>Search</h1>
+    </div>
     <div class="row-fluid">
     	<div class="span12">
-        <form class="form-inline searchform">
-            <input type="text" class="span7 offset2" placeholder="search"> <button type="submit" class="btn btn-success">Go</button>
-            <div class="offset2" style="padding-top:7px;"><small><a href="#">Advanced Search</a></small></div>
+        <form class="form-inline searchform" method="post" action="{{ url_for("search") }}">
+            <input type="text" name="query" class="span7 offset2"  value="{% if query %}{{ query.query }}{% endif %}"> <button type="submit" class="btn btn-success">Search</button>
+            <!-- <div class="offset2" style="padding-top:7px;"><small><a href="#">Advanced Search</a></small></div> -->
         </form>
         </div>
     </div>
+    {% if results %}
+    <hr/>
+    <div class="row-fluid">
+    	<div class="span12">
+        	<h4 class="text-success">Search Results:</h4>
+            <span><em>result types:</em></span>
+            {% for key,value in results.iteritems() %}
+            	<span><em> <a href="#{{key}}">{{ key }}</a>
+                {% if loop.last %}
+                {% else %},
+                {% endif %}
+                </em>
+                </span>
+            {% endfor %}
+            
+        </div>
+    </div>
+    <div class="row-fluid">
+    	<div class="span12">
+            	{% for key,value in results.iteritems() %}                	
+                	<div id="{{ key }}" style="padding-top:40px;">
+                        <h4 class="text-info">{{ key }}</h4>
+                        {% for item in value %}
+                        	<div>
+                            {% if key != "workflow" and key != "user" %}
+                            	{% set result_url=url_for("connections", wid=item.work_uid) %}
+                                <a href="{{ url_for("connections", wid=item.work_uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
+							{% elif key=="user" %}
+                            	{% set result_url=url_for("profile", wid=item.uuid) %}
+                                <a href="{{ url_for("profile", wid=item.uuid) }}" style="text-decoration:underline;">{{ item.username }}: <em>{{ item.lastname }}, {{ item.firstname }} - {{ item.organization }}</em></a>
+                            {% else %}
+                            	{% set result_url=url_for("connections", wid=item.uid) %}
+                                <a href="{{ url_for("connections", wid=item.uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
+                            {% endif %}
+                            </div>
+                            <div>
+                            {% for k,v in item.iteritems() %}
+                                {% if k == "user" %}
+                                    {% if v %}                    	
+                                    <em>{{ k }}:</em> {{ v.username }}... 
+                                    {% endif %}
+                                {% elif k != "user_uid" %}
+                                    {% if v %}                    	
+                                    <em>{{ k }}:</em> {{ v }}... 
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            </div>
+                            {% if result_url %}
+                            <div>
+                            <em><a href="{{ result_url }}" class="text-success">{{ result_url }}</a></em>
+                            </div>
+                            {% endif %}
+                        <br/>
+                        {% endfor %}
+                        <br/>
+                    </div>
+               	{% endfor %}
+        </div>
+    </div>
+   {% elif query %}
+   <hr/>
+    <div class="row-fluid">
+    	<div class="span10 offset2">
+        	<span class="text-error">No results found.</span>
+        </div>
+    </div>   
+   {% endif %}
 </div>
--->
+
 {% endblock %}

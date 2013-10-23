@@ -288,7 +288,6 @@ def connections(wid):
 	comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
 	if comment.text != "[]":
 	    cm=comment.json()
-	    pprint(cm)
 	    k=0
 	    for i in cm:
 		if i['user_uid']:
@@ -315,10 +314,74 @@ def connections(wid):
 def about():
     return render_template('about.html') 
 
-@app.route('/search')
+@app.route('/search', methods=['GET', 'POST'])
 def search():
-    return render_template('search.html')
-
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+  
+    if request.method == 'POST':   
+	try:
+	    form = request.form.to_dict() #gets POSTed form fields as dict
+	    #r = json.dumps(form)
+	    search_str=form['query'].strip()
+	    
+	    query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
+				     'composite_seq':'comp_seq', 'time':'creation_time' },
+			 'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time','type':'comment_type',
+				      'parent_uid':'parent_GUID','ptype':'parent_type','user_uid':'u_guid'},
+			 'mpousers' : {'username':'username', 'uid':'uuid', 'firstname': 'firstname',
+				   'lastname':'lastname','email':'email','organization':'organization',
+				   'phone':'phone','dn':'dn'},
+			 'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
+				       'work_uid':'w_guid', 'description':'description',
+				       'time':'creation_time','user_uid':'u_guid','start':'start_time','end':'end_time',
+				       'status':'completion_status'},
+			 'activity_short' : {'w':'w_guid'},
+			 'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid', 
+					  'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid', 'uri':'uri'},
+			 'dataobject_short': {'w':'w_guid'},
+			 'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 'user_uid':'u_guid',
+				       'time':'creation_time', 'parent_uid':'parent_guid', 'parent_type':'parent_type'},
+			 'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' }
+			 }
+	    
+	    #wf=requests.get("%s/workflow?uid=%s"%(API_PREFIX,search_str,), **certargs)
+	    results={}
+	    if search_str !='':	    
+		for pkey,pvalue in query_map.iteritems():
+		    obj_result=[]
+		    found=False
+		    for ckey in pvalue:
+			if(pkey != "metadata_short" and pkey != "dataobject_short" and pkey != "activity_short"): #these get requests do not work and break the loop			
+			    if(pkey=="mpousers"): #api route is /user and not /mpousers
+				pkey="user"
+			    
+			    req=requests.get("%s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,), **certargs)
+			    if req.text != "[]":
+				obj_result.extend(req.json())
+				found=True
+				
+				if webdebug:
+				    print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
+		    
+		    if found:
+			results[pkey]=obj_result
+		    
+		if webdebug:
+		    print('WEBDEBUG: user query')
+		    pprint(form)
+		    print('WEBDEBUG: search results')
+		    pprint(results)		
+	    
+	except:
+	    pass
+	
+	return render_template('search.html', query=form, results=results)
+    
+    if request.method == 'GET': 
+	return render_template('search.html')
+    
 @app.route('/submit_comment', methods=['POST'])
 def submit_comment():
     dn = get_user_dn(request)
@@ -340,9 +403,9 @@ def submit_comment():
                                                                   # passes workflow ID so that the
                                                                   # comments will show for that workflow
 
-@app.route('/login')
-def login():
-    return render_template('login.html')
+#@app.route('/login')
+#def login():
+#    return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -415,10 +478,10 @@ def register():
     if request.method == 'GET':
         return render_template('register.html', form="_")
 
-#@app.route('/profile')
-#def profile():
-#    #retrieve user info and display
-#    return render_template('profile.html')
+@app.route('/profile')
+def profile():
+    #retrieve user info and display
+    return render_template('profile.html')
 
 def is_email(email):
     pattern = '[\.\w]{1,}[@]\w+[.]\w+'
