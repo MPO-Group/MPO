@@ -119,12 +119,16 @@
                         <h4 class="text-info">{{ key }}</h4>
                         {% for item in value %}
                         	<div>
-                            {% if key != "workflow" and key != "user" %}
+                            {% if key != "workflow" and key != "user" and key != "comment" and key != "metadata" %}
                             	{% set result_url=url_for("connections", wid=item.work_uid) %}
                                 <a href="{{ url_for("connections", wid=item.work_uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
 							{% elif key=="user" %}
                             	{% set result_url=url_for("profile", wid=item.uuid) %}
                                 <a href="{{ url_for("profile", wid=item.uuid) }}" style="text-decoration:underline;">{{ item.username }}: <em>{{ item.lastname }}, {{ item.firstname }} - {{ item.organization }}</em></a>
+							{% elif key=="comment" %}
+                                <a href="#" style="text-decoration:underline;">{{ item.content }}: <em>by {{ item.username }}</em></a>
+							{% elif key=="metadata" %}
+                                <a href="#" style="text-decoration:underline;">{{ item.key }}: <em>{{ item.value }}</em></a>                                                                
                             {% else %}
                             	{% set result_url=url_for("connections", wid=item.uid) %}
                                 <a href="{{ url_for("connections", wid=item.uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
