@@ -256,7 +256,7 @@ def getWorkflow(queryargs=None,dn=None):
 		q+=" and b.username='%s'" % queryargs['username']
 
         # order by date
-        q+=" order by time"
+        q+=" order by time desc"
 
 	# execute our Query
         if dbdebug:
