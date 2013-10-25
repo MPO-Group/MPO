@@ -255,6 +255,9 @@ def getWorkflow(queryargs=None,dn=None):
 	if queryargs.has_key('username'): #handle username queries
 		q+=" and b.username='%s'" % queryargs['username']
 
+        # order by date
+        q+=" order by time"
+
 	# execute our Query
         if dbdebug:
 		print('workflows q',q)
