@@ -50,8 +50,8 @@ def getconn():
 	c = psycopg.connect(conn_string)
 	return c
 
-#mypool  = pool.QueuePool(getconn, max_overflow=10, pool_size=25)#,echo='debug')
-mypool  = pool.NullPool(getconn)
+mypool  = pool.QueuePool(getconn, max_overflow=10, pool_size=25)#,echo='debug')
+#mypool  = pool.NullPool(getconn)
 
 class MPOSetEncoder(json.JSONEncoder):
 	"""
