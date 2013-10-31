@@ -13,6 +13,7 @@ simplejson >2.2 #provides namedtuple->json in db.py
 Flask >= 0.9
 requests >= 1.0.3
 psycopg2 #for postgres
+SQLAlchemy #for pooling of connections
 pydot 1.5.7 < 2.0.0 (for python 3) #for static graph creation. 
       : sudo pip install https://pypi.python.org/packages/source/p/pyparsing/pyparsing-1.5.7.tar.gz
       : sudo pip install -U pydot  pyparsing==1.5.7

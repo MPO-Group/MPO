@@ -1,7 +1,8 @@
 # file : db.py
 
-import psycopg2
-import psycopg2.extras
+import psycopg2 as psycopg
+import psycopg2.extras as psyext
+import sqlalchemy.pool as pool
 import sys
 import simplejson as json #plays nice with named tuples
 import uuid
@@ -9,12 +10,13 @@ import datetime
 import os
 import textwrap
 
-dbdebug=True
+dbdebug=False
 try:
 	conn_string = os.environ['MPO_DB_CONNECTION']
 except Exception, e:
 	print('MPO_DB_CONNECTION not found: %s' % e)
 	conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
+
 
 #list of valid query fields and their mapped name in the table,
 #  Use of a dictionary permits different fields in the query than are in the database tables
@@ -44,6 +46,13 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
 	     }
 
 
+def getconn():
+	c = psycopg.connect(conn_string)
+	return c
+
+mypool  = pool.QueuePool(getconn, max_overflow=10, pool_size=25)#,echo='debug')
+#mypool  = pool.NullPool(getconn)
+
 class MPOSetEncoder(json.JSONEncoder):
 	"""
 	This class autoconverts datetime.datetime class types returned from postgres.
@@ -66,7 +75,7 @@ def processArgument(a):
 		
 	return qa
 
-def getRecord(table,queryargs=None, dn=None):
+def getRecord(table,queryargs={}, dn=None):
 	'''
 	Generic record retrieval. Handles GET requests for all tables.
 	Use as a template for route specific behavior.
@@ -80,9 +89,9 @@ def getRecord(table,queryargs=None, dn=None):
 
 	qm=query_map[table]
 	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
+	conn = mypool.connect()
 	# conn.cursor will return a cursor object, you can use this cursor to perform queries
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
 	q = 'SELECT'
 	qm = query_map[table]
@@ -121,10 +130,10 @@ def getRecord(table,queryargs=None, dn=None):
 
 def getUser(queryargs=None,dn=None):
 	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
+	conn = mypool.connect()
 
 	# conn.cursor will return a cursor object, you can use this cursor to perform queries
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
 	#        q = "select username,uuid,firstname,lastname,email,organization,phone,dn from mpousers"
 	q = "select * from mpousers"
@@ -167,8 +176,8 @@ def addUser(json_request,dn):
 		print('adding user:',dn)
 
 	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+	conn = mypool.connect()
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
         # if the dn is already in the db we shouldn't even be here. make sure the username doesn't exist already
         cursor.execute("select username from mpousers where username=%s",(objs['username'],))
@@ -212,10 +221,10 @@ def addUser(json_request,dn):
 
 def validUser(dn):
         #make sure the user exists in the db. return true/false
-	conn = psycopg2.connect(conn_string)
+	conn = mypool.connect()
 
 	# conn.cursor will return a cursor object, you can use this cursor to perform queries
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
         cursor.execute("select username from mpousers where dn=%s",(dn,))
         records = cursor.fetchone()
@@ -232,10 +241,10 @@ def getWorkflow(queryargs=None,dn=None):
 	# 'user' requires a join with USER table
 
 	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
+	conn = mypool.connect()
 
 	# conn.cursor will return a cursor object, you can use this cursor to perform queries
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
 	#build our Query, base query is a join between the workflow and user tables to get the username
 	q = textwrap.dedent("""\
@@ -305,9 +314,9 @@ def getWorkflowCompositeID(id):
 
 def getWorkflowElements(id):
 	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
+	conn = mypool.connect()
 	# conn.cursor will return a cursor object, you can use this cursor to perform queries
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
 	records = {}
 	# fetch the nodes from the database
@@ -330,8 +339,8 @@ def addRecord(table,request,dn):
         objs['uid']=str(uuid.uuid4())
         objs['time']=datetime.datetime.now()
 	# get a connection, if a connect cannot be made an exception will be raised here
-        conn = psycopg2.connect(conn_string)
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+        conn = mypool.connect()
+        cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
         #get the user id
         cursor.execute("select uuid from mpousers where dn=%s", (dn,))
         user_id = cursor.fetchone()
@@ -341,6 +350,10 @@ def addRecord(table,request,dn):
 
         q = "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) + ") values ("+",".join(["%s" for x in objkeys])+")"
         v = tuple(objs[x] for x in objkeys)
+	if dbdebug:
+		print('DDBEBUG addRecord to ',table)
+                print(q,v)
+
         cursor.execute(q,v)
         #connectivity table
 	wc_guid = str(uuid.uuid4())
@@ -366,8 +379,8 @@ def addWorkflow(json_request,dn):
 	objs = json.loads(json_request)
 
 	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+	conn = mypool.connect()
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 	w_guid = str(uuid.uuid4())
 
         #get the user id
@@ -402,8 +415,8 @@ def addWorkflow(json_request,dn):
 def addComment(json_request,dn):
 	objs = json.loads(json_request)
 	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+	conn = mypool.connect()
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
         #get the user id
         cursor.execute("select uuid from mpousers where dn=%s", (dn,))
         user_id = cursor.fetchone()
@@ -438,8 +451,8 @@ def addComment(json_request,dn):
 def addMetadata(json_request,dn):
 	objs = json.loads(json_request)
 	# get a connection, if a connect cannot be made an exception will be raised here
-	conn = psycopg2.connect(conn_string)
-	cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+	conn = mypool.connect()
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
         #get the user id
         cursor.execute("select uuid from mpousers where dn=%s", (dn,))
         user_id = cursor.fetchone()
