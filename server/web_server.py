@@ -38,6 +38,10 @@ def index():
     num_wf=0
     wf_name=False
     try:
+	s = requests.Session()
+        s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
+	s.verify=False
+	s.headers={'Real-User-DN':dn}
 	wid=request.args.get('wid')
 	wf_name=request.args.get('wf_name')
 
@@ -48,10 +52,10 @@ def index():
 	
 	if wf_name:
 	    #get workflows by specified name
-	    r=requests.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,), **certargs)
+	    r=s.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,),  headers={'Real-User-DN':dn})
 	else:
 	    #get all workflows
-	    r=requests.get("%s/workflow"%API_PREFIX, **certargs)
+	    r=s.get("%s/workflow"%API_PREFIX,  headers={'Real-User-DN':dn})
 
 	
         if webdebug:
@@ -79,7 +83,7 @@ def index():
 		else:
 			results[index]['show_comments'] = ''
                 pid=i['uid']
-                c=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid), **certargs)
+                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
 		comments = c.json()
 
 		num_comments=0
@@ -99,7 +103,7 @@ def index():
 #JCW 9 SEP 2013 API exposure of 'creation_time' is 'time' for comments.
 		time=results[index]['time'][:16]
 		results[index]['time']=time
-                cid=requests.get("%s/workflow/%s/alias"%(API_PREFIX,pid), **certargs)
+                cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
                 cid=cid.json()
                 if webdebug:
                     print ('webdebug ',cid,cid)
