@@ -1,0 +1,13 @@
+        WSGIDaemonProcess mpoapi user=jas group=jas threads=5
+        WSGIScriptAlias /api /var/www/mposvn/api_server.wsgi process-group=mpoapi application-group=%{GLOBAL}
+
+        WSGIDaemonProcess mpowww user=jas group=jas threads=5
+        WSGIScriptAlias /mpo /var/www/mposvn/web_server.wsgi process-group=mpowww application-group=%{GLOBAL}
+
+        SSLInsecureRenegotiation ON
+        <Directory /var/www/mposvn>
+                Order deny,allow
+                Allow from all
+                SSLVerifyClient require
+                SSLOptions StdEnvVars
+        </Directory>

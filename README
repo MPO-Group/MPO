@@ -30,6 +30,9 @@ Scripts
                       NOTE:  for apache to serve these pages to safari you may need to add:
                       SSLInsecureRenegotiation ON
                       to the apache config file - at least for this directory.
+   apache2-site-cfg - Sample lines to configure apache2 to serve the mpo web and api servers.
+                      These should be added to /etc/apache2/sites-available/default-ssl, or 
+                      someplace equivalent on the target system.
 
 To run the api_server:
    ./api_server.sh 
