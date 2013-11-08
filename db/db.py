@@ -109,7 +109,7 @@ def getRecord(table,queryargs={}, dn=None):
 	for key in query_map[table]:
 		if queryargs.has_key(key):
 			qa=processArgument(queryargs[key])
-                        s+=" and "+ "CAST(%s as text) LIKE '%%%s%%'" % (qm[key],qa)
+                        s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
         
         if (s): q+=s
 
@@ -143,9 +143,9 @@ def getUser(queryargs=None,dn=None):
 		if queryargs.has_key(key):
 			qa=processArgument(queryargs[key])
                         if (s):
-                                s+=" and "+ "CAST(%s as text) LIKE '%%%s%%'" % (query_map['mpousers'][key],qa)
+                                s+=" and "+ "CAST(%s as text) iLIKE '%%%s%%'" % (query_map['mpousers'][key],qa)
                         else:
-                                s+=" where "+ "CAST(%s as text) LIKE '%%%s%%'" % (query_map['mpousers'][key],qa)
+                                s+=" where "+ "CAST(%s as text) iLIKE '%%%s%%'" % (query_map['mpousers'][key],qa)
         
         if (s): q+=s
 	# execute our Query
@@ -262,7 +262,7 @@ def getWorkflow(queryargs=None,dn=None):
 			print ('DBDEBUG workflow key',key,queryargs.has_key(key),queryargs.keys())
 		if queryargs.has_key(key):
 			qa=processArgument(queryargs[key])
-			q+=" and CAST(a.%s as text) LIKE '%%%s%%'" % (query_map['workflow'][key],qa)
+			q+=" and CAST(a.%s as text) iLIKE '%%%s%%'" % (query_map['workflow'][key],qa)
 
 	if queryargs.has_key('alias'):  #handle composite id queries
 	#logic here to extract composite_seq,user, and workflow name from composite ID
