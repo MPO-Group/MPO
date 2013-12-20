@@ -61,6 +61,25 @@ To access the live apache served servers *
   see the certificate directions below.
 ** note the api server's top route is not defined, try: https://mpo.psfc.mit.edu/api/workflow
 
+Example scripts to archive using rsync. These scripts use an ssh-key from ~/.mporsync to rsync
+   files between user directories and an archive server.  Create a password free key for use by these
+   scripts by typing:
+     ssh-keygen
+   and putting .mporsync/id_rsa  in for the key file name and nothing for the password. Send the public
+   part of the key (~/.mporsync/id_rsa.pub) to jas@psfc.mit.edu  and he will authorize you to write in
+   archive.
+
+   mpoarchive src-file workflow-name user-name run-number [extra-file-name-parts]
+   mpols  workflow-name user-name run-number [extra-file-name-parts]
+   mporestore  workflow-name user-name run-number [extra-file-name-parts]
+
+To example-usage:
+   mpoarchive gyrodir gyro jas 1   - this will archive the contents of the directory gyrodir as 
+                                     gyro/jas/1/gyrodir in the archive on psfcstor1
+   mpols gyro jas 1                - This will recursively list out all the files archived in the previous step
+   mporestore gyro jas 1           - This will restore all the files in the 1st step to the current 
+                                     working directory hierarchy.
+
 Server use cases:
 
 a. You want to access the api server running on mpo.psfc.mit.edu under apache but run your own
