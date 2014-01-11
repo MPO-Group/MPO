@@ -1,0 +1,3 @@
+test_routes.sh : script for creating and populating test database and servers
+                 from scratch. Simple coverage testing.
+

@@ -37,21 +37,25 @@ def workflow(id=None):
                 r = rdb.addWorkflow(request.data,dn)
  	elif request.method == 'GET':
 		if id:
-			r = rdb.getWorkflow({'uid':id})
+			darg=dict(request.args.items(multi=True)+[('uid',id)])
+			print('darg',darg)
+			r = rdb.getWorkflow({'uid':id},dn)
 		else:
-			r = rdb.getWorkflow(request.args)
+			r = rdb.getWorkflow(request.args,dn)
 	return r
 
 
 @app.route(routes['workflow']+'/<id>/graph', methods=['GET'])
 def getWorkflowGraph(id):
+	dn=get_user_dn(request)
 	if request.method == 'GET':
-		r = rdb.getWorkflowElements(id)
+		r = rdb.getWorkflowElements(id,request.args,dn)
 	return r
 
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
 def getWorkflowCompositeID(id):
+	dn=get_user_dn(request)
 	if request.method == 'GET':
 		r = rdb.getWorkflowCompositeID(id)
 	return r

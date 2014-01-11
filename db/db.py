@@ -10,7 +10,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=False
+dbdebug=True
 try:
 	conn_string = os.environ['MPO_DB_CONNECTION']
 except Exception, e:
@@ -128,7 +128,7 @@ def getRecord(table,queryargs={}, dn=None):
 
 
 
-def getUser(queryargs=None,dn=None):
+def getUser(queryargs={},dn=None):
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = mypool.connect()
 
@@ -234,11 +234,19 @@ def validUser(dn):
         else:
                 return False
 
-def getWorkflow(queryargs=None,dn=None):
+def getWorkflow(queryargs={},dn=None):
 	"""
 	Processes the /workflow route. Handles get query arguments.
 	"""
 	# 'user' requires a join with USER table
+
+	if dbdebug:
+		print('DDBEBUG getworkflow query ',queryargs)
+		if queryargs.has_key('range'):
+			therange=queryargs['range']
+			print('DDEBUG range is', therange,str(therange))
+			qa= tuple(map(int, therange[1:-1].split(',')))
+			print('DDEBUG tuple range is',qa)
 
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = mypool.connect()
@@ -312,11 +320,20 @@ def getWorkflowCompositeID(id):
 	return json.dumps(compid,cls=MPOSetEncoder)
 
 
-def getWorkflowElements(id):
+def getWorkflowElements(id,queryargs={},dn=None):
+	from dateutil import parser
+
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = mypool.connect()
 	# conn.cursor will return a cursor object, you can use this cursor to perform queries
 	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+
+	if dbdebug:
+		print('DDBEBUG workflowelements query ',queryargs)
+		if queryargs.has_key('after'):
+			after=queryargs['after']
+			print('DDEBUG after value is', after,str(after))
+			print('DDEBUG timestamp for after is',parser.parse(after))
 
 	records = {}
 	# fetch the nodes from the database

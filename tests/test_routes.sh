@@ -32,8 +32,14 @@ export MPO_HOST=https://localhost:$api_port
 
 if ! [ -n "${MPO_HOME:+x}" ]
 then
-  echo ERROR: need to define MPO_HOME
-  exit
+  echo WARNING: MPO_HOME not defined, using defaults.
+  export MPO_HOME=$(dirname $0)/../
+fi
+
+if ! [ -n "${PGDATA:+x}" ]
+then
+  echo WARNING: PGDATA not defined, using defaults.
+  export PGDATA=$MPO_HOME/db/data
 fi
 
 if ! [ -n "${MPO_VERSION:+x}" ]
@@ -47,6 +53,8 @@ then
 fi
 
 export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem'
+echo env is
+env
 
 #start our own database
 test_db=mpo_test
