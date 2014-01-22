@@ -292,7 +292,8 @@ def getWorkflow(queryargs={},dn=None):
         if queryargs.has_key('range'): # return a range
                 therange=queryargs['range']
                 qa= tuple(map(int, therange[1:-1].split(',')))
-                q+=" limit "+str(qa[1]-qa[0]+1)+ " offset "+str(qa[0]-1)
+                q+=" limit %s" % (qa[1]-qa[0]+1)
+                q+=" offset %s" % (qa[0]-1)
 
 	# execute our Query
         if dbdebug:
