@@ -212,6 +212,8 @@ def graph(wid, format="svg"):
         response.headers['Content-Type'] = 'image/gif'
     elif format == 'jpg' :
         response.headers['Content-Type'] = 'image/jpg'
+    elif format == 'dot' :
+	response.headers['Content-Type'] = 'text/plain'
     return response
 
 def getsvgxml(wid):
