@@ -130,49 +130,6 @@ def graph(wid, format="svg"):
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
-    jsfun = """
-        <script>
- //               document.getElementById("graph1").addEventListener("click", sendClickToParentDocument, false);
-//                document.getElementById("graph1").addEventListener("onmouseover", sendMouseOverToParent, false);
-//                document.getElementById("graph1").addEventListener("onmouseout", sendMouseoutToParent, false);
-                function sendClickToParentDocument(evt)
-                {
-                        // SVGElementInstance objects aren't normal DOM nodes, so fetch the corresponding 'use' element instead
-                        var target = evt.target;
-      
-			// call a method in the parent document if it exists
-			if (window.parent.svgElementClicked)
-				window.parent.svgElementClicked(target);
-			else
-				alert("You clicked '" + target.id + "' which is a " + target.textContent + " element");
-		}
-
-		//get list of nodes for svg xml tag "g" w/ class "node"
-		var nodelist = document.querySelectorAll("g.node");
-		
-		//parse nodelist object and add click event function to each node (w/ respective data)
-		for (var key in nodelist) {
-		  if (nodelist.hasOwnProperty(key)) {
-		    var node=nodelist[key];
-		    node.addEventListener(
-			"click",
-			(function(node) {
-				return function(event) {
-					alert(node.childNodes[4].textContent + " (" + node.childNodes[0].textContent + ")" + " node clicked.");
-				}
-			})(node),
-			false
-		    );
-		  }
-		}
-
-		//alert(document.getElementsByTagName("title")[1].textContent);
-		//alert(nodelist[0].childNodes[0])
-		//alert(nodelist[0].childNodes[0].textContent)
-
-        </script>
-    """
-
     r=requests.get("%s/workflow/%s/graph"%(API_PREFIX,wid,), **certargs)
     r = r.json()
     nodeshape={'activity':'rectangle','dataobject':'ellipse','workflow':'diamond'}
@@ -201,7 +158,7 @@ def graph(wid, format="svg"):
         ans = graph.create_dot()
     else: 
 	return "unsupported graph format", 404
-    ans = ans[:-7] + jsfun + ans[-7:]
+    ans = ans[:-7] + ans[-7:]
     response = make_response(ans)
 
     if format == 'svg' :
