@@ -289,6 +289,11 @@ def getWorkflow(queryargs={},dn=None):
         # order by date
         q+=" order by time desc"
 
+        if queryargs.has_key('range'): # return a range
+                therange=queryargs['range']
+                qa= tuple(map(int, therange[1:-1].split(',')))
+                q+=" limit "+qa[1]-qa[0]+1+ " offset "+qa[0]-1
+
 	# execute our Query
         if dbdebug:
 		print('workflows q',q)
