@@ -197,6 +197,8 @@ def graph(wid, format="svg"):
         ans = graph.create_gif()
     elif format == 'jpg' :
         ans = graph.create_jpg()
+    elif format == 'dot' :
+        ans = graph.create_dot()
     else: 
 	return "unsupported graph format", 404
     ans = ans[:-7] + jsfun + ans[-7:]
