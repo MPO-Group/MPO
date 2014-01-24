@@ -67,7 +67,7 @@ aid4=`$MPO step $wid $aid3 --name="EFIT Data averaging" --desc="Average EFIT Dat
 ignore=`$MPO meta $aid4 'av_time (ms)' '10'`
 ignore=`$MPO comment $aid4 "Backwards averaging"`
 
-if [ "$efitnum" == '02' ]
+if [ "$efitnum" == '02' ] || [ "$efitnum" == 'S2' ]
 then
   aid5=`$MPO step $wid $aid4 --name="Call MSE library" --desc="Call MSE library" --uri=EFIT`
   aid6=`$MPO step $wid $aid5 --name="Process and return MSE data" --desc="Process and return MSE data" --uri=EFIT`
