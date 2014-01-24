@@ -1,4 +1,4 @@
-/* uncomment to wipe out the whole database and recreate 
+/* uncomment to wipe out the whole database and recreate
 
 drop database if exists mpodbdev; */
 
@@ -13,10 +13,10 @@ create table mpousers
 (
   username text,
   uuid uuid,
-  firstname text, 
-  lastname text, 
-  email text, 
-  organization text, 
+  firstname text,
+  lastname text,
+  email text,
+  organization text,
   phone text,
   dn text
 /*  creation_time timestamp */
@@ -119,3 +119,37 @@ create table metadata
 );
 ALTER TABLE metadata OWNER TO mpoadmin;
 
+drop table if exists ontology_classes;
+create table ontology_classes
+(
+  oc_uid uuid,
+  name text,
+  description text,
+  parent_guid uuid,
+  added_by uuid,
+  date_added timestamp,
+  reviewd_by uuid,
+  date_reviewed timestamp
+);
+
+drop table if exists ontology_terms;
+create table ontology_terms
+(
+  ot_uid uuid,
+  class uuid,
+  name text,
+  description text,
+  added_by uuid,
+  date_added timestamp,
+  reviewd_by uuid,
+  date_reviewed timestamp
+);
+
+drop table if exists ontology_instance;
+create table ontology_instance
+(
+  target_uid uuid,
+  term_uid uuid,
+  creation_time timestamp,
+  u_guid uuid
+);
