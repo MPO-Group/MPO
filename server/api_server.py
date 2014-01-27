@@ -4,6 +4,10 @@ from flask import Flask, render_template, request, jsonify, redirect, Response
 import json
 import db as rdb
 from authentication import get_user_dn
+import gevent
+from gevent.queue import Queue
+import time
+from flask.ext.cors import cross_origin
 
 MPO_API_VERSION = 'v0'
 
@@ -15,6 +19,76 @@ routes={'workflow':'workflow', 'dataobject':'dataobject', 'activity': 'activity'
 	'comment':'comment', 'metadata':'metadata', 'ontology':'ontology', 'user':'user',
 	'guid':'guid'}
 
+# SSE "protocol" is described here: http://mzl.la/UPFyxY
+class ServerSentEvent(object):
+
+    def __init__(self, data):
+        self.data = data
+        self.event = None
+        self.id = None
+        self.desc_map = {
+            self.data : "data",
+            self.event : "event",
+            self.id : "id"
+        }
+
+    def encode(self):
+        if not self.data:
+            return ""
+        lines = ["%s: %s" % (v, k) 
+                 for k, v in self.desc_map.iteritems() if k]
+        
+        return "%s\n\n" % "\n".join(lines)
+
+subscriptions = []
+
+def publish(msg = str(time.time())):
+    #this routine launches an asynchronous thread running notify().
+    #Dummy data - pick up from request for real data
+
+    #?logic here to choose with subs to send out?
+    sendsubs=subscriptions #sendsubs will be subset of subscriptions later
+    noticefound=False
+    if len(sendsubs)>0:
+	noticefound=True
+
+    def notify(): 
+        for sub in sendsubs[:]:
+	    sub.put(msg)
+	    
+    if noticefound:
+	gevent.spawn(notify)
+
+
+@app.route("/subscribe")
+@cross_origin()
+def subscribe(): #subscribe returns the gen() function. gen() returns an iterator
+    print('subscribing')
+    def gen():
+        q = Queue()
+        subscriptions.append(q)
+	print('invoking gen')
+        try:
+	    while True:
+                result = q.get()
+		print('invoking gen2')
+		if apidebug:
+		    print("SSE message: "+ str(result))
+                ev = ServerSentEvent(str(result))
+                yield ev.encode()
+        except GeneratorExit: # Or maybe use flask signals
+	     if apidebug:#subscription gets removed if we navigate away from the page
+		 print("in gen(): removing subscription")
+	     subscriptions.remove(q)
+    # This invokes gen() which returns an iterator that is returned by /subscribe in a Response()
+    # Response() is a WSGI application.
+    return Response(gen(), mimetype="text/event-stream") 
+
+
+@app.route("/nsub")
+def debug():
+    return "Currently %d subscriptions" % len(subscriptions)
+
 #here we create application routes for a specified MPO_VERSION
 if MPO_API_VERSION:
 	for k,v in routes.iteritems():
@@ -22,6 +96,7 @@ if MPO_API_VERSION:
 else:
 	for k,v in routes.iteritems():
 		routes[k] = '/' + routes[k]
+
 
 @app.route(routes['workflow']+'/<id>', methods=['GET'])
 @app.route(routes['workflow'],  methods=['GET', 'POST'])
@@ -72,8 +147,10 @@ def dataobject(id=None):
 			r = rdb.getRecord('dataobject',{'uid':id})
 		else:
 			r = rdb.getRecord('dataobject',request.args)
-	return r
 
+	publish(r)
+	return r
+        
 
 @app.route(routes['activity']+'/<id>', methods=['GET'])
 @app.route(routes['activity'], methods=['GET', 'POST'])

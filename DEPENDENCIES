@@ -11,6 +11,7 @@ $HOME/mposvn/db
 ##External python packages
 simplejson >2.2 #provides namedtuple->json in db.py
 Flask >= 0.9
+flask-cors . Flask CORS extension. 
 requests >= 1.0.3
 psycopg2 #for postgres
 SQLAlchemy #for pooling of connections

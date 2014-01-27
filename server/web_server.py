@@ -454,6 +454,33 @@ def is_email(email):
         return True
     else:
         return False
+    
+@app.route("/testfeed")
+def testfeed():
+    debug_template = """
+     <html>
+       <head>
+       </head>
+       <body>
+         <h1>Server sent events</h1>
+         <div id="event"></div>
+         <script type="text/javascript">
+
+         host = "%s/subscribe";
+             
+         var eventOutputContainer = document.getElementById("event");
+         var evtSrc = new EventSource(host);
+
+         evtSrc.onmessage = function(ev) {
+             console.log(ev.data);
+             eventOutputContainer.innerHTML = ev.data;
+         };
+
+         </script>
+       </body>
+     </html>
+    """%MPO_API_SERVER
+    return(debug_template)
 
 
 if __name__ == "__main__":

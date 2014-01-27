@@ -310,6 +310,12 @@ def getWorkflow(queryargs={},dn=None):
 		r.pop('firstname')
 		r.pop('lastname')
 		r.pop('userid')
+
+	#add total records count
+	#cursor.execute('select count ('+q+'))
+	#	records = cursor.fetchone()
+	#       r['total_count'] = records
+	count=cursor.rowcount
 	# Close communication with the database
 	cursor.close()
 	conn.close()
