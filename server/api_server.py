@@ -82,7 +82,8 @@ def subscribe(): #subscribe returns the gen() function. gen() returns an iterato
 	     subscriptions.remove(q)
     # This invokes gen() which returns an iterator that is returned by /subscribe in a Response()
     # Response() is a WSGI application.
-    return Response(gen(), mimetype="text/event-stream") 
+    return Response(gen(), mimetype="text/event-stream",headers={'cache-control': 'no-cache',
+								 'connection': 'keep-alive'})
 
 
 @app.route("/nsub")

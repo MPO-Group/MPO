@@ -473,7 +473,7 @@ def testfeed():
 
          evtSrc.onmessage = function(ev) {
              console.log(ev.data);
-             eventOutputContainer.innerHTML = ev.data;
+             eventOutputContainer.innerHTML += ev.data;
          };
 
          </script>

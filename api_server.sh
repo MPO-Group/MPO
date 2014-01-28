@@ -54,7 +54,7 @@ key_check $MPO_API_SERVER_KEY
 export MPO_DB_CONNECTION
 export PYTHONPATH
 
-uwsgi --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/api_server.py  --callable app  
+uwsgi --gevent 100 --master --pidfile /tmp/api_master.pid --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/api_server.py  --callable app  
 
 #add this above to redirect logging
 #--logto /tmp/mylog.log

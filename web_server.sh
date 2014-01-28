@@ -79,4 +79,4 @@ export MPO_API_SERVER
 export MPO_WEB_CLIENT_CERT
 export MPO_WEB_CLIENT_KEY
 
-uwsgi --https "0.0.0.0:$MPO_WEB_SERVER_PORT,$MPO_WEB_SERVER_CERT,$MPO_WEB_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/web_server.py  --callable app
+uwsgi --gevent 100 --master --pidfile /tmp/web_master.pid --https  "0.0.0.0:$MPO_WEB_SERVER_PORT,$MPO_WEB_SERVER_CERT,$MPO_WEB_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/web_server.py  --callable app
