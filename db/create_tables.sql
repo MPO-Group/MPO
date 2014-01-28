@@ -139,6 +139,7 @@ create table ontology_terms
   class uuid,
   name text,
   description text,
+  term_parent uuid,
   added_by uuid,
   date_added timestamp,
   reviewd_by uuid,
