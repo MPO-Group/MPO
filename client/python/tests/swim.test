@@ -1,0 +1,74 @@
+#!/bin/bash
+#specify MPO server address. The API will read this value.
+#defaults are used if environment is not set
+if ! [ -n "${MPO_HOST:+x}" ]
+then
+  export MPO_HOST=https://mpo.gat.com:9443
+fi
+
+if ! [ -n "${MPO_VERSION:+x}" ]
+then
+  export MPO_VERSION=v0
+fi
+
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+  echo "Error: Must have MPO_HOME set"
+  exit
+fi
+
+if ! [ -n "${MPO:+x}" ]
+then
+    MPO=$MPO_HOME/client/python/mpo_testing.py
+fi
+
+if ! [ -n "${MPO_AUTH:+x}" ]
+then
+  export MPO_AUTH=$MPO_HOME/MPODemoUser.pem
+fi
+
+
+echo $MPO_HOST
+echo $MPO_VERSION
+echo $MPO_HOME
+echo "exiting here..."
+
+if [ $# -lt 1 ]
+then
+  echo "Usage: $0 RUN"
+  exit 1
+fi
+
+if [ "$2" == '' ]
+then
+  simname='-'
+else
+  simname=$2
+fi
+
+run=$1
+
+#use API methods to create a workflow
+wid=`$MPO init --name=SWIM --desc="$simname for $run"`
+ignore=`$MPO meta $wid 'Run_Comment' 'Test run_from_proj with monitor_comp.py version 5.2 '`
+ignore=`$MPO meta $wid 'Tokamak' 'ITER'`
+ignore=`$MPO meta $wid 'Shot_Number' '36001'`
+ignore=`$MPO meta $wid 'Host' 'Hopper'`
+oid1=`$MPO add  $wid $wid --name=RunID --desc="Simulation Run number" --uri=$run`
+oid2=`$MPO add  $wid $wid --name="IPS Configuration File" --desc="IPS configuration file" --uri="\\efit$simname:namelist"`
+oid3=`$MPO add  $wid $wid --name="IPS Input Files" --desc="Input files" --uri="href="http://portal.nersc.gov/project/m876/dbb/"`
+ignore=`$MPO meta $oid3 'input file ' 'hy040510_1.5sec_3steps_ps.cdf'`
+ignore=`$MPO meta $oid3 'input file ' 'hy040510_1.5sec_3steps_psp.cdf'`
+ignore=`$MPO meta $oid3 'input file ' 'hy040510_1.5sec_3steps_psn.cdf'`
+ignore=`$MPO meta $oid3 'input file ' 'hy040510_1.5sec_3steps_ps.geq'`
+ignore=`$MPO meta $oid3 'input file ' 'hy040510_1.5sec_3steps_ps.jso'`
+ignore=`$MPO meta $oid3 'input file ' 'hy040510_1.5sec_3steps_ps.'`
+
+aid1=`$MPO step $wid $oid1 --input=$oid2 --input=$oid3 --name="Read Input Files" --desc="IPS Staging..."`
+
+aid2=`$MPO step $wid $aid1 --name="Run IPS" --desc="tasks: epa__tsc -> nb__nubeam -> nb__nubeam -> epa_tsc -> nb__nubeam -> epa__tsc -> nb__nubeam -> epa__tsc" --uri=http://swim.gat.com/detail/?id=29693`
+
+oid4=`$MPO step  $wid $aid2 --name="Plasma State File" --desc="IPS Plasma State Monitor File" --uri="http://portal.nersc.gov/project/m876/dbb/29693_monitor_file.nc"`
+aid3=`$MPO step  $wid $oid4 --name="Simulation Ended" --desc="Completed" --uri="http://swim.gat.com/detail/?id=29693"`
+ignore=`$MPO meta $aid3 'Last updated' '2014-01-24 09:50:32'`
+
