@@ -196,8 +196,30 @@ def metadata(id=None):
 	return r
 
 
-@app.route(routes['ontology']+'/<id>', methods=['GET'])
-@app.route(routes['ontology'], methods=['GET', 'POST'])
+@app.route(routes['ontology/class']+'/<id>', methods=['GET'])
+@app.route(routes['ontology/class'], methods=['GET', 'POST'])
+def ontology(id=None):
+	dn=get_user_dn(request)
+	result = jsonify(json.loads(request.data),user_dn=dn)
+	if request.method == 'POST':
+		pass
+ 	else:
+		pass
+	return result
+
+@app.route(routes['ontology/term']+'/<id>', methods=['GET'])
+@app.route(routes['ontology/term'], methods=['GET', 'POST'])
+def ontology(id=None):
+	dn=get_user_dn(request)
+	result = jsonify(json.loads(request.data),user_dn=dn)
+	if request.method == 'POST':
+		pass
+ 	else:
+		pass
+	return result
+
+@app.route(routes['ontology/instance']+'/<id>', methods=['GET'])
+@app.route(routes['ontology/instance'], methods=['GET', 'POST'])
 def ontology(id=None):
 	dn=get_user_dn(request)
 	result = jsonify(json.loads(request.data),user_dn=dn)
