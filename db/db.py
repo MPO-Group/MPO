@@ -37,7 +37,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
 			   'time':'creation_time','user_uid':'u_guid','start':'start_time','end':'end_time',
 			   'status':'completion_status'},
 	     'activity_short' : {'w':'w_guid'},
-	     'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid', 
+	     'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid',
 			      'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid', 'uri':'uri'},
 	     'dataobject_short': {'w':'w_guid'},
 	     'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 'user_uid':'u_guid',
@@ -72,14 +72,14 @@ def processArgument(a):
 		qa=a[1:-1]
 	else:
 		qa=a.replace(' ','%')
-		
+
 	return qa
 
 def getRecord(table,queryargs={}, dn=None):
 	'''
 	Generic record retrieval. Handles GET requests for all tables.
 	Use as a template for route specific behavior.
-	
+
 	Retrieve a record based on join of restrictions in query arguments.
         To get a specific record, call with {'uid':id}.
 	id overrides any query arguments since it specifies an exact record. You can get an empty
@@ -110,7 +110,7 @@ def getRecord(table,queryargs={}, dn=None):
 		if queryargs.has_key(key):
 			qa=processArgument(queryargs[key])
                         s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
-        
+
         if (s): q+=s
 
 	if dbdebug:
@@ -146,7 +146,7 @@ def getUser(queryargs={},dn=None):
                                 s+=" and "+ "CAST(%s as text) iLIKE '%%%s%%'" % (query_map['mpousers'][key],qa)
                         else:
                                 s+=" where "+ "CAST(%s as text) iLIKE '%%%s%%'" % (query_map['mpousers'][key],qa)
-        
+
         if (s): q+=s
 	# execute our Query
 	if dbdebug:
@@ -165,13 +165,13 @@ def addUser(json_request,dn):
 	objs = json.loads(json_request)
 	objs['uid']=str(uuid.uuid4())
 	objs['dn']=dn
-	
+
 	#Check for valid keys against query map, we require all fields for user creation
 	reqkeys=sorted([x.lower() for x in  query_map['mpousers'].keys() ] )
 	objkeys= sorted([x.lower() for x in  objs.keys() ] )
 	if reqkeys != objkeys:
 		return '{"status":"error","error_mesg":"invalid or missing fields"}'
-		
+
 	if dbdebug:
 		print('adding user:',dn)
 
@@ -256,8 +256,8 @@ def getWorkflow(queryargs={},dn=None):
 
 	#build our Query, base query is a join between the workflow and user tables to get the username
 	q = textwrap.dedent("""\
-                            SELECT w_guid as uid, a.name, a.description, a.creation_time as time, 
-                            a.comp_seq, b.firstname, b.lastname, b.username, b.uuid as userid 
+                            SELECT w_guid as uid, a.name, a.description, a.creation_time as time,
+                            a.comp_seq, b.firstname, b.lastname, b.username, b.uuid as userid
                             FROM workflow a, mpousers b WHERE a.u_guid=b.uuid
 			    """)
 
@@ -282,7 +282,7 @@ def getWorkflow(queryargs={},dn=None):
 		q+=" and b.username     ='%s'" % compid[0]
 		q+=" and a.name         ='%s'" % compid[1]
 		q+=" and a.comp_seq='%s'" % compid[2]
-		
+
 	if queryargs.has_key('username'): #handle username queries
 		q+=" and b.username='%s'" % queryargs['username']
 
@@ -319,7 +319,7 @@ def getWorkflow(queryargs={},dn=None):
 	# Close communication with the database
 	cursor.close()
 	conn.close()
-	
+
         return json.dumps(jr,cls=MPOSetEncoder)
 
 
@@ -421,7 +421,7 @@ def addWorkflow(json_request,dn):
 	cursor.execute("select MAX(comp_seq) from workflow where name=%s and U_GUID=%s",
 		       (objs['name'], user_id ) )
 	count=cursor.fetchone()
-	
+
 	print ("#############count is",str(count),str(count.max))
 	if count.max:
 		seq_no=count.max+1
@@ -455,7 +455,7 @@ def addComment(json_request,dn):
 	                 SELECT w_guid  AS uid, 'workflow'   AS type FROM workflow   WHERE w_guid=%s UNION
 			 SELECT a_guid  AS uid, 'activity'   AS type FROM activity   WHERE a_guid=%s UNION
 			 SELECT cm_guid AS uid, 'comment'    AS type FROM comment    WHERE cm_guid=%s UNION
-			 SELECT do_guid AS uid, 'dataobject' AS type FROM dataobject WHERE do_guid=%s  
+			 SELECT do_guid AS uid, 'dataobject' AS type FROM dataobject WHERE do_guid=%s
 	                  """)
 	pid=objs['parent_uid']
 	v=(pid,pid,pid,pid)
@@ -490,7 +490,7 @@ def addMetadata(json_request,dn):
 	q=textwrap.dedent("""\
 	                 SELECT w_guid  AS uid, 'workflow'   AS type FROM workflow   WHERE w_guid=%s UNION
 			 SELECT a_guid  AS uid, 'activity'   AS type FROM activity   WHERE a_guid=%s UNION
-			 SELECT do_guid AS uid, 'dataobject' AS type FROM dataobject WHERE do_guid=%s  
+			 SELECT do_guid AS uid, 'dataobject' AS type FROM dataobject WHERE do_guid=%s
 	                  """)
 	pid=objs['parent_uid']
 	v=(pid,pid,pid)
@@ -507,6 +507,75 @@ def addMetadata(json_request,dn):
 
 	records = {}
 	records['uid'] = md_guid
+	# Close communication with the database
+	cursor.close()
+	conn.close()
+	return json.dumps(records,cls=MPOSetEncoder)
+
+def addOntologyClass(json_request,dn):
+	objs = json.loads(json_request)
+	# get a connection, if a connect cannot be made an exception will be raised here
+	conn = mypool.connect()
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+        #get the user id
+        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+        user_id = cursor.fetchone()
+
+        oc_uid = str(uuid.uuid4())
+        q="insert into ontology_classes (oc_uid, name, description, parent_guid, added_by, date_added) values (%s,%s,%s,%s,%s,%s,%s)"
+        v=(oc_uid,objs['name'],objs['description'],objs['parent'],user_id,datetime.datetime.now())
+        cursor.execute(q,v)
+	# Make the changes to the database persistent
+	conn.commit()
+
+	records = {}
+	records['uid'] = oc_guid
+	# Close communication with the database
+	cursor.close()
+	conn.close()
+	return json.dumps(records,cls=MPOSetEncoder)
+
+def addOntologyTerm(json_request,dn):
+	objs = json.loads(json_request)
+	# get a connection, if a connect cannot be made an exception will be raised here
+	conn = mypool.connect()
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+        #get the user id
+        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+        user_id = cursor.fetchone()
+
+        ot_uid = str(uuid.uuid4())
+        q="insert into ontology_terms (ot_uid,class,name,description,term_parent,added_by,reviewd_by) values(%s,%s,%s,%s,%s,%s,%s)"
+        v=(ot_uid,objs['class'],objs['name'],objs['description'],objs['parent'],user_id,datetime.datetime.now())
+        cursor.execute(q,v)
+	# Make the changes to the database persistent
+	conn.commit()
+
+	records = {}
+	records['uid'] = oc_guid
+	# Close communication with the database
+	cursor.close()
+	conn.close()
+	return json.dumps(records,cls=MPOSetEncoder)
+
+def addOntologyInstance(json_request,dn):
+	objs = json.loads(json_request)
+	# get a connection, if a connect cannot be made an exception will be raised here
+	conn = mypool.connect()
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+        #get the user id
+        cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+        user_id = cursor.fetchone()
+
+        oi_uid = str(uuid.uuid4())
+        q="insert into ontology_instance (oi_uid,target_uid,term_uid,creation_time,u_guid) values(%s,%s,%s,%s,%s)"
+        v=(oi_uid,objs['target'],objs['term']datetime.datetime.now(),user_id)
+        cursor.execute(q,v)
+	# Make the changes to the database persistent
+	conn.commit()
+
+	records = {}
+	records['uid'] = oi_guid
 	# Close communication with the database
 	cursor.close()
 	conn.close()

@@ -139,7 +139,7 @@ create table ontology_terms
   class uuid,
   name text,
   description text,
-  term_parent uuid,
+  parent_guid uuid,
   added_by uuid,
   date_added timestamp,
   reviewd_by uuid,
@@ -149,6 +149,7 @@ create table ontology_terms
 drop table if exists ontology_instance;
 create table ontology_instance
 (
+  oi_uid uuid,
   target_uid uuid,
   term_uid uuid,
   creation_time timestamp,
