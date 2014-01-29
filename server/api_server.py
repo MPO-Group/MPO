@@ -15,8 +15,13 @@ app = Flask(__name__)
 app.debug=True
 apidebug=True
 
-routes={'workflow':'workflow', 'dataobject':'dataobject', 'activity': 'activity',
-	'comment':'comment', 'metadata':'metadata', 'ontology':'ontology', 'user':'user',
+routes={'workflow':'workflow', 'dataobject':'dataobject', 
+        'activity': 'activity',
+	'comment':'comment', 'metadata':'metadata', 
+        'ontology_class':'ontology/class', 
+        'ontology_term':'ontology/term',
+        'ontology_instance':'ontology/instance',
+        'user':'user',
 	'guid':'guid'}
 
 # SSE "protocol" is described here: http://mzl.la/UPFyxY
@@ -196,8 +201,8 @@ def metadata(id=None):
 	return r
 
 
-@app.route(routes['ontology/class']+'/<id>', methods=['GET'])
-@app.route(routes['ontology/class'], methods=['GET', 'POST'])
+@app.route(routes['ontology_class']+'/<id>', methods=['GET'])
+@app.route(routes['ontology_class'], methods=['GET', 'POST'])
 def ontology(id=None):
 	dn=get_user_dn(request)
 	result = jsonify(json.loads(request.data),user_dn=dn)
@@ -207,8 +212,8 @@ def ontology(id=None):
 		pass
 	return result
 
-@app.route(routes['ontology/term']+'/<id>', methods=['GET'])
-@app.route(routes['ontology/term'], methods=['GET', 'POST'])
+@app.route(routes['ontology_term']+'/<id>', methods=['GET'])
+@app.route(routes['ontology_term'], methods=['GET', 'POST'])
 def ontology(id=None):
 	dn=get_user_dn(request)
 	result = jsonify(json.loads(request.data),user_dn=dn)
@@ -218,8 +223,8 @@ def ontology(id=None):
 		pass
 	return result
 
-@app.route(routes['ontology/instance']+'/<id>', methods=['GET'])
-@app.route(routes['ontology/instance'], methods=['GET', 'POST'])
+@app.route(routes['ontology_instance']+'/<id>', methods=['GET'])
+@app.route(routes['ontology_instance'], methods=['GET', 'POST'])
 def ontology(id=None):
 	dn=get_user_dn(request)
 	result = jsonify(json.loads(request.data),user_dn=dn)
