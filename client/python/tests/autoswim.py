@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os, sys, traceback
 import subprocess
+import re
 
 #setup django environment
 sys.path.append("/var/www/swim/")
@@ -18,29 +19,44 @@ MPO_HOME = "/home/abla/projects/mposvn/trunk"
 MPO = MPO_HOME + "/client/python/mpo_testing.py"
 os.environ["MPO_AUTH"] = MPO_HOME + "/MPODemoUser.pem"
 
-
 def test_env():
-	print(" == environment == ")
-	print("%s" %(os.environ["MPO_HOST"] ))
-	print("%s" %(os.environ["MPO_VERSION"] ))
-	print("%s" %(os.environ["MPO_HOME"] ))
-	print("%s" %(os.environ["MPO_AUTH"] ))
-	print("%s" %(MPO))
+    print(" == environment == ")
+    print("%s" %(os.environ["MPO_HOST"]))
+    print("%s" %(os.environ["MPO_VERSION"]))
+    print("%s" %(os.environ["MPO_HOME"]))
+    print("%s" %(os.environ["MPO_AUTH"]))
+    print("%s" %(MPO))
 
 def main(run='29710', simname="ss_36001_Vmod_22"):
     sum = mymonitor.summary.objects.get(portal_runid=run)
     print("%s:%s" %(sum.user, sum.simname))
 
+def vizurl2path(vizurl="portal.nersc.gov/project/m876/dbb/29710.html"):
+	path = ""
+	if len(vizurl) > 0:
+		vizurl = "http://" + vizurl
+		path =  "/".join(vizurl.split("/")[0:-1])
+	return path
+	
+def path2configfile(path="http://portal.nersc.gov/project/m876/dbb/", run='29710'):
+	configfile = None
+	r = requests(url)
+	for line in r:
+		found = re.search(r'%s.+config'%(run), line)
+		if found:
+			configfile = str(found.group())
+	return configfile
+		
 def swim_workflow(run='29710'):
     try:
         sum = mymonitor.summary.objects.get(portal_runid=run)
         sim = mymonitor.simulation.objects.filter(portal_runid=run)
 
 	# initial debug
-	print("====sum====")
-	print(sum)
-	print("====sim====")
-	print(sim[0])
+	#print("====sum====")
+	#print(sum)
+	#print("====sim====")
+	#print(sim[0])
  
 	#create workflow and metadata
         wid = create_workflow(run=sum.portal_runid, simname=sum.simname)        
@@ -60,26 +76,18 @@ def swim_workflow(run='29710'):
 	create_meta(wid, metaname="vizurl", metadata=sum.vizurl)
 	
 	#create configuration file data Object
-	path = "http://portal.nersc.gov/project/m876/dbb/"
-	uri = "<a href=%s%s_monitor_file.nc> %s%s_monitor_file.nc </a>" %(path, sum.portal_runid, path, sum.portal_runid)
+	path = vizurl2path(vizurl=sum.vizurl)
+	#path = "http://portal.nersc.gov/project/m876/dbb/"
+	uri = "<a href=%s/%s.config> %s/%s.config </a>" %(path, sum.portal_runid, path, sum.portal_runid)
     	oid2 = create_object(wid, wid, name ="IPS Configuration File", desc="IPS configuration description", uri=uri)
 
 	#create input files 
-    	oid3 = create_object(wid, wid, name = "IPS Input Files", desc="Input files", uri=path)
+    	oid3 = create_object(wid, wid, name = "IPS Input Files", desc="Input files", uri=uri)
 	
 	#create Read Input File Activity
         aid1 = create_activity(wid, oid2, "Read Input Files", "IPS Staging...", path, input=oid3 )		
 
 	#create IPS Tasks Activity -- Will come back to this!
-        """
-	desc = "tasks: "
-	for item in sim:
-		if item.eventtype=='IPS_LAUNCH_TASK':
-			desc = desc + " =>" + item.code
-
-	uri = "http://swim.gat.com/detail/?id=%s" %(run)
-	aid2 = create_activity(wid, aid1, "Run IPS", desc, uri)
-	"""
 
 	uri = "http://swim.gat.com/detail/?id=%s" %(run)
 	launch_count = 0
@@ -92,22 +100,21 @@ def swim_workflow(run='29710'):
 		count = 0
 		for item in sim:
 			if item.eventtype=='IPS_LAUNCH_TASK':
-				name = item.code
-				desc = item.comment
+				name = str(item.seqnum) + ": " + item.code
+				desc = str(item.seqnum) + ": " + item.comment
 				if count == 0:
 					temp_id = create_activity(wid, aid1, name, desc, uri)
 				else:
-					temp_id = create_activity(wid, launch[count-1], name, desc, uri)
-				launch.append(temp_id)
+					temp_id = create_activity(wid, temp_id, name, desc, uri)
 				count = count + 1
-		aid2 = launch[count-1]					
+		aid2 = temp_id
 
 	else:
 		desc = "IPS subtasks"
         	aid2 = create_activity(wid, aid1, "Run IPS", desc, uri)
 		 
 	#create Plasma State file Object
-	uri = "http://portal.nersc.gov/project/m876/dbb/%s_monitor.nc" %(run)
+	uri = "%s/%s_monitor.nc" %(path, run)
         oid4 = create_object(wid, aid2, name = "Plasma State File", desc="IPS Plasma State Monitor File", uri=uri )
 	
 	vis = "http://swim.gat.com/media/plot/all.php?run_id=%s" %(run) 
@@ -116,13 +123,13 @@ def swim_workflow(run='29710'):
     	create_meta(oid4, "Visualization(Hard Copy)", pdf)
 
 	#create Output Files Object
-	uri = "<a href=http://portal.nersc.gov/project/m876/dbb/> http://portal.nersc.gov/project/m876/dbb/ </a>"
+	uri = "<a href=%s> %s </a>" %(path, path)
         oid5= create_object(wid, aid2, name="Simulation Output Files", desc="Simulation Output Files", uri=uri)
 
 	#create Simulation Ended Activity and metadata
 	uri = "http://swim.gat.com/detail/?id=%s" %(run) 
     	aid3 = create_activity(wid, oid4, "Simulation Ended", "Completed", uri)
-    	create_meta(aid3, 'Last updated', '2014-02-13 09:50:32')
+    	create_meta(aid3, 'Last updated', sum.date )
 
     except KeyboardInterrupt:
         print("Exit requested.... exiting")
