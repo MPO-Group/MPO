@@ -141,7 +141,7 @@ ALTER TABLE metadata OWNER TO mpoadmin;
 drop table if exists ontology_classes;
 create table ontology_classes
 (
-  oc_uid uuid,
+  oc_guid uuid,
   name text,
   description text,
   parent_guid uuid,
@@ -154,11 +154,14 @@ create table ontology_classes
 drop table if exists ontology_terms;
 create table ontology_terms
 (
-  ot_uid uuid,
+  ot_guid uuid,
   class uuid,
   name text,
   description text,
   parent_guid uuid,
+  value_type text,
+  units text,
+  specified boolean,
   added_by uuid,
   date_added timestamp,
   reviewd_by uuid,
@@ -168,9 +171,10 @@ create table ontology_terms
 drop table if exists ontology_instance;
 create table ontology_instance
 (
-  oi_uid uuid,
-  target_uid uuid,
-  term_uid uuid,
+  oi_guid uuid,
+  target_guid uuid,
+  term_guid uuid,
+  value text,
   creation_time timestamp,
   u_guid uuid
 );
