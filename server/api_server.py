@@ -213,7 +213,7 @@ def metadata(id=None):
 
 @app.route(routes['ontology_class']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_class'], methods=['GET', 'POST'])
-def ontology(id=None):
+def ontologyClass(id=None):
 	dn=get_user_dn(request)
 	result = jsonify(json.loads(request.data),user_dn=dn)
 	if request.method == 'POST':
@@ -224,7 +224,7 @@ def ontology(id=None):
 
 @app.route(routes['ontology_term']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_term'], methods=['GET', 'POST'])
-def ontology(id=None):
+def ontologyTerm(id=None):
 	dn=get_user_dn(request)
 	result = jsonify(json.loads(request.data),user_dn=dn)
 	if request.method == 'POST':
@@ -235,7 +235,7 @@ def ontology(id=None):
 
 @app.route(routes['ontology_instance']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_instance'], methods=['GET', 'POST'])
-def ontology(id=None):
+def ontologyInstance(id=None):
 	dn=get_user_dn(request)
 	result = jsonify(json.loads(request.data),user_dn=dn)
 	if request.method == 'POST':
