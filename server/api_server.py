@@ -15,8 +15,8 @@ app = Flask(__name__)
 app.debug=True
 apidebug=True
 
-routes={'workflow':'workflow', 'dataobject':'dataobject', 
-        'activity': 'activity',
+routes={'collection':'collection','workflow':'workflow',
+        'activity': 'activity', 'dataobject':'dataobject',
 	'comment':'comment', 'metadata':'metadata', 
         'ontology_class':'ontology/class', 
         'ontology_term':'ontology/term',
@@ -103,6 +103,15 @@ else:
 	for k,v in routes.iteritems():
 		routes[k] = '/' + routes[k]
 
+@app.route(routes['collection']+'/<id>', methods=['GET'])
+@app.route(routes['collection'],  methods=['GET', 'POST'])
+	dn=get_user_dn(request)
+	result = jsonify(json.loads(request.data),user_dn=dn)
+	if request.method == 'POST':
+            pass
+ 	elif request.method == 'GET':
+            pass
+        return result
 
 @app.route(routes['workflow']+'/<id>', methods=['GET'])
 @app.route(routes['workflow'],  methods=['GET', 'POST'])

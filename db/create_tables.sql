@@ -27,6 +27,25 @@ insert into mpousers values ('mpoadmin', 'ddc315a1-6310-41e7-a84d-886bc904f3b2')
 insert into mpousers values ('mpodemo', 'f223db41-d1c5-41db-b8af-fde6c0a16f76', 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', '', '/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu');
 alter table mpousers OWNER TO mpoadmin;
 
+drop table if exists collection
+create table collection
+(
+  c_guid uuid,
+  name text,
+  description text,
+  u_guid uuid,
+  creation_time timestamp
+);
+alter table collection owner to mpoadmin;
+
+drop table if exists collection_elements
+create table collection_elements
+(
+  c_guid uuid,
+  e_uuid uuid
+);
+alter table collection_elements owner to mpoadmin;
+
 drop table if exists workflow;
 create table workflow
 (
@@ -122,7 +141,7 @@ ALTER TABLE metadata OWNER TO mpoadmin;
 drop table if exists ontology_classes;
 create table ontology_classes
 (
-  oc_uid uuid,
+  oc_guid uuid,
   name text,
   description text,
   parent_guid uuid,
@@ -135,11 +154,14 @@ create table ontology_classes
 drop table if exists ontology_terms;
 create table ontology_terms
 (
-  ot_uid uuid,
+  ot_guid uuid,
   class uuid,
   name text,
   description text,
   parent_guid uuid,
+  value_type text,
+  units text,
+  specified boolean,
   added_by uuid,
   date_added timestamp,
   reviewd_by uuid,
@@ -149,9 +171,10 @@ create table ontology_terms
 drop table if exists ontology_instance;
 create table ontology_instance
 (
-  oi_uid uuid,
-  target_uid uuid,
-  term_uid uuid,
+  oi_guid uuid,
+  target_guid uuid,
+  term_guid uuid,
+  value text,
   creation_time timestamp,
   u_guid uuid
 );
