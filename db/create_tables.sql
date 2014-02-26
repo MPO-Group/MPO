@@ -150,6 +150,7 @@ create table ontology_classes
   reviewd_by uuid,
   date_reviewed timestamp
 );
+ALTER TABLE ontology_classes OWNER TO mpoadmin;
 
 drop table if exists ontology_terms;
 create table ontology_terms
@@ -167,6 +168,7 @@ create table ontology_terms
   reviewd_by uuid,
   date_reviewed timestamp
 );
+ALTER TABLE ontology_terms OWNER TO mpoadmin;
 
 drop table if exists ontology_instance;
 create table ontology_instance
@@ -178,3 +180,4 @@ create table ontology_instance
   creation_time timestamp,
   u_guid uuid
 );
+ALTER TABLE ontology_instances OWNER TO mpoadmin;

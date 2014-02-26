@@ -55,6 +55,7 @@ class mpo_methods(object):
     METADATA_RT = 'metadata'
     DATAOBJECT_RT='dataobject'
     ACTIVITY_RT=  'activity'
+    ONTOLOGY_TERM_RT = 'ontology/term'
     debug=1
 
     def __init__(self):
@@ -128,8 +129,9 @@ class mpo_methods(object):
                 return r
 
         if workflowID==None and data!=None: #eg init
-            if objID!=None:  #comments and metadata
-                datadict[self.PARENTID]=objID
+# commented out because top of ontology hierarchy is null (at least for now)
+#            if objID!=None:  #comments and metadata
+            datadict[self.PARENTID]=objID
 
             try:
                 r = requests.post(url, json.dumps(datadict), headers=self.POSTheaders,**kwargs)
@@ -318,6 +320,47 @@ class mpo_methods(object):
         r=self.mpo_post(urlcon,workflow_ID,inp,payload,**kwargs)
         return r
 
+    def mpo_ontology_term(self,url,term,*args,**kwargs):
+        """Add terms to the ontology
+           args are term,--parent,--desc,--vtype,--specified,--units
+        """
+
+        flags="p:d:t:s:u"
+        longflags=["parent=","desc=","vtype=","specified=","units="]
+
+        try:
+            opts, cmdargs = getopt.getopt(map(str,list(args)), flags, longflags)
+
+        except getopt.GetoptError:
+            print("Test Accepted flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
+            sys.exit(2)
+
+        desc=None
+        vtype=None
+        specified=None
+        units=None
+        pid = None
+
+        for opt, arg in opts:
+            if opt in ("-d","--desc"):
+                desc = arg
+            elif opt in ("-t","--vtype"):
+                vtype = arg
+            elif opt in ("-u","--units"):
+                units = arg
+            elif opt in ("-p","--parent"):
+                pid = arg
+            elif opt in ("-s","--specified"):
+                if (arg=='y'):
+                    specified=True
+                else:
+                    specified=False
+
+        o=urlparse(url)
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT
+        payload={"term":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
+        r=self.mpo_post(urlcon,None,pid,payload,**kwargs)
+        return r
 
     def mpo_comment(self,url,obj_ID,data,**kwargs):
         """Takes a returned record and adds a comment to it.

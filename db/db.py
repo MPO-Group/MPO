@@ -523,7 +523,7 @@ def addOntologyClass(json_request,dn):
 
         oc_uid = str(uuid.uuid4())
         q="insert into ontology_classes (oc_uid, name, description, parent_guid, added_by, date_added) values (%s,%s,%s,%s,%s,%s,%s)"
-        v=(oc_uid,objs['name'],objs['description'],objs['parent'],user_id,datetime.datetime.now())
+        v=(oc_uid,objs['name'],objs['description'],objs['parent_uid'],user_id,datetime.datetime.now())
         cursor.execute(q,v)
 	# Make the changes to the database persistent
 	conn.commit()
@@ -537,6 +537,7 @@ def addOntologyClass(json_request,dn):
 
 def addOntologyTerm(json_request,dn):
 	objs = json.loads(json_request)
+        print(objs)
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = mypool.connect()
 	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
@@ -544,15 +545,15 @@ def addOntologyTerm(json_request,dn):
         cursor.execute("select uuid from mpousers where dn=%s", (dn,))
         user_id = cursor.fetchone()
 
-        ot_uid = str(uuid.uuid4())
-        q="insert into ontology_terms (ot_uid,class,name,description,term_parent,added_by,reviewd_by) values(%s,%s,%s,%s,%s,%s,%s)"
-        v=(ot_uid,objs['class'],objs['name'],objs['description'],objs['parent'],user_id,datetime.datetime.now())
+        ot_guid = str(uuid.uuid4())
+        q="insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values(%s,%s,%s,%s,%s,%s,%s,%s)"
+        v=(ot_guid,objs['term'],objs['description'],objs['parent_uid'],objs['value_type'],objs['specified'],user_id,datetime.datetime.now())
         cursor.execute(q,v)
 	# Make the changes to the database persistent
 	conn.commit()
 
 	records = {}
-	records['uid'] = oc_guid
+	records['uid'] = ot_guid
 	# Close communication with the database
 	cursor.close()
 	conn.close()
