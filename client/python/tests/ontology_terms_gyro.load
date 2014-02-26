@@ -36,7 +36,7 @@ oid8=`$MPO ontology_term 'source' --desc='link to code download, e.g. https://fu
 oid9=`$MPO ontology_term 'linear plasma turbulence' --desc='Fortran code for linear plasma turbulence' -p $oid5 -t 'string' -s 'y'`
 oid10=`$MPO ontology_term 'nonlinear plasma turbulence' --desc='Fortran code for nonlinear plasma turbulence' -p $oid5 -t 'string' -s 'y'`
 oid11=`$MPO ontology_term 'operational mode' --desc='operational mode' -p $oid3 -t 'string' -s 'y'`
-oid12=`'$MPO ontology_term 'boundary conditions' --desc='boundary conditions' -p $oid3 -t 'string' -s 'y'`
+oid12=`$MPO ontology_term 'boundary conditions' --desc='boundary conditions' -p $oid3 -t 'string' -s 'y'`
 oid13=`$MPO ontology_term 'profiles' --desc='origin of profiles' -p $oid3 -t 'string' -s 'y'`
 oid14=`$MPO ontology_term 'fluctuations' --desc='electrostatic or electromagnetic' -p $oid3 -t 'string' -s 'y'`
 oid15=`$MPO ontology_term 'electron dynamical method' --desc='electron dynamical method' -p $oid3 -t 'string' -s 'y'`
