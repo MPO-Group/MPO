@@ -1,0 +1,74 @@
+#!/bin/sh
+#specify MPO server address. The API will read this value.
+#defaults are used if environment is not set
+if ! [ -n "${MPO_HOST:+x}" ]
+then
+  export MPO_HOST=https://localhost:8443
+fi
+
+
+if ! [ -n "${MPO_VERSION:+x}" ]
+then
+  export MPO_VERSION=v0
+fi
+
+
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+  echo MPO_HOME not defined, exitting
+  exit 
+fi
+
+if ! [ -n "${MPO:+x}" ]
+then
+  export MPO="$MPO_HOME/client/python/mpo_testing.py --user=$USER"
+fi
+
+#use API methods to create a workflow
+oid1=`$MPO ontology_term Gyro --desc="Ontology terms for workflows of type Gyro"`
+oid2=`$MPO ontology_term 'Code Characteristics' --desc='Terms that describe the code type' -p $oid1 -t 'string' -s 'y'`
+oid3=`$MPO ontology_term 'Run Characteristics' --desc='Terms that describe the run type' -p $oid1 -t 'string' -s 'y'`
+oid4=`$MPO ontology_term 'Run Metadata' --desc='Metadata terms associated with the run' -p $oid1 -t 'string' -s 'y'`
+oid5=`$MPO ontology_term 'turbulence code' --desc='turbulence code type' -p $oid2 -t 'string' -s 'y'`
+oid6=`$MPO ontology_term 'version' --desc='code version, e.g. git version release (written as out.gyro.version when code is run)' -p $oid2 -t 'string' -s 'n'`
+oid7=`$MPO ontology_term 'documentation' --desc='link to code documentation, e.g. https://fusion.gat.com/theory/Gyrooverview' -p $oid2 -t 'url' -s 'n'`
+oid8=`$MPO ontology_term 'source' --desc='link to code download, e.g. https://fusion.gat.com/theory/Gacode_announce' -p $oid2 -t 'url' -s 'n'`
+oid9=`$MPO ontology_term 'linear plasma turbulence' --desc='Fortran code for linear plasma turbulence' -p $oid5 -t 'string' -s 'y'`
+oid10=`$MPO ontology_term 'nonlinear plasma turbulence' --desc='Fortran code for nonlinear plasma turbulence' -p $oid5 -t 'string' -s 'y'`
+oid11=`$MPO ontology_term 'operational mode' --desc='operational mode' -p $oid3 -t 'string' -s 'y'`
+oid12=`$MPO ontology_term 'boundary conditions' --desc='boundary conditions' -p $oid3 -t 'string' -s 'y'`
+oid13=`$MPO ontology_term 'profiles' --desc='origin of profiles' -p $oid3 -t 'string' -s 'y'`
+oid14=`$MPO ontology_term 'fluctuations' --desc='electrostatic or electromagnetic' -p $oid3 -t 'string' -s 'y'`
+oid15=`$MPO ontology_term 'electron dynamical method' --desc='electron dynamical method' -p $oid3 -t 'string' -s 'y'`
+oid16=`$MPO ontology_term 'nonlinear dynamic model' --desc='nonlinear dynamics' -p $oid3 -t 'string' =s 'y'`
+oid17=`$MPO ontology_term 'initial value' -p $oid11 -t 'string' -s 'y'`
+oid18=`$MPO ontology_term 'eigenvalue' -p $oid11 -t 'string' -s 'y'`
+oid19=`$MPO ontology_term 'periodic (flux tube)' -p $oid12 -t 'string' -s 'y'`
+oid20=`$MPO ontology_term 'nonperiodic (global or fixed profile)' -p $oid12 -t 'string' -s 'y'`
+oid21=`$MPO ontology_term 'experimental' -p $oid13 -t 'string' -s 'y'`
+oid22=`$MPO ontology_term 'user-defined' -p $oid13 -t 'string' -s 'y'`
+oid23=`$MPO ontology_term 'electrostatic' -p $oid14 -t 'string' -s 'y'`
+oid24=`$MPO ontology_term 'electromagnetic' -p $oid14 -t 'string' -s 'y'`
+oid25=`$MPO ontology_term 'adiabatic' -p $oid15 -t 'string' -s 'y'`
+oid26=`$MPO ontology_term 'drift kinetic' -p $oid15 -t 'string' -s 'y'`
+oid27=`$MPO ontology_term 'gyrokinetic' -p $oid15 -t 'string' -s 'y'`
+oid28=`$MPO ontology_term 'on' -p $oid16 -t 'string' -s 'y'`
+oid29=`$MPO ontology_term 'off' -p $oid16 -t 'string' -s 'y'`
+oid30=`$MPO ontology_term 'm_ref' --desc 'mass of main ions' -p $oid4 -t 'real' -s 'n'`
+oid31=`$MPO ontology_term 'B_unit' --desc='toroidal magnetic field' -p $oid4 -t 'real' -s 'n'`
+oid32=`$MPO ontology_term 'a' --desc='plasma minor radius' -p $oid4 -t 'real' -s 'n'`
+oid33=`$MPO ontology_term 'CsD/a' --desc='normalization for all time or frequency variables' -p $oid4 -t 'real' -s 'n'`
+oid34=`$MPO ontology_term 'CsD' --desc='plasma sound speed' -p $oid4 -t 'real' -s 'n'`
+oid35=`$MPO ontology_term 'Te' --desc='central electron temperature' -p $oid4 -t 'real' -s 'n'`
+oid36=`$MPO ontology_term 'ne' --desc='central electron density' -p $oid4 -t 'real' -s 'n'`
+oid37=`$MPO ontology_term 'rho_SD' --desc='gyroradius calculated using B_unit and CsD' -p $oid4 -t 'real' -s 'n'`
+oid38=`$MPO ontology_term 'chi_gBD' --desc='heat diffusivity (chi) normalized to gyroBohm (see technical manual' -p $oid4 -t 'real' -s 'n'`
+oid39=`$MPO ontology_term 'Gamma_gBD' --desc='particle flux [Gamma] normalized to gyroBohm' -p $oid4 -t 'real' -s 'n'`
+oid40=`$MPO ontology_term 'Q_gBD' --desc='heat flux [Q] normalized to gyroBohm (see technical manual)' -p $oid4 -t 'real' -s 'n'`
+oid40=`$MPO ontology_term 'Pi_gBD' --desc='' -p $oid4 -t 'real' -s 'n'`
+oid41=`$MPO ontology_term '' --desc='toroidal momentum flux [Pi] normalized to gyroBohm' -p $oid4 -t 'real' -s 'n'`
+oid42=`$MPO ontology_term 'S_qBD' --desc='turbulent energy exchange between ions and electrons normalized to gyroBohm (see technical manual)' -p $oid4 -t 'real' -s 'n'`
+oid43=`$MPO ontology_term 'radius' --desc='r/a using geometric average of postion of flux surface at point of maximum plasma horizontal extent' -p $oid4 -t 'real' -s 'n'`
+oid44=`$MPO ontology_term 'dlntdr' --desc='local logarithmic derivative of ion temperature= 1/Ti  *  dTi/dr' -p $oid4 -t 'real' -s 'n'`
+oid45=`$MPO ontology_term 'dlnndr_electron' --desc='local logarithmic derivative of electron density = 1/ne  *  dbe/dr' -p $oid4 -t 'real' -s 'n'`
+oid46=`$MPO ontology_term 'dlntdr_electron' --desc='local logarithmic derivative of electron temperature = 1/Te  *  dTe/dr' -p $oid4 -t 'real' -s 'n'`
