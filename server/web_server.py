@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, make_response
+from flask.ext.cors import cross_origin
 import json
 import requests
 import time
@@ -15,6 +16,15 @@ app = Flask(__name__)
 MPO_API_SERVER=os.environ['MPO_API_SERVER']
 MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
 MPO_WEB_CLIENT_KEY=os.environ['MPO_WEB_CLIENT_KEY']
+if os.environ.has_key('MPO_EVENT_SERVER'):
+    MPO_EVENT_SERVER=os.environ['MPO_EVENT_SERVER']
+else:
+    print("""
+    WARNING: MPO_EVENT_SERVER not set, using localhost\n
+    Webclients outside of localhost will not see events.
+    """)
+    MPO_EVENT_SERVER='localhost' #note this will not work for remote access to webpages
+
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
 webdebug=True
@@ -481,6 +491,14 @@ def testfeed():
      </html>
     """%MPO_API_SERVER
     return(debug_template)
+
+#add serving host to template args
+#listens and publishes all mpo events
+@app.route("/testevent")
+@cross_origin()
+def testevent():
+    return render_template('event_server_eg.html',evserver=MPO_EVENT_SERVER)
+
 
 
 if __name__ == "__main__":

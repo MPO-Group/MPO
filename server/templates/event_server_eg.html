@@ -1,0 +1,31 @@
+{% extends "event_server_base.html" %}
+
+{% block hscripts %}
+function success_cb(event,data,userarg) { 
+//define your callback here.
+//you probably want JSON.parse(data.event.data.text["#text"]) which selects the string 
+//serialized json object containing the mpo event payload that is contained in the larger
+// json object that is parsed out of XMLHTTPrequest and converts it to a local JSON object
+// that can be used.
+// You may want to define different callbacks for different events you want to monitor
+// or have logic on the value of 'event'
+
+  var now=new Date();
+  document.write('Time: '+now.toString()+'<br/>');
+  document.write('Event: '+event+'<br/>');
+  document.write('rawdata: '+JSON.stringify(data)+'<br/>');
+  document.write('jsondata: '+JSON.stringify(data.event.data.text["#text"])+'<br/>');
+  document.write('Userarg: '+userarg+'<br/>');
+  console.log(JSON.parse(data.event.data.text["#text"]))
+}
+
+//  getQueryVariable is only used here to get the event name from "?event=mpo_object"
+//  in the url. Generally you would just set the first argument to the event name, eg 
+//  mdsEvent('mpo_object',1,success_cb,failure_cb,42);
+
+e=mdsEvent(getQueryVariable('event'),1,success_cb,failure_cb,42);
+{% endblock %}
+
+{% block mybody %}
+Hi There.
+{% endblock %}
