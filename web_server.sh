@@ -7,9 +7,6 @@
 # connections.  Clients are verified using X.509 certificates.
 #
 # Exports:
-# MPO_DB_CONNECTION - string so that db.py will know where to connect to.  
-#                     Note: once all calls to rdb are removed, this will no longer 
-#                     be neccessary. 
 # MPO_API_SERVER    - the url of the API server
 # MPO_WEB_CLIENT_CERT - the filespec of this server's public key
 # MPO_WEB_CLIENT_KEY  - the filespec of this server's private key
@@ -40,7 +37,7 @@ function usage {
                          (web server will eventually not need this)
 
   for example:
-    ./web_server.sh  9443 https://localhost:8443  'host=localhost dbname=mpoDB user=xxxx password="yyy"'
+    ./web_server.sh  9443 https://localhost:8443
 "
   exit 0
 }
@@ -59,8 +56,6 @@ mydir=`dirname $myfp`
 
 PYTHONPATH=$mydir/db:$mydir/server
 export PYTHONPATH
-MPO_DB_CONNECTION=${3:-host=\'localhost\' dbname=\'mpoDB\' user=\'mpoadmin\' password=\'mpo2013\'}
-export DB_CONNECTION_STRING
 MPO_API_SERVER=${2:-https://localhost:8443}
 MPO_API_VERSION=v0
 export MPO_API_SERVER MPO_API_VERSION

@@ -10,7 +10,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=True
+dbdebug=False
 try:
 	conn_string = os.environ['MPO_DB_CONNECTION']
 except Exception, e:
@@ -184,7 +184,9 @@ def addUser(json_request,dn):
         username = cursor.fetchone()
         if (username):
 		msg ={"status":"error","error_mesg":"username already exists", "username":username}
-		print(msg)
+
+		if dbdebug:
+			print(msg)
                 return json.dumps(msg,cls=MPOSetEncoder)
 
 	q = "insert into mpousers (" + ",".join([query_map['mpousers'][x] for x in reqkeys]) + ") values ("+",".join(["%s" for x in reqkeys])+")"

@@ -12,8 +12,8 @@ from flask.ext.cors import cross_origin
 MPO_API_VERSION = 'v0'
 
 app = Flask(__name__)
-app.debug=True
-apidebug=True
+app.debug=False
+apidebug=False
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
@@ -260,7 +260,7 @@ def user(id=None):
         
 if __name__ == '__main__':
     #adding debug option here, so we can see what is going on.	
-    app.debug = True
+    app.debug = False
     #app.run()
     #app.run(host='0.0.0.0', port=8080) #api server
     #app.run(host='0.0.0.0', port=8889) #web ui server
