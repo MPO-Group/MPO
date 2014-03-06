@@ -4,10 +4,27 @@ from flask import Flask, render_template, request, jsonify, redirect, Response
 import json
 import db as rdb
 from authentication import get_user_dn
-import gevent
-from gevent.queue import Queue
 import time
 from flask.ext.cors import cross_origin
+
+#Only needed for event prototype
+import gevent
+from gevent.queue import Queue
+
+#MDSplus Events support
+def publishEvent(eventname, eventbody=None):
+    """
+    eventbody should be text presently as we do not implement
+    deserialization of arbitrary types.
+    """
+    try:
+        from MDSplus import Event
+        from numpy import uint8
+        Event.seteventRaw(eventname,uint8(bytearray(eventbody)))
+    except:
+        print("ERROR, events not supported. Tried to "+
+              "send event %s, with message %s.")%(eventname,eventbody)
+
 
 MPO_API_VERSION = 'v0'
 
@@ -47,7 +64,8 @@ class ServerSentEvent(object):
 
 subscriptions = []
 
-def publish(msg = str(time.time())):
+
+def publishgevent(msg = str(time.time())):
     #this routine launches an asynchronous thread running notify().
     #Dummy data - pick up from request for real data
 
@@ -86,7 +104,8 @@ def subscribe(): #subscribe returns the gen() function. gen() returns an iterato
 		 print("in gen(): removing subscription")
 	     subscriptions.remove(q)
     # This invokes gen() which returns an iterator that is returned by /subscribe in a Response()
-    # Response() is a WSGI application.
+    # Response() is a WSGI application. Response will send the next message in the iterator/generator 
+    # for each http request
     return Response(gen(), mimetype="text/event-stream",headers={'cache-control': 'no-cache',
 								 'connection': 'keep-alive'})
 
@@ -158,13 +177,12 @@ def dataobject(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
                 r = rdb.addRecord('dataobject',request.data,dn)
+                publishEvent('mpo_object',r)
  	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('dataobject',{'uid':id})
 		else:
 			r = rdb.getRecord('dataobject',request.args)
-
-	publish(r)
 	return r
         
 
@@ -174,6 +192,7 @@ def activity(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
 		r = rdb.addRecord('activity',request.data,dn)
+                publishEvent('mpo_activity',r)
  	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('activity', {'uid':id})
@@ -188,6 +207,7 @@ def comment(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
 		r = rdb.addComment(request.data,dn)
+                publishEvent('mpo_comment',r)
 	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('comment',{'uid':id},dn)
@@ -203,6 +223,7 @@ def metadata(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
 		r = rdb.addMetadata( request.data, dn)
+                publishEvent('mpo_metadata',r)
  	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('metadata', {'uid':id}, dn )

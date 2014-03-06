@@ -1,3 +1,5 @@
+#these are typically put in /etc/apache2/sites-enabled/default-ssl or equivalent
+
         WSGIDaemonProcess mpoapi user=jas group=jas threads=5
         WSGIScriptAlias /api /var/www/mposvn/api_server.wsgi process-group=mpoapi application-group=%{GLOBAL}
 
@@ -11,3 +13,9 @@
                 SSLVerifyClient require
                 SSLOptions StdEnvVars
         </Directory>
+
+        WSGIDaemonProcess mpoev user=jas group=jas threads=5
+	WSGIScriptAlias /mdsplusWsgi /var/www/mposvn/mdsplus.wsgi process-group=mpoev application-group=%{GLOBAL}
+	Redirect /mdsplusEvents /mdsplusWsgi/event
+
+

@@ -24,9 +24,12 @@ uwsgi > 1.3 - web services for api server. tested with version 1.9.13
               We recommend 'sudo pip install uwsgi' which should grab and build the most 
 	      recent release from source. Note that libssl should be installed for https support before the install.
 
+MDSplus : provided by mdsplus-python, provides events capability
 
 ### Not in production pymongo.py, BSON
 
+#mdsplus. Install mdsplus-kernel and mdsplus-python from mdsplus.org
+	  Provides event capabilities
 
 #db support
 postgresql >9.1 support (development support) 9.3 has better memory management
