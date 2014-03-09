@@ -29,7 +29,7 @@
 # 
 
 function usage {
-  echo "Usage: $0 -h | [port [api_url [db_connection_string]]]
+  echo "Usage: $0 -h | [port [api_url ]]
   -h                   - print this message
   port                 - network port to listen on [9443]
   api_url              - https url for the api server [https://localhost:8443]
@@ -65,13 +65,22 @@ MPO_WEB_CLIENT_KEY=$mydir/MPO-UI-SERVER.key
 MPO_WEB_SERVER_CERT=$mydir/mpo.psfc.mit.edu.crt
 MPO_WEB_SERVER_KEY=$mydir/mpo.psfc.mit.edu.key
 MPO_CA_CERT=\!$mydir/mpo.psfc.mit.edu-ca.crt
-
+#consistent with event_server.sh for uwsgi
+#MPO_EVENT_SERVER="http://localhost:9444/mdsplusEvents"
+#use this,otherwise uwsgi redirect needed which has not been done
+MPO_EVENT_SERVER="http://localhost:9444/mdsplusWsgi/event"
 key_check $MPO_WEB_CLIENT_KEY
 key_check $MPO_WEB_SERVER_KEY
 
-export MPO_DB_CONNECTION
 export MPO_API_SERVER
+export MPO_EVENT_SERVER
 export MPO_WEB_CLIENT_CERT
 export MPO_WEB_CLIENT_KEY
 
-uwsgi --gevent 100 --master --pidfile /tmp/web_master.pid --https  "0.0.0.0:$MPO_WEB_SERVER_PORT,$MPO_WEB_SERVER_CERT,$MPO_WEB_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/web_server.py  --callable app
+#uncomment this opt (or set in launching env) to test gevent framework
+#export GEVENT_OPT="--gevent 100 --master --pidfile /tmp/web_master.pid"
+export THREAD_OPT=--enable-threads
+uwsgi $GEVENT_OPT $THREAD_OPT --https  "0.0.0.0:$MPO_WEB_SERVER_PORT,$MPO_WEB_SERVER_CERT,$MPO_WEB_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/web_server.py  --callable app
+
+#with --master option, can restart after changes to server with
+# uwsgi --reload /tmp/web-master.pid

@@ -49,7 +49,7 @@ function getQueryVariable(variable) {
 
 function mdsEvent(event,repeat,success_cb,error_cb,userarg) {
   var req = new XMLHttpRequest();
-  req.open('GET','https://{{evserver}}/mdsplusEvents/'+event,true);
+  req.open('GET','{{evserver}}/'+event,true);
   req.responseType = '';
   req.scb=success_cb;
   req.fcb=error_cb;
@@ -71,13 +71,13 @@ function mdsEvent(event,repeat,success_cb,error_cb,userarg) {
 //          data = this.responseText;
        	  this.scb(this.event,data,this.userarg);
           if (this.repeat != 0) {
-             this.open('GET','https://{{evserver}}/mdsplusEvents/'+event,true);
+             this.open('GET','{{evserver}}/'+event,true);
              this.send();
              return;
           }
        }
        else if (req.status == 204) {
-          this.open('GET','https://{{evserver}}/mdsplusEvents/'+event,true);
+          this.open('GET','{{evserver}}/'+event,true);
           this.send();
           return;
        } else if (req.status != 0) {
@@ -88,11 +88,6 @@ function mdsEvent(event,repeat,success_cb,error_cb,userarg) {
   };
   req.send();
   return req;
-}
-
-
-function failure_cb(event,msg,userarg) {
-  alert(msg);
 }
 
 

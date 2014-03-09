@@ -28,7 +28,7 @@ else:
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
 webdebug=True
-app.debug = True
+app.debug = False
 
 @app.route('/')
 def landing():

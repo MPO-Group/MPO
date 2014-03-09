@@ -18,4 +18,4 @@
 	WSGIScriptAlias /mdsplusWsgi /var/www/mposvn/mdsplus.wsgi process-group=mpoev application-group=%{GLOBAL}
 	Redirect /mdsplusEvents /mdsplusWsgi/event
 
-
+#Second argument to WSGIScriptAlias gets set back apache to env SCRIPT_FILENAME

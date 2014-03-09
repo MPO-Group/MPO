@@ -1,6 +1,11 @@
 {% extends "event_server_base.html" %}
 
 {% block hscripts %}
+function failure_cb(event,msg,userarg) {
+//what to do on failure (status !=200 or 204) eg event server down.
+  alert(msg);
+}
+
 function success_cb(event,data,userarg) { 
 //define your callback here.
 //you probably want JSON.parse(data.event.data.text["#text"]) which selects the string 
@@ -11,6 +16,8 @@ function success_cb(event,data,userarg) {
 // or have logic on the value of 'event'
 
   var now=new Date();
+
+// EXAMPLE OUTPUT
 //  document.write('Time: '+now.toString()+'<br/>');
   document.write('Event: '+event+'<br/>');
 //  document.write('rawdata: '+JSON.stringify(data)+'<br/>');
@@ -24,6 +31,7 @@ function success_cb(event,data,userarg) {
 //  mdsEvent('mpo_object',1,success_cb,failure_cb,42);
 
 e=mdsEvent(getQueryVariable('event'),1,success_cb,failure_cb,42);
+
 {% endblock %}
 
 {% block mybody %}

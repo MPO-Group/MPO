@@ -30,7 +30,7 @@ MPO_API_VERSION = 'v0'
 
 app = Flask(__name__)
 app.debug=False
-apidebug=False
+apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
@@ -140,6 +140,7 @@ def workflow(id=None):
 	if apidebug:
 		print ('APIDEBUG: You are: %s'% dn )
 		print ('APIDEBUG: workflow url request is',request.url)
+
         if not rdb.validUser(dn):
                 return Response(None, status=401)
 
@@ -148,7 +149,8 @@ def workflow(id=None):
  	elif request.method == 'GET':
 		if id:
 			darg=dict(request.args.items(multi=True)+[('uid',id)])
-			print('darg',darg)
+                        if (APIDEBUG):
+                            print('darg is ',darg)
 			r = rdb.getWorkflow({'uid':id},dn)
 		else:
 			r = rdb.getWorkflow(request.args,dn)
@@ -282,6 +284,6 @@ def user(id=None):
 if __name__ == '__main__':
     #adding debug option here, so we can see what is going on.	
     app.debug = False
-    #app.run()
-    #app.run(host='0.0.0.0', port=8080) #api server
+    #    app.run()
+    app.run(host='0.0.0.0', port=8080) #api server
     #app.run(host='0.0.0.0', port=8889) #web ui server

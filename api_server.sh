@@ -48,13 +48,20 @@ MPO_API_SERVER_PORT=${1:-8443}
 MPO_API_SERVER_CERT=$mydir/mpo.psfc.mit.edu.crt
 MPO_API_SERVER_KEY=$mydir/mpo.psfc.mit.edu.key
 MPO_CA_CERT=\!$mydir/mpo.psfc.mit.edu-ca.crt
-
+export UDP_EVENTS=yes
 key_check $MPO_API_SERVER_KEY
 
 export MPO_DB_CONNECTION
 export PYTHONPATH
 
-uwsgi --gevent 100 --master --pidfile /tmp/api_master.pid --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/api_server.py  --callable app  
+#uncomment this opt (or set in launching env) to test gevent framework
+#export GEVENT_OPT="--gevent 100 --master --pidfile /tmp/web_master.pid"
+export THREAD_OPT=--enable-threads
+
+uwsgi $GEVENT_OPT $THREAD_OPT --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/api_server.py  --callable app
 
 #add this above to redirect logging
 #--logto /tmp/mylog.log
+
+#with --master option, can restart after changes to server with
+# uwsgi --reload /tmp/api-master.pid

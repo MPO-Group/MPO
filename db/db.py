@@ -243,7 +243,7 @@ def getWorkflow(queryargs={},dn=None):
 	# 'user' requires a join with USER table
 
 	if dbdebug:
-		print('DDBEBUG getworkflow query ',queryargs)
+		print('DDEBUG getworkflow query ',queryargs)
 		if queryargs.has_key('range'):
 			therange=queryargs['range']
 			print('DDEBUG range is', therange,str(therange))
