@@ -255,7 +255,7 @@ def ontologyTerm(id=None):
 	if request.method == 'POST':
 		r = rdb.addOntologyTerm(request.data,dn)
  	else:
-		pass
+		r = rdb.getOntologyTermDictionary(id)
 	return r
 
 @app.route(routes['ontology_instance']+'/<id>', methods=['GET'])

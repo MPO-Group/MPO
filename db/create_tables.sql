@@ -147,7 +147,7 @@ create table ontology_classes
   parent_guid uuid,
   added_by uuid,
   date_added timestamp,
-  reviewd_by uuid,
+  reviewed_by uuid,
   date_reviewed timestamp
 );
 ALTER TABLE ontology_classes OWNER TO mpoadmin;
@@ -165,7 +165,7 @@ create table ontology_terms
   specified boolean,
   added_by uuid,
   date_added timestamp,
-  reviewd_by uuid,
+  reviewed_by uuid,
   date_reviewed timestamp
 );
 ALTER TABLE ontology_terms OWNER TO mpoadmin;
