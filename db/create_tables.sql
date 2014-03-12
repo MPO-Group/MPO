@@ -27,7 +27,7 @@ insert into mpousers values ('mpoadmin', 'ddc315a1-6310-41e7-a84d-886bc904f3b2')
 insert into mpousers values ('mpodemo', 'f223db41-d1c5-41db-b8af-fde6c0a16f76', 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', '', '/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu');
 alter table mpousers OWNER TO mpoadmin;
 
-drop table if exists collection
+drop table if exists collection;
 create table collection
 (
   c_guid uuid,
@@ -38,7 +38,7 @@ create table collection
 );
 alter table collection owner to mpoadmin;
 
-drop table if exists collection_elements
+drop table if exists collection_elements;
 create table collection_elements
 (
   c_guid uuid,
@@ -170,8 +170,8 @@ create table ontology_terms
 );
 ALTER TABLE ontology_terms OWNER TO mpoadmin;
 
-drop table if exists ontology_instance;
-create table ontology_instance
+drop table if exists ontology_instances;
+create table ontology_instances
 (
   oi_guid uuid,
   target_guid uuid,
