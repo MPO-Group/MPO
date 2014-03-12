@@ -139,18 +139,20 @@ def workflow(id=None):
 	dn=get_user_dn(request)
 	if apidebug:
 		print ('APIDEBUG: You are: %s'% dn )
-		print ('APIDEBUG: workflow url request is',request.url)
+		print ('APIDEBUG: workflow url request is %s' %request.url)
 
         if not rdb.validUser(dn):
-                return Response(None, status=401)
+            if apidebug:
+                print ('APIDEBUG: Not a valid user'% dn)
+            return Response(None, status=401)
 
 	if request.method == 'POST':
                 r = rdb.addWorkflow(request.data,dn)
  	elif request.method == 'GET':
 		if id:
 			darg=dict(request.args.items(multi=True)+[('uid',id)])
-                        if (APIDEBUG):
-                            print('darg is ',darg)
+                        if apidebug:
+                            print('darg is %s' %darg)
 			r = rdb.getWorkflow({'uid':id},dn)
 		else:
 			r = rdb.getWorkflow(request.args,dn)
