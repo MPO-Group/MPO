@@ -115,15 +115,15 @@ def index():
 		results[index]['time']=time
                 cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
                 cid=cid.json()
-                if webdebug:
-                    print ('webdebug ',cid,cid)
+#                if webdebug:
+#                    print ('webdebug ',cid,cid)
                 cid=cid['alias']
                 results[index]['alias']=cid		
 		index+=1
 
-        if webdebug:
-            print("WEBDEBUG: results sent to index")
-            pprint(results)
+#        if webdebug:
+#            print("WEBDEBUG: results sent to index")
+#            pprint(results)
 		
     except Exception, err:
 	print "web_server.index()- there was an exception"
@@ -278,9 +278,9 @@ def connections(wid):
 	    num_comment+=k
 	    wf_objects[key]['comment']=cm
 	
-    if webdebug:
-        print("WEBDEBUG: workflow objects")
-        pprint(wf_objects)
+#   if webdebug:
+#        print("WEBDEBUG: workflow objects")
+#        pprint(wf_objects)
     
     nodes=wf_objects
     return render_template('conn.html', **locals())

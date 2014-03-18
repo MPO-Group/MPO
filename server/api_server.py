@@ -11,20 +11,6 @@ from flask.ext.cors import cross_origin
 import gevent
 from gevent.queue import Queue
 
-#MDSplus Events support
-def publishEvent(eventname, eventbody=None):
-    """
-    eventbody should be text presently as we do not implement
-    deserialization of arbitrary types.
-    """
-    try:
-        from MDSplus import Event
-        from numpy import uint8
-        Event.seteventRaw(eventname,uint8(bytearray(eventbody)))
-    except:
-        print("ERROR, events not supported. Tried to "+
-              "send event %s, with message %s.")%(eventname,eventbody)
-
 
 MPO_API_VERSION = 'v0'
 
@@ -40,6 +26,28 @@ routes={'collection':'collection','workflow':'workflow',
         'ontology_instance':'ontology/instance',
         'user':'user',
 	'guid':'guid'}
+
+#MDSplus Events support
+def publishEvent(eventname, eventbody=None):
+    """
+    eventbody should be text presently as we do not implement
+    deserialization of arbitrary types.
+    """
+    try:
+        from MDSplus import Event
+        from numpy import uint8
+        if apidebug:
+            print("APIDEBUG: publishEvent",eventname,eventbody)
+            print("APIDEBUG: publishEvent",str(type(eventbody)))
+        Event.seteventRaw(eventname,uint8(bytearray(eventbody)))
+    except Exception as e:
+        import sys,os
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print("ERROR, events not supported. Tried to "+
+              "send event %s, with message %s.")%(eventname,eventbody)
+        print(exc_type, fname, exc_tb.tb_lineno)
+
 
 # SSE "protocol" is described here: http://mzl.la/UPFyxY
 class ServerSentEvent(object):
@@ -83,6 +91,36 @@ def publishgevent(msg = str(time.time())):
 	gevent.spawn(notify)
 
 
+def onlyone(recordstr): #error codes are made up for now
+    if not isinstance(recordstr,str):
+        s={"errorcode":1,"errormsg":"returned record is not a string"}
+        s["record"]=str(recordstr)
+        s["recordtype"]=str(type(recordstr))
+        return json.dumps(s)
+    else:
+        j=json.loads(recordstr)
+        if isinstance(j,list) and len(j)==1:  #strip off list
+            return json.dumps(j[0])
+        if isinstance(j,list) and len(j)>1:  #strip off list
+            s=j[0]
+            s["errorcode"]=3
+            s["errormsg"]="returned record has more than one record"
+            s["recordlen"]=len(j)
+            return json.dumps(s)
+        if isinstance(j,dict):  #strip off list
+            s=j
+            s["errorcode"]=0
+            s["errormsg"]="warning, received json encoded dict and not a list of dict"
+            return json.dumps(s)
+
+        #default error
+        s={"errorcode":2,"errormsg":"returned record is not a valid type, must be a json string."}
+        s["recordtype"]=str(type(recordstr))
+        s["record"]=str(recordstr)
+        return json.dumps(s)
+
+
+###############ROUTE handling###############################
 @app.route("/subscribe")
 @cross_origin()
 def subscribe(): #subscribe returns the gen() function. gen() returns an iterator
@@ -181,7 +219,11 @@ def dataobject(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
                 r = rdb.addRecord('dataobject',request.data,dn)
-                publishEvent('mpo_object',r)
+		rr = json.loads(r)
+                id = rr['uid']
+                morer = rdb.getRecord('dataobject',{'uid':id},dn)
+                publishEvent('mpo_dataobject',onlyone(morer))
+#                publishEvent('mpo_dataobject',r)
  	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('dataobject',{'uid':id})
@@ -196,7 +238,11 @@ def activity(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
 		r = rdb.addRecord('activity',request.data,dn)
-                publishEvent('mpo_activity',r)
+		rr = json.loads(r)
+                id = rr['uid']
+                morer = rdb.getRecord('activity',{'uid':id},dn)
+                publishEvent('mpo_activity',onlyone(morer))
+#                publishEvent('mpo_activity',r)
  	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('activity', {'uid':id})
@@ -211,7 +257,18 @@ def comment(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
 		r = rdb.addComment(request.data,dn)
-                publishEvent('mpo_comment',r)
+		rr = json.loads(r)
+                id = rr['uid']
+                try:  #JCW just being careful here on first implementation
+                    morer = rdb.getRecord('comment',{'uid':id},dn)
+                except Exception as e:
+                    import sys,os
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    print('get comment',exc_type, fname, exc_tb.tb_lineno)
+
+                publishEvent('mpo_comment',onlyone(morer))
+#                publishEvent('mpo_comment',r)
 	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('comment',{'uid':id},dn)
@@ -227,7 +284,11 @@ def metadata(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
 		r = rdb.addMetadata( request.data, dn)
-                publishEvent('mpo_metadata',r)
+		rr = json.loads(r)
+                id = rr['uid']
+                morer = rdb.getRecord('metadata',{'uid':id},dn)
+                publishEvent('mpo_metadata',onlyone(morer))
+#                publishEvent('mpo_metadata',r)
  	elif request.method == 'GET':
 		if id:
 			r = rdb.getRecord('metadata', {'uid':id}, dn )
