@@ -2909,9 +2909,9 @@ table th[class*="span"],
   z-index: 1000;
   display: none;
   float: left;
-  min-width: 160px;
-  padding: 5px 0;
-  margin: 2px 0 0;
+  min-width: 30px;
+  padding: 3px 3px 3px 3px;
+  margin: 0;
   list-style: none;
   background-color: #ffffff;
   border: 1px solid #ccc;
@@ -2945,13 +2945,13 @@ table th[class*="span"],
 }
 
 .dropdown-menu > li > a {
-  display: block;
-  padding: 3px 20px;
-  clear: both;
-  font-weight: normal;
-  line-height: 20px;
+  /*display: block;*/
+  /*padding: 3px 20px;*/
+  /*clear: both;*/
+  /*font-weight: normal;*/
+  /*line-height: 20px;*/
   color: #333333;
-  white-space: nowrap;
+  /*white-space: nowrap;*/
 }
 
 .dropdown-menu > li > a:hover,

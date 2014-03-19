@@ -1,39 +1,6 @@
 {% extends "base.html" %}
 {% block title %}MPO Home{% endblock %}
-
-{# pagination controls #}
-{% set recs_per_page = 15 %}
-{% if num_wf %}
-    {% set num_pages = num_wf//recs_per_page %}
-    {% if ((num_wf%recs_per_page) != 0) %}
-        {% set num_pages = num_pages+1 %}
-    {% endif %}
-{% endif %}
-
-{% block hscripts %}
-<script>
-var total_pages=1;
-{% if num_pages %}
-var total_pages={{num_pages}};
-{% endif %}
-var current_page=1;
-var last_page=0;
-
-function showPage(num) {
-	last_page=current_page.toString();
-	current_page=num.toString();
-	$("#page"+last_page).hide();
-	$("#page"+current_page).show();
-}
-$(document).ready(function () {
-	$('#pages a').click(function() {
-		$('ul li.disabled').removeClass('disabled');
-		$(this).closest('li').addClass('disabled');
-	});
-});
-
-</script>
-{% endblock %}
+{% block hscripts %}{% endblock %}
 {% block index_active %} class="active" {% endblock %}
 {% block container %}
 
@@ -45,31 +12,28 @@ $(document).ready(function () {
 	</div>
     <div class="row-fluid">
     <div class="span12">
-{% set page=0 %}
 {% if results %}
-    {% for item in results %}
-        {% if (page == 0) %}
-            {% set page=page+1 %}
-            <!--start page{{page}} div--> 
-            <div id="page{{page}}">
+<div>
+<span class="muted"><small>show:</small></span>  <div class="btn-group">
+    <a class="btn btn-mini dropdown-toggle" data-toggle="dropdown" href="#">
+    {{ rpp }}
+    <span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu">
+    <li>&nbsp;<a href="{{ url_for("index", wf_name=wf_name,r=15) }}">15</a></li>
+    <li>&nbsp;<a href="{{ url_for("index", wf_name=wf_name,r=30) }}">30</a></li>
+    <li>&nbsp;<a href="{{ url_for("index", wf_name=wf_name,r=90) }}">90</a></li>
+    </ul>
+    </div>
+</div>
                 <table class="main">
                   <tr>
-                    <th width="3%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th>
+                    <th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th>
                   </tr>
-        {% elif ((page > 0) and ((loop.index%recs_per_page) == 0)) %}    	
-                </table>
-            </div><!--end page{{page}} div--> 
-            {% set page=page+1 %}
-            <!--start page{{page}} div--> 
-            <div id="page{{page}}" style="display: none;">
-                <table class="main">
-                  <tr>
-                    <th width="3%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th>
-                  </tr>           
-        {% endif %}
+    {% for item in results %}
                 <div id="accordion2" class="accordion">
                 <tr>
-                    <td class="muted">{{loop.index}}</td>
+                    
                     <td><a href="#">{{ item.username }}</a> / <a href="{{ url_for("index", wf_name=item.name) }}">{{ item.name }}</a> / <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.comp_seq }}</a></td>
                     <td>{{ item.description }}</a></td>
                     <td class="xsmall">{{ item.time }}</td>
@@ -122,19 +86,24 @@ $(document).ready(function () {
      {% endfor %}
 			</table>
 {% endif %}     
-	    </div><!--end last page div-->
-    {% if wf_name %}
-    	<span><small><a href="{{ url_for("index") }}">show all</a></small></span>
-    {% endif %}
+
     <div class="pagination pagination-mini pull-right"> 
         <ul id="pages" style="vertical-align:middle;">
         {% if num_pages %}
             {% for cnt in range(0,num_pages) %}
-                {% if (loop.index==1) %}
-                    <li class="disabled"><a href="#" onclick="showPage({{loop.index}});">{{loop.index}}</a></li>
+                {% if (loop.index==current_page) %}
+                	{% if wf_name %}
+						<li class="disabled"><a href="/home?wf_name={{ wf_name }}&range={{loop.index0*rpp+1}},{{loop.index0*rpp+rpp}}&r={{rpp}}&p={{loop.index}}">{{loop.index}}</a></li>
+                    {% else %}
+                    	<li class="disabled"><a href="/home?range={{loop.index0*rpp+1}},{{loop.index0*rpp+rpp}}&r={{rpp}}&p={{loop.index}}">{{loop.index}}</a></li>
+                    {% endif %}
                 {% else %}
-                    <li><a href="#" onclick="showPage({{loop.index}});">{{loop.index}}</a></li>
-                {% endif %}
+                	{% if wf_name %}
+	                    <li><a href="/home?wf_name={{ wf_name }}&range={{loop.index0*rpp+1}},{{loop.index0*rpp+rpp}}&r={{rpp}}&p={{loop.index}}">{{loop.index}}</a></li>
+                    {% else %}
+                    	<li><a href="/home?range={{loop.index0*rpp+1}},{{loop.index0*rpp+rpp}}&r={{rpp}}&p={{loop.index}}">{{loop.index}}</a></li>
+                    {% endif %}
+                {% endif %}                    
             {% endfor %}
         {% endif %}
         </ul>

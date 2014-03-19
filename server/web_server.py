@@ -9,6 +9,7 @@ import datetime
 from pprint import pprint
 import pydot
 import re,os
+import math
 from authentication import get_user_dn
 
 app = Flask(__name__)
@@ -45,8 +46,6 @@ def index():
 	print('WEBDEBUG: certargs',certargs)
 
     results=False
-    num_wf=0
-    wf_name=False
     try:
 	s = requests.Session()
         s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
@@ -54,37 +53,67 @@ def index():
 	s.headers={'Real-User-DN':dn}
 	wid=request.args.get('wid')
 	wf_name=request.args.get('wf_name')
-
+	
+	#pagination control variables
+	wf_range=request.args.get('range')
+	wf_page=request.args.get('p')
+	wf_rpp=request.args.get('r')
 
         if webdebug:
 	    print('WEBDEBUG: requests in index route',API_PREFIX,wf_name)
 	#req=request.args.to_dict()
-	
-	if wf_name:
-	    #get workflows by specified name
-	    r=s.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,),  headers={'Real-User-DN':dn})
-	else:
-	    #get all workflows
-	    r=s.get("%s/workflow"%API_PREFIX,  headers={'Real-User-DN':dn})
 
+	if wf_page:
+	    current_page=int(wf_page)
+	else:
+	    current_page=1
 	
-        if webdebug:
-	    print('WEBDEBUG: after requests in index route',API_PREFIX,wf_name)
-	    
+	#records per page, 15 is default
+	if wf_rpp:
+	    rpp=int(wf_rpp)
+	else:
+	    rpp=15
+
+	#get total # of workflows
+	r=s.get("%s/workflow"%API_PREFIX,  headers={'Real-User-DN':dn}) 
+
         # need to check the status code
         if r.status_code == 401:
             return redirect(url_for('landing', dest_url=request.path))
-        else:
-	#results = json.loads(r) #results is json object
-            results = r.json()
-        
-	#if webdebug:
-        #    print("WEBDEBUG: results in index")
-        #    pprint(results)
 
-	#pagination control
-	num_wf=len(results) # number of workflows returned from api call
+	rjson = r.json()
+	num_wf=len(rjson) # number of workflows returned from api call
+
+	#get start & end of range
+	if wf_range:
+	    rlist=wf_range.split(',')
+	    rmin=int(rlist[0])
+	    #rmax=int(rlist[1])
+	    rmax=rmin+rpp-1
+	else:
+	    #default range
+	    rmin=1
+	    rmax=rmin+rpp-1
+
+	if wf_name:
+	    #get workflows by specified name
+	    r=s.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,),  headers={'Real-User-DN':dn})
+	    rjson = r.json()
+	    num_wf=len(rjson) # number of workflows of specified name
+	    #get range of workflows of specified name
+	    r=s.get("%s/workflow?name=%s&range=(%s,%s)"%(API_PREFIX,wf_name,rmin,rmax),  headers={'Real-User-DN':dn})
+	else:
+	    r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax),  headers={'Real-User-DN':dn})
 	
+	#calculate number of pages
+	num_pages=int(math.ceil(float(num_wf)/float(rpp)))
+
+        if webdebug:
+	    print('WEBDEBUG: after requests in index route',API_PREFIX,wf_name)
+	    
+	results = r.json()
+
+	#get comments
 	index=0
 	for i in results:	#i is dict
 		if wid:
@@ -130,8 +159,8 @@ def index():
 	print err
 #        pass
 
-    return render_template('index.html', results = results, num_wf = num_wf, wf_name = wf_name)
-
+    #return render_template('index.html', results = results, num_wf = num_wf, wf_name = wf_name)
+    return render_template('index.html', **locals())
 
 @app.route('/graph/<wid>', methods=['GET'])
 @app.route('/graph/<wid>/<format>', methods=['GET'])
