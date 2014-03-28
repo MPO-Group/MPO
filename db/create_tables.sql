@@ -187,7 +187,14 @@ declare
   pid record;
   wid uuid;
 begin
-  with recursive p as (select a.parent_guid, a.parent_type, a.cm_guid from comment as a union all select b.parent_guid, b.parent_type,c.cm_guid from comment as b, p as c where b.cm_guid=c.parent_guid )  select * from p into pid where cm_guid=cid and parent_type!='comment' and parent_type!='metadata';
+-- execute doesn't like unions into an undefined record.
+-- fake the number of fields.
+  select 'bbbdddad-c934-4ecc-bb51-c1d167e2e6ce'::uuid as parent_guid, ''::text as parent_type into pid;
+  execute 'select parent_guid, parent_type from comment where cm_guid=''' || cid || ''' union select parent_guid, parent_type from metadata where md_guid=''' || pid.parent_guid || '''' into pid;
+  while (pid.parent_type = 'comment' or pid.parent_type = 'metadata')
+  loop
+    execute 'select parent_guid, parent_type from comment where cm_guid=''' || pid.parent_guid || ''' union select parent_guid, parent_type from metadata where md_guid=''' || pid.parent_guid || '''' into pid;
+  end loop;
   if pid.parent_type = 'activity' then
     execute 'select w_guid from ' || pid.parent_type || ' where a_guid=''' || pid.parent_guid || '''' into wid;
   elsif pid.parent_type = 'dataobject' then
