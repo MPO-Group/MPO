@@ -181,3 +181,22 @@ create table ontology_instances
   u_guid uuid
 );
 ALTER TABLE ontology_instances OWNER TO mpoadmin;
+
+create or replace function getWID(cid uuid) returns uuid as $$
+declare
+  pid record;
+  wid uuid;
+begin
+  with recursive p as (select a.parent_guid, a.parent_type, a.cm_guid from comment as a union all select b.parent_guid, b.parent_type,c.cm_guid from comment as b, p as c where b.cm_guid=c.parent_guid )  select * from p into pid where cm_guid=cid and parent_type!='comment' and parent_type!='metadata';
+  if pid.parent_type = 'activity' then
+    execute 'select w_guid from ' || pid.parent_type || ' where a_guid=''' || pid.parent_guid || '''' into wid;
+  elsif pid.parent_type = 'dataobject' then
+    execute 'select w_guid from ' || pid.parent_type || ' where do_guid=''' || pid.parent_guid || '''' into wid;
+  elsif pid.parent_type = 'workflow' then
+    execute 'select w_guid from ' || pid.parent_type || ' where w_guid=''' || pid.parent_guid || '''' into wid;
+  end if;
+
+  return wid;
+end;
+$$ LANGUAGE plpgsql;
+alter function getWID(cid uuid) OWNER TO mpoadmin;

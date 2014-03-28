@@ -101,9 +101,12 @@ def getRecord(table,queryargs={}, dn=None):
 	#do we want this line now? username is not in the API interface except for mpousers
 	#this line adds a username field to each record returned in addition to the user_uid
 	#currently, this is not defined in the API
-	q=q[:-1]+', b.username FROM '+table+' a, mpousers b ' #remove trailing comma
-
-
+	q=q[:-1]+', b.username' #remove trailing comma
+        if table == 'comment' or table == 'metadata':
+                q+=', work_uid'
+        q+=' FROM '+table+' a, mpousers b '
+        if table == 'comment' or table == 'metadata':
+                 q+=", getWID('"+processArgument(queryargs['uid'])+"') as work_uid "
 		#map user and filter by query
         s="where a.u_guid=b.uuid"
 	for key in query_map[table]:
