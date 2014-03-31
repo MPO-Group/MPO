@@ -184,23 +184,21 @@ ALTER TABLE ontology_instances OWNER TO mpoadmin;
 
 create or replace function getWID(cid uuid) returns uuid as $$
 declare
-  pid record;
+  parent_guid uuid;
+  parent_type text;
   wid uuid;
 begin
--- execute doesn't like unions into an undefined record.
--- fake the number of fields.
-  select 'bbbdddad-c934-4ecc-bb51-c1d167e2e6ce'::uuid as parent_guid, ''::text as parent_type into pid;
-  execute 'select parent_guid, parent_type from comment where cm_guid=''' || cid || ''' union select parent_guid, parent_type from metadata where md_guid=''' || pid.parent_guid || '''' into pid;
-  while (pid.parent_type = 'comment' or pid.parent_type = 'metadata')
+  execute 'select parent_guid, parent_type from comment where cm_guid=''' || cid || ''' union select parent_guid, parent_type from metadata where md_guid=''' || cid || '''' into parent_guid,parent_type;
+  while (parent_type = 'comment' or parent_type = 'metadata')
   loop
-    execute 'select parent_guid, parent_type from comment where cm_guid=''' || pid.parent_guid || ''' union select parent_guid, parent_type from metadata where md_guid=''' || pid.parent_guid || '''' into pid;
+    execute 'select parent_guid, parent_type from comment where cm_guid=''' || parent_guid || ''' union select parent_guid, parent_type from metadata where md_guid=''' || parent_guid || '''' into parent_guid, parent_type;
   end loop;
-  if pid.parent_type = 'activity' then
-    execute 'select w_guid from ' || pid.parent_type || ' where a_guid=''' || pid.parent_guid || '''' into wid;
-  elsif pid.parent_type = 'dataobject' then
-    execute 'select w_guid from ' || pid.parent_type || ' where do_guid=''' || pid.parent_guid || '''' into wid;
-  elsif pid.parent_type = 'workflow' then
-    execute 'select w_guid from ' || pid.parent_type || ' where w_guid=''' || pid.parent_guid || '''' into wid;
+  if parent_type = 'activity' then
+    execute 'select w_guid from ' || parent_type || ' where a_guid=''' || parent_guid || '''' into wid;
+  elsif b = 'dataobject' then
+    execute 'select w_guid from ' || parent_type || ' where do_guid=''' || parent_guid || '''' into wid;
+  elsif v = 'workflow' then
+    execute 'select w_guid from ' || parent_type || ' where w_guid=''' || parent_guid || '''' into wid;
   end if;
 
   return wid;
