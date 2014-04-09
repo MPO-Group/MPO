@@ -65,8 +65,7 @@ oid37=`$MPO ontology_term 'rho_SD' --desc='gyroradius calculated using B_unit an
 oid38=`$MPO ontology_term 'chi_gBD' --desc='heat diffusivity (chi) normalized to gyroBohm (see technical manual' -p $oid4 -t 'real' -s 'n'`
 oid39=`$MPO ontology_term 'Gamma_gBD' --desc='particle flux [Gamma] normalized to gyroBohm' -p $oid4 -t 'real' -s 'n'`
 oid40=`$MPO ontology_term 'Q_gBD' --desc='heat flux [Q] normalized to gyroBohm (see technical manual)' -p $oid4 -t 'real' -s 'n'`
-oid40=`$MPO ontology_term 'Pi_gBD' --desc='' -p $oid4 -t 'real' -s 'n'`
-oid41=`$MPO ontology_term '' --desc='toroidal momentum flux [Pi] normalized to gyroBohm' -p $oid4 -t 'real' -s 'n'`
+oid41=`$MPO ontology_term 'Pi_gBD' --desc='toroidal momentum flux [Pi] normalized to gyroBohm' -p $oid4 -t 'real' -s 'n'`
 oid42=`$MPO ontology_term 'S_qBD' --desc='turbulent energy exchange between ions and electrons normalized to gyroBohm (see technical manual)' -p $oid4 -t 'real' -s 'n'`
 oid43=`$MPO ontology_term 'radius' --desc='r/a using geometric average of postion of flux surface at point of maximum plasma horizontal extent' -p $oid4 -t 'real' -s 'n'`
 oid44=`$MPO ontology_term 'dlntdr' --desc='local logarithmic derivative of ion temperature= 1/Ti  *  dTi/dr' -p $oid4 -t 'real' -s 'n'`
