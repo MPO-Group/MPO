@@ -55,6 +55,7 @@ create table workflow
   description text,
   U_GUID uuid,
   comp_seq integer,
+  ontology_root uuid,
   creation_time timestamp,
   start_time timestamp,
   end_time timestamp,

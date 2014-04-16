@@ -25,7 +25,13 @@ then
 fi
 
 #use API methods to create a workflow
-oid1=`$MPO ontology_term Gyro --desc="Ontology terms for workflows of type Gyro"`
+oid0a=`$MPO ontology_term Workflow --desc="Ontology terms for workflow entries"`
+oid0b=`$MPO ontology_term Activity --desc="Ontology terms for activity entries"`
+oid0c=`$MPO ontology_term Generic --desc="Ontology terms for generic entries"`
+oid1a=`$MPO ontology_term Type --desc="Terms that describe the workflow types" -p $oid0a -t 'string' -s 'y'`
+oid1b=`$MPO ontology_term EFIT --desc="Ontology terms for workflows of type EFIT" -p $oid1a -t 'string' -s 'y'`
+oid1c=`$MPO ontology_term SWIM --desc="Ontology terms for workflows of type SWIM" -p $oid1a -t 'string' -s 'y'`
+oid1=`$MPO ontology_term Gyro --desc="Ontology terms for workflows of type Gyro" -p $oid1a -t 'string' -s 'y'`
 oid2=`$MPO ontology_term 'Code Characteristics' --desc='Terms that describe the code type' -p $oid1 -t 'string' -s 'y'`
 oid3=`$MPO ontology_term 'Run Characteristics' --desc='Terms that describe the run type' -p $oid1 -t 'string' -s 'y'`
 oid4=`$MPO ontology_term 'Run Metadata' --desc='Metadata terms associated with the run' -p $oid1 -t 'string' -s 'y'`
