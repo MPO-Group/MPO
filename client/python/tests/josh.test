@@ -25,7 +25,7 @@ then
 fi
 
 #use API methods to create a workflow
-wid=`$MPO init --name=EFIT --desc="A first EFIT workflow"`
+wid=`$MPO init --name=EFIT --desc="A first EFIT workflow" --type=EFIT`
 oid1=`$MPO add  $wid $wid --name=shot --desc="Plasma shot number" --uri=150335`
 oid2=`$MPO add  $wid $wid --name="Snap file" --desc="EFIT input file" --uri="\\efit01:namelist"`
 oid3=`$MPO add  $wid $wid --name="Green's Table" --desc="Green's table files" --uri="/link/efit/rpf[01-12].d3d"`
