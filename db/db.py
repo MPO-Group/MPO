@@ -436,6 +436,10 @@ def addWorkflow(json_request,dn):
 	q="insert into workflow (w_guid, name, description, u_guid, creation_time, comp_seq) values (%s,%s,%s,%s,%s,%s)"
 	v= (w_guid, objs['name'], objs['description'], user_id, datetime.datetime.now(),seq_no)
 	cursor.execute(q,v)
+        # add the workflow type to the ontology_instance table
+        q="insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) values (%s,%s,%s,%s,%s,%s)"
+        v=(str(uuid.uuid4()),w_guid,objs['id'],'workflow',datetime.datetime.now(),user_id)
+        cursor.execute(q,v)
 	# Make the changes to the database persistent
 	conn.commit()
 	records = {} #JCW we are not returning the full record here.

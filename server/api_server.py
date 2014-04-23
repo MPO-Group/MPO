@@ -312,7 +312,6 @@ def ontologyClass(id=None):
 @app.route(routes['ontology_term'], methods=['GET', 'POST'])
 def ontologyTerm(id=None):
 	dn=get_user_dn(request)
-        print request.data
 	if request.method == 'POST':
 		r = rdb.addOntologyTerm(request.data,dn)
  	else:

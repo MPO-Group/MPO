@@ -220,12 +220,12 @@ class mpo_methods(object):
         It returns the server response for a new workflow.
         URL should be the host root.
         Syntactic sugar, alias for post
-        args are <url>,--name,--description
+        args are <url>,--name,--description,--type
 
         """
 
-        flags="n:d:"
-        longflags=["name=","desc="]
+        flags="n:d:t:"
+        longflags=["name=","desc=","type="]
 
         try:
             opts, cmdargs = getopt.getopt(map(str,list(args)), flags, longflags)
@@ -234,16 +234,47 @@ class mpo_methods(object):
             print("Test Accepted flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
             sys.exit(2)
 
+        wtype=None
         for opt, arg in opts:
             if opt in ("-n","--name"):
                 name=arg
             elif opt in ("-d","--desc"):
                 desc=arg
+            elif opt in ("-t","--type"):
+                wtype=arg
+        if wtype == None:
+            print("Workflow type is required. Specify with --type=<type>")
+            sys.exit(2)
 
         o=urlparse(url)
+
+        # get the workflowtype uid
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT
+        r=self.mpo_get(urlcon,**kwargs)
+        for n in json.loads(r.text):
+            if n['name'] == 'Workflow':
+                id=n['ot_guid']
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id
+        r=self.mpo_get(urlcon,**kwargs)
+        for n in json.loads(r.text):
+            if n['name'] == 'Type':
+                id=n['ot_guid']
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id
+        r=self.mpo_get(urlcon,**kwargs)
+        id = None
+        for n in json.loads(r.text):
+            if n['name'] == wtype:
+              id=n['ot_guid']
+        if id == None:
+            wtypes = ''
+            for n in json.loads(r.text):
+                wtypes += n['name']+' '
+            print("Unknown workflow type. Must be one of: "+wtypes)
+            sys.exit(2)
+
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.WORKFLOW_RT
 
-        payload={"name":name,"description":desc}
+        payload={"name":name,"description":desc,"id":id}
 
         r=self.mpo_post(urlcon,None,None,payload,**kwargs)
         return r
