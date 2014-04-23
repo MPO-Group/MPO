@@ -43,7 +43,7 @@ fi
 shot=$1
 
 #use API methods to create a workflow
-wid=`$MPO init --name=EFIT --desc="EFIT$efitnum for $shot"`
+wid=`$MPO init --name=EFIT --desc="EFIT$efitnum for $shot" -type=EFIT`
 oid1=`$MPO add  $wid $wid --name=Shot --desc="Plasma shot number" --uri=$shot`
 oid2=`$MPO add  $wid $wid --name="Snap file" --desc="EFIT input file" --uri="\\efit$efitnum:namelist"`
 oid3=`$MPO add  $wid $wid --name="Green's table" --desc="Green's table files" --uri="/link/efit/ec6565.ddd"`

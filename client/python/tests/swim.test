@@ -52,7 +52,7 @@ echo '-----'
 
 
 #use API methods to create a workflow
-wid=`$MPO init --name=SWIM --desc="$run : $simname "`
+wid=`$MPO init --name=SWIM --desc="$run : $simname " --type=SWIM`
 ignore=`$MPO meta $wid 'RunID:' $run`
 ignore=`$MPO meta $wid 'User:' 'Bachelor'`
 ignore=`$MPO meta $wid 'Run_Comment' 'Test run_from_proj with monitor_comp.py version 5.2 '`

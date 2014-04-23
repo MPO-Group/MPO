@@ -68,7 +68,7 @@ fi
 #############Record GYRO storage workflow###################
 
 #Initialize workflow
-wid=`$MPO --user=$mpo_user init --name=Archive-GYRO --desc="Import of gyro simulation results from $rundir"`
+wid=`$MPO --user=$mpo_user init --name=Archive-GYRO --desc="Import of gyro simulation results from $rundir" --type=Gyro`
 echo Workflow ID is $wid.
 
 #Comment on the workflow
