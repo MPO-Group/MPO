@@ -576,9 +576,9 @@ def addOntologyInstance(json_request,dn):
         cursor.execute("select uuid from mpousers where dn=%s", (dn,))
         user_id = cursor.fetchone()
 
-        oi_uid = str(uuid.uuid4())
-        q="insert into ontology_instance (oi_uid,target_uid,term_uid,creation_time,u_guid) values(%s,%s,%s,%s,%s)"
-        v=(oi_uid,objs['target'],objs['term'],datetime.datetime.now(),user_id)
+        oi_guid = str(uuid.uuid4())
+        q="insert into ontology_instance (oi_guid,target_uid,term_uid,value,creation_time,u_guid) values(%s,%s,%s,%s,%s)"
+        v=(oi_uid,objs['parent'],objs['term'],objs['value'],datetime.datetime.now(),user_id)
         cursor.execute(q,v)
 	# Make the changes to the database persistent
 	conn.commit()

@@ -324,7 +324,7 @@ def ontologyInstance(id=None):
 	dn=get_user_dn(request)
 	result = jsonify(json.loads(request.data),user_dn=dn)
 	if request.method == 'POST':
-		pass
+		addOntologyInstance(request.data,dn)
  	else:
 		pass
 	return result

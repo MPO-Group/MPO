@@ -56,6 +56,7 @@ class mpo_methods(object):
     DATAOBJECT_RT='dataobject'
     ACTIVITY_RT=  'activity'
     ONTOLOGY_TERM_RT = 'ontology/term'
+    ONTOLOGY_INSTANCE_RT = 'ontology/instance'
     debug=1
 
     def __init__(self):
@@ -393,6 +394,43 @@ class mpo_methods(object):
         r=self.mpo_post(urlcon,None,pid,payload,**kwargs)
         return r
 
+    def mpo_ontology_instance(self,url,term,*args,**kwargs):
+        """Add terms to the ontology instance
+           args are term,--parent,--otype,--value
+        """
+
+        flags="p:t:v:"
+        longflags=["parent=","otype=","value="]
+
+        try:
+            opts, cmdargs = getopt.getopt(map(str,list(args)), flags, longflags)
+
+        except getopt.GetoptError:
+            print("Accepted flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
+            sys.exit(2)
+
+        parent = None
+        otype = None
+        value = None
+
+        for opt, arg in opts:
+            if opt in ("-p","--parent"):
+                parent = arg
+            elif opt in ("-t","--otype"):
+                otype = arg
+            elif opt in ("-v","--value"):
+                value = arg
+
+        if (parent == None or otype == None or value == None):
+           print("Required flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
+           sys.exit(2)
+
+        o=urlparse(url)
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_INSTANCE_RT
+        payload={"term":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
+        r=self.mpo_post(urlcon,None,pid,payload,**kwargs)
+        return r
+
     def mpo_comment(self,url,obj_ID,data,**kwargs):
         """Takes a returned record and adds a comment to it.
         In this case, data should be a plain string.
@@ -407,7 +445,6 @@ class mpo_methods(object):
         r=self.mpo_post(urlcon,None,obj_ID,{'content':str(data)},**kwargs)
 
         return r
-
 
     def mpo_meta(self,url,obj_ID,key,value,**kwargs):
         """Takes a returned record and adds a metadata to it.
