@@ -396,11 +396,11 @@ class mpo_methods(object):
 
     def mpo_ontology_instance(self,url,term,*args,**kwargs):
         """Add terms to the ontology instance
-           args are term,--parent,--otype,--value
+           args are term,--target,--path,--value
         """
 
-        flags="p:t:v:"
-        longflags=["parent=","otype=","value="]
+        flags="t:p:v:"
+        longflags=["target=","path=","value="]
 
         try:
             opts, cmdargs = getopt.getopt(map(str,list(args)), flags, longflags)
@@ -409,14 +409,14 @@ class mpo_methods(object):
             print("Accepted flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
             sys.exit(2)
 
-        parent = None
-        otype = None
+        target = None
+        path = None
         value = None
 
         for opt, arg in opts:
-            if opt in ("-p","--parent"):
+            if opt in ("-t","--target"):
                 parent = arg
-            elif opt in ("-t","--otype"):
+            elif opt in ("-p","--path"):
                 otype = arg
             elif opt in ("-v","--value"):
                 value = arg
