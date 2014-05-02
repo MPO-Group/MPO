@@ -195,9 +195,9 @@ begin
   end loop;
   if parent_type = 'activity' then
     execute 'select w_guid from ' || parent_type || ' where a_guid=''' || parent_guid || '''' into wid;
-  elsif b = 'dataobject' then
+  elsif parent_type = 'dataobject' then
     execute 'select w_guid from ' || parent_type || ' where do_guid=''' || parent_guid || '''' into wid;
-  elsif v = 'workflow' then
+  elsif parent_type = 'workflow' then
     execute 'select w_guid from ' || parent_type || ' where w_guid=''' || parent_guid || '''' into wid;
   end if;
 
