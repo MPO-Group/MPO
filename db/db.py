@@ -574,11 +574,28 @@ def addOntologyInstance(json_request,dn):
 	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
         #get the user id
         cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-        user_id = cursor.fetchone()
+        user_id = cursor.fetchone().uuid
 
         oi_guid = str(uuid.uuid4())
-        q="insert into ontology_instance (oi_guid,target_uid,term_uid,value,creation_time,u_guid) values(%s,%s,%s,%s,%s)"
-        v=(oi_uid,objs['parent'],objs['term'],objs['value'],datetime.datetime.now(),user_id)
+        # get the ontology term uid
+        terms=objs['path'].split("/")
+        terms.remove('')
+        cursor.execute("select ot_guid,parent_guid from ontology_terms where name=%s",(terms[0],))
+        parent=[]
+        parent.insert(0,cursor.fetchall())
+        if len(parent[0]) != 1 and parent[0][0].parent_guid != None:
+                return None;
+        for i,o in list(enumerate(terms[1:])):
+                cursor.execute("select ot_guid,parent_guid from ontology_terms where name=%s",(o,))
+                parent.insert(i+1,cursor.fetchall())
+                for l in parent[i+1]:
+                        if l.parent_guid != parent[i][0].ot_guid:
+                                parent[i+1].remove(l)
+                        if len(parent[i+1]) != 1:
+                                return None
+        print parent[-1][0].ot_guid
+        q="insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) values(%s,%s,%s,%s,%s,%s)"
+        v=(oi_guid,objs['parent_uid'],parent[-1][0].ot_guid,objs['value'],datetime.datetime.now(),user_id)
         cursor.execute(q,v)
 	# Make the changes to the database persistent
 	conn.commit()

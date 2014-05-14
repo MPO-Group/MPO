@@ -394,41 +394,19 @@ class mpo_methods(object):
         r=self.mpo_post(urlcon,None,pid,payload,**kwargs)
         return r
 
-    def mpo_ontology_instance(self,url,term,*args,**kwargs):
+    def mpo_ontology_instance(self,url,target=None,path=None,value=None,*args,**kwargs):
         """Add terms to the ontology instance
-           args are term,--target,--path,--value
+           args are target,path,value
         """
 
-        flags="t:p:v:"
-        longflags=["target=","path=","value="]
-
-        try:
-            opts, cmdargs = getopt.getopt(map(str,list(args)), flags, longflags)
-
-        except getopt.GetoptError:
-            print("Accepted flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
+        if target == None or path == None or value == None:
+            print("Usage: ontology_instance target path value",file=sys.stderr)
             sys.exit(2)
-
-        target = None
-        path = None
-        value = None
-
-        for opt, arg in opts:
-            if opt in ("-t","--target"):
-                parent = arg
-            elif opt in ("-p","--path"):
-                otype = arg
-            elif opt in ("-v","--value"):
-                value = arg
-
-        if (parent == None or otype == None or value == None):
-           print("Required flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
-           sys.exit(2)
 
         o=urlparse(url)
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_INSTANCE_RT
-        payload={"term":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
-        r=self.mpo_post(urlcon,None,pid,payload,**kwargs)
+        payload={"path":path,"value":value}
+        r=self.mpo_post(urlcon,None,target,payload,**kwargs)
         return r
 
     def mpo_comment(self,url,obj_ID,data,**kwargs):
