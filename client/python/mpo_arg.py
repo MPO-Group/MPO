@@ -113,14 +113,25 @@ class mpo_cli(object):
 
 #import foreign classes for methods here
 
-    def __init__(self,server='https://localhost:8080',version='v0',user='noone',password='pass',cert='cert'):
+    def __init__(self,api_url='https://localhost:8080',version='v0',
+                 user='noone',password='pass',mpo_cert='cert', 
+                 archive_host='psfcstor1.psfc.mit.edu', 
+                 archive_user='psfcmpo', archive_key=None, 
+                 archive_prefix=None):
+    
         self.debug=True
+        self.api_url=api_url
         self.user=user
         self.password=password
-        self.cert=cert
+        self.version = version
+        self.cert=mpo_cert
+        self.archive_host=archive_host 
+        self.archive_user=archive_user
+        self.archive_key=archive_key 
+        self.archive_prefix=archive_prefix
 
         #initialize foreign methods here
-        self.mpo=mpo_methods(server,version,debug=True)
+        self.mpo=mpo_methods(api_url,version,debug=True)
         
     def type_uuid(self,uuid):
         if not isinstance(uuid,str):
@@ -180,6 +191,20 @@ class mpo_cli(object):
         meta_parser=subparsers.add_parser('meta',help='Add an action to a workflow.')
         meta_parser.set_defaults(func=self.mpo.init)
 
+        archive_parser=subparsers.add_parser('archive',help='Archive a file or directory')
+        archive_parser.add_argument('source',action='store',help='File or directory to archive')
+        
+        group = archive_parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--workflow_id','--wid', '-w', 
+                           help='Workflow ID of the workflow this data is part of')
+        group.add_argument('--composite_id','--cid', '-c',
+                           help='Composite ID of the workflow this data is part of')
+
+        archive_parser.add_argument('file-prefix',action='store',
+                                    help='Optional string to prefix archived files with')
+        archive_parser.set_defaults(func=self.mpo.init)
+
+
         #print parser.parse_args(['-a', '-bval', '-c', '3'])
         args=parser.parse_args()
         # here we handle global arguments
@@ -190,16 +215,18 @@ class mpo_cli(object):
 ####main block
 if __name__ == '__main__':
     import os
-    from mpo_arg import mpo_cli
+#    from mpo_arg import mpo_cli
 
-    version='v0'
-    if os.environ.has_key('MPO_VERSION'):
-        VERSION=os.environ['MPO_VERSION']
+    mpo_version=os.getenv('MPO_VERSION','v0')
+    mpo_api_url=os.getenv('MPO_API_URL', 'https://localhost:8080/')
+    mpo_cert=os.getenv('MPO_CERT', '~/.mpo/mpo_cert')
+    archive_host =  os.getenv('MPO_ARCHIVE_HOST', 'psfcstor1.psfc.mit.edu')
+    archive_user =  os.getenv('MPO_ARCHIVE_USER', 'psfcmpo')
+    archive_key = os.getenv('MPO_ARCHIVE_KEY', '~/.mporsync/id_rsa')
+    archive_prefix =  os.getenv('MPO_ARCHIVE_PREFIX', 'mpo-persistent-store/')
 
-    server='https://localhost:8080'
-    if os.environ.has_key('MPO_HOST'):
-        server=os.environ['MPO_HOST']
-
-    cli_app=mpo_cli()
-    
+    cli_app=mpo_cli(version=mpo_version, api_url=mpo_api_url, 
+                    archive_host=archive_host, archive_user=archive_user, 
+                    archive_key=archive_key, archive_prefix=archive_prefix, 
+                    mpo_cert=mpo_cert)    
     cli_app.cli()
