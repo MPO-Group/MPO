@@ -1,0 +1,205 @@
+#!/usr/bin/env python
+"""
+Test commandline parsing
+Will permit all parsing to be moved to the meta command where it belongs.
+Then methods can stay put functional invocation.
+argument layout for mpo:
+post
+get
+not implemented: delete
+not implemented: put
+add
+step
+init
+comment
+record/meta
+help
+
+"""
+from __future__ import print_function
+import requests
+import ast, textwrap
+import unittest
+import sys,os,datetime
+import json
+from urlparse import urlparse
+
+import argparse
+
+#Developers note: 
+#all print statements except those in mpo_cli.storeresult should go to sys.stderr
+#Non-standard dependencies: requests.py
+class mpo_methods(object):
+    """
+    Class of RESTful primitives. I/O is through stdin/stdout.
+    Implementation of MPO client side API as described at 
+    http://www.psfc.mit.edu/mpo/
+
+    Commandline invocation:
+    mpo <mpo flags> method <url> <method flags> <payload>
+    Functional invocation:
+    import mpo.mpo_methods as m
+    m.flags=values #set some defaults, eg m.server=$MPO_HOST
+    m.mpo_method(url=url,payload=payload,arg1=arg1,arg2=arg2)
+    """
+
+    #Need error handling
+    #By giving each method **kwargs in its definition, they will accepts
+    #arbitrary sets of keywords arguments that they may or may not act upon.
+    #kwargs in body will only contain keyword pars that were not matched in the 
+    #function call
+    POSTheaders = {'content-type': 'application/json'}
+    GETheaders= {'ACCEPT': 'application/json'}
+    ID='uid'
+    MPO_PORT='8080' #not used yet            
+    WORKID_QRY='workid' #query argument for connection table
+
+    MPO_VERSION='v0'
+    WORKFLOW_RT = 'workflow'
+    COMMENT_RT  = 'comment'
+    METADATA_RT = 'metadata'
+    CONNECTION_RT='connection'
+    DATAOBJECT_RT='dataobject'
+    ACTIVITY_RT=  'activity'
+
+
+    def __init__(self, host='https://localhost', version='v0', debug=True, auth_cert=''):
+        "Initialize mpo methods class"
+        #private class variables
+        self.__user="george"
+        self.__pass="jungle"
+        self.__server=host
+        self.debug=debug
+        self.MPO_VERSION=version
+        self.MPO_HOST=host
+
+        if self.debug:
+            print('#MPO user',self.get_user())
+            print('#MPO server',self.get_server())
+
+        return
+
+    def set_server(self,host):
+        #Error checking. Valid host string.
+        self.__server=host
+        return
+
+    def get_server(self):
+        return self.__server
+
+    def set_user(self,user):
+        #Error checking, look up user to see if they exist. return record
+        self.__user=user
+        return
+
+    def get_user(self):
+        return self.__user
+
+    def set_pass(self,passwd):
+        self.__pass=passwd
+
+    def get_pass(self):
+        return self.__pass
+
+    def init(self,*a,**kw):
+        print('init:',a,kw)
+        return
+
+
+class mpo_cli(object):
+    """
+    mpo command line interface to restful primitives.
+    """
+
+#import foreign classes for methods here
+
+    def __init__(self,server='https://localhost:8080',version='v0',user='noone',password='pass',cert='cert'):
+        self.debug=True
+        self.user=user
+        self.password=password
+        self.cert=cert
+
+        #initialize foreign methods here
+        self.mpo=mpo_methods(server,version,debug=True)
+        
+    def type_uuid(self,uuid):
+        if not isinstance(uuid,str):
+            msg = "%r is not a valid uuid" % uuid
+            raise argparse.ArgumentTypeError(msg)
+        return uuid
+    
+    def cli(self):
+
+        parser = argparse.ArgumentParser(description='MPO Command line API')
+
+        #global mpo options
+        parser.add_argument('--user','-u',action='store',help='''Specify user.''',default=self.user)
+        parser.add_argument('--pass','-p',action='store',help='''Specify password.''',default=self.password)
+
+        #method options
+        subparsers = parser.add_subparsers(help='commands')
+
+        #get
+        get_parser=subparsers.add_parser('get',help='GET from a route')
+        get_parser.add_argument('route',action='store',help='Route of resource to query')
+        get_parser.add_argument('--params',action='store',help='Query arguments as {key:value,key2:value2}')
+        get_parser.set_defaults(func=self.mpo.init)
+        
+        #post
+        post_parser=subparsers.add_parser('post',help='POST to a route')
+        post_parser.add_argument('route',action='store',help='Route of resource to query')
+        post_parser.add_argument('--params',action='store',help='Payload arguments as {key:value,key2:value2}')
+        post_parser.set_defaults(func=self.mpo.init)
+
+        #init
+        init_parser=subparsers.add_parser('init',help='Start a new workflow')
+        init_parser.add_argument('name',action='store',help='''Name to assign the workflow\n.
+        Label used on workflow graphs.''')
+        init_parser.add_argument('description',action='store',help='Describe the workflow')
+        init_parser.set_defaults(func=self.mpo.init)
+
+        #add
+        add_parser=subparsers.add_parser('add',help='Add a data object to a workflow.')
+        addio = add_parser.add_mutually_exclusive_group()
+        addio.add_argument('--parent', action='store',dest='parent')
+        addio.add_argument('--child', action='store',dest='child')
+        add_parser.set_defaults(func=self.mpo.init)
+
+        #step
+        step_parser=subparsers.add_parser('step',help='Add an action to a workflow.')
+        step_parser.set_defaults(func=self.mpo.init)
+
+        #comment
+        comment_parser=subparsers.add_parser('comment',help='Attach a comment an object.')
+        comment_parser.add_argument('comment',action='store',help='Text of comment')
+        comment_parser.add_argument('--object',action='store',help='UUID of object to comment on',
+                                    type=self.type_uuid)
+        comment_parser.set_defaults(func=self.mpo.init)
+
+        #meta
+        meta_parser=subparsers.add_parser('meta',help='Add an action to a workflow.')
+        meta_parser.set_defaults(func=self.mpo.init)
+
+        #print parser.parse_args(['-a', '-bval', '-c', '3'])
+        args=parser.parse_args()
+        # here we handle global arguments
+        # now execute method
+        r=args.func(args._get_args(),args._get_kwargs())
+
+
+####main block
+if __name__ == '__main__':
+    import os
+    from mpo_arg import mpo_cli
+
+    version='v0'
+    if os.environ.has_key('MPO_VERSION'):
+        VERSION=os.environ['MPO_VERSION']
+
+    server='https://localhost:8080'
+    if os.environ.has_key('MPO_HOST'):
+        server=os.environ['MPO_HOST']
+
+    cli_app=mpo_cli()
+    
+    cli_app.cli()
