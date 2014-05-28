@@ -53,7 +53,6 @@ def index():
 	s.headers={'Real-User-DN':dn}
 	wid=request.args.get('wid')
 	
-	
 	#pagination control variables
 	wf_range=request.args.get('range')
 	wf_page=request.args.get('p')
@@ -116,6 +115,23 @@ def index():
 	
 	results = r.json()
 
+#	#ontology
+	req=requests.get("%s/ontology/term"%(API_PREFIX), **certargs)
+	ont_result=req.json()
+	
+## need to revisit and create a recursive function to get all child levels of ontology terms
+	n=0
+	for i in ont_result:
+	    if i['ot_guid']:
+		ont_result[n]['child']=get_child_terms(i['ot_guid'])
+		#tmp_o=result[n]['child']
+		x=0
+		for y in ont_result[n]['child']:
+		    if y['ot_guid']:
+			ont_result[n]['child'][x]['child']=get_child_terms(y['ot_guid'])
+		    x+=1
+	    n+=1;
+
 #	#get comments
 	index=0
 	for i in results:	#i is dict
@@ -125,8 +141,8 @@ def index():
 	    else:
 	        results[index]['show_comments'] = ''
 	    pid=i['uid']
-	    #c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
-	    c=s.get("%s/comment/%s"%(API_PREFIX,pid), headers={'Real-User-DN':dn})
+	    c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
+	    #c=s.get("%s/comment/%s"%(API_PREFIX,pid), headers={'Real-User-DN':dn}) //####BROKEN API ROUTE???
 	    comments = c.json()
 	    
 	    num_comments=0
@@ -151,33 +167,12 @@ def index():
 	    cid=cid['alias']
 	    results[index]['alias']=cid		
 	    index+=1
-
-        if webdebug:
-	    print('WEBDEBUG: comments')
-	    pprint(results)
 	
-#	#ontology
-	req=requests.get("%s/ontology/term"%(API_PREFIX), **certargs)
-	ont_result=req.json()
-	
-## need to revisit and create a recursive function to get all child levels of ontology terms
-	n=0
-	for i in ont_result:
-	    if i['ot_guid']:
-		ont_result[n]['child']=get_child_terms(i['ot_guid'])
-		#tmp_o=result[n]['child']
-		x=0
-		for y in ont_result[n]['child']:
-		    if y['ot_guid']:
-			ont_result[n]['child'][x]['child']=get_child_terms(y['ot_guid'])
-		    x+=1
-	    n+=1;
-
         if webdebug:
 	    print("WEBDEBUG: results sent to index")
 	    pprint(results)
-	    #print("WEBDEBUG: ontology_results sent to index")
-	    #pprint(ont_result)
+	    print("WEBDEBUG: ontology_results sent to index")
+	    pprint(ont_result)
 		
     except Exception, err:
 	print "web_server.index()- there was an exception"
