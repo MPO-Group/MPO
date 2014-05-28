@@ -15,7 +15,7 @@ from gevent.queue import Queue
 MPO_API_VERSION = 'v0'
 
 app = Flask(__name__)
-app.debug=False
+app.debug=True
 apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',

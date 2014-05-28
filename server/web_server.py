@@ -28,8 +28,8 @@ else:
 
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
-webdebug=True
-app.debug = False
+webdebug = True
+app.debug = True
 
 @app.route('/')
 def landing():
@@ -52,12 +52,13 @@ def index():
 	s.verify=False
 	s.headers={'Real-User-DN':dn}
 	wid=request.args.get('wid')
-	wf_name=request.args.get('wf_name')
+	
 	
 	#pagination control variables
 	wf_range=request.args.get('range')
 	wf_page=request.args.get('p')
 	wf_rpp=request.args.get('r')
+	wf_name=request.args.get('wf_name')
 
         if webdebug:
 	    print('WEBDEBUG: requests in index route',API_PREFIX,wf_name)
@@ -82,7 +83,11 @@ def index():
             return redirect(url_for('landing', dest_url=request.path))
 
 	rjson = r.json()
+	
 	num_wf=len(rjson) # number of workflows returned from api call
+	#store distinct workflow types (names)
+	#wf_types={}
+	#wf_types[i['name']]=i['name']
 
 	#get start & end of range
 	if wf_range:
@@ -93,66 +98,86 @@ def index():
 	else:
 	    #default range
 	    rmin=1
-	    rmax=rmin+rpp-1
-
+	    rmax=rpp
+	
 	if wf_name:
-	    #get workflows by specified name
-	    r=s.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,),  headers={'Real-User-DN':dn})
-	    rjson = r.json()
-	    num_wf=len(rjson) # number of workflows of specified name
-	    #get range of workflows of specified name
-	    r=s.get("%s/workflow?name=%s&range=(%s,%s)"%(API_PREFIX,wf_name,rmin,rmax),  headers={'Real-User-DN':dn})
+	    if wf_name != "all":
+		#get workflows by specified name
+		r=s.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,),  headers={'Real-User-DN':dn})
+		rjson = r.json()
+		num_wf=len(rjson) # number of workflows of specified name
+		#get range of workflows of specified name
+		r=s.get("%s/workflow?name=%s&range=(%s,%s)"%(API_PREFIX,wf_name,rmin,rmax),  headers={'Real-User-DN':dn})		
 	else:
 	    r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax),  headers={'Real-User-DN':dn})
 	
 	#calculate number of pages
 	num_pages=int(math.ceil(float(num_wf)/float(rpp)))
-
-        if webdebug:
-	    print('WEBDEBUG: after requests in index route',API_PREFIX,wf_name)
-	    
+	
 	results = r.json()
 
-	#get comments
+#	#get comments
 	index=0
 	for i in results:	#i is dict
-		if wid:
-			if wid == i['uid']:
-				results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
-		else:
-			results[index]['show_comments'] = ''
-                pid=i['uid']
-                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
-		comments = c.json()
+	    if wid:
+		if wid == i['uid']:
+		    results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
+	    else:
+	        results[index]['show_comments'] = ''
+	    pid=i['uid']
+	    #c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
+	    c=s.get("%s/comment/%s"%(API_PREFIX,pid), headers={'Real-User-DN':dn})
+	    comments = c.json()
+	    
+	    num_comments=0
+	    if comments == None: #replace null reply in requests body with empty list so below logic still works
+		comments=[]
+	    for temp in comments: #get number of comments, truncate time string
+		num_comments+=1
+		if temp['time']:
+		    time=temp['time'][:16]
+		    temp['time']=time
 
-		num_comments=0
-                if comments == None: #replace null reply in requests body with empty list so below logic still works
-                    comments=[]
-                for temp in comments: #get number of comments, truncate time string
-                    num_comments+=1
-                    if temp['time']:
-                        time=temp['time'][:16]
-                        temp['time']=time
-
-		results[index]['num_comments']=num_comments
-		results[index]['comments']=comments
+	    results[index]['num_comments']=num_comments
+	    results[index]['comments']=comments
 #JCW 19 JUL 2013. Change 'start_time' to 'creation_time'. 'start_time' is not at presently set or returned by db
 # need to clarify two different times. index.html does request 'start_time'
 # this was throwing an exception because 'start_time' field wasn't found and breaking adding commments or displaying them
 #JCW 9 SEP 2013 API exposure of 'creation_time' is 'time' for comments.
-		time=results[index]['time'][:16]
-		results[index]['time']=time
-                cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
-                cid=cid.json()
-#                if webdebug:
-#                    print ('webdebug ',cid,cid)
-                cid=cid['alias']
-                results[index]['alias']=cid		
-		index+=1
+	    time=results[index]['time'][:16]
+	    results[index]['time']=time
+	    cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
+	    cid=cid.json()
+	    cid=cid['alias']
+	    results[index]['alias']=cid		
+	    index+=1
 
-#        if webdebug:
-#            print("WEBDEBUG: results sent to index")
-#            pprint(results)
+        if webdebug:
+	    print('WEBDEBUG: comments')
+	    pprint(results)
+	
+#	#ontology
+	req=requests.get("%s/ontology/term"%(API_PREFIX), **certargs)
+	ont_result=req.json()
+	
+## need to revisit and create a recursive function to get all child levels of ontology terms
+	n=0
+	for i in ont_result:
+	    if i['ot_guid']:
+		ont_result[n]['child']=get_child_terms(i['ot_guid'])
+		#tmp_o=result[n]['child']
+		x=0
+		for y in ont_result[n]['child']:
+		    if y['ot_guid']:
+			ont_result[n]['child'][x]['child']=get_child_terms(y['ot_guid'])
+		    x+=1
+	    n+=1;
+
+        if webdebug:
+	    print("WEBDEBUG: results sent to index")
+	    pprint(results)
+	    #print("WEBDEBUG: ontology_results sent to index")
+	    #pprint(ont_result)
 		
     except Exception, err:
 	print "web_server.index()- there was an exception"
@@ -186,7 +211,8 @@ def graph(wid, format="svg"):
         if item['child_type']!='workflow':
                 graph.add_edge( pydot.Edge(pid, cid) )
     if format == 'svg' :
-        ans = graph.create_svg()
+        svgxml = graph.create_svg()
+        ans = svgxml[245:] #removes the svg doctype header so only: <svg>...</svg>
     elif format == 'png' :
         ans = graph.create_png()
     elif format == 'gif' :
@@ -201,7 +227,8 @@ def graph(wid, format="svg"):
     response = make_response(ans)
 
     if format == 'svg' :
-        response.headers['Content-Type'] = 'image/svg+xml'
+	response.headers['Content-Type'] = 'text/plain'
+        #response.headers['Content-Type'] = 'image/svg+xml'
     elif format == 'png' :
         response.headers['Content-Type'] = 'image/png'
     elif format == 'gif' :
@@ -250,18 +277,18 @@ def getsvgxml(wid):
     ans[1] = object_order
     return ans
 
-# adds the raw svg xml to the html template <svg></svg>
 @app.route('/connections/<wid>', methods=['GET'])
 def connections(wid):
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
     
-    #get workflow svg xml and object order
+    #get workflow svg xml
     getsvg=getsvgxml(wid)
     svgdoc=getsvg[0]
     wf_objects=getsvg[1] #dict of workflow elements: name & type
-    svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
+    #svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
+    svg=svgdoc[245:] #removes the svg doctype header so only: <svg>...</svg>    
     
     #get workflow info/alias
     wid_req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
@@ -307,12 +334,73 @@ def connections(wid):
 	    num_comment+=k
 	    wf_objects[key]['comment']=cm
 	
-#   if webdebug:
-#        print("WEBDEBUG: workflow objects")
-#        pprint(wf_objects)
+    if webdebug:
+	print("WEBDEBUG: workflow objects")
+	pprint(wf_objects)
     
     nodes=wf_objects
+    evserver=MPO_EVENT_SERVER
     return render_template('conn.html', **locals())
+
+#returns json string of nodes w/ their info
+@app.route('/nodes/<wid>', methods=['GET'])
+def nodes(wid):
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    
+    #get workflow svg xml and object order
+    getsvg=getsvgxml(wid)
+    wf_objects=getsvg[1] #dict of workflow elements: name & type
+
+    #get workflow info/alias
+    wid_req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
+    wid_info=wid_req.json()
+       
+    #get all data of each activity and dataobject of workflow <wid>
+    num_comment=0
+    for key,value in wf_objects.iteritems():
+	if value['type'] == "activity":
+	    req=requests.get("%s/activity/%s"%(API_PREFIX,value['uid'],), **certargs)
+	    data=req.json()
+	    if data[0]['time']:
+		obj_time=data[0]['time']
+		data[0]['time']=obj_time[:16]	    
+	    wf_objects[key]['data']=data
+	elif value['type'] == "dataobject":
+	    req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs) #get data on each workflow element
+	    data=req.json()
+	    if data[0]['time']:
+		obj_time=data[0]['time']
+		data[0]['time']=obj_time[:16]	    
+	    wf_objects[key]['data']=data
+	
+	meta_req=requests.get("%s/metadata?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+	if meta_req.text != "[]":
+	    wf_objects[key]['metadata']=meta_req.json()
+	
+	comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+	if comment.text != "[]":
+	    cm=comment.json()
+	    k=0
+	    for i in cm:
+		if i['user_uid']:
+		    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
+		    user_info=user_req.json();
+		    username=user_info[0]['username']
+		    cm[k]['user']=username
+		if i['time']:
+		    cm_time=i['time']
+		    cm[k]['time']=cm_time[:16]
+		k+=1
+
+	    num_comment+=k
+	    wf_objects[key]['comment']=cm
+    
+    nodes=json.dumps(wf_objects)
+    response = make_response(nodes)
+    response.headers['Content-Type'] = 'text/plain'
+    return response
 
 @app.route('/about')
 def about():
@@ -385,6 +473,59 @@ def search():
     
     if request.method == 'GET': 
 	return render_template('search.html')
+
+@app.route('/ontology')
+@app.route('/ontology/<ot_guid>', methods=['GET'])
+def ontology(ot_guid=False):
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+#    if request.method == 'GET':
+#	if ot_guid:
+#	    req=requests.get("%s/ontology/term/%s"%(API_PREFIX,ot_guid,), **certargs)
+#	    if req.text != "[]":
+#		result=req.text
+#	    else:
+#		result=""
+#	    response = make_response(result)
+#	    response.headers['Content-Type'] = 'text/plain'
+#	    return response
+#	else:
+#	    req=requests.get("%s/ontology/term"%(API_PREFIX), **certargs)
+#	    result=req.json()
+#	    pprint(result)
+#	    return render_template('ontology.html', result=result)
+    if request.method == 'GET':
+	if ot_guid:
+	    req=requests.get("%s/ontology/term/%s"%(API_PREFIX,ot_guid,), **certargs)
+	    if req.text != "[]":
+		result=req.text
+	    else:
+		result=""
+	    response = make_response(result)
+	    response.headers['Content-Type'] = 'text/plain'
+	    return response
+	else:
+	    req=requests.get("%s/ontology/term"%(API_PREFIX), **certargs)
+	    result=req.json()
+## need to revisit and create a recursive function to get all child levels of ontology terms
+	    n=0
+	    for i in result:
+		if i['ot_guid']:
+		    result[n]['child']=get_child_terms(i['ot_guid'])
+		    #tmp_o=result[n]['child']
+		    x=0
+		    for y in result[n]['child']:
+			if y['ot_guid']:
+			    result[n]['child'][x]['child']=get_child_terms(y['ot_guid'])
+			x+=1
+		n+=1;
+	    
+	    if webdebug:
+		pprint(result)
+	    return render_template('ontology.html', result=result)
+
+    return render_template('ontology.html')
     
 @app.route('/submit_comment', methods=['POST'])
 def submit_comment():
@@ -521,14 +662,23 @@ def testfeed():
     """%MPO_API_SERVER
     return(debug_template)
 
+def get_child_terms(ot_guid):
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    
+    req=requests.get("%s/ontology/term/%s"%(API_PREFIX,ot_guid), **certargs)
+    
+    if req.text != "[]":
+	return req.json()
+
+
 #add serving host to template args
 #listens and publishes all mpo events
 @app.route("/testevent")
 @cross_origin()
 def testevent():
     return render_template('event_server_eg.html',evserver=MPO_EVENT_SERVER)
-
-
 
 if __name__ == "__main__":
     #adding debug option here, so we can see what is going on.	

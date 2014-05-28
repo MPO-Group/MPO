@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}MPO Ontology{% endblock %}
+{% block hscripts %}
+<script>
+function expandTerm(oid) {
+
+	url="/ontology/"+oid;
+
+	var jqxhr_terms = $.getJSON( url, function( data ) {
+		termsObj=data;
+	});
+
+	jqxhr_terms.done(function() {
+		var term_name="";
+		var term_desc="";
+		var term_oid="";
+		for (var key in termsObj) {
+		  if (termsObj.hasOwnProperty(key)) {
+			for (var termElements in termsObj[key]) {
+				if (termsObj[key].hasOwnProperty(termElements)) {
+					//console.log(termsObj[key][termElements]);
+					if(termElements==="ot_guid")
+						term_oid=termsObj[key][termElements];
+					else if(termElements==="name")
+						term_name=termsObj[key][termElements];						
+					else if(termElements==="description")
+						term_desc=termsObj[key][termElements];
+				}
+			}
+			$('#'+oid).append('<li id="'+term_oid+'"><a href="#" title="'+term_desc+'" onClick=expandTerm(\''+term_oid+'\')>'+term_name+'</a></li>');
+		  }
+		}
+	});
+};
+</script>
+<style>
+#expand_list, 
+#expand_list ul {float:left; padding:0 0 5px 0; margin:0; list-style:none; font-size: 12px; border:1px solid #000; border-color:#cea; border-width:1px; background:#fff; position:relative; z-index:200;}
+
+#expand_list li li {background:#fff;}
+/* IE6 */
+* html #expand_list li {float:left;}
+
+#expand_list li a {display:block; color:#888; margin:0 25px 0 10px; height:20px; line-height:20px; text-decoration:none; white-space:nowrap;}
+
+#expand_list li:hover {position:relative; z-index:300;}
+
+#expand_list ul {position:absolute; left:-9999px; top:-9999px;}
+/* IE6 */
+* html #expand_list, * html nav ul {width:1px;}
+
+/* next level */
+#expand_list li:hover > ul {left:0px; margin-left:100%; top:-1px;}
+/* hide next levels */
+#expand_list li:hover > ul ul {position:absolute; left:-9999px; top:-9999px; width:auto;}
+/* followed paths */
+#expand_list li:hover > a {text-decoration:underline; color:#7b5;}
+
+
+/* IE6 */
+#expand_list li:hover ul,
+#expand_list li:hover li:hover ul,
+#expand_list li:hover li:hover li:hover ul,
+#expand_list li:hover li:hover li:hover li:hover ul,
+#expand_list li:hover li:hover li:hover li:hover li:hover ul
+{left:0px; margin-left:100%; top:-1px;}
+
+/* hide next levels */
+#expand_list li:hover ul ul,
+#expand_list li:hover li:hover ul ul,
+#expand_list li:hover li:hover li:hover ul ul,
+#expand_list li:hover li:hover li:hover li:hover ul ul
+{position:absolute; left:-9999px; top:-9999px;}
+
+/* followed paths */
+#expand_list li:hover a,
+#expand_list li:hover li:hover a,
+#expand_list li:hover li:hover li:hover a,
+#expand_list li:hover li:hover li:hover li:hover a,
+#expand_list li:hover li:hover li:hover li:hover li:hover a,
+#expand_list li:hover li:hover li:hover li:hover li:hover li:hover a
+{text-decoration:underline; color:#7b5;}
+
+/* hide paths */
+#expand_list li:hover li a,
+#expand_list li:hover li:hover li a,
+#expand_list li:hover li:hover li:hover li a,
+#expand_list li:hover li:hover li:hover li:hover li a,
+#expand_list li:hover li:hover li:hover li:hover li:hover li a
+{text-decoration:none; color:#888;}
+</style>
+
+{% endblock %}
+{% block container %}
+
+<div class="leaderboard">
+	<div id="top">
+    	<h1>Ontology</h1>
+        <input type="button" class="btn-mini btn-success pull-right" value="+ add">
+    </div>
+    <div class="row-fluid" style="height:500px; background-color:#fff;">
+    	<div class="span12">
+        	<div class="muted" style="padding-top:10px;"><small><em>Workflow Type:</em></small></div>
+        	{% if result %}
+				<ul id="expand_list">
+	            {% for obj in result %}
+					<!-- <li id="{{ obj.ot_guid }}"><a href="#" title="{{ obj.description }}" onClick="expandTerm('{{ obj.ot_guid }}');">{{ obj.name }}</a></li> -->
+                    <li id="{{ obj.ot_guid }}"><a href="#" title="{{ obj.description }}" >{{ obj.name }} {% if obj.child %} > {% endif %}</a>
+                    {% if obj.child %}
+                    	<ul>
+                    	{% for n in obj.child %}
+                         	<li id="{{ n.ot_guid }}"><a href="#" title="{{ n.description }}" >{{ n.name }} {% if n.child %} > {% endif %}</a>
+                            {% if n.child %}
+                                <ul>
+                                {% for x in n.child %}
+                                    <li id="{{ x.ot_guid }}"><a href="#" title="{{ x.description }}" >{{ x.name }}</a>                                    
+                                        <ul>
+                                        {% for k in x %}
+                                        <li><small><a href="#"><em>{{k}}</em>: {{x[k]}}</small></a></li>
+                                        {% endfor %}
+                                        </ul>
+                                    </li>
+                                {% endfor %}
+                                	<li class="text-center"><small><a href="#">[+ add]</a></small></li>
+                                </ul>
+                            {% endif %}
+                            </li>
+                        {% endfor %}
+                        <li class="text-center"><small><a href="#">[+ add]</a></small></li>
+                        </ul>
+                    {% endif %}
+                    </li><!-- end of top tree term# {{ loop.index }} -->
+            	{% endfor %}
+            {% endif %}
+                	<li><a href="#" title="">EFIT</a></li>
+                    <li><a href="#" title="">SWIM</a></li>
+				</ul>            
+        </div>
+    </div><!-- end row-fluid -->
+</div>
+
+{% endblock %}

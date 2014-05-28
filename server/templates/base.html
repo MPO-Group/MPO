@@ -34,34 +34,137 @@
     <script src="/static/bootstrap/js/bootstrap-collapse.js"></script>
     <script src="/static/bootstrap/js/bootstrap-carousel.js"></script>
     <script src="/static/bootstrap/js/bootstrap-typeahead.js"></script>
+    <script src="/static/bootstrap/js/bootstrap-paginator.min.js"></script>
     <script src="/static/bootstrap/js/holder.js"></script>
+<script>
+xmlToJson = function(xml) {
+    var obj = {};
+    if (xml.nodeType == 1) {                
+        if (xml.attributes.length > 0) {
+            obj["@attributes"] = {};
+            for (var j = 0; j < xml.attributes.length; j++) {
+                var attribute = xml.attributes.item(j);
+                obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
+            }
+        }
+    } else if (xml.nodeType == 3) { 
+        obj = xml.nodeValue;
+    }            
+    if (xml.hasChildNodes()) {
+        for (var i = 0; i < xml.childNodes.length; i++) {
+            var item = xml.childNodes.item(i);
+            var nodeName = item.nodeName;
+            if (typeof (obj[nodeName]) == "undefined") {
+                obj[nodeName] = xmlToJson(item);
+            } else {
+                if (typeof (obj[nodeName].push) == "undefined") {
+                    var old = obj[nodeName];
+                    obj[nodeName] = [];
+                    obj[nodeName].push(old);
+                }
+                obj[nodeName].push(xmlToJson(item));
+            }
+        }
+    }
+    return obj;
+}
+
+
+function getQueryVariable(variable) {
+  var query = window.location.search.substring(1);
+  var vars = query.split("&");
+  for (var i=0;i<vars.length;i++) {
+    var pair = vars[i].split("=");
+    if (pair[0] == variable) {
+      return pair[1];
+    }
+  }
+}
+
+function mdsEvent(event,repeat,success_cb,error_cb,userarg) {
+  var req = new XMLHttpRequest();
+  req.open('GET','{{evserver}}/'+event,true);
+  req.responseType = '';
+  req.scb=success_cb;
+  req.fcb=error_cb;
+  req.event=event;
+  req.userarg=userarg;
+  req.repeat=repeat;
+  req.onreadystatechange = function() {
+    if (this.readyState == 4) {
+       if (this.status == 200) {
+          console.log("ready");
+          console.log(this.responseXML);
+          console.log(this.responseText);
+	  var parser = new DOMParser(); //this is a workaround to know errors in some browsers with responseXML
+
+          var xmlDoc = parser.parseFromString(this.responseText, "application/xml");
+          data = xmlToJson(xmlDoc);
+          console.log(xmlDoc);
+          console.log(data);
+//          data = this.responseText;
+       	  this.scb(this.event,data,this.userarg);
+          if (this.repeat != 0) {
+             this.open('GET','{{evserver}}/'+event,true);
+             this.send();
+             return;
+          }
+       }
+       else if (req.status == 204) {
+          this.open('GET','{{evserver}}/'+event,true);
+          this.send();
+          return;
+       } else if (req.status != 0) {
+          this.fcb(this.event,req.response,this.userarg);
+       }
+       this.onreadystatechange = function() {}
+    }
+  };
+  req.send();
+  return req;
+}
+
+
+function qs(search_for) {
+		var query = window.location.search.substring(1);
+		var parms = query.split('&');
+		for (var i=0; i<parms.length; i++) {
+			var pos = parms[i].indexOf('=');
+			if (pos > 0  && search_for == parms[i].substring(0,pos)) {
+				return parms[i].substring(pos+1);;
+			}
+		}
+		return "";
+	}
+</script>
     {% block hscripts %}{% endblock %}
   </head>
 
   <body>
+
     <div class="navbar navbar-fixed-top">
       <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <div class="container-fluid">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
-          </a>
-          <!-- <a class="brand" href="#"><img src="/static/img/mpo.png" width="111" height="20" alt="MPO logo" /></a>  -->
-          <div class="nav-collapse">
+          </button>
+          <a class="brand">&nbsp;&nbsp;</a>
+          <div class="nav-collapse collapse">
             <ul class="nav">
                 <li {% block index_active %}{% endblock %}><a href="{{ url_for("index") }}">Home</a></li>
                 <li {% block search_active %}{% endblock %}><a href="{{ url_for("search") }}">Search</a></li>
             </ul>
             <!--<ul class="nav pull-right">
             	<li><a href="#"><i class="icon-user"></i> Username</a></li>
-            </ul>-->
+            </ul>-->            
           </div><!--/.nav-collapse -->
         </div>
       </div>
     </div>
 
-    <div class="container">
+    <div class="container-fluid">
     {% block container %}
     {% endblock %}
 
@@ -69,9 +172,9 @@
       <hr>
 
       <footer>
-        <div><span class="pull-left muted"><a class="muted" href="{{ url_for("about") }}">&copy; MPO Team 2013</a></span><span class="pull-right muted"><a class="muted" href="{{ url_for("index") }}">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("search") }}">Search</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("about") }}">About Us</a> </span></div>    
+        <div><span class="pull-left muted"><a class="muted" href="{{ url_for("about") }}">&copy; MPO Team 2014</a></span><span class="pull-right muted"><a class="muted" href="{{ url_for("index") }}">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("search") }}">Search</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("about") }}">About Us</a> </span></div>    
       </footer>
 
-    </div> <!-- /container -->
+    </div> <!-- /container-fluid -->
   </body>
 </html>
