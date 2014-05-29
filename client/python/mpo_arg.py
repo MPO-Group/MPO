@@ -63,20 +63,27 @@ class mpo_methods(object):
     ACTIVITY_RT=  'activity'
 
 
-    def __init__(self, host='https://localhost', version='v0', debug=True, auth_cert=''):
-        "Initialize mpo methods class"
-        #private class variables
-        self.__user="george"
-        self.__pass="jungle"
-        self.__server=host
+    def __init__(self,api_url='https://localhost:8080',version='v0',
+                 user='noone',password='pass',mpo_cert='cert', 
+                 archive_host='psfcstor1.psfc.mit.edu', 
+                 archive_user='psfcmpo', archive_key=None, 
+                 archive_prefix=None, debug=True):
+    
         self.debug=debug
-        self.MPO_VERSION=version
-        self.MPO_HOST=host
+        self.api_url=api_url
+        self.user=user
+        self.password=password
+        self.version = version
+        self.cert=mpo_cert
+        self.archive_host=archive_host 
+        self.archive_user=archive_user
+        self.archive_key=archive_key 
+        self.archive_prefix=archive_prefix
 
         if self.debug:
-            print('#MPO user',self.get_user())
-            print('#MPO server',self.get_server())
-
+#            print('#MPO user',self.get_user())
+#            print('#MPO server',self.get_server())
+            pass
         return
 
     def set_server(self,host):
@@ -116,25 +123,10 @@ class mpo_cli(object):
 
 #import foreign classes for methods here
 
-    def __init__(self,api_url='https://localhost:8080',version='v0',
-                 user='noone',password='pass',mpo_cert='cert', 
-                 archive_host='psfcstor1.psfc.mit.edu', 
-                 archive_user='psfcmpo', archive_key=None, 
-                 archive_prefix=None):
-    
-        self.debug=True
-        self.api_url=api_url
-        self.user=user
-        self.password=password
-        self.version = version
-        self.cert=mpo_cert
-        self.archive_host=archive_host 
-        self.archive_user=archive_user
-        self.archive_key=archive_key 
-        self.archive_prefix=archive_prefix
-
-        #initialize foreign methods here
-        self.mpo=mpo_methods(api_url,version,debug=True)
+    def __init__(self, *args, **kwargs) :
+        self.user=None
+        self.password=None
+        self.mpo=mpo_methods(*args, **kwargs)
         
     def type_uuid(self,uuid):
         if not isinstance(uuid,str):
@@ -200,12 +192,12 @@ class mpo_cli(object):
 
         #archive
         archive_parser=subparsers.add_parser('archive',help='Archive a file or directory')
-        archive_parser.add_argument('source',action='append', nargs='+', 
+        archive_parser.add_argument('source', nargs='+',
                                     help='File or directory to archive')        
         group = archive_parser.add_mutually_exclusive_group(required=True)
-        group.add_argument('--workflow_id','--wid', '-w', nargs=1,
+        group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store',
                            help='Workflow ID of the workflow this data is part of')
-        group.add_argument('--composite_id','--cid', '-c',
+        group.add_argument('--composite_id','--cid', '-c',nargs=1, action='store',
                            help='Composite ID of the workflow this data is part of')
         archive_parser.add_argument('--prefix','--pre', '-p', required=False, 
                                     action='store',
@@ -215,22 +207,22 @@ class mpo_cli(object):
         #restore
         restore_parser=subparsers.add_parser('restore',help='Restore a file or directory')
         group = restore_parser.add_mutually_exclusive_group(required=True)
-        group.add_argument('--workflow_id','--wid', '-w', 
+        group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store', 
                            help='Workflow ID of the workflow this data is part of')
-        group.add_argument('--composite_id','--cid', '-c',
+        group.add_argument('--composite_id','--cid', '-c', nargs=1, action='store',
                            help='Composite ID of the workflow this data is part of')
-        restore_parser.add_argument('files',action='append', nargs='*',
+        restore_parser.add_argument('files', nargs='*',
                                     help='Optional name of file or directory to restore')
         restore_parser.set_defaults(func=self.mpo.init)
 
         #ls
         ls_parser=subparsers.add_parser('ls',help='list file(s) or directories')
         group = ls_parser.add_mutually_exclusive_group(required=True)
-        group.add_argument('--workflow_id','--wid', '-w', 
+        group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store',
                            help='Workflow ID of the workflow this data is part of')
-        group.add_argument('--composite_id','--cid', '-c',
+        group.add_argument('--composite_id','--cid', '-c', nargs=1, action='store',
                            help='Composite ID of the workflow this data is part of')
-        ls_parser.add_argument('files',action='append', nargs='*',
+        ls_parser.add_argument('files', nargs='*',
                                     help='Optional name of file(s) or directories to list')
         ls_parser.set_defaults(func=self.mpo.init)
 
@@ -258,5 +250,5 @@ if __name__ == '__main__':
     cli_app=mpo_cli(version=mpo_version, api_url=mpo_api_url, 
                     archive_host=archive_host, archive_user=archive_user, 
                     archive_key=archive_key, archive_prefix=archive_prefix, 
-                    mpo_cert=mpo_cert)    
+                    mpo_cert=mpo_cert, debug=True)    
     cli_app.cli()
