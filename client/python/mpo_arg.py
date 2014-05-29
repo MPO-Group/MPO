@@ -101,8 +101,11 @@ class mpo_methods(object):
     def get_pass(self):
         return self.__pass
 
-    def init(self,*a,**kw):
+
+# define api methods here. All methods must be declared as method(**kwargs).
+    def init(self,route='default',*a,**kw):
         print('init:',a,kw)
+        print('with route', route)
         return
 
 
@@ -143,6 +146,8 @@ class mpo_cli(object):
 
         parser = argparse.ArgumentParser(description='MPO Command line API')
 
+	#note that arguments will be available in functions as arg.var
+
         #global mpo options
         parser.add_argument('--user','-u',action='store',help='''Specify user.''',default=self.user)
         parser.add_argument('--pass','-p',action='store',help='''Specify password.''',default=self.password)
@@ -152,7 +157,9 @@ class mpo_cli(object):
 
         #get
         get_parser=subparsers.add_parser('get',help='GET from a route')
+           #add positional argument which will be passed to func 'route' in 'Namespace' named tuple
         get_parser.add_argument('route',action='store',help='Route of resource to query')
+           #add keyword argument passed to func as 'params'
         get_parser.add_argument('--params',action='store',help='Query arguments as {key:value,key2:value2}')
         get_parser.set_defaults(func=self.mpo.init)
         
@@ -228,10 +235,11 @@ class mpo_cli(object):
         ls_parser.set_defaults(func=self.mpo.init)
 
         #print parser.parse_args(['-a', '-bval', '-c', '3'])
-        args=parser.parse_args()
         # here we handle global arguments
         # now execute method
-        r=args.func(args._get_args(),args._get_kwargs())
+        args=parser.parse_args()
+    #    r=args.func(args._get_args(),args._get_kwargs())
+        r=args.func(**args.__dict__)
 
 
 ####main block
