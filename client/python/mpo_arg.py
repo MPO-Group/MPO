@@ -191,19 +191,41 @@ class mpo_cli(object):
         meta_parser=subparsers.add_parser('meta',help='Add an action to a workflow.')
         meta_parser.set_defaults(func=self.mpo.init)
 
+        #archive
         archive_parser=subparsers.add_parser('archive',help='Archive a file or directory')
-        archive_parser.add_argument('source',action='store',help='File or directory to archive')
-        
+        archive_parser.add_argument('source',action='append', nargs='+', 
+                                    help='File or directory to archive')        
         group = archive_parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--workflow_id','--wid', '-w', nargs=1,
+                           help='Workflow ID of the workflow this data is part of')
+        group.add_argument('--composite_id','--cid', '-c',
+                           help='Composite ID of the workflow this data is part of')
+        archive_parser.add_argument('--prefix','--pre', '-p', required=False, 
+                                    action='store',
+                                    help='Optional string to prefix archived files with')
+        archive_parser.set_defaults(func=self.mpo.init)
+
+        #restore
+        restore_parser=subparsers.add_parser('restore',help='Restore a file or directory')
+        group = restore_parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--workflow_id','--wid', '-w', 
                            help='Workflow ID of the workflow this data is part of')
         group.add_argument('--composite_id','--cid', '-c',
                            help='Composite ID of the workflow this data is part of')
+        restore_parser.add_argument('files',action='append', nargs='*',
+                                    help='Optional name of file or directory to restore')
+        restore_parser.set_defaults(func=self.mpo.init)
 
-        archive_parser.add_argument('file-prefix',action='store',
-                                    help='Optional string to prefix archived files with')
-        archive_parser.set_defaults(func=self.mpo.init)
-
+        #ls
+        ls_parser=subparsers.add_parser('ls',help='list file(s) or directories')
+        group = ls_parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--workflow_id','--wid', '-w', 
+                           help='Workflow ID of the workflow this data is part of')
+        group.add_argument('--composite_id','--cid', '-c',
+                           help='Composite ID of the workflow this data is part of')
+        ls_parser.add_argument('files',action='append', nargs='*',
+                                    help='Optional name of file(s) or directories to list')
+        ls_parser.set_defaults(func=self.mpo.init)
 
         #print parser.parse_args(['-a', '-bval', '-c', '3'])
         args=parser.parse_args()
