@@ -86,6 +86,50 @@ class mpo_methods(object):
             pass
         return
 
+    def mpo_get(self,url,*args,**kwargs):
+        """arguments: url, <params>
+           params is a python key:value dictionary
+        """
+
+        if kwargs.has_key('user'):
+            #add to params or header?
+            del kwargs['user'] #dont pass it along to requests
+
+        flags="r:p:"
+        longflags=["route=","params="]
+
+        try:
+            opts, cmdargs = getopt.getopt(map(str,list(args)), flags, longflags)
+
+        except getopt.GetoptError:
+            print("Test Accepted flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
+            sys.exit(2)
+
+        params=None
+        for opt, arg in opts:
+            if opt in ("-r","--route"):
+                route=arg
+                o=urlparse(url)
+                url=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+route
+            elif opt in ("-p","--params"):
+                params=arg
+
+        if self.debug>0:
+            print('mpo_GET',url,params,kwargs,file=sys.stderr)
+        try:
+            r = requests.get(url,headers=self.GETheaders,params=params,**kwargs)
+        except requests.exceptions.ConnectionError,err:
+            print("ERROR: Could not connect to server, "+url,file=sys.stderr)
+            sys.stderr.write('MPO ERROR: %s\n' % str(err))
+            print(" ",file=sys.stderr)
+            return 1
+        
+        #if parameters are present, this is a search
+        #requests.py reconstructs the url with the parameters appended 
+        #in the "?param=val" http syntax
+
+        return r
+
     def set_server(self,host):
         #Error checking. Valid host string.
         self.__server=host
@@ -114,6 +158,31 @@ class mpo_methods(object):
         print('init:',a,kw)
         print('with route', route)
         return
+
+    def archive(self, wid=None, cid=None, prefix=None, *files, **kw):
+        """
+       if cid != None :
+            try:
+                wid=self.get_wid(cid)
+            except:
+                # deal with error workflow not found
+                pass
+        elif wid != None :
+            try:
+                cid = self.get_cid(wid)
+            except:
+                # deal with error workflow not found
+                pass
+        else:
+            # deal with error must specify 1 of them
+            pass
+
+        for f in files:
+
+            self.archive_file(cid, f)
+        """
+        pass
+
 
 
 class mpo_cli(object):
@@ -192,7 +261,7 @@ class mpo_cli(object):
 
         #archive
         archive_parser=subparsers.add_parser('archive',help='Archive a file or directory')
-        archive_parser.add_argument('source', nargs='+',
+        archive_parser.add_argument('source', nargs=1,
                                     help='File or directory to archive')        
         group = archive_parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store',
@@ -202,7 +271,7 @@ class mpo_cli(object):
         archive_parser.add_argument('--prefix','--pre', '-p', required=False, 
                                     action='store',
                                     help='Optional string to prefix archived files with')
-        archive_parser.set_defaults(func=self.mpo.init)
+        archive_parser.set_defaults(func=self.mpo.archive)
 
         #restore
         restore_parser=subparsers.add_parser('restore',help='Restore a file or directory')
