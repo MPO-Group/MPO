@@ -124,7 +124,7 @@ class mpo_methods(object):
         elif filter=='raw':
             output=result
         elif filter=='text':
-            output=result .text           
+            output=result.text           
         else:
             output=result.json()
 
@@ -251,6 +251,25 @@ class mpo_methods(object):
         r=self.post(self.COMMENT_RT,objID=object,data={'content':str(comment)})
         return r
 
+    def get_wid(self, cid):
+#        print("get_wid %s"%cid, file=sys.stderr)
+        self.filter='id'    
+        res = self.get("%s?alias=%s"%(self.WORKFLOW_RT, cid[0]))
+#        if self.debug>0:
+#        print("get_wid returning %s"%res[0],file=sys.stderr)        
+        return res[0]
+
+    def get_cid(self, wid):
+#        print('get_cid',wid[0],file=sys.stderr)
+        self.filter='json'
+        res = self.get("%s/%s/alias"%(self.WORKFLOW_RT, wid[0],))
+        ans = res[u'alias']
+#        print (ans, file=sys.stderr)
+        
+        if self.debug>0:
+            print("get_cid returning %s"%ans,file=sys.stderr)        
+        return ans
+
 
     def search(self,route,params,**kwargs):
         """Find objects by query. An supermethod of GET.
@@ -267,17 +286,32 @@ class mpo_methods(object):
         return r
 
 
-    def archive(self, wid=None, cid=None, prefix=None, *files, **kw):
-        """
-       if cid != None :
+    def archive_file(self, cid, prefix, name):
+ #       print("archive_file", cid, prefix, name, file=sys.stderr)
+        ans = "rsync://%s/"%(self.archive_host,)
+        if self.archive_prefix:
+            ans = "%s/%s/"%(ans, self.archive_prefix)
+        ans = "%s%s/"%(ans, cid,)
+        if prefix:
+            ans = "%s/%s/"%(ans, prefix,)
+        ans = "%s%s/%s"%(ans, cid, name,)
+#        print("archive_file returning '%s'"%(ans,), file=sys.stderr)
+        return ans
+
+    def archive(self, prefix=None, workflow_id=None, composite_id=None, source=None, *arg,  **kw):
+#        print('archive', workflow_id, composite_id, source, file=sys.stderr)        
+        if composite_id != None :
             try:
-                wid=self.get_wid(cid)
+#                print('about to call get_wid', workflow_id, composite_id, file=sys.stderr)
+                wid=self.get_wid(composite_id)
+                cid=composite_id[0]
             except:
+#                print("error tring to get_wid", file=sys.stderr)
                 # deal with error workflow not found
                 pass
-        elif wid != None :
+        elif workflow_id != None :
             try:
-                cid = self.get_cid(wid)
+                cid = self.get_cid(workflow_id)
             except:
                 # deal with error workflow not found
                 pass
@@ -285,12 +319,13 @@ class mpo_methods(object):
             # deal with error must specify 1 of them
             pass
 
-        for f in files:
-
-            self.archive_file(cid, f)
-        """
-        pass
-
+        url = None
+        if cid :
+            try:
+                url = self.archive_file(cid, prefix, source[0])
+            except Exception,e:
+                print("error archiving file %s to %s\nError is %s"%(source[0],cid,e,), file=sys.stderr)
+        return url
 
 
 class mpo_cli(object):
@@ -414,7 +449,7 @@ class mpo_cli(object):
         archive_parser.add_argument('--prefix','--pre', '-p', required=False, 
                                     action='store',
                                     help='Optional string to prefix archived files with')
-        archive_parser.set_defaults(func=self.mpo.test)
+        archive_parser.set_defaults(func=self.mpo.archive)
 
         #restore
         restore_parser=subparsers.add_parser('restore',help='Restore a file or directory')
@@ -459,7 +494,7 @@ if __name__ == '__main__':
 
     mpo_version    = os.getenv('MPO_VERSION','v0')
     mpo_api_url    = os.getenv('MPO_HOST', 'https://localhost:8080/') #API_URL
-    mpo_cert       = os.getenv('MPO_AUTH', '~/.mpo/mpo_cert')
+    mpo_cert       = os.getenv('MPO_AUTH', '~/.mpo/mpo_cert.pem')
     archive_host   = os.getenv('MPO_ARCHIVE_HOST', 'psfcstor1.psfc.mit.edu')
     archive_user   = os.getenv('MPO_ARCHIVE_USER', 'psfcmpo')
     archive_key    = os.getenv('MPO_ARCHIVE_KEY', '~/.mporsync/id_rsa')
