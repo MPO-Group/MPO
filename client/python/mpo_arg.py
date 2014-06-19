@@ -67,12 +67,13 @@ class mpo_methods(object):
                  user='noone',password='pass',cert='cert', 
                  archive_host='psfcstor1.psfc.mit.edu', 
                  archive_user='psfcmpo', archive_key=None, 
-                 archive_prefix=None, debug=True):
+                 archive_prefix=None, debug=False,filter=False):
     
         self.debug=debug
+        self.filter=filter
         self.user=user
         self.password=password
-        self.version = version
+        self.version=version
         self.cert=cert
         self.archive_host=archive_host 
         self.archive_user=archive_user
@@ -96,25 +97,72 @@ class mpo_methods(object):
         print('with route', route)
         return
 
+    
+    def format(self,result,filter='id'):
+        """
+        Routine to handle reformatting of responses from submethods. It is aware of the
+        internal format returned.
+        """
 
-    def get(self,params={},route="",**kwargs):
+        #check that result is a request object.
+        # if isinstance(result,requests.models.Response):
+        
+        if filter=='id':
+            output=[]
+            if isinstance(result.json(),list):
+                print("Caution, response format of 'id' used when result is a list.",file=sys.stderr)
+                print("Returning list of ID's",file=sys.stderr)
+                for r in result.json():
+                    output.append(str(r[self.ID]))
+            else:
+                if result.json().has_key(self.ID):
+                    output=result.json()[self.ID]
+        elif filter=='json':
+            output=result.json()
+        elif filter=='pretty':
+            output=json.dumps(result.json(),separators=(',', ':'),indent=4)
+        elif filter=='raw':
+            output=result
+        elif filter=='text':
+            output=result .text           
+        else:
+            output=result.json()
+
+        return output
+
+    def get(self,route="",params={},verbose=False,**kwargs):
+        import re
         """GET a resource from the MPO API server.
 
         Keyword arguments:
-        params -- python dictionary
+        params -- python dictionary or a list of tuples
         route -- API route for resource
         """
         #if parameters are present, this is a search
         #requests.py reconstructs the url with the parameters appended 
         #in the "?param=val" http syntax
         #JCW check on the params syntax for requests
+        #check for dict and str instances, requests expects a dict
+
 
         url=self.api_url+route
-        if self.debug:
+        if self.debug or verbose:
             print('mpo_GET',url,params,kwargs,file=sys.stderr)
 
+                    
+        if isinstance(params,str): #string repr of a dict
+            datadict=ast.literal_eval(params)
+        elif isinstance(params,dict):
+            datadict=params
+        elif isinstance(params,list): #list of key=value strings
+            datadict=dict(re.findall(r'(\S+)=(".*?"|\S+)', ' '.join(params) ))
+        else:
+            #throw error
+            datadict={}
+
+        
         try:
-            r = requests.get(url,params=params,
+            r = requests.get(url,params=datadict,
                              headers=self.GETheaders,**self.requestargs)
         except requests.exceptions.ConnectionError,err:
             #something standard here to be nice to calling routine
@@ -123,6 +171,12 @@ class mpo_methods(object):
             print(" ",file=sys.stderr)
             return 1
 
+        if self.debug or verbose:
+            print('mpo_GET response',r.url,r.status_code,file=sys.stderr)
+
+        if self.filter:
+            r=self.format(r,self.filter)
+             
         return r
 
 
@@ -182,8 +236,9 @@ class mpo_methods(object):
         if r.status_code!=200:
             return r.status_code, r.text
         else:
+            if self.filter:
+                r=self.format(r,self.filter)
             return r
-
 
     def comment(self,object,comment,**kwargs):
         """Takes a returned record and adds a comment to it.
@@ -194,6 +249,21 @@ class mpo_methods(object):
             return -1
             
         r=self.post(self.COMMENT_RT,objID=object,data={'content':str(comment)})
+        return r
+
+
+    def search(self,route,params,**kwargs):
+        """Find objects by query. An supermethod of GET.
+        Presently, identical to 'get' but can be generalized.
+        
+        Keyword arguments:
+        params -- python dictionary
+        route -- API route for resource
+        """
+        #Presently, route is specified but search syntax should be developed.
+        #eventually, some specialized target route for searching would be used.
+
+        r=self.get(route,params) # ,params=ast.literal_eval(params))
         return r
 
 
@@ -238,7 +308,7 @@ class mpo_cli(object):
                  archive_user='psfcmpo', archive_key=None, 
                  archive_prefix=None):
     
-        self.debug=True
+        self.debug=False
         self.api_url=api_url
         self.user=user
         self.password=password
@@ -250,24 +320,31 @@ class mpo_cli(object):
         self.archive_prefix=archive_prefix
 
         #initialize foreign methods here
-        self.mpo=mpo_methods(api_url,version,debug=True,cert=mpo_cert)
+        self.mpo=mpo_methods(api_url,version,debug=self.debug,cert=mpo_cert)
         
     def type_uuid(self,uuid):
         if not isinstance(uuid,str):
             msg = "%r is not a valid uuid" % uuid
             raise argparse.ArgumentTypeError(msg)
         return uuid
-    
+
+
     def cli(self):
 
-        parser = argparse.ArgumentParser(description='MPO Command line API')
+        parser = argparse.ArgumentParser(description='MPO Command line API',
+                                         epilog="""Metadata Provenance Ontology project""")
 
 	#note that arguments will be available in functions as arg.var
 
         #global mpo options
         parser.add_argument('--user','-u',action='store',help='''Specify user.''',default=self.user)
-        parser.add_argument('--pass','-p',action='store',help='''Specify password.''',default=self.password)
-
+        parser.add_argument('--pass','-p',action='store',help='''Specify password.''',
+                            default=self.password)
+        parser.add_argument('--format','-f',action='store',help='Set the format of the response.',
+                            choices=['id','raw','text','json','pretty'], default='id') #case insensitive?
+        parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
+                            default=False)
+                
         #method options
         subparsers = parser.add_subparsers(help='commands')
 
@@ -276,7 +353,8 @@ class mpo_cli(object):
            #add positional argument which will be passed to func 'route' in 'Namespace' named tuple
         get_parser.add_argument('-r','--route',action='store',help='Route of resource to query')
            #add keyword argument passed to func as 'params'
-        get_parser.add_argument('-p','--params',action='store',help='Query arguments as {key:value,key2:value2}')
+        get_parser.add_argument('-p','--params',action='store',nargs='*',
+                                help='Query arguments as {key:value,key2:value2}')
         get_parser.set_defaults(func=self.mpo.get)
         
         #post
@@ -314,6 +392,15 @@ class mpo_cli(object):
         #meta
         meta_parser=subparsers.add_parser('meta',help='Add an action to a workflow.')
         meta_parser.set_defaults(func=self.mpo.test)
+
+
+        #search
+        search_parser=subparsers.add_parser('search',help='SEARCH the MPO store')
+           #add positional argument which will be passed to func 'route' in 'Namespace' named tuple
+        search_parser.add_argument('-r','--route',action='store',help='Route of resource to query')
+           #add keyword argument passed to func as 'params'
+        search_parser.add_argument('-p','--params',action='store',help='Query arguments as {key:value,key2:value2}')
+        search_parser.set_defaults(func=self.mpo.search)
 
         #archive
         archive_parser=subparsers.add_parser('archive',help='Archive a file or directory')
@@ -358,7 +445,12 @@ class mpo_cli(object):
         kwargs=copy.deepcopy(args.__dict__)
         # strip out 'func' method
         del(kwargs['func'])
+        if self.debug:
+            print('args',str(args.__dict__))
+
         r=args.func(**kwargs)
+        if kwargs.has_key('format'):
+            r=self.mpo.format(r,filter=kwargs['format'])
         return r
 
 ####main routine
@@ -378,4 +470,5 @@ if __name__ == '__main__':
                     archive_key=archive_key, archive_prefix=archive_prefix, 
                     mpo_cert=mpo_cert)    
     result=cli_app.cli()
-    print(json.dumps(result.json(),separators=(',', ':'),indent=4))
+#    print(json.dumps(result.json(),separators=(',', ':'),indent=4))
+    print(result)
