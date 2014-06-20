@@ -160,16 +160,10 @@ class mpo_methods(object):
             #throw error
             datadict={}
 
-        
-        try:
-            r = requests.get(url,params=datadict,
+
+        r = requests.get(url,params=datadict,
                              headers=self.GETheaders,**self.requestargs)
-        except requests.exceptions.ConnectionError,err:
-            #something standard here to be nice to calling routine
-            print("ERROR: Could not connect to server, "+url,file=sys.stderr)
-            sys.stderr.write('MPO ERROR: %s\n' % str(err))
-            print(" ",file=sys.stderr)
-            return 1
+        r.raise_for_status()
 
         if self.debug or verbose:
             print('mpo_GET response',r.url,r.status_code,file=sys.stderr)
@@ -252,19 +246,14 @@ class mpo_methods(object):
         return r
 
     def get_wid(self, cid):
-#        print("get_wid %s"%cid, file=sys.stderr)
         self.filter='id'    
         res = self.get("%s?alias=%s"%(self.WORKFLOW_RT, cid[0]))
-#        if self.debug>0:
-#        print("get_wid returning %s"%res[0],file=sys.stderr)        
         return res[0]
 
     def get_cid(self, wid):
-#        print('get_cid',wid[0],file=sys.stderr)
         self.filter='json'
         res = self.get("%s/%s/alias"%(self.WORKFLOW_RT, wid[0],))
         ans = res[u'alias']
-#        print (ans, file=sys.stderr)
         
         if self.debug>0:
             print("get_cid returning %s"%ans,file=sys.stderr)        
@@ -312,46 +301,58 @@ class mpo_methods(object):
         if prefix:
             ans = "%s/%s/"%(ans, prefix,)
         ans = "%s%s"%(ans,cid,)
-        print("making ssh command")
         cmd=" ssh  -i %s %s@%s mkdir -p %s"%(self.archive_key,self.archive_user,self.archive_host,ans,)
-        print("archive_file about to '%s'"%(cmd,), file=sys.stderr)
         self.shell(cmd)
         destspec="%s/%s"%(ans,destspec,)
-        cmd="rsync -av -e \"ssh -i %s\" %s %s@%s:%s"%(self.archive_key,name,self.archive_user,self.archive_host,destspec,)
+        cmd="rsync -av -e \"ssh -i %s\" %s %s@%s:%s"%(self.archive_key,
+                                                      name,
+                                                      self.archive_user,
+                                                      self.archive_host,
+                                                      destspec,)
         print("archive_file about to '%s'"%(cmd,), file=sys.stderr)
         self.shell(cmd)
         ans = "rsync://%s/%s"%(self.archive_host,destspec)
-#        print("archive_file returning '%s'"%(ans,), file=sys.stderr)
         return ans
 
     def archive(self, prefix=None, workflow_id=None, composite_id=None, source=None, *arg,  **kw):
         print('archive', workflow_id, composite_id, source, file=sys.stderr)        
         if composite_id != None :
-            try:
-#                print('about to call get_wid', workflow_id, composite_id, file=sys.stderr)
-                wid=self.get_wid(composite_id)
-                cid=composite_id[0]
-            except:
-#                print("error tring to get_wid", file=sys.stderr)
-                # deal with error workflow not found
-                pass
+            wid=self.get_wid(composite_id)
+            cid=composite_id[0]
         elif workflow_id != None :
-            try:
-                cid = self.get_cid(workflow_id)
-            except:
-                # deal with error workflow not found
-                pass
+            cid = self.get_cid(workflow_id)
         else:
-            # deal with error must specify 1 of them
-            pass
-
-        url = None
-        if cid :
-            try:
-                url = self.archive_file(cid, prefix, source[0])
-            except Exception,e:
-                print("error archiving file %s to %s\nError is %s"%(source[0],cid,e,), file=sys.stderr)
+            raise Execption("one of workflow_id or composite_id must be specified")
+        url = self.archive_file(cid, prefix, source[0])
         return url
+
+    def ls_archive(self, cid, prefix, files):
+        path = ""
+        if self.archive_prefix:
+            path=self.archive_prefix
+        if prefix:
+            path="%s%s" %(path, prefix)
+        path="%s%s"%(path,cid,)
+        paths = ""
+        for f in files:
+            paths+="%s/%s "%(path, f)
+        cmd = "ssh -i %s %s@%s ls -Rl %s"%(self.archive_key,self.archive_user,self.archive_host, paths,)
+        print ("about to execute ", cmd, file=sys.stderr)
+        ans = self.shell(cmd)
+        return ans
+
+    def ls(self, prefix=None, workflow_id=None, composite_id=None, files=None, *arg,  **kw):
+        print('ls', workflow_id, composite_id, files, file=sys.stderr)        
+        if composite_id != None :
+            wid=self.get_wid(composite_id)
+            cid=composite_id[0]
+        elif workflow_id != None :
+            cid = self.get_cid(workflow_id)
+        else:
+            raise Execption("one of workflow_id or composite_id must be specified")
+        
+        answer = self.ls_archive(cid, prefix, files)
+        return answer
 
 
 class mpo_cli(object):
@@ -497,7 +498,7 @@ class mpo_cli(object):
                            help='Composite ID of the workflow this data is part of')
         ls_parser.add_argument('files', nargs='*',
                                     help='Optional name of file(s) or directories to list')
-        ls_parser.set_defaults(func=self.mpo.test)
+        ls_parser.set_defaults(func=self.mpo.ls)
 
         #print parser.parse_args(['-a', '-bval', '-c', '3'])
         # here we handle global arguments
