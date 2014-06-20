@@ -285,21 +285,47 @@ class mpo_methods(object):
         r=self.get(route,params) # ,params=ast.literal_eval(params))
         return r
 
+    def shell(self,cmd):
+        import subprocess
+        import sys
+        retcode = subprocess.call(cmd,shell=True)
+        if retcode != 0:
+            raise Exception("Error Executing command %s - returned %d"%(cmd,retcode,))
 
     def archive_file(self, cid, prefix, name):
- #       print("archive_file", cid, prefix, name, file=sys.stderr)
-        ans = "rsync://%s/"%(self.archive_host,)
+        import os
+        print("archive_file", cid, prefix, name, file=sys.stderr)
+        destspec=None
+        if name:
+            if os.path.isfile(name):
+                if os.access(name, os.R_OK):
+                    destspec=name
+            elif os.path.isdir(name):
+                if os.access(name, os.R_OK):
+                    if os.access(name, os.X_OK):
+                        destspec=name
+        if not destspec:
+            raise Exception("Source not specified or not readable - can not archive")
+        ans=""
         if self.archive_prefix:
-            ans = "%s/%s/"%(ans, self.archive_prefix)
-        ans = "%s%s/"%(ans, cid,)
+            ans = "%s/"%(self.archive_prefix,)
         if prefix:
             ans = "%s/%s/"%(ans, prefix,)
-        ans = "%s%s/%s"%(ans, cid, name,)
+        ans = "%s%s"%(ans,cid,)
+        print("making ssh command")
+        cmd=" ssh  -i %s %s@%s mkdir -p %s"%(self.archive_key,self.archive_user,self.archive_host,ans,)
+        print("archive_file about to '%s'"%(cmd,), file=sys.stderr)
+        self.shell(cmd)
+        destspec="%s/%s"%(ans,destspec,)
+        cmd="rsync -av -e \"ssh -i %s\" %s %s@%s:%s"%(self.archive_key,name,self.archive_user,self.archive_host,destspec,)
+        print("archive_file about to '%s'"%(cmd,), file=sys.stderr)
+        self.shell(cmd)
+        ans = "rsync://%s/%s"%(self.archive_host,destspec)
 #        print("archive_file returning '%s'"%(ans,), file=sys.stderr)
         return ans
 
     def archive(self, prefix=None, workflow_id=None, composite_id=None, source=None, *arg,  **kw):
-#        print('archive', workflow_id, composite_id, source, file=sys.stderr)        
+        print('archive', workflow_id, composite_id, source, file=sys.stderr)        
         if composite_id != None :
             try:
 #                print('about to call get_wid', workflow_id, composite_id, file=sys.stderr)
@@ -355,7 +381,7 @@ class mpo_cli(object):
         self.archive_prefix=archive_prefix
 
         #initialize foreign methods here
-        self.mpo=mpo_methods(api_url,version,debug=self.debug,cert=mpo_cert)
+        self.mpo=mpo_methods(api_url,version,debug=self.debug,cert=mpo_cert,archive_key=archive_key)
         
     def type_uuid(self,uuid):
         if not isinstance(uuid,str):
