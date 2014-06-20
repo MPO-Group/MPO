@@ -26,6 +26,11 @@ from urlparse import urlparse
 import copy
 import argparse
 
+class shell_exception(Exception):
+    def __init__(self, status, *args, **kwargs):
+        self.return_status=status
+        Exception.__init__(self, *args, **kwargs)
+
 #Developers note: 
 #all print statements except those in mpo_cli.storeresult should go to sys.stderr
 #Non-standard dependencies: requests.py
@@ -279,7 +284,7 @@ class mpo_methods(object):
         import sys
         retcode = subprocess.call(cmd,shell=True)
         if retcode != 0:
-            raise Exception("Error Executing command %s - returned %d"%(cmd,retcode,))
+            raise shell_exception(retcode, "Error Executing command %s - returned %d"%(cmd,retcode,))
 
     def archive_file(self, cid, prefix, name):
         import os
@@ -338,7 +343,12 @@ class mpo_methods(object):
             paths+="%s/%s "%(path, f)
         cmd = "ssh -i %s %s@%s ls -Rl %s"%(self.archive_key,self.archive_user,self.archive_host, paths,)
         print ("about to execute ", cmd, file=sys.stderr)
-        ans = self.shell(cmd)
+        try:
+            ans = self.shell(cmd)
+        except shell_exception,e:
+            ans=None
+            if e.return_status !=2:
+                raise
         return ans
 
     def ls(self, prefix=None, workflow_id=None, composite_id=None, files=None, *arg,  **kw):
