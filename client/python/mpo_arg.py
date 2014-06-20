@@ -354,6 +354,31 @@ class mpo_methods(object):
         answer = self.ls_archive(cid, prefix, files)
         return answer
 
+    def restore_archive(self, cid, prefix, filename):
+        path = ""
+        if self.archive_prefix:
+            path=self.archive_prefix
+        if prefix:
+            path="%s%s" %(path, prefix)
+        path="%s%s/%s"%(path,cid,filename,)
+        cmd = "rsync -av  -e \"ssh  -i %s\" %s@%s:%s ."%(self.archive_key, self.archive_user, self.archive_host, path,)
+        print ("about to execute ", cmd, file=sys.stderr)
+        ans = self.shell(cmd)
+        return ans
+
+    def restore(self, prefix=None, workflow_id=None, composite_id=None, filename=None, *arg,  **kw):
+        print('restore', workflow_id, composite_id, filename, file=sys.stderr)        
+        if composite_id != None :
+            wid=self.get_wid(composite_id)
+            cid=composite_id[0]
+        elif workflow_id != None :
+            cid = self.get_cid(workflow_id)
+        else:
+            raise Execption("one of workflow_id or composite_id must be specified")
+        
+        answer = self.restore_archive(cid, prefix, filename[0])
+        return answer
+
 
 class mpo_cli(object):
     """
@@ -485,9 +510,9 @@ class mpo_cli(object):
                            help='Workflow ID of the workflow this data is part of')
         group.add_argument('--composite_id','--cid', '-c', nargs=1, action='store',
                            help='Composite ID of the workflow this data is part of')
-        restore_parser.add_argument('files', nargs='*',
+        restore_parser.add_argument('filename', nargs=1,
                                     help='Optional name of file or directory to restore')
-        restore_parser.set_defaults(func=self.mpo.test)
+        restore_parser.set_defaults(func=self.mpo.restore)
 
         #ls
         ls_parser=subparsers.add_parser('ls',help='list file(s) or directories')
