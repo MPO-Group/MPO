@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from flask import Flask, render_template, request, jsonify, redirect, Response
+from flask import Flask, render_template, request, jsonify, redirect, Response, make_response
 import json
 import db as rdb
 from authentication import get_user_dn
@@ -194,6 +194,13 @@ def workflow(id=None):
 			r = rdb.getWorkflow({'uid':id},dn)
 		else:
 			r = rdb.getWorkflow(request.args,dn)
+                if apidebug:
+                    print ('APIDEBUG: workflow returning "%s" len %d'% (r,len(r),))
+                if len(r) == 2:
+			r = make_response(r,404)
+        if apidebug:
+                print ('APIDEBUG: workflow %s'% (r,) )
+
 	return r
 
 
@@ -210,6 +217,8 @@ def getWorkflowCompositeID(id):
 	dn=get_user_dn(request)
 	if request.method == 'GET':
 		r = rdb.getWorkflowCompositeID(id)
+        if apidebug:
+                print ('APIDEBUG: ALIAS %s'% r )
 	return r
 
 

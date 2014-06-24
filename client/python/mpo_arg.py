@@ -169,7 +169,6 @@ class mpo_methods(object):
         r = requests.get(url,params=datadict,
                              headers=self.GETheaders,**self.requestargs)
         r.raise_for_status()
-
         if self.debug or verbose:
             print('mpo_GET response',r.url,r.status_code,file=sys.stderr)
 
@@ -288,7 +287,8 @@ class mpo_methods(object):
 
     def archive_file(self, cid, prefix, name):
         import os
-        print("archive_file", cid, prefix, name, file=sys.stderr)
+        if self.debug:
+            print("archive_file", cid, prefix, name, file=sys.stderr)
         destspec=None
         if name:
             if os.path.isfile(name):
@@ -314,13 +314,15 @@ class mpo_methods(object):
                                                       self.archive_user,
                                                       self.archive_host,
                                                       destspec,)
-        print("archive_file about to '%s'"%(cmd,), file=sys.stderr)
+        if self.debug:
+            print("archive_file about to '%s'"%(cmd,), file=sys.stderr)
         self.shell(cmd)
         ans = "rsync://%s/%s"%(self.archive_host,destspec)
         return ans
 
     def archive(self, prefix=None, workflow_id=None, composite_id=None, source=None, *arg,  **kw):
-        print('archive', workflow_id, composite_id, source, file=sys.stderr)        
+        if self.debug:
+            print('archive', workflow_id, composite_id, source, file=sys.stderr)        
         if composite_id != None :
             wid=self.get_wid(composite_id)
             cid=composite_id[0]
@@ -342,7 +344,8 @@ class mpo_methods(object):
         for f in files:
             paths+="%s/%s "%(path, f)
         cmd = "ssh -i %s %s@%s ls -Rl %s"%(self.archive_key,self.archive_user,self.archive_host, paths,)
-        print ("about to execute ", cmd, file=sys.stderr)
+        if self.debug:
+            print ("about to execute ", cmd, file=sys.stderr)
         try:
             ans = self.shell(cmd)
         except shell_exception,e:
@@ -352,7 +355,8 @@ class mpo_methods(object):
         return ans
 
     def ls(self, prefix=None, workflow_id=None, composite_id=None, files=None, *arg,  **kw):
-        print('ls', workflow_id, composite_id, files, file=sys.stderr)        
+        if self.debug:
+            print('ls', workflow_id, composite_id, files, file=sys.stderr)        
         if composite_id != None :
             wid=self.get_wid(composite_id)
             cid=composite_id[0]
@@ -372,12 +376,15 @@ class mpo_methods(object):
             path="%s%s" %(path, prefix)
         path="%s%s/%s"%(path,cid,filename,)
         cmd = "rsync -av  -e \"ssh  -i %s\" %s@%s:%s ."%(self.archive_key, self.archive_user, self.archive_host, path,)
-        print ("about to execute ", cmd, file=sys.stderr)
+        if self.debug:
+            print ("about to execute ", cmd, file=sys.stderr)
+
         ans = self.shell(cmd)
         return ans
 
     def restore(self, prefix=None, workflow_id=None, composite_id=None, filename=None, *arg,  **kw):
-        print('restore', workflow_id, composite_id, filename, file=sys.stderr)        
+        if self.debug:
+            print('restore', workflow_id, composite_id, filename, file=sys.stderr)        
         if composite_id != None :
             wid=self.get_wid(composite_id)
             cid=composite_id[0]
@@ -545,7 +552,11 @@ class mpo_cli(object):
         if self.debug:
             print('args',str(args.__dict__))
 
-        r=args.func(**kwargs)
+	try:
+            r=args.func(**kwargs)
+	except Exception,e:
+	    print("error executing command\n%s"%e, file=sys.stderr)
+	    return 0
         if kwargs.has_key('format'):
             r=self.mpo.format(r,filter=kwargs['format'])
         return r
