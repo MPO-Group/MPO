@@ -552,11 +552,11 @@ class mpo_cli(object):
         if self.debug:
             print('args',str(args.__dict__))
 
-    try:
+        try:
             r=args.func(**kwargs)
-    except Exception,e:
-        print("error executing command\n%s"%e, file=sys.stderr)
-        return 0
+        except Exception,e:
+            print("error executing command\n%s"%e, file=sys.stderr)
+            return 0
         if kwargs.has_key('format'):
             r=self.mpo.format(r,filter=kwargs['format'])
         return r
