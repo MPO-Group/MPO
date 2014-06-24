@@ -31,13 +31,13 @@ class shell_exception(Exception):
         self.return_status=status
         Exception.__init__(self, *args, **kwargs)
 
-#Developers note: 
+#Developers note:
 #all print statements except those in mpo_cli.storeresult should go to sys.stderr
 #Non-standard dependencies: requests.py
 class mpo_methods(object):
     """
     Class of RESTful primitives. I/O is through stdin/stdout.
-    Implementation of MPO client side API as described at 
+    Implementation of MPO client side API as described at
     http://www.psfc.mit.edu/mpo/
 
     Functional invocation:
@@ -49,14 +49,14 @@ class mpo_methods(object):
     #Need error handling
     #By giving each method **kwargs in its definition, they will accepts
     #arbitrary sets of keywords arguments that they may or may not act upon.
-    #kwargs in body will only contain keyword pars that were not matched in the 
+    #kwargs in body will only contain keyword pars that were not matched in the
     #function call
     POSTheaders = {'content-type': 'application/json'}
     GETheaders= {'ACCEPT': 'application/json'}
     ID='uid'
     WORKID='work_uid'
     PARENTID='parent_uid' #field for object id to which comments and metadata are attached
-    MPO_PORT='8080' #not used yet            
+    MPO_PORT='8080' #not used yet
     WORKID_QRY='workid' #query argument for connection table
 
     MPO_VERSION='v0'
@@ -69,26 +69,26 @@ class mpo_methods(object):
 
 
     def __init__(self,api_url='https://localhost:8080',version='v0',
-                 user='noone',password='pass',cert='cert', 
-                 archive_host='psfcstor1.psfc.mit.edu', 
-                 archive_user='psfcmpo', archive_key=None, 
+                 user='noone',password='pass',cert='cert',
+                 archive_host='psfcstor1.psfc.mit.edu',
+                 archive_user='psfcmpo', archive_key=None,
                  archive_prefix=None, debug=False,filter=False):
-    
+
         self.debug=debug
         self.filter=filter
         self.user=user
         self.password=password
         self.version=version
         self.cert=cert
-        self.archive_host=archive_host 
+        self.archive_host=archive_host
         self.archive_user=archive_user
-        self.archive_key=archive_key 
+        self.archive_key=archive_key
         self.archive_prefix=archive_prefix
         o=urlparse(api_url)
          #makes a clean url ending in trailing slash
         self.api_url=o.scheme+"://"+o.netloc+o.path+'/'+self.version+'/'
         self.requestargs={'cert':self.cert,'verify':False}
-        
+
         if self.debug:
 #            print('#MPO user',self.get_user())
 #            print('#MPO server',self.get_server())
@@ -102,7 +102,7 @@ class mpo_methods(object):
         print('with route', route)
         return
 
-    
+
     def format(self,result,filter='id'):
         """
         Routine to handle reformatting of responses from submethods. It is aware of the
@@ -111,7 +111,7 @@ class mpo_methods(object):
 
         #check that result is a request object.
         # if isinstance(result,requests.models.Response):
-        
+
         if filter=='id':
             output=[]
             if isinstance(result.json(),list):
@@ -129,7 +129,7 @@ class mpo_methods(object):
         elif filter=='raw':
             output=result
         elif filter=='text':
-            output=result.text           
+            output=result.text
         else:
             output=result.json()
 
@@ -144,7 +144,7 @@ class mpo_methods(object):
         route -- API route for resource
         """
         #if parameters are present, this is a search
-        #requests.py reconstructs the url with the parameters appended 
+        #requests.py reconstructs the url with the parameters appended
         #in the "?param=val" http syntax
         #JCW check on the params syntax for requests
         #check for dict and str instances, requests expects a dict
@@ -154,7 +154,7 @@ class mpo_methods(object):
         if self.debug or verbose:
             print('mpo_GET',url,params,kwargs,file=sys.stderr)
 
-                    
+
         if isinstance(params,str): #string repr of a dict
             datadict=ast.literal_eval(params)
         elif isinstance(params,dict):
@@ -174,14 +174,14 @@ class mpo_methods(object):
 
         if self.filter:
             r=self.format(r,self.filter)
-             
+
         return r
 
 
     def post(self,route="",workflowID=None,objID=None,data=None,**kwargs):
         """POST a messsage to an MPO route.
-        Used by all methods that create objects in an MPO workflow. 
-        
+        Used by all methods that create objects in an MPO workflow.
+
         Keyword arguments:
         workflowID -- the workflow being added to
         objID -- the object we are making a connection from
@@ -199,7 +199,7 @@ class mpo_methods(object):
         if route=="":
             #throw error
             return
-        
+
         if isinstance(data,str):
             datadict=ast.literal_eval(data)
         elif isinstance(data,dict):
@@ -207,15 +207,15 @@ class mpo_methods(object):
         else:
             #throw error
             pass
-        
+
         url=self.api_url+route
-        
+
         if self.debug>0:
             print('MPO.POST',url,json.dumps(datadict),file=sys.stderr)
 
         if objID:
             datadict[self.PARENTID]=objID
-            
+
         if workflowID:
             datadict[self.WORKID]=workflowID
 
@@ -245,12 +245,12 @@ class mpo_methods(object):
         if not (isinstance(comment,str) or isinstance(comment,unicode)):
             print('Error in mpo_commment, should be a plain string')
             return -1
-            
+
         r=self.post(self.COMMENT_RT,objID=object,data={'content':str(comment)})
         return r
 
     def get_wid(self, cid):
-        self.filter='id'    
+        self.filter='id'
         res = self.get("%s?alias=%s"%(self.WORKFLOW_RT, cid[0]))
         return res[0]
 
@@ -258,16 +258,16 @@ class mpo_methods(object):
         self.filter='json'
         res = self.get("%s/%s/alias"%(self.WORKFLOW_RT, wid[0],))
         ans = res[u'alias']
-        
+
         if self.debug>0:
-            print("get_cid returning %s"%ans,file=sys.stderr)        
+            print("get_cid returning %s"%ans,file=sys.stderr)
         return ans
 
 
     def search(self,route,params,**kwargs):
         """Find objects by query. An supermethod of GET.
         Presently, identical to 'get' but can be generalized.
-        
+
         Keyword arguments:
         params -- python dictionary
         route -- API route for resource
@@ -322,7 +322,7 @@ class mpo_methods(object):
 
     def archive(self, prefix=None, workflow_id=None, composite_id=None, source=None, *arg,  **kw):
         if self.debug:
-            print('archive', workflow_id, composite_id, source, file=sys.stderr)        
+            print('archive', workflow_id, composite_id, source, file=sys.stderr)
         if composite_id != None :
             wid=self.get_wid(composite_id)
             cid=composite_id[0]
@@ -356,7 +356,7 @@ class mpo_methods(object):
 
     def ls(self, prefix=None, workflow_id=None, composite_id=None, files=None, *arg,  **kw):
         if self.debug:
-            print('ls', workflow_id, composite_id, files, file=sys.stderr)        
+            print('ls', workflow_id, composite_id, files, file=sys.stderr)
         if composite_id != None :
             wid=self.get_wid(composite_id)
             cid=composite_id[0]
@@ -364,7 +364,7 @@ class mpo_methods(object):
             cid = self.get_cid(workflow_id)
         else:
             raise Execption("one of workflow_id or composite_id must be specified")
-        
+
         answer = self.ls_archive(cid, prefix, files)
         return answer
 
@@ -384,7 +384,7 @@ class mpo_methods(object):
 
     def restore(self, prefix=None, workflow_id=None, composite_id=None, filename=None, *arg,  **kw):
         if self.debug:
-            print('restore', workflow_id, composite_id, filename, file=sys.stderr)        
+            print('restore', workflow_id, composite_id, filename, file=sys.stderr)
         if composite_id != None :
             wid=self.get_wid(composite_id)
             cid=composite_id[0]
@@ -392,7 +392,7 @@ class mpo_methods(object):
             cid = self.get_cid(workflow_id)
         else:
             raise Execption("one of workflow_id or composite_id must be specified")
-        
+
         answer = self.restore_archive(cid, prefix, filename[0])
         return answer
 
@@ -407,25 +407,25 @@ class mpo_cli(object):
 #import foreign classes for methods here
 
     def __init__(self,api_url='https://localhost:8080',version='v0',
-                 user='noone',password='pass',mpo_cert='', 
-                 archive_host='psfcstor1.psfc.mit.edu', 
-                 archive_user='psfcmpo', archive_key=None, 
+                 user='noone',password='pass',mpo_cert='',
+                 archive_host='psfcstor1.psfc.mit.edu',
+                 archive_user='psfcmpo', archive_key=None,
                  archive_prefix=None):
-    
+
         self.debug=False
         self.api_url=api_url
         self.user=user
         self.password=password
         self.version = version
         self.cert=mpo_cert
-        self.archive_host=archive_host 
+        self.archive_host=archive_host
         self.archive_user=archive_user
-        self.archive_key=archive_key 
+        self.archive_key=archive_key
         self.archive_prefix=archive_prefix
 
         #initialize foreign methods here
         self.mpo=mpo_methods(api_url,version,debug=self.debug,cert=mpo_cert,archive_key=archive_key)
-        
+
     def type_uuid(self,uuid):
         if not isinstance(uuid,str):
             msg = "%r is not a valid uuid" % uuid
@@ -438,7 +438,7 @@ class mpo_cli(object):
         parser = argparse.ArgumentParser(description='MPO Command line API',
                                          epilog="""Metadata Provenance Ontology project""")
 
-	#note that arguments will be available in functions as arg.var
+    #note that arguments will be available in functions as arg.var
 
         #global mpo options
         parser.add_argument('--user','-u',action='store',help='''Specify user.''',default=self.user)
@@ -448,7 +448,7 @@ class mpo_cli(object):
                             choices=['id','raw','text','json','pretty'], default='id') #case insensitive?
         parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
                             default=False)
-                
+
         #method options
         subparsers = parser.add_subparsers(help='commands')
 
@@ -460,7 +460,7 @@ class mpo_cli(object):
         get_parser.add_argument('-p','--params',action='store',nargs='*',
                                 help='Query arguments as {key:value,key2:value2}')
         get_parser.set_defaults(func=self.mpo.get)
-        
+
         #post
         post_parser=subparsers.add_parser('post',help='POST to a route')
         post_parser.add_argument('route',action='store',help='Route of resource to query')
@@ -509,13 +509,13 @@ class mpo_cli(object):
         #archive
         archive_parser=subparsers.add_parser('archive',help='Archive a file or directory')
         archive_parser.add_argument('source', nargs=1,
-                                    help='File or directory to archive')        
+                                    help='File or directory to archive')
         group = archive_parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store',
                            help='Workflow ID of the workflow this data is part of')
         group.add_argument('--composite_id','--cid', '-c',nargs=1, action='store',
                            help='Composite ID of the workflow this data is part of')
-        archive_parser.add_argument('--prefix','--pre', '-p', required=False, 
+        archive_parser.add_argument('--prefix','--pre', '-p', required=False,
                                     action='store',
                                     help='Optional string to prefix archived files with')
         archive_parser.set_defaults(func=self.mpo.archive)
@@ -523,7 +523,7 @@ class mpo_cli(object):
         #restore
         restore_parser=subparsers.add_parser('restore',help='Restore a file or directory')
         group = restore_parser.add_mutually_exclusive_group(required=True)
-        group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store', 
+        group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store',
                            help='Workflow ID of the workflow this data is part of')
         group.add_argument('--composite_id','--cid', '-c', nargs=1, action='store',
                            help='Composite ID of the workflow this data is part of')
@@ -552,11 +552,11 @@ class mpo_cli(object):
         if self.debug:
             print('args',str(args.__dict__))
 
-	try:
+    try:
             r=args.func(**kwargs)
-	except Exception,e:
-	    print("error executing command\n%s"%e, file=sys.stderr)
-	    return 0
+    except Exception,e:
+        print("error executing command\n%s"%e, file=sys.stderr)
+        return 0
         if kwargs.has_key('format'):
             r=self.mpo.format(r,filter=kwargs['format'])
         return r
@@ -573,10 +573,10 @@ if __name__ == '__main__':
     archive_key    = os.getenv('MPO_ARCHIVE_KEY', '~/.mporsync/id_rsa')
     archive_prefix = os.getenv('MPO_ARCHIVE_PREFIX', 'mpo-persistent-store/')
 
-    cli_app=mpo_cli(version=mpo_version, api_url=mpo_api_url, 
-                    archive_host=archive_host, archive_user=archive_user, 
-                    archive_key=archive_key, archive_prefix=archive_prefix, 
-                    mpo_cert=mpo_cert)    
+    cli_app=mpo_cli(version=mpo_version, api_url=mpo_api_url,
+                    archive_host=archive_host, archive_user=archive_user,
+                    archive_key=archive_key, archive_prefix=archive_prefix,
+                    mpo_cert=mpo_cert)
     result=cli_app.cli()
 #    print(json.dumps(result.json(),separators=(',', ':'),indent=4))
     print(result)
