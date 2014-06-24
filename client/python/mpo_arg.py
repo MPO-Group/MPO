@@ -29,7 +29,7 @@ import argparse
 class shell_exception(Exception):
     def __init__(self, status, *args, **kwargs):
         self.return_status=status
-        Exception.__init__(self, *args, **kwargs)
+#        Exception.__init__(self, *args, **kwargs)
 
 #Developers note:
 #all print statements except those in mpo_cli.storeresult should go to sys.stderr
