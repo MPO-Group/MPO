@@ -20,8 +20,8 @@ apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
-	'comment':'comment', 'metadata':'metadata', 
-        'ontology_class':'ontology/class', 
+	'comment':'comment', 'metadata':'metadata',
+        'ontology_class':'ontology/class',
         'ontology_term':'ontology/term',
         'ontology_instance':'ontology/instance',
         'user':'user',
@@ -65,9 +65,9 @@ class ServerSentEvent(object):
     def encode(self):
         if not self.data:
             return ""
-        lines = ["%s: %s" % (v, k) 
+        lines = ["%s: %s" % (v, k)
                  for k, v in self.desc_map.iteritems() if k]
-        
+
         return "%s\n\n" % "\n".join(lines)
 
 subscriptions = []
@@ -83,10 +83,10 @@ def publishgevent(msg = str(time.time())):
     if len(sendsubs)>0:
 	noticefound=True
 
-    def notify(): 
+    def notify():
         for sub in sendsubs[:]:
 	    sub.put(msg)
-	    
+
     if noticefound:
 	gevent.spawn(notify)
 
@@ -142,7 +142,7 @@ def subscribe(): #subscribe returns the gen() function. gen() returns an iterato
 		 print("in gen(): removing subscription")
 	     subscriptions.remove(q)
     # This invokes gen() which returns an iterator that is returned by /subscribe in a Response()
-    # Response() is a WSGI application. Response will send the next message in the iterator/generator 
+    # Response() is a WSGI application. Response will send the next message in the iterator/generator
     # for each http request
     return Response(gen(), mimetype="text/event-stream",headers={'cache-control': 'no-cache',
 								 'connection': 'keep-alive'})
@@ -230,7 +230,7 @@ def dataobject(id=None):
 		else:
 			r = rdb.getRecord('dataobject',request.args)
 	return r
-        
+
 
 @app.route(routes['activity']+'/<id>', methods=['GET'])
 @app.route(routes['activity'], methods=['GET', 'POST'])
@@ -322,11 +322,13 @@ def ontologyTerm(id=None):
 @app.route(routes['ontology_instance'], methods=['GET', 'POST'])
 def ontologyInstance(id=None):
 	dn=get_user_dn(request)
-	result = jsonify(json.loads(request.data),user_dn=dn)
 	if request.method == 'POST':
 		r = rdb.addOntologyInstance(request.data,dn)
  	else:
-		pass
+		if id:
+			r = rdb.getRecord('ontology_instances', {'uid':id}, dn )
+		else:
+			r = rdb.getRecord('ontology_instances', request.args, dn )
 	return r
 
 @app.route(routes['user']+'/<id>', methods=['GET'])
@@ -342,9 +344,9 @@ def user(id=None):
 			r = rdb.getUser( request.args, dn )
 
 	return r
-        
+
 if __name__ == '__main__':
-    #adding debug option here, so we can see what is going on.	
+    #adding debug option here, so we can see what is going on.
     app.debug = False
     #    app.run()
     app.run(host='0.0.0.0', port=8080) #api server
