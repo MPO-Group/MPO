@@ -602,12 +602,16 @@ def addOntologyInstance(json_request,dn):
                 if objs['value'] not in valid:
                         return json.dumps({},cls=MPOSetEncoder)
         # make sure the target corresponds to the path
-        # parent[1][0].ot_guid is the term uid, terms[2] is the type
-        cursor.execute("select oi_guid from ontology_instances where target_guid=%s and term_guid=%s and value=%s",(objs['parent_uid'],parent[1][0].ot_guid,terms[2]))
-        if cursor.fetchone() == None:
-                return json.dumps({},cls=MPOSetEncoder)
+        # parent[1][0].ot_guid is the term uid, terms[2] is the type.
+        # allow for the migration of workflows os do this only if Type exists
+        # i.e. len(terms)>2
+        print len(terms)
+        if len(terms) > 2:
+                cursor.execute("select oi_guid from ontology_instances where target_guid=%s and term_guid=%s and value=%s",(objs['parent_uid'],parent[1][0].ot_guid,terms[2]))
+                if cursor.fetchone() == None:
+                        return json.dumps({},cls=MPOSetEncoder)
         # and finally make sure the instance doesn't already exist.
-        cursor.execute("select oi_guid from ontology_instances where term_guid=%s",(parent[-1][0].ot_guid,))
+        cursor.execute("select oi_guid from ontology_instances where term_guid=%s and target_guid=%s",(parent[-1][0].ot_guid,objs['parent_uid']))
         if cursor.fetchone():
              return json.dumps({},cls=MPOSetEncoder)
         q="insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) values(%s,%s,%s,%s,%s,%s)"
