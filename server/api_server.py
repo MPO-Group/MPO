@@ -308,6 +308,12 @@ def ontologyClass(id=None):
 		pass
 	return result
 
+@app.route(routes['ontology_term']+'/<id>/vocabulary', methods=['GET'])
+@app.route(routes['ontology_term']+'/vocabulary', methods=['GET'])
+def ontologyTermVocabulary(id=None):
+        r = rdb.getOntologyTermDictionary(id)
+        return r
+
 @app.route(routes['ontology_term']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_term'], methods=['GET', 'POST'])
 def ontologyTerm(id=None):
@@ -315,7 +321,10 @@ def ontologyTerm(id=None):
 	if request.method == 'POST':
 		r = rdb.addOntologyTerm(request.data,dn)
  	else:
-		r = rdb.getOntologyTermDictionary(id)
+		if id:
+			r = rdb.getRecord('ontology_terms', {'uid':id}, dn )
+		else:
+			r = rdb.getRecord('ontology_terms', request.args, dn )
 	return r
 
 @app.route(routes['ontology_instance']+'/<id>', methods=['GET'])

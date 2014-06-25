@@ -43,7 +43,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
 	     'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 'user_uid':'u_guid',
 			   'time':'creation_time', 'parent_uid':'parent_guid', 'parent_type':'parent_type'},
 	     'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' },
-             'ontology_term' : {'uid':'ot_guid','name':'name', 'description':'description','parent':'parent_guid','type':'value_type','units':'units','specified':'specified','added_by':'added_by','date_added':'date_added'},
+             'ontology_terms' : {'uid':'ot_guid','name':'name', 'description':'description','parent':'parent_guid','type':'value_type','units':'units','specified':'specified','user_uid':'added_by','date_added':'date_added'},
              'ontology_instances' : {'uid':'oi_guid','parent_uid':'target_guid','value':'value','time':'creation_time','user_uid':'u_guid'}
 	     }
 
@@ -109,7 +109,7 @@ def getRecord(table,queryargs={}, dn=None):
         if table == 'comment' or table == 'metadata':
                  q+=", getWID('"+processArgument(queryargs['parent_uid'])+"') as work_uid "
 		#map user and filter by query
-        s="where a.u_guid=b.uuid"
+        s="where a."+qm['user_uid']+"=b.uuid"
 	for key in query_map[table]:
 		if queryargs.has_key(key):
 			qa=processArgument(queryargs[key])
@@ -633,8 +633,8 @@ def getOntologyTermDictionary(id,queryargs={},dn=None):
 	# conn.cursor will return a cursor object, you can use this cursor to perform queries
 	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
-        qm=query_map['ontology_term']
-        q = "select " + ",".join(query_map['ontology_term'][x] for x in query_map['ontology_term'].keys() if x != 'parent' and x != 'added_by')
+        qm=query_map['ontology_terms']
+        q = "select " + ",".join(query_map['ontology_terms'][x] for x in query_map['ontology_terms'].keys() if x != 'parent' and x != 'user_uid')
         q+=",b.username as added_by from ontology_terms as a, mpousers as b where a.added_by=b.uuid and parent_guid"
 	# fetch the nodes from the database
         if id == None:
