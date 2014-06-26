@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #specify MPO server address. The API will read this value.
 #defaults are used if environment is not set
 if ! [ -n "${MPO_HOST:+x}" ]
