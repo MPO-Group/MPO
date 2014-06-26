@@ -311,7 +311,11 @@ def ontologyClass(id=None):
 @app.route(routes['ontology_term']+'/<id>/vocabulary', methods=['GET'])
 @app.route(routes['ontology_term']+'/vocabulary', methods=['GET'])
 def ontologyTermVocabulary(id=None):
-        r = rdb.getOntologyTermDictionary(id)
+        dn=get_user_dn(request)
+        if id:
+            r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
+        else:
+            r = rdb.getRecord('ontology_terms', {'parent_uid':'None'}, dn )
         return r
 
 @app.route(routes['ontology_term']+'/<id>', methods=['GET'])

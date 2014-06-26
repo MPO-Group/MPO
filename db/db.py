@@ -598,7 +598,7 @@ def addOntologyInstance(json_request,dn):
                         if len(parent[i+1]) != 1:
                                 return json.dumps({},cls=MPOSetEncoder)
         if parent[-1][0].specified:
-                vocab = json.loads(getOntologyTermDictionary(parent[-1][0].ot_guid))
+                vocab = json.loads(getRecord('ontology_terms', {'parent_uid':parent[-1][0].ot_guid}, dn ))
                 #added term has to exist in the controlled vocabulary.
                 valid= tuple(x['name'] for x in vocab)
                 if objs['value'] not in valid:
@@ -628,25 +628,3 @@ def addOntologyInstance(json_request,dn):
 	cursor.close()
 	conn.close()
 	return json.dumps(records,cls=MPOSetEncoder)
-
-def getOntologyTermDictionary(id,queryargs={},dn=None):
-        # get a connection, if a connect cannot be made an exception will be raised here
-	conn = mypool.connect()
-	# conn.cursor will return a cursor object, you can use this cursor to perform queries
-	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
-
-        qm=query_map['ontology_terms']
-        q = "select " + ",".join(query_map['ontology_terms'][x] for x in query_map['ontology_terms'].keys() if x != 'parent' and x != 'user_uid')
-        q+=",b.username as added_by from ontology_terms as a, mpousers as b where a.added_by=b.uuid and parent_guid"
-	# fetch the nodes from the database
-        if id == None:
-                cursor.execute(q+" is null")
-        else:
-                cursor.execute(q+"=%s",(id,))
-	r = cursor.fetchall()
-        print (r)
-	# Close communication with the database
-	cursor.close()
-	conn.close()
-
-        return json.dumps(r,cls=MPOSetEncoder)
