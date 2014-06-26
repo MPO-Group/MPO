@@ -250,17 +250,17 @@ class mpo_methods(object):
         o=urlparse(url)
 
         # get the workflowtype uid
-        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/vocabulary'
         r=self.mpo_get(urlcon,**kwargs)
         for n in json.loads(r.text):
             if n['name'] == 'Workflow':
                 id=n['ot_guid']
-        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id+'/vocabulary'
         r=self.mpo_get(urlcon,**kwargs)
         for n in json.loads(r.text):
             if n['name'] == 'Type':
                 id=n['ot_guid']
-        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id+'/vocabulary'
         r=self.mpo_get(urlcon,**kwargs)
         value = None
         wtypes = ''
@@ -389,7 +389,7 @@ class mpo_methods(object):
                     specified=False
 
         o=urlparse(url)
-        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/vocabulary'
         payload={"term":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
         r=self.mpo_post(urlcon,None,pid,payload,**kwargs)
         return r
