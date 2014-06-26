@@ -113,7 +113,10 @@ def getRecord(table,queryargs={}, dn=None):
 	for key in query_map[table]:
 		if queryargs.has_key(key):
 			qa=processArgument(queryargs[key])
-                        s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
+                        if qa == 'None':
+                                s+=" and "+ "CAST(%s as text) is Null" % (qm[key],)
+                        else:
+                                s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
         if (s): q+=s
 
 	if dbdebug:
