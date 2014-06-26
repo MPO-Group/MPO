@@ -43,7 +43,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
 	     'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 'user_uid':'u_guid',
 			   'time':'creation_time', 'parent_uid':'parent_guid', 'parent_type':'parent_type'},
 	     'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' },
-             'ontology_terms' : {'uid':'ot_guid','name':'name', 'description':'description','parent':'parent_guid','type':'value_type','units':'units','specified':'specified','user_uid':'added_by','date_added':'date_added'},
+             'ontology_terms' : {'uid':'ot_guid','name':'name', 'description':'description','parent_uid':'parent_guid','type':'value_type','units':'units','specified':'specified','user_uid':'added_by','date_added':'date_added'},
              'ontology_instances' : {'uid':'oi_guid','parent_uid':'target_guid','value':'value','time':'creation_time','user_uid':'u_guid'}
 	     }
 
@@ -114,7 +114,6 @@ def getRecord(table,queryargs={}, dn=None):
 		if queryargs.has_key(key):
 			qa=processArgument(queryargs[key])
                         s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
-
         if (s): q+=s
 
 	if dbdebug:
