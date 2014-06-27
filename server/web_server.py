@@ -507,12 +507,12 @@ def ontology(ot_guid=False):
 	    n=0
 	    for i in result:
 		if i['ot_guid']:
-		    result[n]['child']=get_child_terms(i['ot_guid'])
+		    result[n]['child']=get_child_terms(i['uid'])
 		    #tmp_o=result[n]['child']
 		    x=0
 		    for y in result[n]['child']:
-			if y['ot_guid']:
-			    result[n]['child'][x]['child']=get_child_terms(y['ot_guid'])
+			if y['uid']:
+			    result[n]['child'][x]['child']=get_child_terms(y['uid'])
 			x+=1
 		n+=1;
 
@@ -657,12 +657,12 @@ def testfeed():
     """%MPO_API_SERVER
     return(debug_template)
 
-def get_child_terms(ot_guid):
+def get_child_terms(uid):
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
-    req=requests.get("%s/ontology/term/%s/vocabulary"%(API_PREFIX,ot_guid), **certargs)
+    req=requests.get("%s/ontology/term/%s/vocabulary"%(API_PREFIX,uid), **certargs)
 
     if req.text != "[]":
 	return req.json()
