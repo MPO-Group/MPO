@@ -254,12 +254,12 @@ class mpo_methods(object):
         r=self.mpo_get(urlcon,**kwargs)
         for n in json.loads(r.text):
             if n['name'] == 'Workflow':
-                id=n['ot_guid']
+                id=n['uid']
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id+'/vocabulary'
         r=self.mpo_get(urlcon,**kwargs)
         for n in json.loads(r.text):
             if n['name'] == 'Type':
-                id=n['ot_guid']
+                id=n['uid']
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id+'/vocabulary'
         r=self.mpo_get(urlcon,**kwargs)
         value = None
