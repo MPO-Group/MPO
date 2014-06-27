@@ -122,13 +122,13 @@ def index():
 ## need to revisit and create a recursive function to get all child levels of ontology terms
 	n=0
 	for i in ont_result:
-	    if i['ot_guid']:
-		ont_result[n]['child']=get_child_terms(i['ot_guid'])
+	    if i['uid']:
+		ont_result[n]['child']=get_child_terms(i['uid'])
 		#tmp_o=result[n]['child']
 		x=0
 		for y in ont_result[n]['child']:
-		    if y['ot_guid']:
-			ont_result[n]['child'][x]['child']=get_child_terms(y['ot_guid'])
+		    if y['uid']:
+			ont_result[n]['child'][x]['child']=get_child_terms(y['uid'])
 		    x+=1
 	    n+=1;
 
