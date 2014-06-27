@@ -470,14 +470,14 @@ def search():
 	return render_template('search.html')
 
 @app.route('/ontology')
-@app.route('/ontology/<ot_guid>', methods=['GET'])
-def ontology(ot_guid=False):
+@app.route('/ontology/<uid>', methods=['GET'])
+def ontology(uid=False):
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 #    if request.method == 'GET':
-#	if ot_guid:
-#	    req=requests.get("%s/ontology/term/%s"%(API_PREFIX,ot_guid,), **certargs)
+#	if uid:
+#	    req=requests.get("%s/ontology/term/%s"%(API_PREFIX,uid,), **certargs)
 #	    if req.text != "[]":
 #		result=req.text
 #	    else:
@@ -491,8 +491,8 @@ def ontology(ot_guid=False):
 #	    pprint(result)
 #	    return render_template('ontology.html', result=result)
     if request.method == 'GET':
-	if ot_guid:
-	    req=requests.get("%s/ontology/term/%s/vocabulary"%(API_PREFIX,ot_guid,), **certargs)
+	if uid:
+	    req=requests.get("%s/ontology/term/%s/vocabulary"%(API_PREFIX,uid,), **certargs)
 	    if req.text != "[]":
 		result=req.text
 	    else:
@@ -506,7 +506,7 @@ def ontology(ot_guid=False):
 ## need to revisit and create a recursive function to get all child levels of ontology terms
 	    n=0
 	    for i in result:
-		if i['ot_guid']:
+		if i['uid']:
 		    result[n]['child']=get_child_terms(i['uid'])
 		    #tmp_o=result[n]['child']
 		    x=0
