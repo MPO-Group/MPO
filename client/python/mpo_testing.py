@@ -389,10 +389,11 @@ class mpo_methods(object):
                     specified=False
 
         o=urlparse(url)
-        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/vocabulary'
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT
         payload={"term":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
         r=self.mpo_post(urlcon,None,pid,payload,**kwargs)
         return r
+
 
     def mpo_ontology_instance(self,url,target=None,path=None,value=None,*args,**kwargs):
         """Add terms to the ontology instance
