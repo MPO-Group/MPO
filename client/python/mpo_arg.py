@@ -66,6 +66,8 @@ class mpo_methods(object):
     CONNECTION_RT='connection'
     DATAOBJECT_RT='dataobject'
     ACTIVITY_RT=  'activity'
+    ONTOLOGY_TERM_RT = 'ontology/term'
+    ONTOLOGY_INSTANCE_RT = 'ontology/instance'
 
 
     def __init__(self,api_url='https://localhost:8080',version='v0',
@@ -96,12 +98,7 @@ class mpo_methods(object):
         return
 
 
-# define api methods here. All methods must be declared as method(**kwargs).
-    def test(self,route='default',*a,**kw):
-        print('init:',a,kw)
-        print('with route', route)
-        return
-
+### internal methods ###
 
     def format(self,result,filter='id'):
         """
@@ -134,6 +131,13 @@ class mpo_methods(object):
             output=result.json()
 
         return output
+
+# define api methods here. All methods must be declared as method(**kwargs).
+    def test(self,route='default',*a,**kw):
+        print('init:',a,kw)
+        print('with route', route)
+        return
+
 
     def get(self,route="",params={},verbose=False,**kwargs):
         import re
@@ -172,13 +176,13 @@ class mpo_methods(object):
         if self.debug or verbose:
             print('mpo_GET response',r.url,r.status_code,file=sys.stderr)
 
-        if self.filter:
-            r=self.format(r,self.filter)
+#        if self.filter:
+#            r=self.format(r,self.filter)
 
         return r
 
 
-    def post(self,route="",workflowID=None,objID=None,data=None,**kwargs):
+    def post(self,route="",workflowID=None,obj_ID=None,data=None,**kwargs):
         """POST a messsage to an MPO route.
         Used by all methods that create objects in an MPO workflow.
 
@@ -238,7 +242,93 @@ class mpo_methods(object):
                 r=self.format(r,self.filter)
             return r
 
-    def comment(self,object,comment,**kwargs):
+
+    def init(self,name, desc, wtype, **kwargs):
+        """
+        The INIT method starts a workflow.
+        It returns the server response for a new workflow.
+
+        args are:
+        name --
+        desc -- description
+        wtype -- workflow type
+
+        """
+
+     ## get the workflowtype uid
+        #first get ontology term Workflow guid from whole ontology list of terms
+        r=self.get(self.ONTOLOGY_TERM_RT)
+        for n in json.loads(r.text):
+            if n['name'] == 'Workflow':
+                id=n['ot_guid']
+        #second, get record with parent_guid=ot_guid and get its id if it has name='Type'
+        #that get Workflow/Type uuid
+        #JCW This is an incorrect usage of /id route BTW
+        r=self.get(self.ONTOLOGY_TERM_RT+'/'+id)
+        for n in json.loads(r.text):
+            if n['name'] == 'Type':
+                id=n['ot_guid']
+        #third, now get Workflow/Type/"Instances"
+        r=self.get(self.ONTOLOGY_TERM_RT+'/'+id)
+        value = None
+        wtypes = ''  #this is only to record for debugging purposes
+        for n in json.loads(r.text):
+            wtypes += n['name']+' '
+            if n['name'] == wtype:
+                value = wtype
+                break
+        if value == None:
+            print("Unknown workflow type. Must be one of: "+wtypes)
+            value=wtype
+            #sys.exit(2) #replace with exception
+
+        #id is id of parent
+        payload={"name":name,"description":desc,"id":id}
+        r=self.post(self.WORKFLOW_RT,data=payload,**kwargs)
+
+        return r
+
+    
+    def add(self,workflow_ID,parentobj_ID, name='No name', **kwargs):
+        """
+        Add at dataobject to a workflow.
+
+        args are:
+        workflow_ID --
+        parentobj_ID --
+        name --
+        desc -- description
+        uri -- uri for the data object added
+
+        """
+
+        payload={"name":name,"description":desc,"uri":uri}
+
+        return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],payload,**kwargs)
+
+    
+    def step(self,workflow_ID,parentobj_ID,input_objs=None,**kwargs):
+        """
+        For adding actions
+        args:
+        workflow_ID --
+        parentobj_ID --
+        name --
+        desc -- description
+        uri -- uri for the data object added
+        input -- additional inputs
+        """
+
+        inp=[parentobj_ID]
+        if input_objs:
+            inp.append(arg)
+        payload={"name":name,"description":desc,"uri":uri}
+
+        r=self.post(self.ACTIVITY_RT,workflow_ID,inp,payload,**kwargs)
+        return r
+
+    
+    def comment(self,obj_ID,comment,**kwargs):
         """Takes a returned record and adds a comment to it.
         In this case, data should be a plain string.
         """
@@ -246,24 +336,23 @@ class mpo_methods(object):
             print('Error in mpo_commment, should be a plain string')
             return -1
 
-        r=self.post(self.COMMENT_RT,objID=object,data={'content':str(comment)})
+        r=self.post(self.COMMENT_RT,None,obj_ID,data={'content':str(comment)})
         return r
 
-    def get_wid(self, cid):
-        self.filter='id'
-        res = self.get("%s?alias=%s"%(self.WORKFLOW_RT, cid[0]))
-        return res[0]
 
-    def get_cid(self, wid):
-        self.filter='json'
-        res = self.get("%s/%s/alias"%(self.WORKFLOW_RT, wid[0],))
-        ans = res[u'alias']
+    def meta(self,obj_ID,key,value,**kwargs):
+        """Takes a returned record and adds a metadata to it.
+        In this case, data should be a plain string.
+        """
+        if not (isinstance(key,str) or isinstance(key,unicode)):
+            print('Error in mpo_meta, should be a plain string')
+            return -1
+            
+        r=self.post(self.METADATA_RT,None,obj_ID,data={'value':str(value),'key':key}, **kwargs)
 
-        if self.debug>0:
-            print("get_cid returning %s"%ans,file=sys.stderr)
-        return ans
+        return r
 
-
+        
     def search(self,route,params,**kwargs):
         """Find objects by query. An supermethod of GET.
         Presently, identical to 'get' but can be generalized.
@@ -277,6 +366,21 @@ class mpo_methods(object):
 
         r=self.get(route,params) # ,params=ast.literal_eval(params))
         return r
+
+    ### Persistent store methods ###
+    def get_wid(self, cid):
+        self.filter='id'
+        res = self.get("%s?alias=%s"%(self.WORKFLOW_RT, cid[0]))
+        return res[0]
+
+    def get_cid(self, wid):
+        self.filter='json'
+        res = self.get("%s/%s/alias"%(self.WORKFLOW_RT, wid[0],))
+        ans = res[u'alias']
+
+        if self.debug>0:
+            print("get_cid returning %s"%ans,file=sys.stderr)
+        return ans
 
     def shell(self,cmd):
         import subprocess
@@ -469,25 +573,37 @@ class mpo_cli(object):
 
         #init
         init_parser=subparsers.add_parser('init',help='Start a new workflow')
-        init_parser.add_argument('name',action='store',help='''Name to assign the workflow\n.
-        Label used on workflow graphs.''')
-        init_parser.add_argument('description',action='store',help='Describe the workflow')
-        init_parser.set_defaults(func=self.mpo.test)
+        init_parser.add_argument('-n','--name',action='store',help='''Name to assign the workflow\n.
+        Label used on workflow graphs.''', default='NoName')
+        init_parser.add_argument('-d','--desc',action='store',help='Describe the workflow')
+        init_parser.add_argument('-t','--type',action='store',dest=wtype,
+                                 help='Type of workflow, an ontology reference.',
+                                 required=True)
+        init_parser.set_defaults(func=self.mpo.init)
 
         #add
         add_parser=subparsers.add_parser('add',help='Add a data object to a workflow.')
-        addio = add_parser.add_mutually_exclusive_group()
-        addio.add_argument('--parent', action='store',dest='parent')
-        addio.add_argument('--child', action='store',dest='child')
-        add_parser.set_defaults(func=self.mpo.test)
+#        addio = add_parser.add_mutually_exclusive_group() #needed for child vs parent.
+        add_parser.add_argument('workflow', action='store',dest='workflow_ID',required=True)
+        add_parser.add_argument('parent', action='store',dest='parentobj_ID',required=True)
+        add_parser.add_argument('--name', '-n', action='store')
+        add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
+        add_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        add_parser.set_defaults(func=self.mpo.add)
 
-        #step
+        #step, nearly identical to add
         step_parser=subparsers.add_parser('step',help='Add an action to a workflow.')
-        step_parser.set_defaults(func=self.mpo.test)
+        step_parser.add_argument('workflow', action='store',dest='workflow_ID',required=True)
+        step_parser.add_argument('parent', action='store',dest='parentobj_ID',required=True)
+        step_parser.add_argument('--input', '-i', action='store',dest=input_objs)
+        step_parser.add_argument('--name', '-n', action='store')
+        step_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
+        step_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        step_parser.set_defaults(func=self.mpo.step)
 
         #comment
         comment_parser=subparsers.add_parser('comment',help='Attach a comment an object.')
-        comment_parser.add_argument('object',action='store',
+        comment_parser.add_argument('object',action='store',dest='object_ID',
                                     help='UUID of object to comment on',
                                     type=self.type_uuid)
         comment_parser.add_argument('comment',action='store',help='Text of comment')
@@ -495,7 +611,14 @@ class mpo_cli(object):
 
         #meta
         meta_parser=subparsers.add_parser('meta',help='Add an action to a workflow.')
-        meta_parser.set_defaults(func=self.mpo.test)
+        meta_parser.add_argument('object',action='store',dest='object_ID',
+                                    help='UUID of object to attach metadata to',
+                                    type=self.type_uuid)
+        meta_parser.add_argument('key',action='store',
+                                    help='metadata type/identifier')
+        meta_parser.add_argument('value',action='store',
+                                    help='metadata data to add')
+        meta_parser.set_defaults(func=self.mpo.meta)
 
 
         #search
