@@ -107,8 +107,8 @@ def getRecord(table,queryargs={}, dn=None):
                 q+=', work_uid'
         q+=' FROM '+table+' a, mpousers b '
         if table == 'comment' or table == 'metadata':
-                 q+=", getWID('"+processArgument(queryargs['parent_uid'])+"') as work_uid "
-		#map user and filter by query
+                q+=", getWID('"+processArgument(queryargs['parent_uid'])+"') as work_uid "
+        #map user and filter by query
         s="where a."+qm['user_uid']+"=b.uuid"
 	for key in query_map[table]:
 		if queryargs.has_key(key):
@@ -290,8 +290,10 @@ def getWorkflow(queryargs={},dn=None):
 	q = textwrap.dedent("""\
                             SELECT w_guid as uid, a.name, a.description, a.creation_time as time,
                             a.comp_seq, b.firstname, b.lastname, b.username, b.uuid as userid
-                            FROM workflow a, mpousers b WHERE a.u_guid=b.uuid
+                            FROM workflow a, mpousers b, ontology_instances c WHERE a.u_guid=b.uuid
 			    """)
+        if queryargs.has_key('type'):
+                q+= " and a.w_guid=c.target_guid and c.value='"+processArgument(queryargs['type'])+"'"
 
 	#logic here to convert queryargs to additional WHERE constraints
 	#query is built up from getargs keys that are found in query_map
