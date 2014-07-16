@@ -570,6 +570,32 @@ def addOntologyTerm(json_request,dn):
 	conn.close()
 	return json.dumps(records,cls=MPOSetEncoder)
 
+def getOntologyTermIdByPath(path):
+        terms=path.split("/")
+        terms.remove('')
+        # get the ontology term uid
+        cursor.execute("select ot_guid,parent_guid from ontology_terms where name=%s",(terms[0],))
+        parent=[]
+        parent.insert(0,cursor.fetchall())
+        #if len(parent[0]) != 1 and parent[0][0].parent_guid != None:
+        # it turns out the path desn't have to be fully specified
+        # (i.e. starting from the root node) but if there is any
+        # ambiguity (i.e. more than one term returned) the returned
+        # value is None
+        if len(parent[0]) != 1:
+                return None
+        for i,o in list(enumerate(terms[1:])):
+                cursor.execute("select ot_guid,parent_guid from ontology_terms where name=%s",(o,))
+                parent.insert(i+1,cursor.fetchall())
+                for l in parent[i+1]:
+                        if l.parent_guid != parent[i][0].ot_guid:
+                                parent[i+1].remove(l)
+                if len(parent[i+1]) != 1:
+                        return None
+
+        return parent[-1][0].ot_guid
+
+
 def addOntologyInstance(json_request,dn):
 	objs = json.loads(json_request)
 	# get a connection, if a connect cannot be made an exception will be raised here
@@ -595,8 +621,8 @@ def addOntologyInstance(json_request,dn):
                 for l in parent[i+1]:
                         if l.parent_guid != parent[i][0].ot_guid:
                                 parent[i+1].remove(l)
-                        if len(parent[i+1]) != 1:
-                                return json.dumps({},cls=MPOSetEncoder)
+                if len(parent[i+1]) != 1:
+                        return json.dumps({},cls=MPOSetEncoder)
         if parent[-1][0].specified:
                 vocab = json.loads(getRecord('ontology_terms', {'parent_uid':parent[-1][0].ot_guid}, dn ))
                 #added term has to exist in the controlled vocabulary.
