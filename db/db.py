@@ -107,7 +107,7 @@ def getRecord(table,queryargs={}, dn=None):
                 q+=', work_uid'
         q+=' FROM '+table+' a, mpousers b '
         if table == 'comment' or table == 'metadata':
-                q+=", getWID('"+processArgument(queryargs['parent_uid'])+"') as work_uid "
+                q+=", getWID('"+processArgument(queryargs['uid'])+"') as work_uid "
         #map user and filter by query
         s="where a."+qm['user_uid']+"=b.uuid"
 	for key in query_map[table]:
