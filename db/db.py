@@ -117,6 +117,16 @@ def getRecord(table,queryargs={}, dn=None):
                                 s+=" and "+ "CAST(%s as text) is Null" % (qm[key],)
                         else:
                                 s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
+        ontology_terms = []
+        if table == 'ontology_terms' and queryargs.has_key('path'):
+                ontology_terms=processArgument(queryargs['path']).split("/")
+                if '' in ontology_terms: ontology_terms.remove('')
+                s+=" and ("
+                for i in ontology_terms:
+                        s+=" name = '%s' or" % (i,)
+                #remove the last or
+                s=s[:-3]
+                s+=")"
         if (s): q+=s
 
 	if dbdebug:
@@ -129,6 +139,20 @@ def getRecord(table,queryargs={}, dn=None):
 	# Close communication with the database
 	cursor.close()
 	conn.close()
+
+        if table == 'ontology_terms' and len(ontology_terms):
+                terms = []
+                [terms.append(x) for x in records if not x.parent_uid]
+                if len(terms) != 1:
+                        return json.dumps({},cls=MPOSetEncoder)
+                parent = terms[0]
+                for i,o in list(enumerate(ontology_terms[1:])):
+                        terms = []
+                        [terms.append(x) for x in records if x.name == o and x.parent_uid == parent.uid]
+                        if len(terms) != 1:
+                                return json.dumps({},cls=MPOSetEncoder)
+                        parent = terms[0]
+                records = parent
 
         return json.dumps(records,cls=MPOSetEncoder)
 
@@ -569,32 +593,6 @@ def addOntologyTerm(json_request,dn):
 	cursor.close()
 	conn.close()
 	return json.dumps(records,cls=MPOSetEncoder)
-
-def getOntologyTermIdByPath(path):
-        terms=path.split("/")
-        terms.remove('')
-        # get the ontology term uid
-        cursor.execute("select ot_guid,parent_guid from ontology_terms where name=%s",(terms[0],))
-        parent=[]
-        parent.insert(0,cursor.fetchall())
-        #if len(parent[0]) != 1 and parent[0][0].parent_guid != None:
-        # it turns out the path desn't have to be fully specified
-        # (i.e. starting from the root node) but if there is any
-        # ambiguity (i.e. more than one term returned) the returned
-        # value is None
-        if len(parent[0]) != 1:
-                return None
-        for i,o in list(enumerate(terms[1:])):
-                cursor.execute("select ot_guid,parent_guid from ontology_terms where name=%s",(o,))
-                parent.insert(i+1,cursor.fetchall())
-                for l in parent[i+1]:
-                        if l.parent_guid != parent[i][0].ot_guid:
-                                parent[i+1].remove(l)
-                if len(parent[i+1]) != 1:
-                        return None
-
-        return parent[-1][0].ot_guid
-
 
 def addOntologyInstance(json_request,dn):
 	objs = json.loads(json_request)
