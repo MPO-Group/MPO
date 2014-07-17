@@ -273,7 +273,10 @@ def comment(id=None):
 		if id:
 			r = rdb.getRecord('comment',{'uid':id},dn)
 		else:
-			r = rdb.getWorkflowComments(request.args,dn)
+                        if request.args.has_key('wf_uid'):
+				r = rdb.getWorkflowComments(request.args,dn)
+			else:
+				r = rdb.getRecord('comment',request.args,dn)
 
 	return r
 

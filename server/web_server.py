@@ -311,7 +311,7 @@ def connections(wid):
 	if meta_req.text != "[]":
 	    wf_objects[key]['metadata']=meta_req.json()
 
-	comment=requests.get("%s/comment?wf_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+	comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
 	print comment
 	if comment.text != "[]":
 	    cm=comment.json()
