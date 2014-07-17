@@ -103,10 +103,10 @@ def getRecord(table,queryargs={}, dn=None):
 	#this line adds a username field to each record returned in addition to the user_uid
 	#currently, this is not defined in the API
 	q=q[:-1]+', b.username' #remove trailing comma
-        if table == 'comment' or table == 'metadata':
+        if (table == 'comment' or table == 'metadata') and queryargs.has_key('uid'):
                 q+=', work_uid'
         q+=' FROM '+table+' a, mpousers b '
-        if table == 'comment' or table == 'metadata':
+        if (table == 'comment' or table == 'metadata') and queryargs.has_key('uid'):
                 q+=", getWID('"+processArgument(queryargs['uid'])+"') as work_uid "
         #map user and filter by query
         s="where a."+qm['user_uid']+"=b.uuid"
@@ -290,8 +290,11 @@ def getWorkflow(queryargs={},dn=None):
 	q = textwrap.dedent("""\
                             SELECT w_guid as uid, a.name, a.description, a.creation_time as time,
                             a.comp_seq, b.firstname, b.lastname, b.username, b.uuid as userid
-                            FROM workflow a, mpousers b, ontology_instances c WHERE a.u_guid=b.uuid
-			    """)
+                            FROM workflow a, mpousers b""")
+        if queryargs.has_key('type'):
+                q+= ", ontology_instances c"
+        q+=" WHERE a.u_guid=b.uuid"
+
         if queryargs.has_key('type'):
                 q+= " and a.w_guid=c.target_guid and c.value='"+processArgument(queryargs['type'])+"'"
 
