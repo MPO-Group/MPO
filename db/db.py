@@ -400,6 +400,24 @@ def getWorkflowElements(id,queryargs={},dn=None):
 	conn.close()
 	return json.dumps(records,cls=MPOSetEncoder)
 
+def getWorkflowComments(queryargs={},dn=None):
+        records={}
+        id = processArgument(queryargs['wf_uid'])
+	# get a connection, if a connect cannot be made an exception will be raised here
+	conn = mypool.connect()
+	# conn.cursor will return a cursor object, you can use this cursor to perform queries
+	cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+        q = "select "
+	qm = query_map['comment']
+	for key in qm:
+		q+=' a.'+qm[key]+' AS '+key+','
+        q=q[:-1]+" from comment as a where a.parent_guid in (select w_guid as uid from workflow where w_guid=%s union select do_guid as uid from dataobject where w_guid=%s union select a_guid as uid from activity where w_guid=%s)"
+        cursor.execute(q,(id,id,id))
+	records = cursor.fetchall()
+	cursor.close()
+	conn.close()
+	return json.dumps(records,cls=MPOSetEncoder)
+
 def addRecord(table,request,dn):
         objs = json.loads(request)
         objs['uid']=str(uuid.uuid4())

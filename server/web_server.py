@@ -141,7 +141,7 @@ def index():
 	    else:
 	        results[index]['show_comments'] = ''
 	    pid=i['uid']
-	    c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
+	    c=s.get("%s/comment?wf_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
 	    #c=s.get("%s/comment/%s"%(API_PREFIX,pid), headers={'Real-User-DN':dn}) //####BROKEN API ROUTE???
 	    comments = c.json()
 
@@ -664,8 +664,8 @@ def get_child_terms(uid):
 
     req=requests.get("%s/ontology/term/%s/vocabulary"%(API_PREFIX,uid), **certargs)
 
-    if req.text != "[]":
-	return req.json()
+    #if req.text != "[]":
+    return req.json()
 
 
 #add serving host to template args

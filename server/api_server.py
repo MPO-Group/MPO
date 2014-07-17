@@ -273,7 +273,7 @@ def comment(id=None):
 		if id:
 			r = rdb.getRecord('comment',{'uid':id},dn)
 		else:
-			r = rdb.getRecord('comment',request.args,dn)
+			r = rdb.getWorkflowComments(request.args,dn)
 
 	return r
 
@@ -324,6 +324,7 @@ def ontologyTerm(id=None):
 	dn=get_user_dn(request)
 	if request.method == 'POST':
 		r = rdb.addOntologyTerm(request.data,dn)
+                #r = rdb.addRecord('ontology_terms',request.data,dn)
  	else:
 		if id:
 			r = rdb.getRecord('ontology_terms', {'uid':id}, dn )
