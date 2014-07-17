@@ -65,6 +65,8 @@ psql -d $test_db -a -f $MPO_HOME/db/create_tables.sql
 $MPO_HOME/api_server.sh $api_port "host=localhost dbname=$test_db user='mpoadmin' password='mpo2013' " &> api_out.txt &
 $MPO_HOME/web_server.sh $web_port https://localhost:$api_port &> web_out.txt &
 
+echo %TESTING first create the ontology terms %%%%%%%%%%%%
+$MPO_HOME/client/python/tests/ontology_terms_gyro.load
 echo %TESTING postings with commandline api %%%%%%%%%%%%%%
 $MPO_HOME/client/python/tests/josh.test
 $MPO_HOME/client/python/tests/api_test.sh
