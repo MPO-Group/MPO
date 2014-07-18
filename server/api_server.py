@@ -204,6 +204,12 @@ def getWorkflowGraph(id):
 		r = rdb.getWorkflowElements(id,request.args,dn)
 	return r
 
+@app.route(routes['workflow']+'/<id>/comments', methods=['GET'])
+def getWorkflowComments(id):
+	dn=get_user_dn(request)
+	if request.method == 'GET':
+		r = rdb.getWorkflowComments(id,request.args,dn)
+	return r
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
 def getWorkflowCompositeID(id):
@@ -211,7 +217,6 @@ def getWorkflowCompositeID(id):
 	if request.method == 'GET':
 		r = rdb.getWorkflowCompositeID(id)
 	return r
-
 
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
@@ -273,10 +278,7 @@ def comment(id=None):
 		if id:
 			r = rdb.getRecord('comment',{'uid':id},dn)
 		else:
-                        if request.args.has_key('wf_uid'):
-				r = rdb.getWorkflowComments(request.args,dn)
-			else:
-				r = rdb.getRecord('comment',request.args,dn)
+                        r = rdb.getRecord('comment',request.args,dn)
 
 	return r
 

@@ -141,8 +141,7 @@ def index():
 	    else:
 	        results[index]['show_comments'] = ''
 	    pid=i['uid']
-	    c=s.get("%s/comment?wf_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
-	    #c=s.get("%s/comment/%s"%(API_PREFIX,pid), headers={'Real-User-DN':dn}) //####BROKEN API ROUTE???
+	    c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
 	    comments = c.json()
 
 	    num_comments=0

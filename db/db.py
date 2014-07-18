@@ -400,9 +400,9 @@ def getWorkflowElements(id,queryargs={},dn=None):
 	conn.close()
 	return json.dumps(records,cls=MPOSetEncoder)
 
-def getWorkflowComments(queryargs={},dn=None):
-        records={}
-        id = processArgument(queryargs['wf_uid'])
+def getWorkflowComments(id,queryargs={},dn=None):
+        #records={}
+        #id = processArgument(queryargs['wf_uid'])
 	# get a connection, if a connect cannot be made an exception will be raised here
 	conn = mypool.connect()
 	# conn.cursor will return a cursor object, you can use this cursor to perform queries
