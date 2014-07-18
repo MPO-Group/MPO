@@ -411,21 +411,31 @@ def getWorkflowComments(id,queryargs={},dn=None):
 	qm = query_map['comment']
 	for key in qm:
 		q+=' a.'+qm[key]+' AS '+key+','
-        q=q[:-1]+" from comment as a where a.parent_guid in (select w_guid as uid from workflow where w_guid=%s union select do_guid as uid from dataobject where w_guid=%s union select a_guid as uid from activity where w_guid=%s)"
+        q = q[:-1] + (" from comment as a where a.parent_guid in "+
+                      "(select w_guid as uid from workflow where w_guid=%s "+
+                      "union "+
+                      "select do_guid as uid from dataobject where w_guid=%s "+
+                      "union " +
+                      "select a_guid as uid from activity where w_guid=%s)" )
         cursor.execute(q,(id,id,id))
 	records = cursor.fetchall()
         # get all the comments recursively
-        parents = []
-        [parents.append(x.uid) for x in records]
+        #JCW initialize list with an aribtrary uuid for cases when parents is empty
+        parents = ['b08b6ebd-7658-400d-b7a4-7e382fb94c94']
+        for x in records:
+                parents.append(x.uid)
         #recursively get comments on comments
         while True:
                 q = "select "
                 for key in qm:
                         q+=' a.'+qm[key]+' AS '+key+','
-                q=q[:-1]+" from comment as a where a.parent_guid in ("
+                q=q[:-1]+" from comment as a where a.parent_guid in ( "
+                #JCW this loop breaks the command q if parents is empty
+                # q= ... in () ; which doesn't work
                 for i in parents:
                         q+="%s,"
                 q=q[:-1]+")"
+                print('db.py:\n' + q)
                 v = tuple(x for x in parents)
                 cursor.execute(q,v)
                 children = cursor.fetchall()
@@ -433,7 +443,8 @@ def getWorkflowComments(id,queryargs={},dn=None):
                 for i in children:
                         records.append(i)
                 parents = []
-                [parents.append(x.uid) for x in children]
+                for x in children:
+                        parents.append(x.uid)
 	cursor.close()
 	conn.close()
 	return json.dumps(records,cls=MPOSetEncoder)
@@ -451,8 +462,10 @@ def addRecord(table,request,dn):
 
         objs['user_uid'] = user_id.uuid
         objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
-
-        q = "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) + ") values ("+",".join(["%s" for x in objkeys])+")"
+        
+        q = ( "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) +
+             ") values ("+",".join(["%s" for x in objkeys])+")" )
+   
         v = tuple(objs[x] for x in objkeys)
 	if dbdebug:
 		print('DDBEBUG addRecord to ',table)

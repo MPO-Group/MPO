@@ -62,11 +62,13 @@ createdb $test_db
 psql -d $test_db -a -f $MPO_HOME/db/create_tables.sql
 
 #start up api and web servers
+echo Starting up uwsgi servers
 $MPO_HOME/api_server.sh $api_port "host=localhost dbname=$test_db user='mpoadmin' password='mpo2013' " &> api_out.txt &
 $MPO_HOME/web_server.sh $web_port https://localhost:$api_port &> web_out.txt &
 
 echo %TESTING first create the ontology terms %%%%%%%%%%%%
 $MPO_HOME/client/python/tests/ontology_terms_gyro.load
+
 echo %TESTING postings with commandline api %%%%%%%%%%%%%%
 $MPO_HOME/client/python/tests/josh.test
 $MPO_HOME/client/python/tests/api_test.sh
@@ -82,6 +84,6 @@ done
 
 
 
-echo Commandline tests done. lauch a browser at https://localhost:$api_port to check the web browser client
+echo Commandline tests done. launch a browser at https://localhost:$web_port to check the web browser client
 echo When done, run kill your servers. Inspect api.out.txt and web_out.txt for errors.
 ps waux |grep uwsgi|grep $USER

@@ -244,7 +244,7 @@ class mpo_methods(object):
             elif opt in ("-t","--type"):
                 wtype=arg
         if wtype == None:
-            print("Workflow type is required. Specify with --type=<type>")
+            print("Workflow type is required. Specify with --type=<type>",file=sys.stderr)
             sys.exit(2)
 
         o=urlparse(url)

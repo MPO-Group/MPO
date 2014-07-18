@@ -175,7 +175,7 @@ def index():
 
     except Exception, err:
 	print "web_server.index()- there was an exception"
-	print err
+	print "error is", err
 #        pass
 
     #return render_template('index.html', results = results, num_wf = num_wf, wf_name = wf_name)
