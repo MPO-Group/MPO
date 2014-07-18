@@ -414,6 +414,26 @@ def getWorkflowComments(id,queryargs={},dn=None):
         q=q[:-1]+" from comment as a where a.parent_guid in (select w_guid as uid from workflow where w_guid=%s union select do_guid as uid from dataobject where w_guid=%s union select a_guid as uid from activity where w_guid=%s)"
         cursor.execute(q,(id,id,id))
 	records = cursor.fetchall()
+        # get all the comments recursively
+        parents = []
+        [parents.append(x.uid) for x in records]
+        #recursively get comments on comments
+        while True:
+                q = "select "
+                for key in qm:
+                        q+=' a.'+qm[key]+' AS '+key+','
+                q=q[:-1]+" from comment as a where a.parent_guid in ("
+                for i in parents:
+                        q+="%s,"
+                q=q[:-1]+")"
+                v = tuple(x for x in parents)
+                cursor.execute(q,v)
+                children = cursor.fetchall()
+                if not len(children): break
+                for i in children:
+                        records.append(i)
+                parents = []
+                [parents.append(x.uid) for x in children]
 	cursor.close()
 	conn.close()
 	return json.dumps(records,cls=MPOSetEncoder)
