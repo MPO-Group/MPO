@@ -26,6 +26,11 @@ fi
 
 #use API methods to create a workflow
 oid1=`$MPO get --route 'ontology/term' --params='path=/Workflow/Type/EFIT'`
+if [ $oid1 = "[]" ]
+then
+    echo Ontology term /Workflow/Type/EFIT doesn\'t exist. Run $MPO_HOME/client/python/tests/ontology_terms_gyro.load first
+    exit
+fi
 oid2=`$MPO ontology_term 'Code Characteristics' --desc='Terms that describe the code type' -p $oid1 -t 'string' -s 'y'`
 oid3=`$MPO ontology_term 'Run Characteristics' --desc='Terms that describe the run type' -p $oid1 -t 'string' -s 'y'`
 oid4=`$MPO ontology_term 'Run Metadata' --desc='Metadata terms associated with the run' -p $oid1 -t 'string' -s 'y'`
