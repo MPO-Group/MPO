@@ -4,7 +4,7 @@
 #defaults are used if environment is not set
 if ! [ -n "${MPO_HOST:+x}" ]
 then
-  export MPO_HOST=http://localhost:8080
+  export MPO_HOST=https://mpo.gat.com:8443
 fi
 
 
