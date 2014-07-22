@@ -48,6 +48,8 @@ def index():
     results=False
     try:
 	s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=10)
+        s.mount('https://', a)
         s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
 	s.verify=False
 	s.headers={'Real-User-DN':dn}
