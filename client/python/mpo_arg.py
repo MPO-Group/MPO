@@ -26,14 +26,56 @@ from urlparse import urlparse
 import copy
 import argparse
 
+
+class AliasedSubParsersAction(argparse._SubParsersAction):
+    """
+    Support 'aliases' of commands.
+    use
+    parser.register('action', 'parsers', AliasedSubParsersAction)
+    then subparsers can take aliases=()
+
+    Note, this functionality is added to argparse for python 3.2 
+    """
+    class _AliasedPseudoAction(argparse.Action):
+        def __init__(self, name, aliases, help):
+            dest = name
+            if aliases:
+                dest += ' (%s)' % ','.join(aliases)
+            sup = super(AliasedSubParsersAction._AliasedPseudoAction, self)
+            sup.__init__(option_strings=[], dest=dest, help=help) 
+
+    def add_parser(self, name, **kwargs):
+        if 'aliases' in kwargs:
+            aliases = kwargs['aliases']
+            del kwargs['aliases']
+        else:
+            aliases = []
+
+        parser = super(AliasedSubParsersAction, self).add_parser(name, **kwargs)
+
+        # Make the aliases work.
+        for alias in aliases:
+            self._name_parser_map[alias] = parser
+        # Make the help text reflect them, first removing old help entry.
+        if 'help' in kwargs:
+            help = kwargs.pop('help')
+            self._choices_actions.pop()
+            pseudo_action = self._AliasedPseudoAction(name, aliases, help)
+            self._choices_actions.append(pseudo_action)
+
+        return parser
+
+
+
 class shell_exception(Exception):
     def __init__(self, status, *args, **kwargs):
         self.return_status=status
 #        Exception.__init__(self, *args, **kwargs)
 
 #Developers note:
-#all print statements except those in mpo_cli.storeresult should go to sys.stderr
-#Non-standard dependencies: requests.py
+# All print statements except those in mpo_cli.storeresult should go to sys.stderr
+# AVOID tabs, use spaces.
+#Non-standard dependencies: requests.py, argparse.py
 class mpo_methods(object):
     """
     Class of RESTful primitives. I/O is through stdin/stdout.
@@ -92,6 +134,8 @@ class mpo_methods(object):
         self.requestargs={'cert':self.cert,'verify':False}
 
         if self.debug:
+            print('cert',cert,file=sys.stderr)
+            print('cert',cert,file=sys.stderr)
 #            print('#MPO user',self.get_user())
 #            print('#MPO server',self.get_server())
             pass
@@ -147,12 +191,31 @@ class mpo_methods(object):
         params -- python dictionary or a list of tuples
         route -- API route for resource
         """
+
+        import logging
+
+# These two lines enable debugging at httplib level (requests->urllib3->http.client)
+# You will see the REQUEST, including HEADERS and DATA, and RESPONSE with HEADERS but without DATA.
+# The only thing missing will be the response.body which is not logged.
+        try:
+            import http.client as http_client
+        except ImportError:
+            # Python 2
+            import httplib as http_client
+        http_client.HTTPConnection.debuglevel = 1
+
+        # You must initialize logging, otherwise you'll not see debug output.
+        logging.basicConfig() 
+        logging.getLogger().setLevel(logging.DEBUG)
+        requests_log = logging.getLogger("requests.packages.urllib3")
+        requests_log.setLevel(logging.DEBUG)
+        requests_log.propagate = True
+        
         #if parameters are present, this is a search
         #requests.py reconstructs the url with the parameters appended
         #in the "?param=val" http syntax
         #JCW check on the params syntax for requests
         #check for dict and str instances, requests expects a dict
-
 
         url=self.api_url+route
         if self.debug or verbose:
@@ -169,12 +232,17 @@ class mpo_methods(object):
             #throw error
             datadict={}
 
+        if self.debug or verbose:
+            print('mpo_GET',datadict, 'got here2',file=sys.stderr)
+            print('xxxx',url,datadict, self.GETheaders,self.requestargs)
+
 
         r = requests.get(url,params=datadict,
                              headers=self.GETheaders,**self.requestargs)
-        r.raise_for_status()
         if self.debug or verbose:
             print('mpo_GET response',r.url,r.status_code,file=sys.stderr)
+
+        r.raise_for_status()
 
 #        if self.filter:
 #            r=self.format(r,self.filter)
@@ -243,13 +311,13 @@ class mpo_methods(object):
             return r
 
 
-    def init(self,name, desc, wtype, **kwargs):
+    def init(self,name, desc="", wtype='None', **kwargs):
         """
         The INIT method starts a workflow.
         It returns the server response for a new workflow.
 
         args are:
-        name --
+        name -- name
         desc -- description
         wtype -- workflow type
 
@@ -528,6 +596,7 @@ class mpo_cli(object):
         self.archive_prefix=archive_prefix
 
         #initialize foreign methods here
+        print('init',mpo_cert,archive_key)
         self.mpo=mpo_methods(api_url,version,debug=self.debug,cert=mpo_cert,archive_key=archive_key)
 
     def type_uuid(self,uuid):
@@ -576,7 +645,7 @@ class mpo_cli(object):
         init_parser.add_argument('-n','--name',action='store',help='''Name to assign the workflow\n.
         Label used on workflow graphs.''', default='NoName')
         init_parser.add_argument('-d','--desc',action='store',help='Describe the workflow')
-        init_parser.add_argument('-t','--type',action='store',dest=wtype,
+        init_parser.add_argument('-t','--type',action='store',dest='wtype',
                                  help='Type of workflow, an ontology reference.',
                                  required=True)
         init_parser.set_defaults(func=self.mpo.init)
@@ -584,8 +653,8 @@ class mpo_cli(object):
         #add
         add_parser=subparsers.add_parser('add',help='Add a data object to a workflow.')
 #        addio = add_parser.add_mutually_exclusive_group() #needed for child vs parent.
-        add_parser.add_argument('workflow', action='store',dest='workflow_ID',required=True)
-        add_parser.add_argument('parent', action='store',dest='parentobj_ID',required=True)
+        add_parser.add_argument('workflow', action='store',metavar='workflow_ID')
+        add_parser.add_argument('parent', action='store',metavar='parentobj_ID')
         add_parser.add_argument('--name', '-n', action='store')
         add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
         add_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
@@ -593,9 +662,9 @@ class mpo_cli(object):
 
         #step, nearly identical to add
         step_parser=subparsers.add_parser('step',help='Add an action to a workflow.')
-        step_parser.add_argument('workflow', action='store',dest='workflow_ID',required=True)
-        step_parser.add_argument('parent', action='store',dest='parentobj_ID',required=True)
-        step_parser.add_argument('--input', '-i', action='store',dest=input_objs)
+        step_parser.add_argument('workflow_ID', action='store',metavar='workflow')
+        step_parser.add_argument('parentobj_ID', action='store',metavar='parent')
+        step_parser.add_argument('--input', '-i', action='store',dest='input_objs')
         step_parser.add_argument('--name', '-n', action='store')
         step_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
         step_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
@@ -603,7 +672,7 @@ class mpo_cli(object):
 
         #comment
         comment_parser=subparsers.add_parser('comment',help='Attach a comment an object.')
-        comment_parser.add_argument('object',action='store',dest='object_ID',
+        comment_parser.add_argument('object_ID',action='store',metavar='object',
                                     help='UUID of object to comment on',
                                     type=self.type_uuid)
         comment_parser.add_argument('comment',action='store',help='Text of comment')
@@ -611,7 +680,7 @@ class mpo_cli(object):
 
         #meta
         meta_parser=subparsers.add_parser('meta',help='Add an action to a workflow.')
-        meta_parser.add_argument('object',action='store',dest='object_ID',
+        meta_parser.add_argument('object_ID',action='store',metavar='object',
                                     help='UUID of object to attach metadata to',
                                     type=self.type_uuid)
         meta_parser.add_argument('key',action='store',

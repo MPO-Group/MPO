@@ -23,7 +23,7 @@ subprocess.call([os.path.join('flask', bin, pip), 'install', 'requests'])
 subprocess.call([os.path.join('flask', bin, pip), 'install', 'sqlalchemy==0.7.9'])
 subprocess.call([os.path.join('flask', bin, pip), 'install', 'flask-sqlalchemy'])
 subprocess.call([os.path.join('flask', bin, pip), 'install', 'https://pypi.python.org/packages/source/p/pyparsing/pyparsing-1.5.7.tar.gz'])
-subprocess.call([os.path.join('flask', bin, pip), 'install', '-U pydot pyparsing==2.0.0'])
+subprocess.call([os.path.join('flask', bin, pip), 'install', '-U', 'pydot', 'pyparsing==1.5.7'])
 subprocess.call([os.path.join('flask', bin, pip), 'install', 'uwsgi>1.3'])
 
 #needed by command line client and python class
