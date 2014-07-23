@@ -316,26 +316,55 @@ def ontologyClass(id=None):
 @app.route(routes['ontology_term']+'/<id>/vocabulary', methods=['GET'])
 @app.route(routes['ontology_term']+'/vocabulary', methods=['GET'])
 def ontologyTermVocabulary(id=None):
-        dn=get_user_dn(request)
-        if id:
-            r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
-        else:
-            r = rdb.getRecord('ontology_terms', {'parent_uid':'None'}, dn )
-        return r
+    '''
+    This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
+    Vocabulary is defined as the next set of terms below it in the ontology term tree.
+    '''
+    dn=get_user_dn(request)
+
+    if not id:
+        id='None'
+
+    r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
+    
+    return r
+
+@app.route(routes['ontology_term']+'/<id>/tree', methods=['GET'])
+@app.route(routes['ontology_term']+'/tree', methods=['GET'])
+def ontologyTermTree(id=None):
+    '''
+    This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
+    Vocabulary is defined as the next set of terms below it in the ontology term tree.
+    '''
+    dn=get_user_dn(request)
+
+    if not id:
+        id='0' #root parent_uid
+
+    r = rdb.getOntologyTermTree(id, dn )
+
+    return r
+
 
 @app.route(routes['ontology_term']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_term'], methods=['GET', 'POST'])
 def ontologyTerm(id=None):
-	dn=get_user_dn(request)
-	if request.method == 'POST':
-		r = rdb.addOntologyTerm(request.data,dn)
+    '''
+    Retrieves the record of an ontology term from its <id> or path.
+    valid routes:
+    ontology/term/<id>
+    ontology/term?path=term/term2/termN
+    '''
+    dn=get_user_dn(request)
+    if request.method == 'POST':
+        r = rdb.addOntologyTerm(request.data,dn)
                 #r = rdb.addRecord('ontology_terms',request.data,dn)
- 	else:
-		if id:
-			r = rdb.getRecord('ontology_terms', {'uid':id}, dn )
-		else:
-			r = rdb.getRecord('ontology_terms', request.args, dn )
-	return r
+    else:
+        if id:
+            r = rdb.getRecord('ontology_terms', {'uid':id}, dn )
+        else:
+            r = rdb.getRecord('ontology_terms', request.args, dn )
+    return r
 
 @app.route(routes['ontology_instance']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_instance'], methods=['GET', 'POST'])

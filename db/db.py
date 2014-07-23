@@ -33,7 +33,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
 		       'lastname':'lastname','email':'email','organization':'organization',
 		       'phone':'phone','dn':'dn'},
 	     'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
-			   'work_uid':'w_guid', 'description':'description',
+			   'work_uid':'w_guid',
 			   'time':'creation_time','user_uid':'u_guid','start':'start_time','end':'end_time',
 			   'status':'completion_status'},
 	     'activity_short' : {'w':'w_guid'},
@@ -43,8 +43,11 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
 	     'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 'user_uid':'u_guid',
 			   'time':'creation_time', 'parent_uid':'parent_guid', 'parent_type':'parent_type'},
 	     'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' },
-             'ontology_terms' : {'uid':'ot_guid','name':'name', 'description':'description','parent_uid':'parent_guid','type':'value_type','units':'units','specified':'specified','user_uid':'added_by','date_added':'date_added'},
-             'ontology_instances' : {'uid':'oi_guid','parent_uid':'target_guid','value':'value','time':'creation_time','user_uid':'u_guid'}
+             'ontology_terms' : {'uid':'ot_guid','name':'name', 'description':'description',
+                                 'parent_uid':'parent_guid','type':'value_type','units':'units',
+                                 'specified':'specified','user_uid':'added_by','date_added':'date_added'},
+             'ontology_instances' : {'uid':'oi_guid','parent_uid':'target_guid','value':'value',
+                                     'time':'creation_time','user_uid':'u_guid'}
 	     }
 
 
@@ -103,11 +106,15 @@ def getRecord(table,queryargs={}, dn=None):
 	#this line adds a username field to each record returned in addition to the user_uid
 	#currently, this is not defined in the API
 	q=q[:-1]+', b.username' #remove trailing comma
+
+        ##COMMENT and METADATA special handling
         if (table == 'comment' or table == 'metadata') and queryargs.has_key('uid'):
                 q+=', work_uid'
+
         q+=' FROM '+table+' a, mpousers b '
         if (table == 'comment' or table == 'metadata') and queryargs.has_key('uid'):
                 q+=", getWID('"+processArgument(queryargs['uid'])+"') as work_uid "
+
         #map user and filter by query
         s="where a."+qm['user_uid']+"=b.uuid"
 	for key in query_map[table]:
@@ -117,6 +124,8 @@ def getRecord(table,queryargs={}, dn=None):
                                 s+=" and "+ "CAST(%s as text) is Null" % (qm[key],)
                         else:
                                 s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
+
+        ##ONTOLOGY/TERMS handling
         ontology_terms = []
         if table == 'ontology_terms' and queryargs.has_key('path'):
                 ontology_terms=processArgument(queryargs['path']).split("/")
@@ -156,6 +165,66 @@ def getRecord(table,queryargs={}, dn=None):
 
         return json.dumps(records,cls=MPOSetEncoder)
 
+
+def getOntologyTermTree(id='0',dn=None):
+        """
+        Constructs a tree from the ontology terms and returns
+        structure suitable for parsing into graph or menu.
+        """
+        import treelib as t
+
+        ###Unfortunately, it is necessary to retrieve the entire ontology table
+        ###to construct even partial trees because the order is unknown
+        ###perhaps some research on tree representations in SQL would help
+
+        #Construct query for database
+        q = 'SELECT name as name, ot_guid as uid, parent_guid as parent_uid from ontology_terms'
+
+        # get a connection, if a connect cannot be made an exception will be raised here
+        conn = mypool.connect()
+        # conn.cursor will return a cursor object, you can use this cursor to perform queries
+        cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+        # execute our Query
+        cursor.execute(q)
+        # retrieve the records from the database
+        records = cursor.fetchall()
+        # Close communication with the database
+        cursor.close()
+        conn.close()
+
+        #cursor.fetchall always returns a list
+        if isinstance(records,list): 
+                if len(records)==0: #throw error
+                        print('query error in Getontologytermtree, no records returned')
+                        r={"status"    : "error",
+                           "error_mesg": "query error in Getontologytermtree, no records returned"}
+                        return json.dumps(r, cls=MPOSetEncoder)
+                                
+        #make sure parents always occur before children
+        #bubble sort, if ith record has its parent in i+1:n, swap with it
+        for i in xrange(len(records)):
+                for j in xrange(i+1,len(records)):
+                        if records[i]['parent_uid']==records[j]['uid']:
+                                tmp=records[i]
+                                records[i]=records[j]
+                                records[j]=tmp
+                                break #only one parent, so we can exit this loop
+
+        ###Create tree structure for each head of the ontology
+        #may be multiple trees, they have parent as None
+        #we will place them under 'root' node if the whole tree is requested
+        ot_tree=t.Tree()
+        ot_tree.create_node('root','0')
+
+        for o in records:
+                pid=o['parent_uid']
+                name=o['name']
+                if pid==None:
+                        pid='0'
+                ot_tree.create_node(o['name'],o['uid'],parent=pid)
+
+        #load and dump to ensure clean json format
+        return json.dumps(json.loads(ot_tree.subtree(id).to_json()),cls=MPOSetEncoder)
 
 
 def getUser(queryargs={},dn=None):
