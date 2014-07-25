@@ -572,6 +572,15 @@ class mpo_methods(object):
         import importlib
         print("Here I am in create - protocol is %s"%protocol)
         mod = importlib.import_module(protocol[0])
+        creator=mod.dataobject(self)
+        args = creator.cli(protocol[1:])
+        print ("calling creator.create")
+        return creator.create(**args)
+
+    def creater(self, protocol=None, *arg, **kw):
+        import importlib
+        print("Here I am in create - protocol is %s"%protocol)
+        mod = importlib.import_module(protocol[0])
         if protocol[1] in ('-h', '--help'):
             help(mod)
             answer=None

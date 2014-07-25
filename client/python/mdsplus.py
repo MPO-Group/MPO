@@ -10,21 +10,30 @@ class dataobject(object):
     for example:
         mpo create --protocol=mdsplus --server=alcdaq --tree=cmod --shot=1090909009 --path=\\ip
     """
-    def __init__(self, mpo, server=None, tree=None, shot=None, path=None, s=None, n=None, t=None, p=None):
+    def __init__(self, mpo):
         self.mpo = mpo
-#	for k in kw:
-#            print(k)
-#	    self.setattr(k, kw[k])
-        try:
-            self.server=server or s
-            self.tree=tree or t
-            shotstr = shot or n
-            self.shot=int(shotstr)
-            self.path=path or p
-        except Exception, e:
-            pass
-        print "mdsplus data object creator returning"
+        print('mdsplus init returning')
 
-    def create(self):
-        print ("constructing a mdsplus object for server=%s tree=%s shot=%d path=%s"%(self.server, self.tree, self.shot, self.path,))
-        return ("mdsplus://%s/?tree=%s&shot=%d&path=%s"%(self.server, self.tree, self.shot, self.path))
+    def create(self,  server=None, tree=None, shot_number=None, path=None, verbose=False):
+        print ("constructing a mdsplus object for server=%s tree=%s shot=%d path=%s"%(server, tree, shot_number, path,))
+        return ("mdsplus://%s/?tree=%s&shot=%d&path=%s"%(server, tree, shot_number, path,))
+
+    def cli(self, *args):
+        import copy
+        import argparse
+        parser = argparse.ArgumentParser(description='mdsplus data object creator',
+                                         epilog="""Metadata Provenance Ontology project""",
+                                         prog='mpo create --protocol=mdsplus')
+
+    #note that arguments will be available in functions as arg.var
+
+        #global mdsplus options
+        parser.add_argument('--server','-s',action='store',help='''Specify server.''')
+        parser.add_argument('--tree','-t',action='store',help='''Specify tree.''')
+        parser.add_argument('--shot-number','--shot', '-n', action='store',help='Shot number of the tree', type=int)
+        parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
+                            default=False)
+        parser.add_argument('--path', '-p', action='store', help='Path in the tree for this data object')
+
+        ans = parser.parse_args(*args)
+        return copy.deepcopy(ans.__dict__)
