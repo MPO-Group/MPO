@@ -12,10 +12,25 @@ class dataobject(object):
     for example:
         mpo create --protocol=filesys --filespec=/usr/local/cmod/shared/some-file.dat
     """
-    def __init__(self, mpo, filespec=None, f=None):
+    def __init__(self, mpo):
        self.mpo = mpo
-       self.filespec=filespec or f
 
-    def create(self):
-        print ("constructing a filespec object for %s"%self.filespec)
-        return ("filesys://%s"%self.filespec)
+    def create(self, filespec=None, verbose=False):
+        print ("constructing a filespec object for %s"%filespec)
+        return ("filesys://%s"%filespec)
+
+    def cli(self, *args):
+        import copy
+        import argparse
+        parser = argparse.ArgumentParser(description='filespec data object creator',
+                                         epilog="""Metadata Provenance Ontology project""",
+                                         prog='mpo create --protocol=filespec')
+        parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
+                            default=False)
+
+    #note that arguments will be available in functions as arg.var
+
+        #global mdsplus options
+        parser.add_argument('--filespec','-f',action='store',help='''Specify file or directory.''')
+        ans = parser.parse_args(*args)
+        return copy.deepcopy(ans.__dict__)
