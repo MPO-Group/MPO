@@ -568,6 +568,26 @@ class mpo_methods(object):
         answer = self.restore_archive(cid, prefix, filename[0])
         return answer
 
+    def create(self, protocol=None, *arg, **kw):
+        import importlib
+        print("Here I am in create - protocol is %s"%protocol)
+        mod = importlib.import_module(protocol[0])
+        if protocol[1] in ('-h', '--help'):
+            help(mod)
+            answer=None
+        else:
+            d = {}
+            for p in protocol[1:]:
+                (k,v) = p.split("=")
+                for i in (0,1):
+                    if k.startswith('-'):
+                        k = k[1:]
+                d[k]=v
+            creator=mod.dataobject(self, **d)
+            answer = creator.create()
+        return answer
+        
+
 
 class mpo_cli(object):
     """
@@ -669,6 +689,11 @@ class mpo_cli(object):
         step_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
         step_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
         step_parser.set_defaults(func=self.mpo.step)
+
+        #create, note all arguements must be processed by the protocol
+        create_parser=subparsers.add_parser('create',help='Create a data object.')
+        create_parser.add_argument('--protocol', '-p', action='store',metavar='protocol', nargs=argparse.REMAINDER)
+        create_parser.set_defaults(func=self.mpo.create)
 
         #comment
         comment_parser=subparsers.add_parser('comment',help='Attach a comment an object.')
