@@ -5,6 +5,12 @@ class dataobject(object):
 
     This simply creates or returns an existing data object that referes to a 
     particular file.
+
+    command line syntax:
+        mpo create [--protocol=| -p ] filesys [--filespec=|-f ] [file-name | directory-name]
+
+    for example:
+        mpo create --protocol=filesys --filespec=/usr/local/cmod/shared/some-file.dat
     """
     def __init__(self, mpo, filespec=None, f=None):
        self.mpo = mpo

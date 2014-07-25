@@ -4,8 +4,13 @@ class dataobject(object):
 
     This simply creates or returns an existing data object that referes to a 
     particular server, tree, shot, path.
+
+    command line syntax:
+        mpo create {--protocol=|-p }mdsplus {--server=|-s }server-name {--tree=|-t }treename {--shot=|-n }shot-number {--path=|-p }tree-path
+    for example:
+        mpo create --protocol=mdsplus --server=alcdaq --tree=cmod --shot=1090909009 --path=\\ip
     """
-    def __init__(self, mpo, server=None, tree=None, shot=None, path=None, s=None, t=None, s=None, p=None):
+    def __init__(self, mpo, server=None, tree=None, shot=None, path=None, s=None, n=None, t=None, p=None):
         self.mpo = mpo
 #	for k in kw:
 #            print(k)
@@ -13,7 +18,7 @@ class dataobject(object):
         try:
             self.server=server or s
             self.tree=tree or t
-            shotstr = shot or s
+            shotstr = shot or n
             self.shot=int(shotstr)
             self.path=path or p
         except Exception, e:
