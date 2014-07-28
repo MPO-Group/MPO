@@ -16,7 +16,8 @@ class mpo_do_filesys(_do.mpo_do_dataobject):
     """
 
     def create(self, filespec=None, description=None, name=None, verbose=False):
-        print ("constructing a filespec object for %s"%filespec)
+        if verbose:
+            print ("constructing a filespec object for %s"%(filespec,))
         uri = "filesys://%s"%filespec
         return(self.mpo.add(None, None,name=name, desc=description, uri=uri))
 
