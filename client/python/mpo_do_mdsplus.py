@@ -1,4 +1,5 @@
-class mpo_do_mdsplus(object):
+import mpo_do_dataobject as _do
+class mpo_do_mdsplus(_do.mpo_do_dataobject):
     """
     A class to construct data objects for references to mdsplus trees..  
 
@@ -11,30 +12,21 @@ class mpo_do_mdsplus(object):
     for example:
         mpo create --protocol=mdsplus --server=alcdaq --tree=cmod --shot=1090909009 --path=\\ip
     """
-    def __init__(self, mpo):
-        self.mpo = mpo
-        print('mdsplus init returning')
 
-    def create(self,  server=None, tree=None, shot_number=None, path=None, verbose=False):
+    def create(self,  name=None, description=None, server=None, tree=None, shot_number=None, path=None, verbose=False):
         print ("constructing a mdsplus object for server=%s tree=%s shot=%d path=%s"%(server, tree, shot_number, path,))
-        return ("mdsplus://%s/?tree=%s&shot=%d&path=%s"%(server, tree, shot_number, path,))
+        uri = "mdsplus://%s/?tree=%s&shot=%d&path=%s"%(server, tree, shot_number, path,)
+        return(self.mpo.add(None, None,name=name, desc=description, uri=uri))
 
     def cli(self, *args):
         import copy
         import argparse
-        parser = argparse.ArgumentParser(description='mdsplus data object creator',
-                                         epilog="""Metadata Provenance Ontology project""",
-                                         prog='mpo create --protocol=mdsplus')
-
-    #note that arguments will be available in functions as arg.var
 
         #global mdsplus options
-        parser.add_argument('--server','-s',action='store',help='''Specify server.''')
-        parser.add_argument('--tree','-t',action='store',help='''Specify tree.''')
-        parser.add_argument('--shot-number','--shot', '-n', action='store',help='Shot number of the tree', type=int)
-        parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
-                            default=False)
-        parser.add_argument('--path', '-p', action='store', help='Path in the tree for this data object')
+        self.parser.add_argument('--server','-S',action='store',help='''Specify server.''')
+        self.parser.add_argument('--tree','-t',action='store',help='''Specify tree.''')
+        self.parser.add_argument('--shot-number','--shot', '-s', action='store',help='Shot number of the tree', type=int)
+        self.parser.add_argument('--path', '-p', action='store', help='Path in the tree for this data object')
 
-        ans = parser.parse_args(*args)
+        ans = self.parser.parse_args(*args)
         return copy.deepcopy(ans.__dict__)
