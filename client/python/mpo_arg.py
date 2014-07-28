@@ -566,13 +566,11 @@ class mpo_methods(object):
 
     def create(self, protocol=None, *arg, **kw):
         import importlib
-        print("Here I am in create - protocol is %s"%protocol)
         modname= "mpo_do_%s"%protocol[0]
         mod = importlib.import_module(modname)
         creator_class=getattr(mod, modname)
         creator=creator_class(self)
         args = creator.cli(protocol[1:])
-        print ("calling creator.create")
         return creator.create(**args)
 
 class mpo_cli(object):
