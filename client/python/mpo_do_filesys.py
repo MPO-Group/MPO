@@ -15,10 +15,10 @@ class mpo_do_filesys(_do.mpo_do_dataobject):
         mpo create --protocol=filesys --filespec=/usr/local/cmod/shared/some-file.dat
     """
 
-    def create(self, filespec=None, desc=None, verbose=False):
+    def create(self, filespec=None, description=None, name=None, verbose=False):
         print ("constructing a filespec object for %s"%filespec)
         uri = "filesys://%s"%filespec
-        return(self.mpo.add(None, None,name="filesys-object", desc=desc, uri=uri))
+        return(self.mpo.add(None, None,name=name, desc=description, uri=uri))
 
     def cli(self, *args):
         import copy
