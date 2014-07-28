@@ -1,4 +1,6 @@
-class mpo_do_filesys(object):
+import mpo_do_dataobject as _do
+
+class mpo_do_filesys(_do.mpo_do_dataobject):
     """
     A class to construct data objects from files in the users file system.
     No file manipulation is done.  
@@ -12,8 +14,6 @@ class mpo_do_filesys(object):
     for example:
         mpo create --protocol=filesys --filespec=/usr/local/cmod/shared/some-file.dat
     """
-    def __init__(self, mpo):
-       self.mpo = mpo
 
     def create(self, filespec=None, desc=None, verbose=False):
         print ("constructing a filespec object for %s"%filespec)
@@ -23,15 +23,8 @@ class mpo_do_filesys(object):
     def cli(self, *args):
         import copy
         import argparse
-        parser = argparse.ArgumentParser(description='filespec data object creator',
-                                         epilog="""Metadata Provenance Ontology project""",
-                                         prog='mpo create --protocol=filespec')
-        parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
-                            default=False)
 
-    #note that arguments will be available in functions as arg.var
-
-        #global mdsplus options
-        parser.add_argument('--filespec','-f',action='store',help='''Specify file or directory.''')
-        ans = parser.parse_args(*args)
+        #global filespec options
+        self.parser.add_argument('--filespec','-f',action='store',help='''Specify file or directory.''', required=True)
+        ans = self.parser.parse_args(*args)
         return copy.deepcopy(ans.__dict__)
