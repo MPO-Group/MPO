@@ -177,6 +177,9 @@ class mpo_methods(object):
         return output
 
 # define api methods here. All methods must be declared as method(**kwargs).
+# explict arguments are allowed but must be keyword=value, this is required 
+# for compatibility with the commandline parser invokacion
+
     def test(self,route='default',*a,**kw):
         print('init:',a,kw)
         print('with route', route)
@@ -192,25 +195,6 @@ class mpo_methods(object):
         route -- API route for resource
         """
 
-        import logging
-
-# These two lines enable debugging at httplib level (requests->urllib3->http.client)
-# You will see the REQUEST, including HEADERS and DATA, and RESPONSE with HEADERS but without DATA.
-# The only thing missing will be the response.body which is not logged.
-        try:
-            import http.client as http_client
-        except ImportError:
-            # Python 2
-            import httplib as http_client
-        http_client.HTTPConnection.debuglevel = 1
-
-        # You must initialize logging, otherwise you'll not see debug output.
-        logging.basicConfig() 
-        logging.getLogger().setLevel(logging.DEBUG)
-        requests_log = logging.getLogger("requests.packages.urllib3")
-        requests_log.setLevel(logging.DEBUG)
-        requests_log.propagate = True
-        
         #if parameters are present, this is a search
         #requests.py reconstructs the url with the parameters appended
         #in the "?param=val" http syntax
@@ -218,9 +202,6 @@ class mpo_methods(object):
         #check for dict and str instances, requests expects a dict
 
         url=self.api_url+route
-        if self.debug or verbose:
-            print('mpo_GET',url,params,kwargs,file=sys.stderr)
-
 
         if isinstance(params,str): #string repr of a dict
             datadict=ast.literal_eval(params)
@@ -233,14 +214,13 @@ class mpo_methods(object):
             datadict={}
 
         if self.debug or verbose:
-            print('mpo_GET',datadict, 'got here2',file=sys.stderr)
-            print('xxxx',url,datadict, self.GETheaders,self.requestargs)
+            print('MPO.GET',url,datadict, self.GETheaders,self.requestargs,file=sys.stderr)
 
 
         r = requests.get(url,params=datadict,
                              headers=self.GETheaders,**self.requestargs)
         if self.debug or verbose:
-            print('mpo_GET response',r.url,r.status_code,file=sys.stderr)
+            print('MPO.GET response',r.url,r.status_code,file=sys.stderr)
 
         r.raise_for_status()
 
@@ -250,13 +230,13 @@ class mpo_methods(object):
         return r
 
 
-    def post(self,route="",workflowID=None,objID=None,data=None,**kwargs):
+    def post(self,route="",workflow_ID=None,obj_ID=None,data=None,**kwargs):
         """POST a messsage to an MPO route.
         Used by all methods that create objects in an MPO workflow.
 
         Keyword arguments:
-        workflowID -- the workflow being added to
-        objID -- the object we are making a connection from
+        workflow_ID -- the workflow being added to
+        obj_ID -- the object we are making a connection from
         data -- the object being posted
         """
         #need flexible number of args so you can just post to a url.
@@ -283,13 +263,13 @@ class mpo_methods(object):
         url=self.api_url+route
 
         if self.debug>0:
-            print('MPO.POST',url,json.dumps(datadict),file=sys.stderr)
+            print('MPO.POST',url,workflow_ID,obj_ID,json.dumps(datadict),file=sys.stderr)
 
-        if objID:
-            datadict[self.PARENTID]=objID
+        if obj_ID:
+            datadict[self.PARENTID]=obj_ID
 
-        if workflowID:
-            datadict[self.WORKID]=workflowID
+        if workflow_ID:
+            datadict[self.WORKID]=workflow_ID
 
         # note we convert python dict to json format and tell the server and requests.py
         #    in the header it is JSON
@@ -323,41 +303,32 @@ class mpo_methods(object):
 
         """
 
-     ## get the workflowtype uid
-        #first get ontology term Workflow guid from whole ontology list of terms
-        r=self.get(self.ONTOLOGY_TERM_RT)
-        for n in json.loads(r.text):
-            if n['name'] == 'Workflow':
-                id=n['ot_guid']
-        #second, get record with parent_guid=ot_guid and get its id if it has name='Type'
-        #that get Workflow/Type uuid
-        #JCW This is an incorrect usage of /id route BTW
-        r=self.get(self.ONTOLOGY_TERM_RT+'/'+id)
-        for n in json.loads(r.text):
-            if n['name'] == 'Type':
-                id=n['ot_guid']
-        #third, now get Workflow/Type/"Instances"
-        r=self.get(self.ONTOLOGY_TERM_RT+'/'+id)
-        value = None
-        wtypes = ''  #this is only to record for debugging purposes
-        for n in json.loads(r.text):
-            wtypes += n['name']+' '
-            if n['name'] == wtype:
-                value = wtype
-                break
-        if value == None:
-            print("Unknown workflow type. Must be one of: "+wtypes)
-            value=wtype
-            #sys.exit(2) #replace with exception
+        ## get the workflowtype uid
+        r=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type/'+wtype})
+        ont_entry=json.loads(r.text)
 
-        #id is id of parent
-        payload={"name":name,"description":desc,"id":id}
+        if (isinstance(ont_entry, dict)):
+            if ont_entry.get('name')==wtype:
+                value=wtype
+                uid = ont_entry.get('uid')
+            else: #get list of valid workflow types and return error
+                ro=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type'})
+                wtypes_uid=ro.json()['uid']
+                wtypes_vocab=self.get(self.ONTOLOGY_TERM_RT+'/'+wtypes_uid+'/vocabulary')
+                wtypes=[v['name'] for v in wtypes_vocab.json()]
+                print("Unknown workflow type. Must be one of: "+ str(wtypes))
+                sys.exit(2) #replace with exception
+        else:
+            print("Error, no dictionary returned from ontology query in init method.")
+            sys.exit(2)
+
+
+        payload={"name":name,"description":desc,"id":uid,"value":value}
         r=self.post(self.WORKFLOW_RT,data=payload,**kwargs)
-
         return r
 
     
-    def add(self,workflow_ID,parentobj_ID, name='No name', desc=None, uri=None, **kwargs):
+    def add(self, workflow_ID=None, parentobj_ID=None, **kwargs):
         """
         Add at dataobject to a workflow.
 
@@ -370,8 +341,17 @@ class mpo_methods(object):
 
         """
 
-        payload={"name":name,"description":desc,"uri":uri}
+        uri = kwargs.get('uri')
+        desc = kwargs.get('desc')
+        name = kwargs.get('name')
+        if (self.debug):
+            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,kwargs, file=sys.stderr)
 
+        if not (workflow_ID and parentobj_ID):
+            print('Invalid workflow or parent to add method',workflow_ID, parentobj_ID, file=sys.stderr)
+            exit
+
+        payload={"name":name,"description":desc,"uri":uri}
         return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],payload,**kwargs)
 
     
@@ -381,36 +361,52 @@ class mpo_methods(object):
         args:
         workflow_ID --
         parentobj_ID --
-        name --
+        name -- name of activity
         desc -- description
         uri -- uri for the data object added
-        input -- additional inputs
+        input_objs -- array of additional inputs
         """
 
+        name=kwargs.get('name')
+        desc=kwargs.get('desc')
+        uri=kwargs.get('uri')
         inp=[parentobj_ID]
         if input_objs:
-            inp.append(arg)
-        payload={"name":name,"description":desc,"uri":uri}
+            inp.extend(input_objs)
 
+        payload={"name":name,"description":desc,"uri":uri}
         r=self.post(self.ACTIVITY_RT,workflow_ID,inp,payload,**kwargs)
         return r
 
     
-    def comment(self,obj_ID,comment,**kwargs):
+    def comment(self,obj_ID=None,comment='empty',**kwargs):
         """Takes a returned record and adds a comment to it.
         In this case, data should be a plain string.
+        args:
+        obj_ID -- object being commented on
+        comment -- string containing the comment
         """
+
+        if obj_ID==None:
+            print('No object UID given, or invalid UID given',file=sys.stderr)
+            return {'error':-1}
+
         if not (isinstance(comment,str) or isinstance(comment,unicode)):
             print('Error in mpo_commment, should be a plain string')
-            return -1
+            return {'error':-1}
 
         r=self.post(self.COMMENT_RT,None,obj_ID,data={'content':str(comment)})
         return r
 
 
-    def meta(self,obj_ID,key,value,**kwargs):
+    def meta(self,obj_ID=None,key=None,value=None,**kwargs):
         """Takes a returned record and adds a metadata to it.
         In this case, data should be a plain string.
+
+        args:
+        obj_ID -- object being commented on
+        key -- key identifying the type of metadata stored
+        value -- string containing the stored value
         """
         if not (isinstance(key,str) or isinstance(key,unicode)):
             print('Error in mpo_meta, should be a plain string')
@@ -606,7 +602,7 @@ class mpo_cli(object):
         self.archive_prefix=archive_prefix
 
         #initialize foreign methods here
-        print('init',mpo_cert,archive_key)
+        print('init',mpo_cert,archive_key,file=sys.stderr)
         self.mpo=mpo_methods(api_url,version,debug=self.debug,cert=mpo_cert,archive_key=archive_key)
 
     def type_uuid(self,uuid):
@@ -647,7 +643,8 @@ class mpo_cli(object):
         #post
         post_parser=subparsers.add_parser('post',help='POST to a route')
         post_parser.add_argument('route',action='store',help='Route of resource to query')
-        post_parser.add_argument('--params',action='store',help='Payload arguments as {key:value,key2:value2}')
+        post_parser.add_argument('--params',action='store',
+                                 help='Payload arguments as {key:value,key2:value2}')
         post_parser.set_defaults(func=self.mpo.post)
 
         #init
@@ -663,8 +660,8 @@ class mpo_cli(object):
         #add
         add_parser=subparsers.add_parser('add',help='Add a data object to a workflow.')
 #        addio = add_parser.add_mutually_exclusive_group() #needed for child vs parent.
-        add_parser.add_argument('workflow', action='store',metavar='workflow_ID')
-        add_parser.add_argument('parent', action='store',metavar='parentobj_ID')
+        add_parser.add_argument('workflow_ID', action='store',metavar='workflow')
+        add_parser.add_argument('parentobj_ID', action='store',metavar='parent')
         add_parser.add_argument('--name', '-n', action='store')
         add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
         add_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
@@ -674,8 +671,8 @@ class mpo_cli(object):
         step_parser=subparsers.add_parser('step',help='Add an action to a workflow.')
         step_parser.add_argument('workflow_ID', action='store',metavar='workflow')
         step_parser.add_argument('parentobj_ID', action='store',metavar='parent')
-        step_parser.add_argument('--input', '-i', action='store',dest='input_objs')
-        step_parser.add_argument('--name', '-n', action='store')
+        step_parser.add_argument('--input', '-i', action='append',dest='input_objs')
+        step_parser.add_argument('--name', '-n', action='store', default='UnNamed Object')
         step_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
         step_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
         step_parser.set_defaults(func=self.mpo.step)
@@ -687,7 +684,7 @@ class mpo_cli(object):
 
         #comment
         comment_parser=subparsers.add_parser('comment',help='Attach a comment an object.')
-        comment_parser.add_argument('object_ID',action='store',metavar='object',
+        comment_parser.add_argument('obj_ID',action='store',metavar='object',
                                     help='UUID of object to comment on',
                                     type=self.type_uuid)
         comment_parser.add_argument('comment',action='store',help='Text of comment')
@@ -695,7 +692,7 @@ class mpo_cli(object):
 
         #meta
         meta_parser=subparsers.add_parser('meta',help='Add an action to a workflow.')
-        meta_parser.add_argument('object_ID',action='store',metavar='object',
+        meta_parser.add_argument('obj_ID',action='store',metavar='object',
                                     help='UUID of object to attach metadata to',
                                     type=self.type_uuid)
         meta_parser.add_argument('key',action='store',
@@ -752,21 +749,30 @@ class mpo_cli(object):
         #print parser.parse_args(['-a', '-bval', '-c', '3'])
         # here we handle global arguments
         # now execute method
+        # There are basically two choices for these methods.
+        # 1) arguments passed as a named tuple and references in the method as args.var
+        # 2) arguments passed as a dictionary of keywords and accessed
+        # in the method as kwargs[value] OR have method(key1=default)
+        # in the function definition, we do the later in mpo methods
+
         args=parser.parse_args()
         kwargs=copy.deepcopy(args.__dict__)
         # strip out 'func' method
         del(kwargs['func'])
         if self.debug:
-            print('args',str(args.__dict__))
+            print('args',kwargs,args.func,file=sys.stderr)
 
-        try:
-            r=args.func(**kwargs)
-        except Exception,e:
-            print("error executing command\n%s"%e, file=sys.stderr)
-            return 0
+#        try:
+        r=args.func(**kwargs)
+#        except Exception,e:
+#            print("error executing command\n%s"%e, file=sys.stderr)
+#            return 0
+
         if kwargs.has_key('format'):
             r=self.mpo.format(r,filter=kwargs['format'])
+
         return r
+
 
 ####main routine
 if __name__ == '__main__':
