@@ -1,4 +1,4 @@
-class mpo_dataobject(object):
+class mpo_do_mdsplus(object):
     """
     A class to construct data objects for references to mdsplus trees..  
 

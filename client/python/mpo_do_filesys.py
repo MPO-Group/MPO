@@ -1,4 +1,4 @@
-class mpo_dataobject(object):
+class mpo_do_filesys(object):
     """
     A class to construct data objects from files in the users file system.
     No file manipulation is done.  
@@ -15,9 +15,10 @@ class mpo_dataobject(object):
     def __init__(self, mpo):
        self.mpo = mpo
 
-    def create(self, filespec=None, verbose=False):
+    def create(self, filespec=None, desc=None, verbose=False):
         print ("constructing a filespec object for %s"%filespec)
-        return ("filesys://%s"%filespec)
+        uri = "filesys://%s"%filespec
+        return(self.mpo.add(None, None,name="filesys-object", desc=desc, uri=uri))
 
     def cli(self, *args):
         import copy

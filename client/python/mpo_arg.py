@@ -250,7 +250,7 @@ class mpo_methods(object):
         return r
 
 
-    def post(self,route="",workflowID=None,obj_ID=None,data=None,**kwargs):
+    def post(self,route="",workflowID=None,objID=None,data=None,**kwargs):
         """POST a messsage to an MPO route.
         Used by all methods that create objects in an MPO workflow.
 
@@ -357,7 +357,7 @@ class mpo_methods(object):
         return r
 
     
-    def add(self,workflow_ID,parentobj_ID, name='No name', **kwargs):
+    def add(self,workflow_ID,parentobj_ID, name='No name', desc=None, uri=None, **kwargs):
         """
         Add at dataobject to a workflow.
 
@@ -571,32 +571,13 @@ class mpo_methods(object):
     def create(self, protocol=None, *arg, **kw):
         import importlib
         print("Here I am in create - protocol is %s"%protocol)
-        mod = importlib.import_module(protocol[0])
-        creator=mod.dataobject(self)
+        modname= "mpo_do_%s"%protocol[0]
+        mod = importlib.import_module(modname)
+        creator_class=getattr(mod, modname)
+        creator=creator_class(self)
         args = creator.cli(protocol[1:])
         print ("calling creator.create")
         return creator.create(**args)
-
-    def creater(self, protocol=None, *arg, **kw):
-        import importlib
-        print("Here I am in create - protocol is %s"%protocol)
-        mod = importlib.import_module(protocol[0])
-        if protocol[1] in ('-h', '--help'):
-            help(mod)
-            answer=None
-        else:
-            d = {}
-            for p in protocol[1:]:
-                (k,v) = p.split("=")
-                for i in (0,1):
-                    if k.startswith('-'):
-                        k = k[1:]
-                d[k]=v
-            creator=mod.dataobject(self, **d)
-            answer = creator.create()
-        return answer
-        
-
 
 class mpo_cli(object):
     """
