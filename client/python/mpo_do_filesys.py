@@ -1,4 +1,4 @@
-class dataobject(object):
+class mpo_dataobject(object):
     """
     A class to construct data objects from files in the users file system.
     No file manipulation is done.  

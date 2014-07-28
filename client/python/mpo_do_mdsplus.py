@@ -1,4 +1,4 @@
-class dataobject(object):
+class mpo_dataobject(object):
     """
     A class to construct data objects for references to mdsplus trees..  
 
@@ -6,7 +6,8 @@ class dataobject(object):
     particular server, tree, shot, path.
 
     command line syntax:
-        mpo create {--protocol=|-p }mdsplus {--server=|-s }server-name {--tree=|-t }treename {--shot=|-n }shot-number {--path=|-p }tree-path
+        mpo create {--protocol=|-p }mdsplus {--server=|-s }server-name 
+                   {--tree=|-t }tree-name {--shot=|-n }shot-number {--path=|-p }tree-path
     for example:
         mpo create --protocol=mdsplus --server=alcdaq --tree=cmod --shot=1090909009 --path=\\ip
     """
