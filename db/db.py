@@ -174,7 +174,7 @@ def getOntologyTermTree(id='0',dn=None):
 	try:
 		import treelib as t
 	except Exception as e:
-		print('Tree generation requires treelib.py',file=sys.stderr)
+		print('Tree generation requires treelib.py')
 		return {'status':'Not supported','error_message':str(e)}
 
         ###Unfortunately, it is necessary to retrieve the entire ontology table
