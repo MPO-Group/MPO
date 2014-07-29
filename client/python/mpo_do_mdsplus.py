@@ -17,7 +17,7 @@ class mpo_do_mdsplus(_do.mpo_do_dataobject):
         if verbose:
             print ("constructing a mdsplus object for server=%s tree=%s shot=%d path=%s"%(server, tree, shot_number, path,))
         uri = "mdsplus://%s/?tree=%s&shot=%d&path=%s"%(server, tree, shot_number, path,)
-        return(self.mpo.add(None, None,name=name, desc=description, uri=uri))
+        return(self.mpo.add_do(name=name, desc=description, uri=uri))
 
     def cli(self, *args):
         import copy
