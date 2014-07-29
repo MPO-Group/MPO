@@ -4,7 +4,7 @@
 #defaults are used if environment is not set
 if ! [ -n "${MPO_HOST:+x}" ]
 then
-  export MPO_HOST=http://localhost:8080
+  export MPO_HOST=https://mpo.gat.com:8443
 fi
 
 
@@ -19,7 +19,7 @@ then
 fi
 
 #use API methods to create a workflow
-wid=`$MPO init --name=EFIT --desc=test`
+wid=`$MPO init --name=EFIT --desc=test --type=EFIT`
 oid=`$MPO add  $wid $wid --name=shot --desc="Plasma shot number" --uri=150335`
 oid2=`$MPO add  $wid $wid --name="Snap file" --desc="EFIT input file" --uri="\\efit01:namelist"`
 aid=`$MPO step $wid $oid --input=$oid2 --name="EFIT exec" --desc="Fit equilibrium and compute plasma parameters" --uri=EFIT`

@@ -24,6 +24,11 @@ then
   export MPO="$MPO_HOME/client/python/mpo_testing.py --user=$USER"
 fi
 
+if ! [ -n "${MPO_AUTH:+x}" ]
+then
+  export MPO_AUTH=$MPO_HOME/MPODemoUser.pem
+fi
+
 #use API methods to create a workflow
 wid=`$MPO init --name=EFIT --desc="A first EFIT workflow" --type=EFIT`
 oid1=`$MPO add  $wid $wid --name=shot --desc="Plasma shot number" --uri=150335`
