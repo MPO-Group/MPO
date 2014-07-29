@@ -14,19 +14,19 @@ import sys,os,datetime,getopt
 import json
 from urlparse import urlparse
 
-#Developers note: 
+#Developers note:
 #all print statements except those in mpo_cli.storeresult should go to sys.stderr
 #Non-standard dependencies: requests.py
 
 # TODO
-# * Error handling on request replies, define standard replies. Server should always return 
+# * Error handling on request replies, define standard replies. Server should always return
 #    an object (JSON or XML)
 # * santize urls, for example url/workflow and url//workflow should both work
 
 class mpo_methods(object):
     """
     Class of RESTful primitives. I/O is through stdin/stdout.
-    Implementation of MPO client side API as described at 
+    Implementation of MPO client side API as described at
     http://www.psfc.mit.edu/mpo/
 
     Commandline invocation:
@@ -39,7 +39,7 @@ class mpo_methods(object):
     #Need error handling
     #By giving each method **kwargs in its definition, they will accepts
     #arbitrary sets of keywords arguments that they may or may not act upon.
-    #kwargs in body will only contain keyword pars that were not matched in the 
+    #kwargs in body will only contain keyword pars that were not matched in the
     #function call
     POSTheaders = {'content-type': 'application/json'}
     GETheaders= {'ACCEPT': 'application/json'}
@@ -115,7 +115,7 @@ class mpo_methods(object):
             if self.get_user()!="":
                 datadict['user']=self.get_user()
                 #kwargs overrides
-            if kwargs['user']!=None: 
+            if kwargs['user']!=None:
                 datadict['user']=kwargs['user']
             del kwargs['user'] #dont pass it along to requests
 
@@ -206,9 +206,9 @@ class mpo_methods(object):
             sys.stderr.write('MPO ERROR: %s\n' % str(err))
             print(" ",file=sys.stderr)
             return 1
-        
+
         #if parameters are present, this is a search
-        #requests.py reconstructs the url with the parameters appended 
+        #requests.py reconstructs the url with the parameters appended
         #in the "?param=val" http syntax
 
         return r
@@ -244,38 +244,38 @@ class mpo_methods(object):
             elif opt in ("-t","--type"):
                 wtype=arg
         if wtype == None:
-            print("Workflow type is required. Specify with --type=<type>")
+            print("Workflow type is required. Specify with --type=<type>",file=sys.stderr)
             sys.exit(2)
 
         o=urlparse(url)
 
         # get the workflowtype uid
-        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/vocabulary'
         r=self.mpo_get(urlcon,**kwargs)
         for n in json.loads(r.text):
             if n['name'] == 'Workflow':
-                id=n['ot_guid']
-        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id
+                id=n['uid']
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id+'/vocabulary'
         r=self.mpo_get(urlcon,**kwargs)
         for n in json.loads(r.text):
             if n['name'] == 'Type':
-                id=n['ot_guid']
-        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id
+                id=n['uid']
+        urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT+'/'+id+'/vocabulary'
         r=self.mpo_get(urlcon,**kwargs)
-        id = None
+        value = None
+        wtypes = ''
         for n in json.loads(r.text):
+            wtypes += n['name']+' '
             if n['name'] == wtype:
-              id=n['ot_guid']
-        if id == None:
-            wtypes = ''
-            for n in json.loads(r.text):
-                wtypes += n['name']+' '
+              value = wtype
+              break
+        if value == None:
             print("Unknown workflow type. Must be one of: "+wtypes)
             sys.exit(2)
 
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.WORKFLOW_RT
 
-        payload={"name":name,"description":desc,"id":id}
+        payload={"name":name,"description":desc,"id":id,"value":value}
 
         r=self.mpo_post(urlcon,None,None,payload,**kwargs)
         return r
@@ -306,7 +306,7 @@ class mpo_methods(object):
                 desc=arg
             elif opt in ("-u","--uri"):
                 uri=arg
-        
+
         o=urlparse(url)
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.DATAOBJECT_RT
         payload={"name":name,"description":desc,"uri":uri}
@@ -344,7 +344,7 @@ class mpo_methods(object):
                 uri=arg
             elif opt in ("-i","--input"):
                 inp.append(arg)
-        
+
         o=urlparse(url)
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ACTIVITY_RT
         payload={"name":name,"description":desc,"uri":uri}
@@ -394,6 +394,7 @@ class mpo_methods(object):
         r=self.mpo_post(urlcon,None,pid,payload,**kwargs)
         return r
 
+
     def mpo_ontology_instance(self,url,target=None,path=None,value=None,*args,**kwargs):
         """Add terms to the ontology instance
            args are target,path,value
@@ -416,10 +417,10 @@ class mpo_methods(object):
         if not (isinstance(data,str) or isinstance(data,unicode)):
             print('Error in mpo_commment, should be a plain string')
             return -1
-            
+
         o=urlparse(url)
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.COMMENT_RT
-        
+
         r=self.mpo_post(urlcon,None,obj_ID,{'content':str(data)},**kwargs)
 
         return r
@@ -431,10 +432,10 @@ class mpo_methods(object):
         if not (isinstance(key,str) or isinstance(key,unicode)):
             print('Error in mpo_meta, should be a plain string')
             return -1
-            
+
         o=urlparse(url)
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.METADATA_RT
-        
+
         r=self.mpo_post(urlcon,None,obj_ID,{'value':str(value),'key':key}, **kwargs)
 
         return r
@@ -466,7 +467,7 @@ class mpo_methods(object):
 
 class mpo_cli(mpo_methods):
     """
-    Implementation of MPO client side API as described at 
+    Implementation of MPO client side API as described at
     http://www.psfc.mit.edu/mpo/
     High level command line interface to API.
     """
@@ -485,9 +486,9 @@ class mpo_cli(mpo_methods):
 
     def meta( self, method_name,url, *args,**kwargs ):
         """
-           First argument is the method name. It maps to 'mpo_x' defined 
+           First argument is the method name. It maps to 'mpo_x' defined
            in the mpo_methods class.
-           Second argument is optionally the url of the mpo host. Otherwise, 
+           Second argument is optionally the url of the mpo host. Otherwise,
            defaults to other resource specifications.
         """
 
@@ -539,14 +540,14 @@ class mpo_cli(mpo_methods):
                 """.format(f=str(flags),lf=str(longflags)))
         kwargs={}
     #Process commandline
-    
+
         try:
             opts, args = getopt.getopt(sys.argv[1:], flags, longflags)
 
         except getopt.GetoptError:
             print("Accepted flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
             sys.exit(2)
-        
+
         for opt, arg in opts:
             if opt in ("-v","--verbose"):
                 self.debug=1
@@ -598,10 +599,10 @@ class mpo_cli(mpo_methods):
             else:
                 url=self.get_server()
                 rargs=args[1:]
-                
+
         if self.debug>0:
             print('#CLI: URL constructed ',url,file=sys.stderr)
-            
+
         #args[2:] is helpful or not? Could just use only kwargs
 #        return args[0],args[1],args[2:],kwargs #method,uri,args,kwargs
         return method,url,rargs,kwargs
@@ -682,4 +683,3 @@ if __name__ == '__main__':
         print("mpo request failed, result of method is not a valid response:",file=sys.stderr)
         print("     "+str(type(result)),result,file=sys.stderr)
 	print(result)
-
