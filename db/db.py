@@ -171,7 +171,11 @@ def getOntologyTermTree(id='0',dn=None):
         Constructs a tree from the ontology terms and returns
         structure suitable for parsing into graph or menu.
         """
-        import treelib as t
+	try:
+		import treelib as t
+	except Exception as e:
+		print('Tree generation requires treelib.py',file=sys.stderr)
+		return {'status':'Not supported','error_message':str(e)}
 
         ###Unfortunately, it is necessary to retrieve the entire ontology table
         ###to construct even partial trees because the order is unknown
@@ -200,28 +204,26 @@ def getOntologyTermTree(id='0',dn=None):
                            "error_mesg": "query error in Getontologytermtree, no records returned"}
                         return json.dumps(r, cls=MPOSetEncoder)
                                 
-        #make sure parents always occur before children
-        #bubble sort, if ith record has its parent in i+1:n, swap with it
-        for i in xrange(len(records)):
-                for j in xrange(i+1,len(records)):
-                        if records[i]['parent_uid']==records[j]['uid']:
-                                tmp=records[i]
-                                records[i]=records[j]
-                                records[j]=tmp
-                                break #only one parent, so we can exit this loop
-
         ###Create tree structure for each head of the ontology
         #may be multiple trees, they have parent as None
         #we will place them under 'root' node if the whole tree is requested
         ot_tree=t.Tree()
         ot_tree.create_node('root','0')
 
-        for o in records:
-                pid=o['parent_uid']
-                name=o['name']
-                if pid==None:
-                        pid='0'
-                ot_tree.create_node(o['name'],o['uid'],parent=pid)
+        #make sure parents always occur before children
+	#try to insert, if parent is not in tree, skip
+	#repeat until all records are inserted
+	while len(records)>0:
+		for o in records:
+			pid=o['parent_uid']
+			if pid==None:
+				pid='0'
+			try:
+				ot_tree.create_node(o['name'],o['uid'],parent=pid)
+				records.remove(o)
+			except t.tree.NodeIDAbsentError, e:
+				pass #should test for NodeIDAbsentError
+
 
         #load and dump to ensure clean json format
         return json.dumps(json.loads(ot_tree.subtree(id).to_json()),cls=MPOSetEncoder)
