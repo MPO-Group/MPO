@@ -31,10 +31,10 @@ function usage {
 
 if [ $# -ge 1 ]
 then
-  if [ $1 = "-h" ]
-  then
-    usage
-  fi
+if [ $1 = "-h" ]
+then
+  usage
+fi
 fi
 
 myfp=`which $0`

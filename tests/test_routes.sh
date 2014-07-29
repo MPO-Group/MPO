@@ -34,12 +34,14 @@ if ! [ -n "${MPO_HOME:+x}" ]
 then
   echo WARNING: MPO_HOME not defined, using defaults.
   export MPO_HOME=$(dirname $0)/../
+  echo mpo home is $MPO_HOME
 fi
 
 if ! [ -n "${PGDATA:+x}" ]
 then
   echo WARNING: PGDATA not defined, using defaults.
   export PGDATA=$MPO_HOME/db/data
+  echo thepwd $PWD
 fi
 
 if ! [ -n "${MPO_VERSION:+x}" ]
@@ -58,12 +60,22 @@ env
 
 #start our own database
 test_db=mpo_test
+dropdb mpo_test
 createdb $test_db
 psql -d $test_db -a -f $MPO_HOME/db/create_tables.sql
 
 #start up api and web servers
+echo Starting up uwsgi servers
 $MPO_HOME/api_server.sh $api_port "host=localhost dbname=$test_db user='mpoadmin' password='mpo2013' " &> api_out.txt &
 $MPO_HOME/web_server.sh $web_port https://localhost:$api_port &> web_out.txt &
+
+echo %TESTING first create the ontology terms %%%%%%%%%%%%
+$MPO_HOME/client/python/tests/ontology_terms_gyro.load
+$MPO_HOME/client/python/tests/ontology_terms_swim.load
+$MPO_HOME/client/python/tests/ontology_terms_efit.load
+
+echo %TESTING retrieving ontology tree
+$MPO --format=pretty get -r ontology/term/tree
 
 echo %TESTING postings with commandline api %%%%%%%%%%%%%%
 $MPO_HOME/client/python/tests/josh.test
@@ -80,6 +92,6 @@ done
 
 
 
-echo Commandline tests done. lauch a browser at https://localhost:$api_port to check the web browser client
+echo Commandline tests done. launch a browser at https://localhost:$web_port to check the web browser client
 echo When done, run kill your servers. Inspect api.out.txt and web_out.txt for errors.
 ps waux |grep uwsgi|grep $USER
