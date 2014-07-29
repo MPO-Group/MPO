@@ -34,6 +34,7 @@ if ! [ -n "${MPO_HOME:+x}" ]
 then
   echo WARNING: MPO_HOME not defined, using defaults.
   export MPO_HOME=$(dirname $0)/../
+  echo Home is $MPO_HOME
 fi
 
 if ! [ -n "${PGDATA:+x}" ]
@@ -58,6 +59,7 @@ env
 
 #start our own database
 test_db=mpo_test
+dropdb $test_db
 createdb $test_db
 psql -d $test_db -a -f $MPO_HOME/db/create_tables.sql
 
@@ -68,6 +70,8 @@ $MPO_HOME/web_server.sh $web_port https://localhost:$api_port &> web_out.txt &
 
 echo %TESTING first create the ontology terms %%%%%%%%%%%%
 $MPO_HOME/client/python/tests/ontology_terms_gyro.load
+$MPO_HOME/client/python/tests/ontology_terms_swim.load
+$MPO_HOME/client/python/tests/ontology_terms_efit.load
 
 echo %TESTING postings with commandline api %%%%%%%%%%%%%%
 $MPO_HOME/client/python/tests/josh.test
