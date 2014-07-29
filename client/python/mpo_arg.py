@@ -354,6 +354,33 @@ class mpo_methods(object):
         payload={"name":name,"description":desc,"uri":uri}
         return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],payload,**kwargs)
 
+    def add_do(self, **kwargs):
+        """
+        Add a dataobject with no workflow or partentobj_id.
+        This data object can then be connected to one or more
+        workflows.
+
+        if a data object with this workflow already exists, then return it.
+
+        args are:
+        name --
+        desc -- description
+        uri -- uri for the data object added
+
+        """
+
+        uri = kwargs.get('uri')
+        desc = kwargs.get('desc')
+        name = kwargs.get('name')
+        if (self.debug):
+            print('MPO.ADD_DO', name, desc,uri,kwargs, file=sys.stderr)
+
+        payload={"name":name,"description":desc,"uri":uri}
+        print ("about to post %s\n"%payload)
+        ans=self.post(self.DATAOBJECT_RT,data=payload,**kwargs)
+
+        return ans
+
     
     def step(self,workflow_ID,parentobj_ID,input_objs=None,**kwargs):
         """

@@ -19,7 +19,7 @@ class mpo_do_filesys(_do.mpo_do_dataobject):
         if verbose:
             print ("constructing a filespec object for %s"%(filespec,))
         uri = "filesys://%s"%filespec
-        return(self.mpo.add(None, None,name=name, desc=description, uri=uri))
+        return(self.mpo.add_do(name=name, desc=description, uri=uri))
 
     def cli(self, *args):
         import copy

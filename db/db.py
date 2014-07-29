@@ -391,16 +391,17 @@ def addRecord(table,request,dn):
         print(q,v)
 
     cursor.execute(q,v)
+    if objs.has_key('parent_uid'):
     #connectivity table
-    wc_guid = str(uuid.uuid4())
-    for parent in objs['parent_uid']:
-        if objs['parent_uid'] == objs['work_uid']:
-            parent_type = 'workflow'
-        else:
-            cursor.execute("select w_guid as uid, 'workflow' as type from workflow where w_guid=%s union select a_guid as uid, 'activity' as type from activity where a_guid=%s union select do_guid as uid, 'dataobject' as type from dataobject where do_guid=%s",(parent,parent,parent))
-            records = cursor.fetchone()
-            parent_type = records.type
-        cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'], 'dataobject',datetime.datetime.now()))
+        wc_guid = str(uuid.uuid4())
+        for parent in objs['parent_uid']:
+            if objs['parent_uid'] == objs['work_uid']:
+                parent_type = 'workflow'
+            else:
+                cursor.execute("select w_guid as uid, 'workflow' as type from workflow where w_guid=%s union select a_guid as uid, 'activity' as type from activity where a_guid=%s union select do_guid as uid, 'dataobject' as type from dataobject where do_guid=%s",(parent,parent,parent))
+                records = cursor.fetchone()
+                parent_type = records.type
+            cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'], 'dataobject',datetime.datetime.now()))
     # Make the changes to the database persistent
     conn.commit()
 

@@ -227,6 +227,18 @@ def getWorkflowCompositeID(id):
 def dataobject(id=None):
         dn=get_user_dn(request)
         if request.method == 'POST':
+#            print "DATAOBJECT"
+#            print request
+#            print request.args
+#            help(request)
+            print "DO."
+            print request.data
+            print "DO.."
+            args = json.loads(request.data)
+            r = rdb.getRecord('dataobject', {'uri':args['uri']})
+            print "got back r = %s, type=%s"%(r, type(r),)
+            if r == "[]":
+                print "have to add a data object for uri %s"%args['uri']
                 r = rdb.addRecord('dataobject',request.data,dn)
                 rr = json.loads(r)
                 id = rr['uid']
