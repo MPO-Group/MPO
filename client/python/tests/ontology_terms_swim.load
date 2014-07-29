@@ -1,0 +1,59 @@
+#!/bin/sh
+#specify MPO server address. The API will read this value.
+#defaults are used if environment is not set
+if ! [ -n "${MPO_HOST:+x}" ]
+then
+  export MPO_HOST=https://localhost:8443
+fi
+
+
+if ! [ -n "${MPO_VERSION:+x}" ]
+then
+  export MPO_VERSION=v0
+fi
+
+
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+  echo MPO_HOME not defined, exitting
+  exit
+fi
+
+if ! [ -n "${MPO:+x}" ]
+then
+  export MPO="$MPO_HOME/client/python/mpo_testing.py --user=$USER"
+fi
+
+#use API methods to create a workflow
+oid1=`$MPO get --route 'ontology/term' --params='path=/Workflow/Type/SWIM'`
+if [ $oid1 = "[]" ]
+then
+    echo Ontology term /Workflow/Type/SWIM doesn\'t exist. Run $MPO_HOME/client/python/tests/ontology_terms_gyro.load first
+    exit
+fi
+oid2=`$MPO ontology_term 'Code Characteristics' --desc='Terms that describe the code type' -p $oid1 -t 'string' -s 'y'`
+oid3=`$MPO ontology_term 'Run Characteristics' --desc='Terms that describe the run type' -p $oid1 -t 'string' -s 'y'`
+oid4=`$MPO ontology_term 'Run Metadata' --desc='Metadata terms associated with the run' -p $oid1 -t 'string' -s 'y'`
+oid5=`$MPO ontology_term 'purpose' --desc='Fortran code purpose, e.g. Simulation of RF Wave Interactions with Magnetohydrodynamics' -p $oid2 -t 'string' -s 'n'`
+oid6=`$MPO ontology_term 'version' --desc='code version, e.g. 2.20' -p $oid2 -t 'string' -s 'n'`
+oid7=`$MPO ontology_term 'documentation' --desc='link to code documentation, e.g. http://cswim.org' -p $oid2 -t 'url' -s 'n'`
+oid8=`$MPO ontology_term 'source' --desc='link to code download, e.g. http://cswim.org' -p $oid2 -t 'url' -s 'n'`
+oid9=`$MPO ontology_term 'status' --desc='Status of run' -p $oid3 -t 'string' -s 'y'`
+oid9a=`$MPO ontology_term 'complete' --desc='Status' -p $oid9 -t 'string' -s 'y'`
+oid9b=`$MPO ontology_term 'nonstandard completion' --desc='Status' -p $oid9 -t 'string' -s 'y'`
+oid10=`$MPO ontology_term 'shot' --desc='Shot number for run, e.g. 111203' -p $oid4 -t 'int' -s 'n'`
+oid11=`$MPO ontology_term 'sim_name' --desc='Simulation name, e.g. ss31615_1' -p $oid4 -t 'string' -s 'n'`
+oid12=`$MPO ontology_term 'portal_run_id' --desc='ID used on swim portal website, e.g. 30124' -p $oid4 -t 'int' -s 'n'`
+oid13=`$MPO ontology_term 'tokamak' --desc='Tokamak name, e.g. ITER' -p $oid4 -t 'string' -s 'n'`
+oid14=`$MPO ontology_term 'host' --desc='Host name of computer/cluster running simulation, e.g. hopper' -p $oid4 -t 'string' -s 'n'`
+oid15=`$MPO ontology_term 'tree' --desc='Name of MDSplus tree into which the monitor data was loaded' -p $oid4 -t 'string' -s 'n'`
+oid16=`$MPO ontology_term 'date_run' --desc='Time when SWIMM run started' -p $oid4 -t 'datetime' -s 'n'`
+oid17=`$MPO ontology_term 'run_by' --desc='User who started SWIM run' -p $oid4 -t 'string' -s 'n'`
+oid18=`$MPO ontology_term 'run_comment' --desc='Description of run' -p $oid4 -t 'string' -s 'n'`
+oid19=`$MPO ontology_term 'visualisation_url' --desc='URL of visualisation, e.g. http://swim.gat.com:8080/media/plot/all.php?run_id=30124' -p $oid4 -t 'url' -s 'n'`
+oid20=`$MPO ontology_term 'max_te_0' --desc='Maximum value of Te at rho=0' -p $oid4 -t 'real' -s 'n'`
+oid21=`$MPO ontology_term 'max_ti_0' --desc='Maximum value of Ti at rho=0' -p $oid4 -t 'real' -s 'n'`
+oid22=`$MPO ontology_term 'max_ne_0' --desc='Maximum value of ne at rho=0' -p $oid4 -t 'real' -s 'n'`
+oid23=`$MPO ontology_term 'max_q_0' --desc='Maximum value of q at rho=0' -p $oid4 -t 'real' -s 'n'`
+oid24=`$MPO ontology_term 'max_q_95' --desc='Maximum value of q_95' -p $oid4 -t 'real' -s 'n'`
+oid25=`$MPO ontology_term 'max_i_plasma' --desc='Maximum value of plasma current' -p $oid4 -t 'real' -s 'n'`

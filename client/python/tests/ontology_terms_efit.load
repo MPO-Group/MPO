@@ -1,0 +1,69 @@
+#!/bin/sh
+#specify MPO server address. The API will read this value.
+#defaults are used if environment is not set
+if ! [ -n "${MPO_HOST:+x}" ]
+then
+  export MPO_HOST=https://localhost:8443
+fi
+
+
+if ! [ -n "${MPO_VERSION:+x}" ]
+then
+  export MPO_VERSION=v0
+fi
+
+
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+  echo MPO_HOME not defined, exitting
+  exit
+fi
+
+if ! [ -n "${MPO:+x}" ]
+then
+  export MPO="$MPO_HOME/client/python/mpo_testing.py --user=$USER"
+fi
+
+#use API methods to create a workflow
+oid1=`$MPO get --route 'ontology/term' --params='path=/Workflow/Type/EFIT'`
+if [ $oid1 = "[]" ]
+then
+    echo Ontology term /Workflow/Type/EFIT doesn\'t exist. Run $MPO_HOME/client/python/tests/ontology_terms_gyro.load first
+    exit
+fi
+oid2=`$MPO ontology_term 'Code Characteristics' --desc='Terms that describe the code type' -p $oid1 -t 'string' -s 'y'`
+oid3=`$MPO ontology_term 'Run Characteristics' --desc='Terms that describe the run type' -p $oid1 -t 'string' -s 'y'`
+oid4=`$MPO ontology_term 'Run Metadata' --desc='Metadata terms associated with the run' -p $oid1 -t 'string' -s 'y'`
+oid5=`$MPO ontology_term 'purpose' --desc='Fortran code purpose, e.g. Equilibrium and Reconstruction Fitting' -p $oid2 -t 'string' -s 'n'`
+oid6=`$MPO ontology_term 'version' --desc='code version, e.g. 05/14/2013' -p $oid2 -t 'string' -s 'n'`
+oid7=`$MPO ontology_term 'documentation' --desc='link to code documentation, e.g. https://fusion.gat.com/theory/Efit' -p $oid2 -t 'url' -s 'n'`
+oid8=`$MPO ontology_term 'source' --desc='link to code download, e.g. https://fusion.gat.com/theory/Efitsource' -p $oid2 -t 'url' -s 'n'`
+oid9=`$MPO ontology_term 'bit_size' --desc='code bit-size version, e.g. 32 or 64' -p $oid2 -t 'url' -s 'y'`
+oid9a=`$MPO ontology_term '32' --desc='32-bit code' -p $oid2 -t 'string' -s 'y'`
+oid9b=`$MPO ontology_term '64' --desc='64-bit code' -p $oid2 -t 'string' -s 'y'`
+oid10=`$MPO ontology_term 'mode' --desc='The type of input used to run EFIT' -p $oid3 -t 'int' -s 'y'`
+oid10a=`$MPO ontology_term '2' --desc='Input used to run EFIT' -p $oid10 -t 'int' -s 'y'`
+oid10b=`$MPO ontology_term '3' --desc='Input used to run EFIT' -p $oid10 -t 'int' -s 'y'`
+oid10c=`$MPO ontology_term '4' --desc='Input used to run EFIT' -p $oid10 -t 'int' -s 'y'`
+oid10d=`$MPO ontology_term '5' --desc='Input used to run EFIT' -p $oid10 -t 'int' -s 'y'`
+oid10e=`$MPO ontology_term '6' --desc='Input used to run EFIT' -p $oid10 -t 'int' -s 'y'`
+oid10f=`$MPO ontology_term '7' --desc='Input used to run EFIT' -p $oid10 -t 'int' -s 'y'`
+oid11=`$MPO ontology_term 'shot' --desc='Shot number for run' -p $oid4 -t 'int' -s 'n'`
+oid12=`$MPO ontology_term 'run_id' --desc='ID of run; usually based on the shot number' -p $oid4 -t 'int' -s 'n'`
+oid13=`$MPO ontology_term 'experiment' --desc='Name of the responsible experimental facility' -p $oid4 -t 'string' -s 'n'`
+oid14=`$MPO ontology_term 'run_type' --desc='Type of run, e.g. btshot' -p $oid4 -t 'string' -s 'n'`
+oid15=`$MPO ontology_term 'tree' --desc='Name of MDSplus tree into which the EFIT data was loaded' -p $oid4 -t 'string' -s 'n'`
+oid16=`$MPO ontology_term 'date_run' --desc='Time when EFIT run started' -p $oid4 -t 'datetime' -s 'n'`
+oid17=`$MPO ontology_term 'run_by' --desc='User who started EFIT run' -p $oid4 -t 'string' -s 'n'`
+oid18=`$MPO ontology_term 'runtag' --desc='Arbitrary name used to quickly identify a run or set of runs' -p $oid4 -t 'string' -s 'n'`
+oid19=`$MPO ontology_term 'run_comment' --desc='Description of run, e.g. Automatic EFIT' -p $oid4 -t 'string' -s 'n'`
+oid20=`$MPO ontology_term 'wtotmax' --desc='Maximum stored energy' -p $oid4 -t 'real' -s 'n'`
+oid21=`$MPO ontology_term 't_efit' --desc='Time of EFIT at wtotmax' -p $oid4 -t 'real' -s 'n'`
+oid22=`$MPO ontology_term 'a' --desc='Minor radius at t_efit' -p $oid4 -t 'real' -s 'n'`
+oid23=`$MPO ontology_term 'kappa' --desc='Elongation at plasma boundary at t_efit' -p $oid4 -t 'real' -s 'n'`
+oid24=`$MPO ontology_term 'r' --desc='Major radius at t_efit' -p $oid4 -t 'real' -s 'n'`
+oid25=`$MPO ontology_term 'rsurf' --desc='The geometric center of the limiting flux surface at t_efit' -p $oid4 -t 'real' -s 'n'`
+oid26=`$MPO ontology_term 'delta_u' --desc='Upper triangularity at t_efit' -p $oid4 -t 'real' -s 'n'`
+oid27=`$MPO ontology_term 'delta_l' --desc='Lower triangularity at t_efit' -p $oid4 -t 'real' -s 'n'`
+oid28=`$MPO ontology_term 'topology' --desc='Descriptive name for shape of plasma at t_efit' -p $oid4 -t 'string' -s 'n'`
+oid29=`$MPO ontology_term 'zmaxis' --desc='Height of magnetic axis at t_efit' -p $oid4 -t 'real' -s 'n'`
