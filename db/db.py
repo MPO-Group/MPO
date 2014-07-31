@@ -177,6 +177,30 @@ def getOntologyTermTree(id='0',dn=None):
 		print('Tree generation requires treelib.py')
 		return {'status':'Not supported','error_message':str(e)}
 
+        import types #for patching method
+
+        #method patch dictionary method in treelib for this object only to provide data info as well
+        def to_dict(self, nid=None, key=None, reverse=False):
+                """transform self into a dict"""
+
+                nid = self.root if (nid is None) else nid
+                #print('adding',nid,self[nid].data)
+                tree_dict = {self[nid].tag: { "children":[] , "data":self[nid].data } }
+
+                if self[nid].expanded:
+                        queue = [self[i] for i in self[nid].fpointer]
+                        key = (lambda x: x) if (key is None) else key
+                        queue.sort(key=key, reverse=reverse)
+
+                        for elem in queue:
+                                tree_dict[self[nid].tag]["children"].append(
+                                        self.to_dict(elem.identifier))
+
+                        if tree_dict[self[nid].tag]["children"] == []:
+                                tree_dict = {self[nid].tag: { "data":self[nid].data } }
+                        return tree_dict
+
+
         ###Unfortunately, it is necessary to retrieve the entire ontology table
         ###to construct even partial trees because the order is unknown
         ###perhaps some research on tree representations in SQL would help
@@ -224,9 +248,11 @@ def getOntologyTermTree(id='0',dn=None):
 			except t.tree.NodeIDAbsentError, e:
 				pass #should test for NodeIDAbsentError
 
+        ot_subtree=ot_tree.subtree(id) #get partial tree specified by uid
+        #patch the method now for this instance only
+        ot_subtree.to_dict=types.MethodType(to_dict, ot_tree)
 
-        #load and dump to ensure clean json format
-        return json.dumps(json.loads(ot_tree.subtree(id).to_json()),cls=MPOSetEncoder)
+        return json.dumps(ot_subtree(id).to_dict(),cls=MPOSetEncoder)
 
 
 def getUser(queryargs={},dn=None):
@@ -261,6 +287,7 @@ def getUser(queryargs={},dn=None):
 	conn.close()
 
         return json.dumps(records,cls=MPOSetEncoder)
+
 
 def addUser(json_request,dn):
 	objs = json.loads(json_request)
@@ -320,7 +347,7 @@ def addUser(json_request,dn):
 		print('adduser records',records)
 
 	return json.dumps(records,cls=MPOSetEncoder)
-	#	return json.dumps(objs)
+
 
 def validUser(dn):
         #make sure the user exists in the db. return true/false
@@ -360,7 +387,7 @@ def getWorkflow(queryargs={},dn=None):
 	#build our Query, base query is a join between the workflow and user tables to get the username
 	q = textwrap.dedent("""\
                             SELECT w_guid as uid, a.name, a.description, a.creation_time as time,
-                            a.comp_seq, b.firstname, b.lastname, b.username, b.uuid as userid
+                            a.comp_seq as composite_seq, b.firstname, b.lastname, b.username, b.uuid as userid
                             FROM workflow a, mpousers b""")
         if queryargs.has_key('type'):
                 q+= ", ontology_instances c"
@@ -434,7 +461,7 @@ def getWorkflow(queryargs={},dn=None):
 def getWorkflowCompositeID(id):
 	"Returns composite id of the form user/workflow_name/composite_seq"
 	wf=json.loads(getWorkflow({'uid':id}))[0]
-	compid = {'alias':wf['user']['username']+'/'+wf['name']+'/'+str(wf['comp_seq']),'uid':id}
+	compid = {'alias':wf['user']['username']+'/'+wf['name']+'/'+str(wf['composite_seq']),'uid':id}
 	if dbdebug:
 		print('DBDEBUG: compid ',wf,compid)
 	return json.dumps(compid,cls=MPOSetEncoder)
