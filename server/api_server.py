@@ -258,6 +258,18 @@ def dataobject(id=None):
             morer = rdb.getRecord('dataobject',{'uid':id},dn)
             publishEvent('mpo_dataobject',onlyone(morer))
 
+        else:
+            print('do',str(r),str(type(r)))
+            rr=json.loads(r)
+            if isinstance(rr,list) and len(rr)==1:
+                rr=rr[0]
+            else:
+                print("something is wrong in def dataobject. duplicate uri records found.")
+                exit
+
+            rr['status']="DO exists, returning record"
+            r=json.dumps(rr)
+
     elif request.method == 'GET':
         if id:
             r = rdb.getRecord('dataobject',{'uid':id})

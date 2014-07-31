@@ -27,6 +27,13 @@ import copy
 import argparse
 
 
+
+def str2bool(v):
+    if isinstance(v,bool):
+        return v
+    return str(v).lower() in ("yes", "true", "t", "1")
+
+
 class AliasedSubParsersAction(argparse._SubParsersAction):
     """
     Support 'aliases' of commands.
@@ -153,6 +160,11 @@ class mpo_methods(object):
         #check that result is a request object.
         # if isinstance(result,requests.models.Response):
 
+        if self.debug:
+            text=''
+            if isinstance(result,requests.models.Response):
+                text=result.text
+            print("format",result,str(type(result)),text,file=sys.stderr)
         if filter=='id':
             output=[]
             if isinstance(result.json(),list):
@@ -181,6 +193,7 @@ class mpo_methods(object):
 # for compatibility with the commandline parser invokacion
 
     def test(self,route='default',*a,**kw):
+        "NOP routine. Useful for new subcommand development"
         print('init:',a,kw)
         print('with route', route)
         return
@@ -262,11 +275,11 @@ class mpo_methods(object):
 
         url=self.api_url+route
 
-        if self.debug>0:
-            print('MPO.POST',url,workflow_ID,obj_ID,json.dumps(datadict),file=sys.stderr)
+        if self.debug:
+            print('MPO.POST',url,workflow_ID,obj_ID,json.dumps(datadict),file=sys .stderr)
 
-        if obj_ID:
-            datadict[self.PARENTID]=obj_ID
+        #if obj_ID: #commented out to permit null for ontology entries
+        datadict[self.PARENTID]=obj_ID
 
         if workflow_ID:
             datadict[self.WORKID]=workflow_ID
@@ -382,7 +395,7 @@ class mpo_methods(object):
         return ans
 
     
-    def step(self,workflow_ID,parentobj_ID,input_objs=None,**kwargs):
+    def step(self,workflow_ID=None,parentobj_ID=None,input_objs=None,**kwargs):
         """
         For adding actions
         args:
@@ -393,6 +406,11 @@ class mpo_methods(object):
         uri -- uri for the data object added
         input_objs -- array of additional inputs
         """
+
+        if not (workflow_ID and parentobj_ID):
+            msg = 'Both the workflow and parent object must be specified'
+            print(msg,file=sys.stderr)
+            return {'error':-1}
 
         name=kwargs.get('name')
         desc=kwargs.get('desc')
@@ -405,7 +423,45 @@ class mpo_methods(object):
         r=self.post(self.ACTIVITY_RT,workflow_ID,inp,payload,**kwargs)
         return r
 
-    
+
+    def ontology_term(self, term=None, parent_ID=None, specified=None, vtype=None,
+                      desc=None, units=None, **kwargs):
+        """
+        Add terms to the ontology
+           args:
+           term --
+           parent_ID -- term above this one in the hierachy, 
+                           ie the is adding the the parent terms vocabulary
+           desc -- the description of the term
+           vtype -- its type
+           specified -- boolean
+           units -- dimensional units if any
+        """
+        print('ont term',specified,file=sys.stderr)
+        if specified:
+            specified=str2bool(specified)
+        print('ont term',specified,file=sys.stderr)
+
+        payload={"term":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
+        r=self.post(self.ONTOLOGY_TERM_RT,None,parent_ID,payload,**kwargs)
+        return r
+
+
+    def ontology_instance(self,target=None,path=None,value=None,**kwargs):
+        """
+        Add terms to the ontology instance
+        args are target,path,value
+        """
+
+        if target == None or path == None or value == None:
+            print("Usage: ontology_instance target path value",file=sys.stderr)
+            sys.exit(2)
+
+        payload={"path":path,"value":value}
+        r=self.post(self.ONTOLOGY_INSTANCE_RT,None,target,payload,**kwargs)
+        return r
+
+
     def comment(self,obj_ID=None,comment='empty',**kwargs):
         """Takes a returned record and adds a comment to it.
         In this case, data should be a plain string.
@@ -613,9 +669,9 @@ class mpo_cli(object):
                  user='noone',password='pass',mpo_cert='',
                  archive_host='psfcstor1.psfc.mit.edu',
                  archive_user='psfcmpo', archive_key=None,
-                 archive_prefix=None):
+                 archive_prefix=None, debug=False):
 
-        self.debug=False
+        self.debug=debug
         self.api_url=api_url
         self.user=user
         self.password=password
@@ -627,7 +683,7 @@ class mpo_cli(object):
         self.archive_prefix=archive_prefix
 
         #initialize foreign methods here
-        print('init',mpo_cert,archive_key,file=sys.stderr)
+        #print('init',mpo_cert,archive_key,file=sys.stderr)
         self.mpo=mpo_methods(api_url,version,debug=self.debug,cert=mpo_cert,archive_key=archive_key)
 
     def type_uuid(self,uuid):
@@ -652,6 +708,7 @@ class mpo_cli(object):
                             choices=['id','raw','text','json','pretty'], default='id') #case insensitive?
         parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
                             default=False)
+        parser.register('action', 'parsers', AliasedSubParsersAction)
 
         #method options
         subparsers = parser.add_subparsers(help='commands')
@@ -662,7 +719,7 @@ class mpo_cli(object):
         get_parser.add_argument('-r','--route',action='store',help='Route of resource to query')
            #add keyword argument passed to func as 'params'
         get_parser.add_argument('-p','--params',action='store',nargs='*',
-                                help='Query arguments as {key:value,key2:value2}')
+                                help='Query arguments as key=value')
         get_parser.set_defaults(func=self.mpo.get)
 
         #post
@@ -702,9 +759,27 @@ class mpo_cli(object):
         step_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
         step_parser.set_defaults(func=self.mpo.step)
 
+
+        #ontology_term
+        ontologyTerm_parser=subparsers.add_parser('ontology_term', aliases=( ('define',) ),
+                                                  help='Add a term to the vocabulary')
+        ontologyTerm_parser.add_argument('term', action='store', help='name of the term')
+        ontologyTerm_parser.add_argument('--parent','-p', action='store',dest='parent_ID',
+                                         help='Term above this one in the ontology')
+        ontologyTerm_parser.add_argument('--desc', '-d', action='store', help='Describe the new term')
+        ontologyTerm_parser.add_argument('--vtype','-t', action='store', help='The value type')
+        ontologyTerm_parser.add_argument('--units','-u', action='store', help='The units, if any')
+        sgroup = ontologyTerm_parser.add_mutually_exclusive_group(required=False)
+        sgroup.add_argument('--specified','-s',action='store_true', dest='specified', 
+                                         help='Boolean',default=None) #default is otherwise false if not set
+        sgroup.add_argument('--not-specified','-n',action='store_false', dest='specified',
+                                         help='Boolean',default=None)
+        ontologyTerm_parser.set_defaults(func=self.mpo.ontology_term)
+
         #create, note all arguements must be processed by the protocol
         create_parser=subparsers.add_parser('create',help='Create a data object.')
-        create_parser.add_argument('--protocol', '-p', action='store',metavar='protocol', nargs=argparse.REMAINDER)
+        create_parser.add_argument('--protocol', '-p', action='store',metavar='protocol', 
+                                   nargs=argparse.REMAINDER)
         create_parser.set_defaults(func=self.mpo.create)
 
         #comment
@@ -782,6 +857,12 @@ class mpo_cli(object):
 
         args=parser.parse_args()
         kwargs=copy.deepcopy(args.__dict__)
+
+        #turn on debugging
+        if kwargs.get('verbose'):
+            self.debug=True
+            self.mpo.debug=True
+
         # strip out 'func' method
         del(kwargs['func'])
         if self.debug:
@@ -814,7 +895,7 @@ if __name__ == '__main__':
     cli_app=mpo_cli(version=mpo_version, api_url=mpo_api_url,
                     archive_host=archive_host, archive_user=archive_user,
                     archive_key=archive_key, archive_prefix=archive_prefix,
-                    mpo_cert=mpo_cert)
+                    mpo_cert=mpo_cert,debug=False)
     result=cli_app.cli()
 #    print(json.dumps(result.json(),separators=(',', ':'),indent=4))
     print(result)

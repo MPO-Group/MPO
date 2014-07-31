@@ -51,9 +51,10 @@ fi
 
 if ! [ -n "${MPO:+x}" ]
 then
-  export MPO=$MPO_HOME/client/python/mpo_testing.py
+  export MPO=$MPO_HOME/client/python/mpo_arg.py
 fi
 
+export MPO="$MPO -v"
 export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem'
 echo env is
 env
