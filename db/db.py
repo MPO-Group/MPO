@@ -191,6 +191,31 @@ def getOntologyTermTree(id='0',dn=None):
         print('Tree generation requires treelib.py')
         return {'status':'Not supported','error_message':str(e)}
 
+        import types #for patching method
+
+        #method patch dictionary method in treelib for this object only to provide data info as well
+        def to_dict(self, nid=None, key=None, reverse=False):
+            """transform self into a dict"""
+
+            nid = self.root if (nid is None) else nid
+            #print('adding',nid,self[nid].data)
+            tree_dict = {self[nid].tag: { "children":[] , "data":self[nid].data } }
+
+            if self[nid].expanded:
+                queue = [self[i] for i in self[nid].fpointer]
+                key = (lambda x: x) if (key is None) else key
+                queue.sort(key=key, reverse=reverse)
+
+                for elem in queue:
+                    tree_dict[self[nid].tag]["children"].append(
+                        self.to_dict(elem.identifier))
+
+                if tree_dict[self[nid].tag]["children"] == []:
+                    tree_dict = {self[nid].tag: { "data":self[nid].data } }
+                    
+                return tree_dict
+
+
     ###Unfortunately, it is necessary to retrieve the entire ontology table
     ###to construct even partial trees because the order is unknown
     ###perhaps some research on tree representations in SQL would help
@@ -224,6 +249,12 @@ def getOntologyTermTree(id='0',dn=None):
     ot_tree=t.Tree()
     ot_tree.create_node('root','0')
 
+    ###Create tree structure for each head of the ontology
+    #may be multiple trees, they have parent as None
+    #we will place them under 'root' node if the whole tree is requested
+    ot_tree=t.Tree()
+    ot_tree.create_node('root','0')
+
     #make sure parents always occur before children
     #try to insert, if parent is not in tree, skip
     #repeat until all records are inserted
@@ -236,11 +267,13 @@ def getOntologyTermTree(id='0',dn=None):
                 ot_tree.create_node(o['name'],o['uid'],parent=pid)
                 records.remove(o)
             except t.tree.NodeIDAbsentError, e:
-                pass
+                pass #should test for NodeIDAbsentError
 
+    ot_subtree=ot_tree.subtree(id) #get partial tree specified by uid
+    #patch the method now for this instance only
+    ot_subtree.to_dict=types.MethodType(to_dict, ot_tree)
 
-    #load and dump to ensure clean json format
-    return json.dumps(json.loads(ot_tree.subtree(id).to_json()),cls=MPOSetEncoder)
+    return json.dumps(ot_subtree(id).to_dict(),cls=MPOSetEncoder)
 
 
 def getUser(queryargs={},dn=None):
