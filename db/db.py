@@ -243,16 +243,16 @@ def getOntologyTermTree(id='0',dn=None):
 			if pid==None:
 				pid='0'
 			try:
-				ot_tree.create_node(o['name'],o['uid'],parent=pid)
+				ot_tree.create_node(o['name'],o['uid'],parent=pid,data=o)
 				records.remove(o)
 			except t.tree.NodeIDAbsentError, e:
 				pass #should test for NodeIDAbsentError
 
         ot_subtree=ot_tree.subtree(id) #get partial tree specified by uid
         #patch the method now for this instance only
-        ot_subtree.to_dict=types.MethodType(to_dict, ot_tree)
+        ot_subtree.to_dict=types.MethodType(to_dict, ot_subtree)
 
-        return json.dumps(ot_subtree(id).to_dict(),cls=MPOSetEncoder)
+        return json.dumps(ot_subtree.to_dict(),cls=MPOSetEncoder)
 
 
 def getUser(queryargs={},dn=None):
