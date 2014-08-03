@@ -221,13 +221,13 @@ def getOntologyTermTree(id='0',dn=None):
         conn.close()
 
         #cursor.fetchall always returns a list
-        if isinstance(records,list): 
+        if isinstance(records,list):
                 if len(records)==0: #throw error
                         print('query error in Getontologytermtree, no records returned')
                         r={"status"    : "error",
                            "error_mesg": "query error in Getontologytermtree, no records returned"}
                         return json.dumps(r, cls=MPOSetEncoder)
-                                
+
         ###Create tree structure for each head of the ontology
         #may be multiple trees, they have parent as None
         #we will place them under 'root' node if the whole tree is requested
@@ -577,7 +577,7 @@ def addRecord(table,request,dn):
                         cursor.execute("select w_guid as uid, 'workflow' as type from workflow where w_guid=%s union select a_guid as uid, 'activity' as type from activity where a_guid=%s union select do_guid as uid, 'dataobject' as type from dataobject where do_guid=%s",(parent,parent,parent))
                         records = cursor.fetchone()
                         parent_type = records.type
-                cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'], 'dataobject',datetime.datetime.now()))
+                cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'], table, datetime.datetime.now()))
 	# Make the changes to the database persistent
 	conn.commit()
 
