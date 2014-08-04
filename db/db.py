@@ -191,29 +191,31 @@ def getOntologyTermTree(id='0',dn=None):
         print('Tree generation requires treelib.py')
         return {'status':'Not supported','error_message':str(e)}
 
-        import types #for patching method
 
-        #method patch dictionary method in treelib for this object only to provide data info as well
-        def to_dict(self, nid=None, key=None, reverse=False):
-            """transform self into a dict"""
+    import types #for patching method
 
-            nid = self.root if (nid is None) else nid
-            #print('adding',nid,self[nid].data)
-            tree_dict = {self[nid].tag: { "children":[] , "data":self[nid].data } }
+    #method patch dictionary method in treelib for this object only to provide data info as well
+    def to_dict(self, nid=None, key=None, reverse=False):
+        """transform self into a dict"""
 
-            if self[nid].expanded:
-                queue = [self[i] for i in self[nid].fpointer]
-                key = (lambda x: x) if (key is None) else key
-                queue.sort(key=key, reverse=reverse)
+        nid = self.root if (nid is None) else nid
+        #print('adding',nid,self[nid].data)
+        tree_dict = {self[nid].tag: { "children":[] , "data":self[nid].data } }
 
-                for elem in queue:
-                    tree_dict[self[nid].tag]["children"].append(
-                        self.to_dict(elem.identifier))
+        if self[nid].expanded:
+            queue = [self[i] for i in self[nid].fpointer]
+            key = (lambda x: x) if (key is None) else key
+            queue.sort(key=key, reverse=reverse)
 
-                if tree_dict[self[nid].tag]["children"] == []:
-                    tree_dict = {self[nid].tag: { "data":self[nid].data } }
-                    
-                return tree_dict
+            for elem in queue:
+                tree_dict[self[nid].tag]["children"].append(
+                    self.to_dict(elem.identifier))
+
+            if tree_dict[self[nid].tag]["children"] == []:
+                tree_dict = {self[nid].tag: { "data":self[nid].data } }
+        
+            
+        return tree_dict
 
 
     ###Unfortunately, it is necessary to retrieve the entire ontology table

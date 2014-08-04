@@ -437,10 +437,8 @@ class mpo_methods(object):
            specified -- boolean
            units -- dimensional units if any
         """
-        print('ont term',specified,file=sys.stderr)
         if specified:
             specified=str2bool(specified)
-        print('ont term',specified,file=sys.stderr)
 
         payload={"term":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
         r=self.post(self.ONTOLOGY_TERM_RT,None,parent_ID,payload,**kwargs)
