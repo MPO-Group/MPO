@@ -33,8 +33,6 @@ function usage {
   -h                   - print this message
   port                 - network port to listen on [9443]
   api_url              - https url for the api server [https://localhost:8443]
-  db_connection_string - string to connect to the database
-                         (web server will eventually not need this)
 
   for example:
     ./web_server.sh  9443 https://localhost:8443

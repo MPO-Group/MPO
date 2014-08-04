@@ -54,14 +54,14 @@ then
   export MPO=$MPO_HOME/client/python/mpo_arg.py
 fi
 
-export MPO="$MPO -v"
+export MPO="$MPO -v" #remove/add -v for quiet/verbose output
 export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem'
 echo env is
 env
 
 #start our own database
 test_db=mpo_test
-dropdb mpo_test
+dropdb $test_db
 createdb $test_db
 psql -d $test_db -a -f $MPO_HOME/db/create_tables.sql
 

@@ -18,12 +18,14 @@ except Exception, e:
     conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
 
 
-#list of valid query fields and their mapped name in the table,
-#  Use of a dictionary permits different fields in the query than are in the database tables
-#  query_map is a dictionary of dictionaries indexed by the table name.
-#  The first field is the query string and the second is the table column name. Technically, this
-#  can support aliases by providing a second index that maps to the same column name.
-# If it is not is this dictionary, it is ignored. This provides some protection from SQL injection
+#  list of valid query fields and their mapped name in the table, Use
+#  of a dictionary permits different fields in the query than are in
+#  the database tables query_map is a dictionary of dictionaries
+#  indexed by the table name. The first field is the query string and
+#  the second is the table column name. Technically, this can support
+#  aliases by providing a second index that maps to the same column
+#  name. If it is not is this dictionary, it is ignored. This provides
+#  some protection from SQL injection
 
 query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
                          'composite_seq':'comp_seq', 'time':'creation_time' },
@@ -52,7 +54,8 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                                  'user_uid':'added_by','date_added':'date_added'},
              'ontology_instances' : {'uid':'oi_guid','parent_uid':'target_guid','value':'value',
                                      'time':'creation_time','user_uid':'u_guid'}
-            }
+         }
+
 
 
 def getconn():
@@ -110,9 +113,10 @@ def getRecord(table,queryargs={}, dn=None):
     for key in qm:
         q+=' a.'+qm[key]+' AS '+key+','
 
-    #do we want this line now? username is not in the API interface except for mpousers
-    #this line adds a username field to each record returned in addition to the user_uid
-    #currently, this is not defined in the API
+    # do we want this line now? username is not in the API interface
+    # except for mpousers this line adds a username field to each
+    # record returned in addition to the user_uid currently, this is
+    # not defined in the API
     q=q[:-1]+', b.username' #remove trailing comma
 
     ##COMMENT and METADATA special handling
@@ -161,7 +165,6 @@ def getRecord(table,queryargs={}, dn=None):
         terms=[x for x in records if not x.parent_uid]
         #terms = []  #JCW the following returns a [None] list. harmless but should be fixed.
         #[terms.append(x) for x in records if not x.parent_uid]
-
         if len(terms) != 1:
             return json.dumps({},cls=MPOSetEncoder)
 
@@ -191,7 +194,6 @@ def getOntologyTermTree(id='0',dn=None):
         print('Tree generation requires treelib.py')
         return {'status':'Not supported','error_message':str(e)}
 
-
     import types #for patching method
 
     #method patch dictionary method in treelib for this object only to provide data info as well
@@ -213,9 +215,8 @@ def getOntologyTermTree(id='0',dn=None):
 
             if tree_dict[self[nid].tag]["children"] == []:
                 tree_dict = {self[nid].tag: { "data":self[nid].data } }
-        
             
-        return tree_dict
+            return tree_dict
 
 
     ###Unfortunately, it is necessary to retrieve the entire ontology table
@@ -245,12 +246,6 @@ def getOntologyTermTree(id='0',dn=None):
                "error_mesg": "query error in Getontologytermtree, no records returned"}
             return json.dumps(r, cls=MPOSetEncoder)
                                 
-    ###Create tree structure for each head of the ontology
-    #may be multiple trees, they have parent as None
-    #we will place them under 'root' node if the whole tree is requested
-    ot_tree=t.Tree()
-    ot_tree.create_node('root','0')
-
     ###Create tree structure for each head of the ontology
     #may be multiple trees, they have parent as None
     #we will place them under 'root' node if the whole tree is requested
@@ -513,19 +508,24 @@ def getWorkflowElements(id,queryargs={},dn=None):
 
     records = {}
     # fetch the nodes from the database
-    cursor.execute("select w_guid as uid, name, 'workflow' as type from workflow where w_guid=%s union select do_guid as uid, name, 'dataobject' as type from dataobject where w_guid=%s union select a_guid as uid, name, 'activity' as type from activity where w_guid=%s",(id,id,id))
+    cursor.execute("select w_guid as uid, name, 'workflow' as type from workflow "+
+                   "where w_guid=%s union select do_guid as uid, name, 'dataobject' as type "+
+                   "from dataobject where w_guid=%s union select "+
+                   "a_guid as uid, name, 'activity' as type from activity where w_guid=%s",(id,id,id))
     r = cursor.fetchall()
     nodes={}
     for n in r:
         nodes[n.uid]={'type':n.type,'name':n.name}
     records['nodes']=nodes
     # fetch connectors from the database
-    cursor.execute("select parent_guid as parent_uid, parent_type, child_guid as child_uid, child_type from workflow_connectivity where w_guid=%s",(id,))
+    cursor.execute("select parent_guid as parent_uid, parent_type, child_guid as child_uid, "+
+                   "child_type from workflow_connectivity where w_guid=%s",(id,))
     records['connectivity']=cursor.fetchall()
     # Close communication with the database
     cursor.close()
     conn.close()
     return json.dumps(records,cls=MPOSetEncoder)
+
 
 def getWorkflowComments(id,queryargs={},dn=None):
     # get a connection, if a connect cannot be made an exception will be raised here
@@ -545,7 +545,6 @@ def getWorkflowComments(id,queryargs={},dn=None):
     cursor.execute(q,(id,id,id))
     records = cursor.fetchall()
     # get all the comments recursively
-    #JCW initialize list with an aribtrary uuid for cases when parents is empty
     parents = []
     for x in records:
         parents.append(x.uid)
@@ -555,12 +554,10 @@ def getWorkflowComments(id,queryargs={},dn=None):
         for key in qm:
             q+=' a.'+qm[key]+' AS '+key+','
         q=q[:-1]+" from comment as a where a.parent_guid in ( "
-        #JCW this loop breaks the command q if parents is empty
-        # q= ... in () ; which doesn't work
         for i in parents:
             q+="%s,"
+
         q=q[:-1]+")"
-        print('db.py:\n' + q)
         v = tuple(x for x in parents)
         cursor.execute(q,v)
         children = cursor.fetchall()
@@ -597,17 +594,25 @@ def addRecord(table,request,dn):
         print(q,v)
 
     cursor.execute(q,v)
-    if objs.has_key('parent_uid'):
+    if objs.has_key('parent_uid'):  #JCW/JAS allow unattached dataobjects
     #connectivity table
         wc_guid = str(uuid.uuid4())
         for parent in objs['parent_uid']:
             if objs['parent_uid'] == objs['work_uid']:
                 parent_type = 'workflow'
             else:
-                cursor.execute("select w_guid as uid, 'workflow' as type from workflow where w_guid=%s union select a_guid as uid, 'activity' as type from activity where a_guid=%s union select do_guid as uid, 'dataobject' as type from dataobject where do_guid=%s",(parent,parent,parent))
+                cursor.execute("select w_guid as uid, 'workflow' as type from "+
+                               "workflow where w_guid=%s union select "+
+                               "a_guid as uid, 'activity' as type from activity "+
+                               "where a_guid=%s union select do_guid as uid, 'dataobject' as type "+
+                               "from dataobject where do_guid=%s",(parent,parent,parent))
                 records = cursor.fetchone()
                 parent_type = records.type
-            cursor.execute("insert into workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) values (%s,%s,%s,%s,%s,%s,%s)", (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'], 'dataobject',datetime.datetime.now()))
+            cursor.execute("insert into workflow_connectivity "+
+                           "(wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) "+
+                           "values (%s,%s,%s,%s,%s,%s,%s)", 
+                           (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'], 
+                            'dataobject', datetime.datetime.now()))
     # Make the changes to the database persistent
     conn.commit()
 
@@ -637,7 +642,9 @@ def addWorkflow(json_request,dn):
                (objs['name'], user_id ) )
     count=cursor.fetchone()
 
-    print ("#############count is",str(count),str(count.max))
+    if dbdebug:
+        print ("#############count is",str(count),str(count.max))
+
     if count.max:
         seq_no=count.max+1
     else:
@@ -661,6 +668,7 @@ def addWorkflow(json_request,dn):
     cursor.close()
     conn.close()
     return json.dumps(records,cls=MPOSetEncoder)
+
 
 def addComment(json_request,dn):
     objs = json.loads(json_request)
@@ -809,7 +817,7 @@ def addOntologyInstance(json_request,dn):
         return json.dumps({},cls=MPOSetEncoder)
 
     for i,o in list(enumerate(terms[1:])):
-        cursor.execute("select ot_guid,parent_guid from ontology_terms where name=%s",(o,))
+        cursor.execute("select ot_guid,parent_guid,specified from ontology_terms where name=%s",(o,))
         parent.insert(i+1,cursor.fetchall())
         for l in parent[i+1]:
             if l.parent_guid != parent[i][0].ot_guid:
@@ -823,35 +831,34 @@ def addOntologyInstance(json_request,dn):
         valid= tuple(x['name'] for x in vocab)
         if objs['value'] not in valid:
             return json.dumps({},cls=MPOSetEncoder)
+
     # make sure the target corresponds to the path
     # parent[1][0].ot_guid is the term uid, terms[2] is the type.
     # allow for the migration of workflows os do this only if Type exists
     # i.e. len(terms)>2
-    print len(terms)
     if len(terms) > 2:
-        cursor.execute(
-            "select oi_guid from ontology_instances where target_guid=%s and term_guid=%s and value=%s",
-            (objs['parent_uid'],parent[1][0].ot_guid,terms[2]))
+        cursor.execute("select oi_guid from ontology_instances where target_guid=%s "+
+                       "and term_guid=%s and value=%s",(objs['parent_uid'],parent[1][0].ot_guid,terms[2]))
         if cursor.fetchone() == None:
             return json.dumps({},cls=MPOSetEncoder)
 
     # and finally make sure the instance doesn't already exist.
-    cursor.execute("select oi_guid from ontology_instances where term_guid=%s and target_guid=%s",
-                   (parent[-1][0].ot_guid,objs['parent_uid']))
+    cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
+                   "target_guid=%s",(parent[-1][0].ot_guid,objs['parent_uid']))
     if cursor.fetchone():
         return json.dumps({},cls=MPOSetEncoder)
 
-    q=("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid)"+ 
-       "values(%s,%s,%s,%s,%s,%s)" )
+    q=("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
+       "values(%s,%s,%s,%s,%s,%s)")
     v=(oi_guid,objs['parent_uid'],parent[-1][0].ot_guid,objs['value'],datetime.datetime.now(),user_id)
     cursor.execute(q,v)
     # Make the changes to the database persistent
     conn.commit()
-
     records = {}
     records['uid'] = oi_guid
     # Close communication with the database
     cursor.close()
     conn.close()
+
     return json.dumps(records,cls=MPOSetEncoder)
 
