@@ -354,17 +354,17 @@ class mpo_methods(object):
 
     def mpo_ontology_term(self,url,term,*args,**kwargs):
         """Add terms to the ontology
-           args are term,--parent,--desc,--vtype,--specified,--units
+           args are term,--parent,--desc,--vtype,--specified,--units, --not-specified
         """
 
-        flags="p:d:t:s:u"
-        longflags=["parent=","desc=","vtype=","specified=","units="]
+        flags="snp:d:t:u"
+        longflags=["parent=","desc=","vtype=","specified","units=","not-specified"]
 
         try:
             opts, cmdargs = getopt.getopt(map(str,list(args)), flags, longflags)
 
         except getopt.GetoptError:
-            print("Test Accepted flags are:\n"+str(flags)+"\n"+str(longflags),file=sys.stderr)
+            print("Test Accepted flags are:\n"+str(flags)+"\n"+str(longflags),args,file=sys.stderr)
             sys.exit(2)
 
         desc=None
@@ -383,10 +383,10 @@ class mpo_methods(object):
             elif opt in ("-p","--parent"):
                 pid = arg
             elif opt in ("-s","--specified"):
-                if (arg=='y'):
-                    specified=True
-                else:
-                    specified=False
+                specified=True
+            elif opt in ("-n","--not-specified"):
+                specified=False
+
 
         o=urlparse(url)
         urlcon=o.scheme+"://"+o.netloc+o.path+'/'+self.MPO_VERSION+'/'+self.ONTOLOGY_TERM_RT
@@ -635,7 +635,7 @@ class mpo_cli(mpo_methods):
             output=result.json()
 
         if self.istate=='echo':
-            print ("Response URI is "+result.url,file=sys.stderr)
+            print ("Response URI is "+result.url,output,file=sys.stderr)
             print (output)
         elif self.istate=='env': #actually, this will not work because we are in a subprocess
             os.environ['MPO_RESULT']=output

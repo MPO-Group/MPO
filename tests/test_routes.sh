@@ -34,13 +34,14 @@ if ! [ -n "${MPO_HOME:+x}" ]
 then
   echo WARNING: MPO_HOME not defined, using defaults.
   export MPO_HOME=$(dirname $0)/../
-  echo Home is $MPO_HOME
+  echo mpo home is $MPO_HOME
 fi
 
 if ! [ -n "${PGDATA:+x}" ]
 then
   echo WARNING: PGDATA not defined, using defaults.
   export PGDATA=$MPO_HOME/db/data
+  echo thepwd $PWD
 fi
 
 if ! [ -n "${MPO_VERSION:+x}" ]
@@ -50,9 +51,10 @@ fi
 
 if ! [ -n "${MPO:+x}" ]
 then
-  export MPO=$MPO_HOME/client/python/mpo_testing.py
+  export MPO=$MPO_HOME/client/python/mpo_arg.py
 fi
 
+export MPO="$MPO -v" #remove/add -v for quiet/verbose output
 export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem'
 echo env is
 env
@@ -72,6 +74,9 @@ echo %TESTING first create the ontology terms %%%%%%%%%%%%
 $MPO_HOME/client/python/tests/ontology_terms_gyro.load
 $MPO_HOME/client/python/tests/ontology_terms_swim.load
 $MPO_HOME/client/python/tests/ontology_terms_efit.load
+
+echo %TESTING retrieving ontology tree
+$MPO --format=pretty get -r ontology/term/tree
 
 echo %TESTING postings with commandline api %%%%%%%%%%%%%%
 $MPO_HOME/client/python/tests/josh.test

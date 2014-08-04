@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, make_response
+from flask import Flask, render_template, request, jsonify
+from flask import redirect, url_for, make_response
 from flask.ext.cors import cross_origin
 import json
 import requests
@@ -24,7 +25,8 @@ else:
     WARNING: MPO_EVENT_SERVER not set, using localhost\n
     Webclients outside of localhost will not see events.
     """)
-    MPO_EVENT_SERVER='localhost' #note this will not work for remote access to webpages
+    MPO_EVENT_SERVER='localhost' #note this will not work for remote
+    #access to webpages 
 
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
@@ -34,6 +36,7 @@ app.debug = True
 @app.route('/')
 def landing():
     return render_template('landing.html')
+
 
 @app.route('/home')
 def index():
@@ -46,7 +49,7 @@ def index():
 	print('WEBDEBUG: certargs',certargs)
 
     results=False
-    try:
+    if True:
 	s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=10)
         s.mount('https://', a)
@@ -104,24 +107,30 @@ def index():
 	if wf_name:
 	    if wf_name != "all":
 		#get workflows by specified name
-		r=s.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,),  headers={'Real-User-DN':dn})
+		r=s.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,),  
+                        headers={'Real-User-DN':dn})
 		rjson = r.json()
 		num_wf=len(rjson) # number of workflows of specified name
 		#get range of workflows of specified name
-		r=s.get("%s/workflow?name=%s&range=(%s,%s)"%(API_PREFIX,wf_name,rmin,rmax),  headers={'Real-User-DN':dn})
+		r=s.get("%s/workflow?name=%s&range=(%s,%s)"%
+                        (API_PREFIX,wf_name,rmin,rmax), 
+                        headers={'Real-User-DN':dn})
 	else:
-	    r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax),  headers={'Real-User-DN':dn})
+	    r=s.get("%s/workflow?range=(%s,%s)"%
+                    (API_PREFIX,rmin,rmax),  headers={'Real-User-DN':dn})
 
 	#calculate number of pages
 	num_pages=int(math.ceil(float(num_wf)/float(rpp)))
 
 	results = r.json()
 
-#	#ontology
+        #ontology
 	req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
 	ont_result=req.json()
 
-## need to revisit and create a recursive function to get all child levels of ontology terms
+## need to revisit and create a recursive function to get all child
+## levels of ontology terms
+
 	n=0
 	for i in ont_result:
 	    if i['uid']:
@@ -139,7 +148,8 @@ def index():
 	for i in results:	#i is dict
 	    if wid:
 		if wid == i['uid']:
-		    results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
+		    results[index]['show_comments'] = 'in' #in is the
+#name of the css class to collapse accordion body 
 	    else:
 	        results[index]['show_comments'] = ''
 	    pid=i['uid']
@@ -147,7 +157,8 @@ def index():
 	    comments = c.json()
 
 	    num_comments=0
-	    if comments == None: #replace null reply in requests body with empty list so below logic still works
+	    if comments == None: #replace null reply in requests body
+                #with empty list so below logic still works 
 		comments=[]
 	    for temp in comments: #get number of comments, truncate time string
 		num_comments+=1
@@ -157,9 +168,11 @@ def index():
 
 	    results[index]['num_comments']=num_comments
 	    results[index]['comments']=comments
-#JCW 19 JUL 2013. Change 'start_time' to 'creation_time'. 'start_time' is not at presently set or returned by db
+#JCW 19 JUL 2013. Change 'start_time' to 'creation_time'. 'start_time'
+#is not at presently set or returned by db 
 # need to clarify two different times. index.html does request 'start_time'
-# this was throwing an exception because 'start_time' field wasn't found and breaking adding commments or displaying them
+# this was throwing an exception because 'start_time' field wasn't
+# found and breaking adding commments or displaying them 
 #JCW 9 SEP 2013 API exposure of 'creation_time' is 'time' for comments.
 	    time=results[index]['time'][:16]
 	    results[index]['time']=time
@@ -175,10 +188,10 @@ def index():
 	    print("WEBDEBUG: ontology_results sent to index")
 	    pprint(ont_result)
 
-    except Exception, err:
-	print "web_server.index()- there was an exception"
-	print "error is", err
-#        pass
+# This is really dangerous to catch all exceptions. It makes debugging all but impossible - JCW
+#    except Exception, err:
+#	print "web_server.index()- there was an exception"
+#	print "error is", err
 
     #return render_template('index.html', results = results, num_wf = num_wf, wf_name = wf_name)
     return render_template('index.html', **locals())
@@ -196,7 +209,8 @@ def graph(wid, format="svg"):
     graph=pydot.Dot(graph_type='digraph')
     nodes = r['nodes']
     #add workflow node explicitly since in is not a child
-    graph.add_node( pydot.Node(wid,label=nodes[wid]['name'],shape=nodeshape[nodes[wid]['type']]))
+    graph.add_node( pydot.Node(wid,label=nodes[wid]['name'],shape=
+                               nodeshape[nodes[wid]['type']]))
     for item in r['connectivity']:
         pid=item['parent_uid']
         cid=item['child_uid']
@@ -246,9 +260,11 @@ def getsvgxml(wid):
     graph=pydot.Dot(graph_type='digraph')
     nodes = r['nodes']
     #add workflow node explicitly since in is not a child
-    graph.add_node( pydot.Node(wid,label=nodes[wid]['name'],shape=nodeshape[nodes[wid]['type']]))
+    graph.add_node( pydot.Node(wid,label=nodes[wid]['name'],
+                               shape=nodeshape[nodes[wid]['type']]))
 
-    object_order={} #stores numerical order of workflow objects.  used for object list display order on workflow detail page
+    object_order={} #stores numerical order of workflow objects.  used
+#for object list display order on workflow detail page
     object_order[0]={ 'uid':wid, 'name':nodes[wid]['name'], 'type':nodes[wid]['type'] }
     count=1
     prev_name=""
@@ -301,14 +317,16 @@ def connections(wid):
 		data[0]['time']=obj_time[:16]
 	    wf_objects[key]['data']=data
 	elif value['type'] == "dataobject":
-	    req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs) #get data on each workflow element
+            #get data on each workflow element
+	    req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs)
 	    data=req.json()
 	    if data[0]['time']:
 		obj_time=data[0]['time']
 		data[0]['time']=obj_time[:16]
 	    wf_objects[key]['data']=data
 
-	meta_req=requests.get("%s/metadata?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+	meta_req=requests.get("%s/metadata?parent_uid=%s"%
+                              (API_PREFIX,value['uid'],), **certargs)
 	if meta_req.text != "[]":
 	    wf_objects[key]['metadata']=meta_req.json()
 
@@ -417,21 +435,25 @@ def search():
 
 	    query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
 				     'composite_seq':'comp_seq', 'time':'creation_time' },
-			 'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time','type':'comment_type',
-				      'parent_uid':'parent_GUID','ptype':'parent_type','user_uid':'u_guid'},
+			 'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time',
+                                      'type':'comment_type', 'parent_uid':'parent_GUID',
+                                      'ptype':'parent_type','user_uid':'u_guid'},
 			 'mpousers' : {'username':'username', 'uid':'uuid', 'firstname': 'firstname',
 				   'lastname':'lastname','email':'email','organization':'organization',
 				   'phone':'phone','dn':'dn'},
 			 'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
-				       'work_uid':'w_guid', 'description':'description',
-				       'time':'creation_time','user_uid':'u_guid','start':'start_time','end':'end_time',
-				       'status':'completion_status'},
+				       'work_uid':'w_guid', 'time':'creation_time', 
+                                       'user_uid':'u_guid','start':'start_time', 
+                                       'end':'end_time', 'status':'completion_status'},
 			 'activity_short' : {'w':'w_guid'},
 			 'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid',
-					  'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid', 'uri':'uri'},
+					  'time':'creation_time', 'user_uid':'u_guid', 
+                                         'work_uid':'w_guid', 'uri':'uri'},
 			 'dataobject_short': {'w':'w_guid'},
-			 'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 'user_uid':'u_guid',
-				       'time':'creation_time', 'parent_uid':'parent_guid', 'parent_type':'parent_type'},
+			 'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 
+                                       'user_uid':'u_guid', 'time':'creation_time', 
+                                       'parent_uid':'parent_guid', 
+                                       'parent_type':'parent_type'},
 			 'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' }
 			 }
 

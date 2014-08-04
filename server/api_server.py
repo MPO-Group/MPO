@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from flask import Flask, render_template, request, jsonify, redirect, Response
+from flask import Flask, render_template, request, jsonify
+from flask import redirect, Response, make_response
 import json
 import db as rdb
 from authentication import get_user_dn
@@ -20,12 +21,13 @@ apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
-	'comment':'comment', 'metadata':'metadata',
+        'comment':'comment', 'metadata':'metadata',
         'ontology_class':'ontology/class',
         'ontology_term':'ontology/term',
         'ontology_instance':'ontology/instance',
         'user':'user',
-	'guid':'guid'}
+        'guid':'uid'}
+
 
 #MDSplus Events support
 def publishEvent(eventname, eventbody=None):
@@ -62,6 +64,7 @@ class ServerSentEvent(object):
             self.id : "id"
         }
 
+
     def encode(self):
         if not self.data:
             return ""
@@ -81,14 +84,14 @@ def publishgevent(msg = str(time.time())):
     sendsubs=subscriptions #sendsubs will be subset of subscriptions later
     noticefound=False
     if len(sendsubs)>0:
-	noticefound=True
+        noticefound=True
 
     def notify():
         for sub in sendsubs[:]:
-	    sub.put(msg)
+            sub.put(msg)
 
     if noticefound:
-	gevent.spawn(notify)
+        gevent.spawn(notify)
 
 
 def onlyone(recordstr): #error codes are made up for now
@@ -114,7 +117,8 @@ def onlyone(recordstr): #error codes are made up for now
             return json.dumps(s)
 
         #default error
-        s={"errorcode":2,"errormsg":"returned record is not a valid type, must be a json string."}
+        s = {"errorcode":2,"errormsg":
+               "returned record is not a valid type, must be a json string."}
         s["recordtype"]=str(type(recordstr))
         s["record"]=str(recordstr)
         return json.dumps(s)
@@ -128,197 +132,234 @@ def subscribe(): #subscribe returns the gen() function. gen() returns an iterato
     def gen():
         q = Queue()
         subscriptions.append(q)
-	print('invoking gen')
+        print('invoking gen')
         try:
-	    while True:
+            while True:
                 result = q.get()
-		print('invoking gen2')
-		if apidebug:
-		    print("SSE message: "+ str(result))
+                print('invoking gen2')
+                if apidebug:
+                    print("SSE message: "+ str(result))
                 ev = ServerSentEvent(str(result))
                 yield ev.encode()
         except GeneratorExit: # Or maybe use flask signals
-	     if apidebug:#subscription gets removed if we navigate away from the page
-		 print("in gen(): removing subscription")
-	     subscriptions.remove(q)
-    # This invokes gen() which returns an iterator that is returned by /subscribe in a Response()
-    # Response() is a WSGI application. Response will send the next message in the iterator/generator
+             if apidebug:#subscription gets removed if we navigate
+                 #away from the page 
+                 print("in gen(): removing subscription")
+             subscriptions.remove(q)
+    # This invokes gen() which returns an iterator that is 
+    # returned by /subscribe in a Response()
+    # Response() is a WSGI application. Response will send the next
+    # message in the iterator/generator 
     # for each http request
-    return Response(gen(), mimetype="text/event-stream",headers={'cache-control': 'no-cache',
-								 'connection': 'keep-alive'})
+    return Response(gen(), mimetype="text/event-stream",
+                    headers={'cache-control': 'no-cache',
+                             'connection': 'keep-alive'})
 
 
 @app.route("/nsub")
 def debug():
     return "Currently %d subscriptions" % len(subscriptions)
 
+
 #here we create application routes for a specified MPO_VERSION
 if MPO_API_VERSION:
-	for k,v in routes.iteritems():
-		routes[k] = '/' + MPO_API_VERSION + '/' + routes[k]
+        for k,v in routes.iteritems():
+                routes[k] = '/' + MPO_API_VERSION + '/' + routes[k]
 else:
-	for k,v in routes.iteritems():
-		routes[k] = '/' + routes[k]
+        for k,v in routes.iteritems():
+                routes[k] = '/' + routes[k]
+
+
 
 @app.route(routes['collection']+'/<id>', methods=['GET'])
 @app.route(routes['collection'],  methods=['GET', 'POST'])
 def collection(id=None):
-	dn=get_user_dn(request)
-	result = jsonify(json.loads(request.data),user_dn=dn)
-	if request.method == 'POST':
-            pass
- 	elif request.method == 'GET':
-            pass
-        return result
+    dn=get_user_dn(request)
+    result = jsonify(json.loads(request.data),user_dn=dn)
+    if request.method == 'POST':
+        pass
+    elif request.method == 'GET':
+        pass
+    return result
 
 @app.route(routes['workflow']+'/<id>', methods=['GET'])
 @app.route(routes['workflow'],  methods=['GET', 'POST'])
 def workflow(id=None):
-	dn=get_user_dn(request)
-	if apidebug:
-		print ('APIDEBUG: You are: %s'% dn )
-		print ('APIDEBUG: workflow url request is %s' %request.url)
+    dn=get_user_dn(request)
+    if apidebug:
+        print ('APIDEBUG: You are: %s'% dn )
+        print ('APIDEBUG: workflow url request is %s' %request.url)
 
-        if not rdb.validUser(dn):
+    if not rdb.validUser(dn):
+        if apidebug:
+            print ('APIDEBUG: Not a valid user'% dn)
+        return Response(None, status=401)
+
+    if request.method == 'POST':
+        r = rdb.addWorkflow(request.data,dn)
+    elif request.method == 'GET':
+        if id:
+            darg=dict(request.args.items(multi=True)+[('uid',id)])
             if apidebug:
-                print ('APIDEBUG: Not a valid user'% dn)
-            return Response(None, status=401)
+                print('darg is %s' %darg)
+            r = rdb.getWorkflow({'uid':id},dn)
+        else:
+            r = rdb.getWorkflow(request.args,dn)
 
-	if request.method == 'POST':
-                r = rdb.addWorkflow(request.data,dn)
- 	elif request.method == 'GET':
-		if id:
-			darg=dict(request.args.items(multi=True)+[('uid',id)])
-                        if apidebug:
-                            print('darg is %s' %darg)
-			r = rdb.getWorkflow({'uid':id},dn)
-		else:
-			r = rdb.getWorkflow(request.args,dn)
-	return r
+        if apidebug:
+            print ('APIDEBUG: workflow returning "%s" len %d'% (r,len(r),))
+        if len(r) == 2:
+            r = make_response(r,404)
+
+    if apidebug:
+        print ('APIDEBUG: workflow %s'% (r,) )
+
+    return r
 
 
 @app.route(routes['workflow']+'/<id>/graph', methods=['GET'])
 def getWorkflowGraph(id):
-	dn=get_user_dn(request)
-	if request.method == 'GET':
-		r = rdb.getWorkflowElements(id,request.args,dn)
-	return r
+    dn=get_user_dn(request)
+    if request.method == 'GET':
+        r = rdb.getWorkflowElements(id,request.args,dn)
+        return r
+
 
 @app.route(routes['workflow']+'/<id>/comments', methods=['GET'])
 def getWorkflowComments(id):
-	dn=get_user_dn(request)
-	if request.method == 'GET':
-		r = rdb.getWorkflowComments(id,request.args,dn)
-	return r
+    dn=get_user_dn(request)
+    if request.method == 'GET':
+        r = rdb.getWorkflowComments(id,request.args,dn)
+    return r
+
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
 def getWorkflowCompositeID(id):
-	dn=get_user_dn(request)
-	if request.method == 'GET':
-		r = rdb.getWorkflowCompositeID(id)
-	return r
+    dn=get_user_dn(request)
+    if request.method == 'GET':
+        r = rdb.getWorkflowCompositeID(id)
+        if apidebug:
+            print ('APIDEBUG: ALIAS %s'% r )
+    return r
+
 
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
 def dataobject(id=None):
-	dn=get_user_dn(request)
-	if request.method == 'POST':
-                r = rdb.addRecord('dataobject',request.data,dn)
-		rr = json.loads(r)
-                id = rr['uid']
-                morer = rdb.getRecord('dataobject',{'uid':id},dn)
-                publishEvent('mpo_dataobject',onlyone(morer))
-#                publishEvent('mpo_dataobject',r)
- 	elif request.method == 'GET':
-		if id:
-			r = rdb.getRecord('dataobject',{'uid':id})
-		else:
-			r = rdb.getRecord('dataobject',request.args)
-	return r
+    dn=get_user_dn(request)
+    if request.method == 'POST':
+        #check if dataobject with uri already exists
+        args = json.loads(request.data)
+        r = rdb.getRecord('dataobject', {'uri':args['uri']})
+        if r == "[]": #if not, add the record
+            r = rdb.addRecord('dataobject',request.data,dn)
+            rr = json.loads(r)
+            id = rr['uid']
+            morer = rdb.getRecord('dataobject',{'uid':id},dn)
+            publishEvent('mpo_dataobject',onlyone(morer))
+
+        else:
+            print('do',str(r),str(type(r)))
+            rr=json.loads(r)
+            if isinstance(rr,list) and len(rr)==1:
+                rr=rr[0]
+            else:
+                print("something is wrong in def dataobject. duplicate uri records found.")
+                exit
+
+            rr['status']="DO exists, returning record"
+            r=json.dumps(rr)
+
+    elif request.method == 'GET':
+        if id:
+            r = rdb.getRecord('dataobject',{'uid':id})
+        else:
+            r = rdb.getRecord('dataobject',request.args)
+    return r
 
 
 @app.route(routes['activity']+'/<id>', methods=['GET'])
 @app.route(routes['activity'], methods=['GET', 'POST'])
 def activity(id=None):
-	dn=get_user_dn(request)
-	if request.method == 'POST':
-		r = rdb.addRecord('activity',request.data,dn)
-		rr = json.loads(r)
-                id = rr['uid']
-                morer = rdb.getRecord('activity',{'uid':id},dn)
-                publishEvent('mpo_activity',onlyone(morer))
-#                publishEvent('mpo_activity',r)
- 	elif request.method == 'GET':
-		if id:
-			r = rdb.getRecord('activity', {'uid':id})
-		else:
-			r = rdb.getRecord('activity',request.args)
-	return r
+    dn=get_user_dn(request)
+    if request.method == 'POST':
+        r = rdb.addRecord('activity',request.data,dn)
+        rr = json.loads(r)
+        id = rr['uid']
+        morer = rdb.getRecord('activity',{'uid':id},dn)
+        publishEvent('mpo_activity',onlyone(morer))
+    elif request.method == 'GET':
+        if id:
+            r = rdb.getRecord('activity', {'uid':id})
+        else:
+            r = rdb.getRecord('activity',request.args)
+    return r
 
 
 @app.route(routes['comment']+'/<id>', methods=['GET'])
 @app.route(routes['comment'], methods=['GET', 'POST'])
 def comment(id=None):
-	dn=get_user_dn(request)
-	if request.method == 'POST':
-		r = rdb.addComment(request.data,dn)
-		rr = json.loads(r)
-                id = rr['uid']
-                try:  #JCW just being careful here on first implementation
-                    morer = rdb.getRecord('comment',{'uid':id},dn)
-                except Exception as e:
-                    import sys,os
-                    exc_type, exc_obj, exc_tb = sys.exc_info()
-                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    print('get comment',exc_type, fname, exc_tb.tb_lineno)
+    dn=get_user_dn(request)
+    if request.method == 'POST':
+        r = rdb.addComment(request.data,dn)
+        rr = json.loads(r)
+        id = rr['uid']
+        try:  #JCW just being careful here on first implementation
+            morer = rdb.getRecord('comment',{'uid':id},dn)
+        except Exception as e:
+            import sys,os
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print('get comment',exc_type, fname, exc_tb.tb_lineno)
 
-                publishEvent('mpo_comment',onlyone(morer))
-#                publishEvent('mpo_comment',r)
-	elif request.method == 'GET':
-		if id:
-			r = rdb.getRecord('comment',{'uid':id},dn)
-		else:
-                        r = rdb.getRecord('comment',request.args,dn)
+            publishEvent('mpo_comment',onlyone(morer))
+    elif request.method == 'GET':
+        if id:
+            r = rdb.getRecord('comment',{'uid':id},dn)
+        else:
+            r = rdb.getRecord('comment',request.args,dn)
 
-	return r
+    return r
 
 
 @app.route(routes['metadata']+'/<id>', methods=['GET'])
 @app.route(routes['metadata'], methods=['GET', 'POST'])
 def metadata(id=None):
-	dn=get_user_dn(request)
-	if request.method == 'POST':
-		r = rdb.addMetadata( request.data, dn)
-		rr = json.loads(r)
-                id = rr['uid']
-                morer = rdb.getRecord('metadata',{'uid':id},dn)
-                publishEvent('mpo_metadata',onlyone(morer))
-#                publishEvent('mpo_metadata',r)
- 	elif request.method == 'GET':
-		if id:
-			r = rdb.getRecord('metadata', {'uid':id}, dn )
-		else:
-			r = rdb.getRecord('metadata', request.args, dn )
-	return r
+    dn=get_user_dn(request)
+    if request.method == 'POST':
+        r = rdb.addMetadata( request.data, dn)
+        rr = json.loads(r)
+        id = rr['uid']
+        morer = rdb.getRecord('metadata',{'uid':id},dn)
+        publishEvent('mpo_metadata',onlyone(morer))
+    elif request.method == 'GET':
+        if id:
+            r = rdb.getRecord('metadata', {'uid':id}, dn )
+        else:
+            r = rdb.getRecord('metadata', request.args, dn )
+    return r
 
 
 @app.route(routes['ontology_class']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_class'], methods=['GET', 'POST'])
 def ontologyClass(id=None):
-	dn=get_user_dn(request)
-	result = jsonify(json.loads(request.data),user_dn=dn)
-	if request.method == 'POST':
-		pass
- 	else:
-		pass
-	return result
+    dn=get_user_dn(request)
+    result = jsonify(json.loads(request.data),user_dn=dn)
+    if request.method == 'POST':
+        pass
+    else:
+        pass
+    return result
+
 
 @app.route(routes['ontology_term']+'/<id>/vocabulary', methods=['GET'])
 @app.route(routes['ontology_term']+'/vocabulary', methods=['GET'])
 def ontologyTermVocabulary(id=None):
     '''
     This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
-    Vocabulary is defined as the next set of terms below it in the ontology term tree.
+    Vocabulary is defined as the next set of terms below it in the
+    ontology term tree.
+    It is a convenience route equivalent to GET ontology_term?parent_uid=uid
     '''
     dn=get_user_dn(request)
 
@@ -328,6 +369,7 @@ def ontologyTermVocabulary(id=None):
     r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
     
     return r
+
 
 @app.route(routes['ontology_term']+'/<id>/tree', methods=['GET'])
 @app.route(routes['ontology_term']+'/tree', methods=['GET'])
@@ -366,32 +408,36 @@ def ontologyTerm(id=None):
             r = rdb.getRecord('ontology_terms', request.args, dn )
     return r
 
+
 @app.route(routes['ontology_instance']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_instance'], methods=['GET', 'POST'])
 def ontologyInstance(id=None):
-	dn=get_user_dn(request)
-	if request.method == 'POST':
-		r = rdb.addOntologyInstance(request.data,dn)
- 	else:
-		if id:
-			r = rdb.getRecord('ontology_instances', {'uid':id}, dn )
-		else:
-			r = rdb.getRecord('ontology_instances', request.args, dn )
-	return r
+    dn=get_user_dn(request)
+    if request.method == 'POST':
+        r = rdb.addOntologyInstance(request.data,dn)
+    else:
+        if id:
+            r = rdb.getRecord('ontology_instances', {'uid':id}, dn )
+        else:
+            r = rdb.getRecord('ontology_instances', request.args, dn )
+    return r
+
 
 @app.route(routes['user']+'/<id>', methods=['GET'])
 @app.route(routes['user'], methods=['GET', 'POST'])
 def user(id=None):
-	dn=get_user_dn(request)
-	if request.method == 'POST':
-                r = rdb.addUser( request.data, dn )
- 	elif request.method == 'GET':
-		if id:
-			r = rdb.getUser( {'uid':id}, dn )
-		else:
-			r = rdb.getUser( request.args, dn )
+    dn=get_user_dn(request)
+    if request.method == 'POST':
+        r = rdb.addUser( request.data, dn )
+    elif request.method == 'GET':
+        if id:
+            r = rdb.getUser( {'uid':id}, dn )
+        else:
+            r = rdb.getUser( request.args, dn )
 
-	return r
+    return r
+
+
 
 if __name__ == '__main__':
     #adding debug option here, so we can see what is going on.
