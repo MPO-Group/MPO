@@ -192,6 +192,7 @@ def index():
     return render_template('index.html', **locals())
 
 #get children of specified uid (object)
+@app.route('/ontology/children', methods=['GET'])
 @app.route('/ontology/children/<uid>', methods=['GET'])
 def ont_children(uid):
     #Need to get the latest information from MPO database here

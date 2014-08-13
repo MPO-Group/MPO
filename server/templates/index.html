@@ -225,7 +225,8 @@ function getSubLevel(uid) {
 	}
 	else {
 		ont_selections.push(uid);
-		url="/ontology/children/"+uid;
+		//url="/mpo/ontology/children/"+uid;
+		url="{{ url_for("ont_children") }}" + "/" + uid;
 		var jqxhr = $.ajax(url)
 		.done(function(data) {
 			if(!$.isEmptyObject(data)) {
@@ -246,7 +247,8 @@ function getAttrib(uid) {
 	}
 	else {
 		ont_selections.push(uid);
-		url="/ontology/children/"+uid;
+		//url="/mpo/ontology/children/"+uid;
+		url="{{ url_for("ont_children") }}" + "/" + uid;
 		var jqxhr = $.ajax(url)
 		.done(function(data) {
 			getMenuChildren(data,uid);
@@ -255,7 +257,8 @@ function getAttrib(uid) {
 }
 
 function checkSubLevel(uid) {
-	url="/ontology/children/"+uid;
+	//url="/mpo/ontology/children/"+uid;
+	url="{{ url_for("ont_children") }}" + "/" + uid;
 	var tmp1=0;
 
 	/*var jqxhr = $.ajax(url).done(function(data) {
