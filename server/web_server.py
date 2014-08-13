@@ -62,10 +62,10 @@ def index():
 	wf_range=request.args.get('range')
 	wf_page=request.args.get('p')
 	wf_rpp=request.args.get('r')
-	wf_name=request.args.get('wf_name')
+	wf_type=request.args.get('wf_type')
 
         if webdebug:
-	    print('WEBDEBUG: requests in index route',API_PREFIX,wf_name)
+	    print('WEBDEBUG: requests in index route',API_PREFIX,wf_type)
 	#req=request.args.to_dict()
 
 	if wf_page:
@@ -89,9 +89,6 @@ def index():
 	rjson = r.json()
 
 	num_wf=len(rjson) # number of workflows returned from api call
-	#store distinct workflow types (names)
-	#wf_types={}
-	#wf_types[i['name']]=i['name']
 
 	#get start & end of range
 	if wf_range:
@@ -104,46 +101,45 @@ def index():
 	    rmin=1
 	    rmax=rpp
 
-	if wf_name:
-	    if wf_name != "all":
-		#get workflows by specified name
-		r=s.get("%s/workflow?name=%s"%(API_PREFIX,wf_name,),  
-                        headers={'Real-User-DN':dn})
+	if wf_type:
+	    if wf_type != "all":
+		#get workflows by specified type
+		r=s.get("%s/workflow?type=%s"%(API_PREFIX,wf_type,), headers={'Real-User-DN':dn})
 		rjson = r.json()
-		num_wf=len(rjson) # number of workflows of specified name
-		#get range of workflows of specified name
-		r=s.get("%s/workflow?name=%s&range=(%s,%s)"%
-                        (API_PREFIX,wf_name,rmin,rmax), 
-                        headers={'Real-User-DN':dn})
+		num_wf=len(rjson) # number of workflows of specified type
+		#get range of workflows of specified type
+		r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
 	else:
-	    r=s.get("%s/workflow?range=(%s,%s)"%
-                    (API_PREFIX,rmin,rmax),  headers={'Real-User-DN':dn})
+	    r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
 
 	#calculate number of pages
 	num_pages=int(math.ceil(float(num_wf)/float(rpp)))
 
 	results = r.json()
 
-        #ontology
-	req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
-	ont_result=req.json()
-
-## need to revisit and create a recursive function to get all child
-## levels of ontology terms
-
-	n=0
-	for i in ont_result:
-	    if i['uid']:
-		ont_result[n]['child']=get_child_terms(i['uid'])
-		#tmp_o=result[n]['child']
-		x=0
-		for y in ont_result[n]['child']:
-		    if y['uid']:
-			ont_result[n]['child'][x]['child']=get_child_terms(y['uid'])
-		    x+=1
-	    n+=1;
-
-#	#get comments
+#	#ontology tree
+	#req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
+	req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
+	ont_tree=req.json()
+	ont_result={}
+	wf_type_list=[]
+	
+	#get workflow types
+	if ont_tree["root"]["children"]:
+	    ont_result=ont_tree["root"]["children"]
+	    for i in ont_result:
+		if type(i)==dict:
+		    for key,value in i.iteritems():
+			if key=="Workflow":
+			    for n in value["children"]:
+				if type(n)==dict:
+				    for ky,vl in n.iteritems():
+					if ky=="Type":
+					    for x in vl["children"]:
+						for k,v in x.iteritems():
+						    wf_type_list.append(k)
+						
+	#get comments
 	index=0
 	for i in results:	#i is dict
 	    if wid:
@@ -193,8 +189,57 @@ def index():
 #	print "web_server.index()- there was an exception"
 #	print "error is", err
 
-    #return render_template('index.html', results = results, num_wf = num_wf, wf_name = wf_name)
     return render_template('index.html', **locals())
+
+#get children of specified uid (object)
+@app.route('/ontology/children/<uid>', methods=['GET'])
+def ont_children(uid):
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    s = requests.Session()
+    a = requests.adapters.HTTPAdapter(max_retries=10)
+    s.mount('https://', a)
+    s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
+    s.verify=False
+    s.headers={'Real-User-DN':dn}
+
+    req=requests.get("%s/ontology/term/%s/tree"%(API_PREFIX,uid), **certargs)
+    ont_tree=req.json()
+    children={}
+    for key,value in ont_tree.iteritems():
+	for n in value:
+	    if n=="children":
+		for x in value[n]:
+		    for k,v in x.iteritems():
+			pprint(k)
+			children[k]=v["data"]
+    result = jsonify(children)
+    return result
+
+#get ontology term attributes / details
+@app.route('/ontology/term/<uid>', methods=['GET'])
+def ont_term(uid):
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    s = requests.Session()
+    a = requests.adapters.HTTPAdapter(max_retries=10)
+    s.mount('https://', a)
+    s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
+    s.verify=False
+    s.headers={'Real-User-DN':dn}
+
+    req=requests.get("%s/ontology/term/%s"%(API_PREFIX,uid), **certargs)
+    attributes=req.json()
+    result=json.dumps(attributes)
+    return result
 
 @app.route('/graph/<wid>', methods=['GET'])
 @app.route('/graph/<wid>/<format>', methods=['GET'])
