@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <style type="text/css">
+img.scenter { display:block; margin-left:auto; margin-right:auto; width: 50% }
+img.sright { float: right; width: 50% }
+
+    </style>
+</head>
+
+<body>
+<p>This file uses <a href="http://en.wikipedia.org/wiki/Markdown">markdown</a> light weight markup language. A good
+<a href="https://daringfireball.net/projects/markdown/basics">reference</a> explains the basics. This file may be
+converted to <code>html</code> with</p>
+<pre><code> markdown2 api_doc.md &gt; api_doc.html
+</code></pre>
+<p>Here is an example workflow image generated with <code>![a nice DAG image](./workflow.png "Example workflow"){: .scenter}</code></p>
+<p><img alt="a nice DAG image" class="scenter" src="./workflow.png" title="Example workflow" /></p>
+<p>The syntax, <code>![a nice DAG image](./workflow.png "Example workflow"){: .scenter}</code> is a looks a bit complicated,
+but is just the optional text only view, the image and mouse over text and style. We could just use 
+<code>(./workflow.png)</code> if we didnt want to style it.</p>
+<p>This image is provided by the webserver and can be retrieved with</p>
+<pre><code> GET &lt;web_server&gt;/graph/&lt;work_uid&gt;/png
+</code></pre>
+<p>or explicitly:</p>
+<pre><code> curl -k --cert ../MPO\ Demo\ User.pem https://mpo.gat.com/mpo/graph/&lt;work_uid&gt;/png &gt; workflow.png
+</code></pre>
+<p>Some support routes are</p>
+<ul>
+<li><code>workflow</code></li>
+<li><code>dataobject</code></li>
+<li><code>activity</code></li>
+</ul>
+<p>This <code>html</code> file was generated with <code>python md_css_generator.py example.md mpo_doc.css example.html</code> and
+requires markdown to be installed: <code>pip install markdown</code>.</p></body>
+
+</html>
