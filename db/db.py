@@ -41,10 +41,10 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                            'status':'completion_status'},
              'activity_short' : {'w':'w_guid'},
              'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid',
-                             'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid', 
+                             'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid',
                              'uri':'uri'},
              'dataobject_short': {'w':'w_guid'},
-             'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 
+             'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type',
                            'user_uid':'u_guid', 'time':'creation_time',
                            'parent_uid':'parent_guid', 'parent_type':'parent_type'},
              'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' },
@@ -53,7 +53,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                                  'units':'units','specified':'specified',
                                  'user_uid':'added_by','date_added':'date_added'},
              'ontology_instances' : {'uid':'oi_guid','parent_uid':'target_guid','value':'value',
-                                     'time':'creation_time','user_uid':'u_guid'}
+                                     'term_uid':'term_guid','time':'creation_time','user_uid':'u_guid'}
          }
 
 
@@ -215,7 +215,7 @@ def getOntologyTermTree(id='0',dn=None):
 
             if tree_dict[self[nid].tag]["children"] == []:
                 tree_dict = {self[nid].tag: { "data":self[nid].data } }
-            
+
             return tree_dict
 
 
@@ -239,13 +239,13 @@ def getOntologyTermTree(id='0',dn=None):
     conn.close()
 
     #cursor.fetchall always returns a list
-    if isinstance(records,list): 
+    if isinstance(records,list):
         if len(records)==0: #throw error
             print('query error in Getontologytermtree, no records returned')
             r={"status"    : "error",
                "error_mesg": "query error in Getontologytermtree, no records returned"}
             return json.dumps(r, cls=MPOSetEncoder)
-                                
+
     ###Create tree structure for each head of the ontology
     #may be multiple trees, they have parent as None
     #we will place them under 'root' node if the whole tree is requested
@@ -325,7 +325,7 @@ def addUser(json_request,dn):
     conn = mypool.connect()
     cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
-    # if the dn is already in the db we shouldn't even be here. make sure the 
+    # if the dn is already in the db we shouldn't even be here. make sure the
     #  username doesn't exist already
     cursor.execute("select username from mpousers where username=%s",(objs['username'],))
     username = cursor.fetchone()
@@ -336,12 +336,12 @@ def addUser(json_request,dn):
             print(msg)
         return json.dumps(msg,cls=MPOSetEncoder)
 
-    q = ("insert into mpousers (" + ",".join([query_map['mpousers'][x] for x in reqkeys]) + 
+    q = ("insert into mpousers (" + ",".join([query_map['mpousers'][x] for x in reqkeys]) +
          ") values ("+",".join(["%s" for x in reqkeys])+")")
     v= tuple([objs[x] for x in reqkeys])
     cursor.execute(q,v)
-    #JCW Example of returning created record. By calling get getUser() 
-    #method we also get translation to api labels. 
+    #JCW Example of returning created record. By calling get getUser()
+    #method we also get translation to api labels.
     #       cursor.execute('select * from mpousers where uuid=%s ',(objs['uid'],) )
     #records = cursor.fetchone()
     conn.commit()
@@ -359,7 +359,7 @@ def addUser(json_request,dn):
             records = records[0]
         else:
             print('DB ERROR: in addUser, record retrieval failed')
-            msg ={"status":"error","error_mesg":"record retrieval failed", 
+            msg ={"status":"error","error_mesg":"record retrieval failed",
                   "username":username,"uid":objs['uid']}
             print(msg)
             return json.dumps(msg,cls=MPOSetEncoder)
@@ -610,8 +610,8 @@ def addRecord(table,request,dn):
                 parent_type = records.type
             cursor.execute("insert into workflow_connectivity "+
                            "(wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) "+
-                           "values (%s,%s,%s,%s,%s,%s,%s)", 
-                           (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'], 
+                           "values (%s,%s,%s,%s,%s,%s,%s)",
+                           (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'],
                             'dataobject', datetime.datetime.now()))
     # Make the changes to the database persistent
     conn.commit()
@@ -655,7 +655,7 @@ def addWorkflow(json_request,dn):
     v= (w_guid, objs['name'], objs['description'], user_id, datetime.datetime.now(),seq_no)
     cursor.execute(q,v)
     # add the workflow type to the ontology_instance table
-    q = ("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+ 
+    q = ("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
          "values (%s,%s,%s,%s,%s,%s)")
     v=(str(uuid.uuid4()),w_guid,objs['id'],objs['value'],datetime.datetime.now(),user_id)
     cursor.execute(q,v)
@@ -731,7 +731,7 @@ def addMetadata(json_request,dn):
     md_guid = str(uuid.uuid4())
     q = ("insert into metadata (md_guid,name,value,type,parent_guid,parent_type,creation_time,u_guid) "+
          "values (%s,%s,%s,%s,%s,%s,%s,%s)")
-    v= (md_guid, objs['key'], objs['value'], 'text', records.uid, records.type, 
+    v= (md_guid, objs['key'], objs['value'], 'text', records.uid, records.type,
         datetime.datetime.now(), user_id)
     cursor.execute(q,v)
     # Make the changes to the database persistent
@@ -861,4 +861,3 @@ def addOntologyInstance(json_request,dn):
     conn.close()
 
     return json.dumps(records,cls=MPOSetEncoder)
-
