@@ -143,13 +143,13 @@ def subscribe(): #subscribe returns the gen() function. gen() returns an iterato
                 yield ev.encode()
         except GeneratorExit: # Or maybe use flask signals
              if apidebug:#subscription gets removed if we navigate
-                 #away from the page 
+                 #away from the page
                  print("in gen(): removing subscription")
              subscriptions.remove(q)
-    # This invokes gen() which returns an iterator that is 
+    # This invokes gen() which returns an iterator that is
     # returned by /subscribe in a Response()
     # Response() is a WSGI application. Response will send the next
-    # message in the iterator/generator 
+    # message in the iterator/generator
     # for each http request
     return Response(gen(), mimetype="text/event-stream",
                     headers={'cache-control': 'no-cache',
@@ -367,7 +367,7 @@ def ontologyTermVocabulary(id=None):
         id='None'
 
     r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
-    
+
     return r
 
 
@@ -398,6 +398,11 @@ def ontologyTerm(id=None):
     ontology/term?path=term/term2/termN
     '''
     dn=get_user_dn(request)
+    if not rdb.validUser(dn):
+        if apidebug:
+            print ('APIDEBUG: Not a valid user'% dn)
+        return Response(None, status=401)
+
     if request.method == 'POST':
         r = rdb.addOntologyTerm(request.data,dn)
                 #r = rdb.addRecord('ontology_terms',request.data,dn)
