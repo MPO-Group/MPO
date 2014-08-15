@@ -248,28 +248,11 @@ def getWorkflowCompositeID(id):
 def dataobject(id=None):
     dn=get_user_dn(request)
     if request.method == 'POST':
-        #check if dataobject with uri already exists
-        args = json.loads(request.data)
-        r = rdb.getRecord('dataobject', {'uri':args['uri']})
-        if r == "[]": #if not, add the record
-            r = rdb.addRecord('dataobject',request.data,dn)
-            rr = json.loads(r)
-            id = rr['uid']
-            morer = rdb.getRecord('dataobject',{'uid':id},dn)
-            publishEvent('mpo_dataobject',onlyone(morer))
-
-        else:
-            print('do',str(r),str(type(r)))
-            rr=json.loads(r)
-            if isinstance(rr,list) and len(rr)==1:
-                rr=rr[0]
-            else:
-                print("something is wrong in def dataobject. duplicate uri records found.")
-                exit
-
-            rr['status']="DO exists, returning record"
-            r=json.dumps(rr)
-
+        r = rdb.addRecord('dataobject',request.data,dn)
+        rr = json.loads(r)
+        id = rr['uid']
+        morer = rdb.getRecord('dataobject',{'uid':id},dn)
+        publishEvent('mpo_dataobject',onlyone(morer))
     elif request.method == 'GET':
         if id:
             r = rdb.getRecord('dataobject',{'uid':id})
