@@ -26,12 +26,13 @@ else:
     Webclients outside of localhost will not see events.
     """)
     MPO_EVENT_SERVER='localhost' #note this will not work for remote
-    #access to webpages 
+    #access to webpages
 
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
 webdebug = True
 app.debug = True
+
 
 @app.route('/')
 def landing():
@@ -46,148 +47,148 @@ def index():
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
     if webdebug:
-	print('WEBDEBUG: certargs',certargs)
+        print('WEBDEBUG: certargs',certargs)
 
     results=False
     if True:
-	s = requests.Session()
+        s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=10)
         s.mount('https://', a)
         s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
-	s.verify=False
-	s.headers={'Real-User-DN':dn}
-	wid=request.args.get('wid')
+        s.verify=False
+        s.headers={'Real-User-DN':dn}
+        wid=request.args.get('wid')
 
-	#pagination control variables
-	wf_range=request.args.get('range')
-	wf_page=request.args.get('p')
-	wf_rpp=request.args.get('r')
-	wf_type=request.args.get('wf_type')
+        #pagination control variables
+        wf_range=request.args.get('range')
+        wf_page=request.args.get('p')
+        wf_rpp=request.args.get('r')
+        wf_type=request.args.get('wf_type')
 
         if webdebug:
-	    print('WEBDEBUG: requests in index route',API_PREFIX,wf_type)
-	#req=request.args.to_dict()
+            print('WEBDEBUG: requests in index route',API_PREFIX,wf_type)
+        #req=request.args.to_dict()
 
-	if wf_page:
-	    current_page=int(wf_page)
-	else:
-	    current_page=1
+        if wf_page:
+            current_page=int(wf_page)
+        else:
+            current_page=1
 
-	#records per page, 15 is default
-	if wf_rpp:
-	    rpp=int(wf_rpp)
-	else:
-	    rpp=15
+        #records per page, 15 is default
+        if wf_rpp:
+            rpp=int(wf_rpp)
+        else:
+            rpp=15
 
-	#get total # of workflows
-	r=s.get("%s/workflow"%API_PREFIX,  headers={'Real-User-DN':dn})
+        #get total # of workflows
+        r=s.get("%s/workflow"%API_PREFIX,  headers={'Real-User-DN':dn})
 
         # need to check the status code
         if r.status_code == 401:
             return redirect(url_for('landing', dest_url=request.path))
 
-	rjson = r.json()
+        rjson = r.json()
 
-	num_wf=len(rjson) # number of workflows returned from api call
+        num_wf=len(rjson) # number of workflows returned from api call
 
-	#get start & end of range
-	if wf_range:
-	    rlist=wf_range.split(',')
-	    rmin=int(rlist[0])
-	    #rmax=int(rlist[1])
-	    rmax=rmin+rpp-1
-	else:
-	    #default range
-	    rmin=1
-	    rmax=rpp
+        #get start & end of range
+        if wf_range:
+            rlist=wf_range.split(',')
+            rmin=int(rlist[0])
+            #rmax=int(rlist[1])
+            rmax=rmin+rpp-1
+        else:
+            #default range
+            rmin=1
+            rmax=rpp
 
-	if wf_type:
-	    if wf_type != "all":
-		#get workflows by specified type
-		r=s.get("%s/workflow?type=%s"%(API_PREFIX,wf_type,), headers={'Real-User-DN':dn})
-		rjson = r.json()
-		num_wf=len(rjson) # number of workflows of specified type
-		#get range of workflows of specified type
-		r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
-	else:
-	    r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
+        if wf_type:
+            if wf_type != "all":
+                #get workflows by specified type
+                r=s.get("%s/workflow?type=%s"%(API_PREFIX,wf_type,), headers={'Real-User-DN':dn})
+                rjson = r.json()
+                num_wf=len(rjson) # number of workflows of specified type
+                #get range of workflows of specified type
+                r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
+        else:
+            r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
 
-	#calculate number of pages
-	num_pages=int(math.ceil(float(num_wf)/float(rpp)))
+        #calculate number of pages
+        num_pages=int(math.ceil(float(num_wf)/float(rpp)))
 
-	results = r.json()
+        results = r.json()
 
-#	#ontology tree
-	#req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
-	req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
-	ont_tree=req.json()
-	ont_result={}
-	wf_type_list=[]
-	
-	#get workflow types
-	if ont_tree["root"]["children"]:
-	    ont_result=ont_tree["root"]["children"]
-	    for i in ont_result:
-		if type(i)==dict:
-		    for key,value in i.iteritems():
-			if key=="Workflow":
-			    for n in value["children"]:
-				if type(n)==dict:
-				    for ky,vl in n.iteritems():
-					if ky=="Type":
-					    for x in vl["children"]:
-						for k,v in x.iteritems():
-						    wf_type_list.append(k)
-						
-	#get comments
-	index=0
-	for i in results:	#i is dict
-	    if wid:
-		if wid == i['uid']:
-		    results[index]['show_comments'] = 'in' #in is the
-#name of the css class to collapse accordion body 
-	    else:
-	        results[index]['show_comments'] = ''
-	    pid=i['uid']
-	    c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
-	    comments = c.json()
+#       #ontology tree
+        #req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
+        req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
+        ont_tree=req.json()
+        ont_result={}
+        wf_type_list=[]
 
-	    num_comments=0
-	    if comments == None: #replace null reply in requests body
-                #with empty list so below logic still works 
-		comments=[]
-	    for temp in comments: #get number of comments, truncate time string
-		num_comments+=1
-		if temp['time']:
-		    time=temp['time'][:16]
-		    temp['time']=time
+        #get workflow types
+        if ont_tree["root"]["children"]:
+            ont_result=ont_tree["root"]["children"]
+            for i in ont_result:
+                if type(i)==dict:
+                    for key,value in i.iteritems():
+                        if key=="Workflow":
+                            for n in value["children"]:
+                                if type(n)==dict:
+                                    for ky,vl in n.iteritems():
+                                        if ky=="Type":
+                                            for x in vl["children"]:
+                                                for k,v in x.iteritems():
+                                                    wf_type_list.append(k)
 
-	    results[index]['num_comments']=num_comments
-	    results[index]['comments']=comments
+        #get comments
+        index=0
+        for i in results:   #i is dict
+            if wid:
+                if wid == i['uid']:
+                    results[index]['show_comments'] = 'in' #in is the
+            #name of the css class to collapse accordion body
+            else:
+                results[index]['show_comments'] = ''
+            pid=i['uid']
+            c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
+            comments = c.json()
+
+            num_comments=0
+            if comments == None: #replace null reply in requests body
+                #with empty list so below logic still works
+                comments=[]
+            for temp in comments: #get number of comments, truncate time string
+                num_comments+=1
+                if temp['time']:
+                    time=temp['time'][:16]
+                    temp['time']=time
+
+            results[index]['num_comments']=num_comments
+            results[index]['comments']=comments
 #JCW 19 JUL 2013. Change 'start_time' to 'creation_time'. 'start_time'
-#is not at presently set or returned by db 
+#is not at presently set or returned by db
 # need to clarify two different times. index.html does request 'start_time'
 # this was throwing an exception because 'start_time' field wasn't
-# found and breaking adding commments or displaying them 
+# found and breaking adding commments or displaying them
 #JCW 9 SEP 2013 API exposure of 'creation_time' is 'time' for comments.
-	    time=results[index]['time'][:16]
-	    results[index]['time']=time
-	    cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
-	    cid=cid.json()
-	    cid=cid['alias']
-	    results[index]['alias']=cid
-	    index+=1
+            time=results[index]['time'][:16]
+            results[index]['time']=time
+            cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
+            cid=cid.json()
+            cid=cid['alias']
+            results[index]['alias']=cid
+            index+=1
 
         if webdebug:
-	    print("WEBDEBUG: results sent to index")
-	    pprint(results)
-	    print("WEBDEBUG: ontology_results sent to index")
-	    pprint(ont_result)
+            print("WEBDEBUG: results sent to index")
+            pprint(results)
+            print("WEBDEBUG: ontology_results sent to index")
+            pprint(ont_result)
 
 # This is really dangerous to catch all exceptions. It makes debugging all but impossible - JCW
 #    except Exception, err:
-#	print "web_server.index()- there was an exception"
-#	print "error is", err
+#   print "web_server.index()- there was an exception"
+#   print "error is", err
 
     return render_template('index.html', **locals())
 
@@ -212,12 +213,12 @@ def ont_children(uid):
     ont_tree=req.json()
     children={}
     for key,value in ont_tree.iteritems():
-	for n in value:
-	    if n=="children":
-		for x in value[n]:
-		    for k,v in x.iteritems():
-			pprint(k)
-			children[k]=v["data"]
+        for n in value:
+            if n=="children":
+                for x in value[n]:
+                    for k,v in x.iteritems():
+                        pprint(k)
+                        children[k]=v["data"]
     result = jsonify(children)
     return result
 
@@ -265,7 +266,7 @@ def graph(wid, format="svg"):
 #        graph.add_node( pydot.Node(cid, label=name, shape=theshape, URL='javascript:postcomment("\N")') )
         graph.add_node( pydot.Node(cid, id=cid, label=name, shape=theshape) )
         if item['child_type']!='workflow':
-                graph.add_edge( pydot.Edge(pid, cid) )
+            graph.add_edge( pydot.Edge(pid, cid) )
     if format == 'svg' :
         svgxml = graph.create_svg()
         ans = svgxml[245:] #removes the svg doctype header so only: <svg>...</svg>
@@ -278,12 +279,12 @@ def graph(wid, format="svg"):
     elif format == 'dot' :
         ans = graph.create_dot()
     else:
-	return "unsupported graph format", 404
+        return "unsupported graph format", 404
     ans = ans[:-7] + ans[-7:]
     response = make_response(ans)
 
     if format == 'svg' :
-	response.headers['Content-Type'] = 'text/plain'
+        response.headers['Content-Type'] = 'text/plain'
         #response.headers['Content-Type'] = 'image/svg+xml'
     elif format == 'png' :
         response.headers['Content-Type'] = 'image/png'
@@ -292,7 +293,7 @@ def graph(wid, format="svg"):
     elif format == 'jpg' :
         response.headers['Content-Type'] = 'image/jpg'
     elif format == 'dot' :
-	response.headers['Content-Type'] = 'text/plain'
+        response.headers['Content-Type'] = 'text/plain'
     return response
 
 def getsvgxml(wid):
@@ -318,11 +319,11 @@ def getsvgxml(wid):
         pid=item['parent_uid']
         cid=item['child_uid']
         name=nodes[cid]['name']
-	if prev_name != name:
-	    #print(str(count) + " " + name)
-	    object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'] }
-	    prev_name=name
-	    count+=1
+        if prev_name != name:
+            #print(str(count) + " " + name)
+            object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'] }
+            prev_name=name
+            count+=1
 
         theshape=nodeshape[nodes[cid]['type']]
 #        graph.add_node( pydot.Node(cid, label=name, shape=theshape, URL='javascript:postcomment("\N")') )
@@ -355,53 +356,54 @@ def connections(wid):
     #get all data of each activity and dataobject of workflow <wid>
     num_comment=0
     for key,value in wf_objects.iteritems():
-	if value['type'] == "activity":
-	    req=requests.get("%s/activity/%s"%(API_PREFIX,value['uid'],), **certargs)
-	    data=req.json()
-	    if data[0]['time']:
-		obj_time=data[0]['time']
-		data[0]['time']=obj_time[:16]
-	    wf_objects[key]['data']=data
-	elif value['type'] == "dataobject":
+        if value['type'] == "activity":
+            req=requests.get("%s/activity/%s"%(API_PREFIX,value['uid'],), **certargs)
+            data=req.json()
+            if data[0]['time']:
+                obj_time=data[0]['time']
+                data[0]['time']=obj_time[:16]
+            wf_objects[key]['data']=data
+        elif value['type'] == "dataobject":
             #get data on each workflow element
-	    req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs)
-	    data=req.json()
-	    if data[0]['time']:
-		obj_time=data[0]['time']
-		data[0]['time']=obj_time[:16]
-	    wf_objects[key]['data']=data
+            req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+            data=req.json()
+            if data[0]['time']:
+                obj_time=data[0]['time']
+                data[0]['time']=obj_time[:16]
+            wf_objects[key]['data']=data
 
-	meta_req=requests.get("%s/metadata?parent_uid=%s"%
+        meta_req=requests.get("%s/metadata?parent_uid=%s"%
                               (API_PREFIX,value['uid'],), **certargs)
-	if meta_req.text != "[]":
-	    wf_objects[key]['metadata']=meta_req.json()
+        if meta_req.text != "[]":
+            wf_objects[key]['metadata']=meta_req.json()
 
-	comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
-	print comment
-	if comment.text != "[]":
-	    cm=comment.json()
-	    k=0
-	    for i in cm:
-		if i['user_uid']:
-		    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
-		    user_info=user_req.json();
-		    username=user_info[0]['username']
-		    cm[k]['user']=username
-		if i['time']:
-		    cm_time=i['time']
-		    cm[k]['time']=cm_time[:16]
-		k+=1
+        comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+        print comment
+        if comment.text != "[]":
+            cm=comment.json()
+            k=0
+            for i in cm:
+                if i['user_uid']:
+                    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
+                    user_info=user_req.json();
+                    username=user_info[0]['username']
+                    cm[k]['user']=username
+                if i['time']:
+                    cm_time=i['time']
+                    cm[k]['time']=cm_time[:16]
+                k+=1
 
-	    num_comment+=k
-	    wf_objects[key]['comment']=cm
+            num_comment+=k
+            wf_objects[key]['comment']=cm
 
     if webdebug:
-	print("WEBDEBUG: workflow objects")
-	pprint(wf_objects)
+        print("WEBDEBUG: workflow objects")
+        pprint(wf_objects)
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
     return render_template('conn.html', **locals())
+
 
 #returns json string of nodes w/ their info
 @app.route('/nodes/<wid>', methods=['GET'])
@@ -421,47 +423,48 @@ def nodes(wid):
     #get all data of each activity and dataobject of workflow <wid>
     num_comment=0
     for key,value in wf_objects.iteritems():
-	if value['type'] == "activity":
-	    req=requests.get("%s/activity/%s"%(API_PREFIX,value['uid'],), **certargs)
-	    data=req.json()
-	    if data[0]['time']:
-		obj_time=data[0]['time']
-		data[0]['time']=obj_time[:16]
-	    wf_objects[key]['data']=data
-	elif value['type'] == "dataobject":
-	    req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs) #get data on each workflow element
-	    data=req.json()
-	    if data[0]['time']:
-		obj_time=data[0]['time']
-		data[0]['time']=obj_time[:16]
-	    wf_objects[key]['data']=data
+        if value['type'] == "activity":
+            req=requests.get("%s/activity/%s"%(API_PREFIX,value['uid'],), **certargs)
+            data=req.json()
+            if data[0]['time']:
+                obj_time=data[0]['time']
+                data[0]['time']=obj_time[:16]
+            wf_objects[key]['data']=data
+        elif value['type'] == "dataobject":
+            req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs) #get data on each workflow element
+            data=req.json()
+            if data[0]['time']:
+                obj_time=data[0]['time']
+                data[0]['time']=obj_time[:16]
+                wf_objects[key]['data']=data
 
-	meta_req=requests.get("%s/metadata?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
-	if meta_req.text != "[]":
-	    wf_objects[key]['metadata']=meta_req.json()
+        meta_req=requests.get("%s/metadata?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+        if meta_req.text != "[]":
+            wf_objects[key]['metadata']=meta_req.json()
 
-	comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
-	if comment.text != "[]":
-	    cm=comment.json()
-	    k=0
-	    for i in cm:
-		if i['user_uid']:
-		    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
-		    user_info=user_req.json();
-		    username=user_info[0]['username']
-		    cm[k]['user']=username
-		if i['time']:
-		    cm_time=i['time']
-		    cm[k]['time']=cm_time[:16]
-		k+=1
+        comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+        if comment.text != "[]":
+            cm=comment.json()
+            k=0
+            for i in cm:
+                if i['user_uid']:
+                    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
+                    user_info=user_req.json();
+                    username=user_info[0]['username']
+                    cm[k]['user']=username
+                if i['time']:
+                    cm_time=i['time']
+                    cm[k]['time']=cm_time[:16]
+                k+=1
 
-	    num_comment+=k
-	    wf_objects[key]['comment']=cm
+            num_comment+=k
+            wf_objects[key]['comment']=cm
 
     nodes=json.dumps(wf_objects)
     response = make_response(nodes)
     response.headers['Content-Type'] = 'text/plain'
     return response
+
 
 @app.route('/about')
 def about():
@@ -474,70 +477,71 @@ def search():
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
     if request.method == 'POST':
-	try:
-	    form = request.form.to_dict() #gets POSTed form fields as dict
-	    #r = json.dumps(form)
-	    search_str=form['query'].strip()
+        try:
+            form = request.form.to_dict() #gets POSTed form fields as dict
+            #r = json.dumps(form)
+            search_str=form['query'].strip()
 
-	    query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
-				     'composite_seq':'comp_seq', 'time':'creation_time' },
-			 'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time',
+            query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
+                                     'composite_seq':'comp_seq', 'time':'creation_time' },
+                         'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time',
                                       'type':'comment_type', 'parent_uid':'parent_GUID',
                                       'ptype':'parent_type','user_uid':'u_guid'},
-			 'mpousers' : {'username':'username', 'uid':'uuid', 'firstname': 'firstname',
-				   'lastname':'lastname','email':'email','organization':'organization',
-				   'phone':'phone','dn':'dn'},
-			 'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
-				       'work_uid':'w_guid', 'time':'creation_time', 
-                                       'user_uid':'u_guid','start':'start_time', 
+                         'mpousers' : {'username':'username', 'uid':'uuid', 'firstname': 'firstname',
+                                       'lastname':'lastname','email':'email','organization':'organization',
+                                       'phone':'phone','dn':'dn'},
+                         'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
+                                       'work_uid':'w_guid', 'time':'creation_time',
+                                       'user_uid':'u_guid','start':'start_time',
                                        'end':'end_time', 'status':'completion_status'},
-			 'activity_short' : {'w':'w_guid'},
-			 'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid',
-					  'time':'creation_time', 'user_uid':'u_guid', 
+                         'activity_short' : {'w':'w_guid'},
+                         'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid',
+                                         'time':'creation_time', 'user_uid':'u_guid',
                                          'work_uid':'w_guid', 'uri':'uri'},
-			 'dataobject_short': {'w':'w_guid'},
-			 'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type', 
-                                       'user_uid':'u_guid', 'time':'creation_time', 
-                                       'parent_uid':'parent_guid', 
+                         'dataobject_short': {'w':'w_guid'},
+                         'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type',
+                                       'user_uid':'u_guid', 'time':'creation_time',
+                                       'parent_uid':'parent_guid',
                                        'parent_type':'parent_type'},
-			 'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' }
-			 }
+                         'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' }
+                     }
 
-	    #wf=requests.get("%s/workflow?uid=%s"%(API_PREFIX,search_str,), **certargs)
-	    results={}
-	    if search_str !='':
-		for pkey,pvalue in query_map.iteritems():
-		    obj_result=[]
-		    found=False
-		    for ckey in pvalue:
-			if(pkey != "metadata_short" and pkey != "dataobject_short" and pkey != "activity_short"): #these get requests do not work and break the loop
-			    if(pkey=="mpousers"): #api route is /user and not /mpousers
-				pkey="user"
+            #wf=requests.get("%s/workflow?uid=%s"%(API_PREFIX,search_str,), **certargs)
+            results={}
+            if search_str !='':
+                for pkey,pvalue in query_map.iteritems():
+                    obj_result=[]
+                    found=False
+                    for ckey in pvalue:
+                        if(pkey != "metadata_short" and pkey != "dataobject_short" and pkey != "activity_short"): #these get requests do not work and break the loop
+                            if(pkey=="mpousers"): #api route is /user and not /mpousers
+                                pkey="user"
 
-			    req=requests.get("%s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,), **certargs)
-			    if req.text != "[]":
-				obj_result.extend(req.json())
-				found=True
+                            req=requests.get("%s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,), **certargs)
+                            if req.text != "[]":
+                                obj_result.extend(req.json())
+                                found=True
 
-				if webdebug:
-				    print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
+                                if webdebug:
+                                    print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
 
-		    if found:
-			results[pkey]=obj_result
+                    if found:
+                        results[pkey]=obj_result
 
-		if webdebug:
-		    print('WEBDEBUG: user query')
-		    pprint(form)
-		    print('WEBDEBUG: search results')
-		    pprint(results)
+                if webdebug:
+                    print('WEBDEBUG: user query')
+                    pprint(form)
+                    print('WEBDEBUG: search results')
+                    pprint(results)
 
-	except:
-	    pass
+        except:
+            pass
 
-	return render_template('search.html', query=form, results=results)
+        return render_template('search.html', query=form, results=results)
 
     if request.method == 'GET':
-	return render_template('search.html')
+        return render_template('search.html')
+
 
 @app.route('/ontology')
 @app.route('/ontology/<uid>', methods=['GET'])
@@ -546,51 +550,52 @@ def ontology(uid=False):
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 #    if request.method == 'GET':
-#	if uid:
-#	    req=requests.get("%s/ontology/term/%s"%(API_PREFIX,uid,), **certargs)
-#	    if req.text != "[]":
-#		result=req.text
-#	    else:
-#		result=""
-#	    response = make_response(result)
-#	    response.headers['Content-Type'] = 'text/plain'
-#	    return response
-#	else:
-#	    req=requests.get("%s/ontology/term"%(API_PREFIX), **certargs)
-#	    result=req.json()
-#	    pprint(result)
-#	    return render_template('ontology.html', result=result)
+#   if uid:
+#       req=requests.get("%s/ontology/term/%s"%(API_PREFIX,uid,), **certargs)
+#       if req.text != "[]":
+#       result=req.text
+#       else:
+#       result=""
+#       response = make_response(result)
+#       response.headers['Content-Type'] = 'text/plain'
+#       return response
+#   else:
+#       req=requests.get("%s/ontology/term"%(API_PREFIX), **certargs)
+#       result=req.json()
+#       pprint(result)
+#       return render_template('ontology.html', result=result)
     if request.method == 'GET':
-	if uid:
-	    req=requests.get("%s/ontology/term/%s/vocabulary"%(API_PREFIX,uid,), **certargs)
-	    if req.text != "[]":
-		result=req.text
-	    else:
-		result=""
-	    response = make_response(result)
-	    response.headers['Content-Type'] = 'text/plain'
-	    return response
-	else:
-	    req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
-	    result=req.json()
-## need to revisit and create a recursive function to get all child levels of ontology terms
-	    n=0
-	    for i in result:
-		if i['uid']:
-		    result[n]['child']=get_child_terms(i['uid'])
-		    #tmp_o=result[n]['child']
-		    x=0
-		    for y in result[n]['child']:
-			if y['uid']:
-			    result[n]['child'][x]['child']=get_child_terms(y['uid'])
-			x+=1
-		n+=1;
+        if uid:
+            req=requests.get("%s/ontology/term/%s/vocabulary"%(API_PREFIX,uid,), **certargs)
+            if req.text != "[]":
+                result=req.text
+            else:
+                result=""
+            response = make_response(result)
+            response.headers['Content-Type'] = 'text/plain'
+            return response
+        else:
+            req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
+            result=req.json()
+            ## need to revisit and create a recursive function to get all child levels of ontology terms
+            n=0
+            for i in result:
+                if i['uid']:
+                    result[n]['child']=get_child_terms(i['uid'])
+                    #tmp_o=result[n]['child']
+                    x=0
+                    for y in result[n]['child']:
+                        if y['uid']:
+                            result[n]['child'][x]['child']=get_child_terms(y['uid'])
+                        x+=1
+                n+=1;
 
-	    if webdebug:
-		pprint(result)
-	    return render_template('ontology.html', result=result)
+            if webdebug:
+                pprint(result)
+            return render_template('ontology.html', result=result)
 
     return render_template('ontology.html')
+
 
 @app.route('/submit_comment', methods=['POST'])
 def submit_comment():
@@ -617,6 +622,7 @@ def submit_comment():
 #def login():
 #    return render_template('login.html')
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     dn = get_user_dn(request)
@@ -624,74 +630,76 @@ def register():
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
     if request.method == 'POST':
-	try:
-	    form = request.form.to_dict() #gets POSTed form fields as dict
-	    form['dn'] = dn
+        try:
+            form = request.form.to_dict() #gets POSTed form fields as dict
+            form['dn'] = dn
 
-	    #validate input
-	    check="<strong>Missing required fields: </strong>"
-	    n=0
-	    for k,v in form.iteritems():
-		tmp=v.strip();
-		if not tmp:
-		    if n>0:
-			check+=', '
-		    if k=='firstname':
-			check+="first name"
-		    elif k=='lastname':
-			check+="last name"
-		    else:
-			check+=k
-		    n+=1
+            #validate input
+            check="<strong>Missing required fields: </strong>"
+            n=0
+            for k,v in form.iteritems():
+                tmp=v.strip();
+                if not tmp:
+                    if n>0:
+                        check+=', '
+                        if k=='firstname':
+                            check+="first name"
+                        elif k=='lastname':
+                            check+="last name"
+                        else:
+                            check+=k
+                        n+=1
 
-	    r = json.dumps(form) #convert to json
-	    result_post = requests.post("%s/user"%API_PREFIX, r, **certargs)
+            r = json.dumps(form) #convert to json
+            result_post = requests.post("%s/user"%API_PREFIX, r, **certargs)
             result=result_post.json() #Convert body Response to json datastructure
 
-	    if webdebug:
-		print("WEBDEBUG: get form")
+            if webdebug:
+                print("WEBDEBUG: get form")
                 print(form)
                 print('WEB DEBUG: result of register request')
-		pprint(result)
+                pprint(result)
                 print(str(type(result)),len(result))
 
-	    if n==0:
-		if result.has_key('status'): #JCW for now, check this. But we should have some sort of completion status on all route responses
-		    if result['status']=="error":
-			msg = result['error_mesg']
-			if webdebug:
-			    print("WEBDEBUG error")
-			    pprint(msg)
-			return render_template('register.html', msg=msg, form=form)
-		    else:
-			msg="Thank you for registering."
-			if webdebug:
-			    print (msg)
-			return render_template('profile.html', msg=msg, result=result)
-		else:
-		    if webdebug:
-			print('WEBDEBUG: WARNING: in /register no status field in reply')
+            if n==0:
+                if result.has_key('status'): #JCW for now, check this. But we should have some sort of completion status on all route responses
+                    if result['status']=="error":
+                        msg = result['error_mesg']
+                        if webdebug:
+                            print("WEBDEBUG error")
+                            pprint(msg)
+                        return render_template('register.html', msg=msg, form=form)
+                    else:
+                        msg="Thank you for registering."
+                        if webdebug:
+                            print (msg)
+                        return render_template('profile.html', msg=msg, result=result)
+                else:
+                    if webdebug:
+                        print('WEBDEBUG: WARNING: in /register no status field in reply')
 
-		    #JCW Should just fail at this point, but for now act as if successful
-		    msg="Thank you for registering."
-		    if webdebug:
-			print (msg)
-		    return render_template('profile.html', msg=msg, result=result)
-	    else:
-		return render_template('register.html', msg=check, form=form)
+                    #JCW Should just fail at this point, but for now act as if successful
+                    msg="Thank you for registering."
+                    if webdebug:
+                        print (msg)
+                        return render_template('profile.html', msg=msg, result=result)
+            else:
+                return render_template('register.html', msg=check, form=form)
 
 
-	except Exception, err:
+        except Exception, err:
             print('/register exception', Exception, err) #JCW should redirect to an error handling template here
-	    pass
+            pass
 
     if request.method == 'GET':
         return render_template('register.html', form="_")
+
 
 @app.route('/profile')
 def profile():
     #retrieve user info and display
     return render_template('profile.html')
+
 
 def is_email(email):
     pattern = '[\.\w]{1,}[@]\w+[.]\w+'
@@ -699,6 +707,7 @@ def is_email(email):
         return True
     else:
         return False
+
 
 @app.route("/testfeed")
 def testfeed():
@@ -726,6 +735,7 @@ def testfeed():
      </html>
     """%MPO_API_SERVER
     return(debug_template)
+
 
 def get_child_terms(uid):
     dn = get_user_dn(request)
