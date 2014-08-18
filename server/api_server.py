@@ -258,6 +258,9 @@ def dataobject(id=None):
             r = rdb.getRecord('dataobject',{'uid':id})
         else:
             r = rdb.getRecord('dataobject',request.args)
+ 	if len(r) == 0 :
+            r = make_response(r, 404)
+
     return r
 
 
