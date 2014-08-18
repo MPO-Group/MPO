@@ -609,7 +609,7 @@ class mpo_cli(mpo_methods):
 
     def getmpohost(self):
         mpohost=None
-#	print(os.environ,file=sys.stderr)
+        #print(os.environ,file=sys.stderr)
         if os.environ.has_key('MPO_HOST'):
             mpohost=os.environ['MPO_HOST']
         return mpohost
@@ -682,4 +682,4 @@ if __name__ == '__main__':
     else:
         print("mpo request failed, result of method is not a valid response:",file=sys.stderr)
         print("     "+str(type(result)),result,file=sys.stderr)
-	print(result)
+        print(result)
