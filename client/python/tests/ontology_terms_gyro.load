@@ -16,12 +16,12 @@ fi
 if ! [ -n "${MPO_HOME:+x}" ]
 then
   echo MPO_HOME not defined, exitting
-  exit 
+  exit
 fi
 
 if ! [ -n "${MPO:+x}" ]
 then
-  export MPO="$MPO_HOME/client/python/mpo_testing.py --user=$USER"
+  export MPO="$MPO_HOME/client/python/mpo_arg.py --user=$USER"
 fi
 
 #use API methods to create a workflow
