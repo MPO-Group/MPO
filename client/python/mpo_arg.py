@@ -332,7 +332,8 @@ class mpo_methods(object):
                 print("Unknown workflow type. Must be one of: "+ str(wtypes))
                 sys.exit(2) #replace with exception
         else:
-            print("Error, no dictionary returned from ontology query in init method.")
+            print("Error, no dictionary returned from ontology query in init method.",
+                  file=sys.stderr)
             sys.exit(2)
 
 

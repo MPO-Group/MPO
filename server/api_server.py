@@ -187,12 +187,12 @@ def collection(id=None):
 def workflow(id=None):
     dn=get_user_dn(request)
     if apidebug:
-        print ('APIDEBUG: You are: %s'% dn )
+        print ('APIDEBUG: You are: %s'% str(dn) )
         print ('APIDEBUG: workflow url request is %s' %request.url)
 
     if not rdb.validUser(dn):
         if apidebug:
-            print ('APIDEBUG: Not a valid user'% dn)
+            print ('APIDEBUG: Not a valid user %s' % str(dn) )
         return Response(None, status=401)
 
     if request.method == 'POST':
