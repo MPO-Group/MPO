@@ -44,6 +44,8 @@ $(document).ready(function () {
 						dataElements[tmp['name']]=tmp3['description'] + ' - ' + tmp3['time'];
 					else
 						dataElements[tmp['name']]=tmp3['description'];
+					if(tmp3['uri'])
+						dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['uri']+"</small></li><li><small>"+tmp3['uid']+"</small></li></ul>";
 				}
 				else if(j=="metadata") {
 					var tmp2=tmp[j];
@@ -324,9 +326,13 @@ $(document).ready(function () {
                                                         {% if n.data %}
                                                             {% for x in n.data %}
                                                                 <li><small>{{ x.description }}</small></li>
+                                                                {% if x.uri %}                                                	
+                                                                <li><small>uri: {{ x.uri }}</small></li>
+                                                                {% endif %}                                                                
                                                                 {% if x.time %}                                                	
                                                                 <li><small>time: {{ x.time }}</small></li>
                                                                 {% endif %}
+                                                                <li><small>uid: {{ x.uid }}</small></li>
                                                             {% endfor %}
                                                         {% endif %}
                                                         {% if n.metadata %}
