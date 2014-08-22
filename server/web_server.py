@@ -381,6 +381,17 @@ def connections(wid):
             if data[0]['time']:
                 obj_time=data[0]['time']
                 data[0]['time']=obj_time[:16]
+	    
+	    #get linked workflows
+	    if data[0]['uri']:
+		#https://mpo.gat.com:8443/v0/dataobject?uri=/link/efit/2006/156000
+		wf_links_req=requests.get("%s/dataobject?uri=%s"%(API_PREFIX,data[0]['uri'],), **certargs)
+		if wf_links_req.text != "[]":
+		    wf_links=wf_links_req.json()
+		    data[0]['wf_link']=wf_links
+		    pprint(data[0]['uri'])
+		    pprint(data[0]['wf_link'])
+		
             wf_objects[key]['data']=data
 
         meta_req=requests.get("%s/metadata?parent_uid=%s"%
@@ -409,7 +420,7 @@ def connections(wid):
 
     if webdebug:
         print("WEBDEBUG: workflow objects")
-        pprint(wf_objects)
+        #pprint(wf_objects)
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER

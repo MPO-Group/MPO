@@ -3,8 +3,24 @@
 {% block title %}MPO Workflow Detail{% endblock %}
 
 {% block hscripts %}
+<script type="text/javascript" src="/static/js/svg-pan-zoom.js"></script> 
+<!-- <script type="text/javascript" src="/static/js/jquery-ui.js"></script> -->
+<script type="text/javascript" src="/static/js/jquery.slimscroll.min.js"></script>
+<style>
+#svg_loading {
+	background:url(/static/img/ajax-loader.gif) no-repeat center center;
+	height:60px;
+}
+#svg {
+	background-color:#fff;
+}
 
+</style>
 <script>
+var nodeUIDs = new Array(); //store node UIDs for comparison with new node UIDs added after page load
+var wid = ""; //store workflow wid
+var lastUpdate = ""; //store last update time
+var rightScrollHeight='600px';
 
 function closepop(id) {
 	$('#'+id).popover('hide');
@@ -14,168 +30,225 @@ function showComments() {
 	$( "#node_comments" ).toggle();
 }
 
+function inArray(value, array) {
+  return array.indexOf(value) > -1;
+}
+
+function failure_cb(event,msg,userarg) {
+//what to do on failure (status !=200 or 204) eg event server down.
+  alert(msg);
+}
+
+function success_cb(event,data,userarg) { 
+//define your callback here.
+//you probably want JSON.parse(data.event.data.text["#text"]) which selects the string 
+//serialized json object containing the mpo event payload that is contained in the larger
+// json object that is parsed out of XMLHTTPrequest and converts it to a local JSON object
+// that can be used.
+// You may want to define different callbacks for different events you want to monitor
+// or have logic on the value of 'event'
+ //alert(JSON.stringify(data));
+	if (typeof(data.event) !== "undefined") {
+		var tmpDataObj=JSON.parse(data.event.data.text["#text"]);
+		//var tmpDataObj=jQuery.parseJSON(data.event.data.text["#text"]);
+		
+		var wfID="";
+		for (var key in tmpDataObj) {
+			if(key=="parent_uid")
+			//console.log('parent_uid: ' + tmpDataObj[key]);
+				wfID=tmpDataObj[key];
+			else if (key=="work_uid")
+			//console.log('work_uid: ' + tmpDataObj[key]);
+				wfID=tmpDataObj[key];
+		}
+	}
+	 
+	if(userarg==wfID)
+		buildPageElements(wfID);
+}
+
 //handles the svg workflow plot functionality
 $(document).ready(function () {
-		wf_desc="{{ wid_info[0].description }}";	
-		var jsondata = '{{ nodes|tojson }}';  //single quote issue
-		var tmp_str=jsondata.replace(/&#34;/g,'"');
-		tmp_str=tmp_str.replace(/(\r\n|\n|\r)/g,'<br/>');
-		tmp_str=tmp_str.replace(/&#39;/g,'\''); //replace single quote with \'
-		tmp_str=tmp_str.replace(/\\/g, "\\\\");  //replace single backslash with double \\
-		var jdata=tmp_str;
-		//console.log(jdata);
+	$("#svg_loading").hide();
+	wf_desc="{{ wid_info[0].description }}";	
+	var jsondata = '{{ nodes|tojson }}';  //single quote issue
+	var tmp_str=jsondata.replace(/&#34;/g,'"');
+	tmp_str=tmp_str.replace(/(\r\n|\n|\r)/g,'<br/>');
+	tmp_str=tmp_str.replace(/&#39;/g,'\''); //replace single quote with \'
+	tmp_str=tmp_str.replace(/\\/g, "\\\\");  //replace single backslash with double \\
+	var jdata=tmp_str;
+	//console.log(jdata);
 
-		var dataObjs=jQuery.parseJSON(jdata);
-		//alert(JSON.stringify(dataObjs[4].data));
-		
-		var dataElements = {}; //for name - desc in popover
-		
-		name='';
-		desc='';
-		for (var key in dataObjs) {
-		  if (dataObjs.hasOwnProperty(key)) {
-			var tmp = dataObjs[key];
-			for(var j in tmp) {
-				if(j=="data") {
-					//alert(JSON.stringify(tmp[j]));
-					var tmp2=tmp[j];
-					var tmp3=tmp2[0];
-					if(tmp3['time'])
-						dataElements[tmp['name']]=tmp3['description'] + ' - ' + tmp3['time'];
-					else
-						dataElements[tmp['name']]=tmp3['description'];
+	var dataObjs=jQuery.parseJSON(jdata);
+	//console.log(JSON.stringify(dataObjs[4].data));
+	
+	lastUpdate=new Date(1900,00,01); //past date for demo
+	//lastUpdate=new Date(); //GET CURRENT DATE ON PAGE LOAD for newest added element comparison
+
+	var nodeCount=0;
+	var dataElements = {}; //for name - desc in popover
+	
+	for (var key in dataObjs) {
+	  if (dataObjs.hasOwnProperty(key)) {
+		var tmp = dataObjs[key];
+		nodeUIDs[nodeCount]=tmp['uid'];
+		for(var j in tmp) {
+			if(j=="data") {
+				//alert(JSON.stringify(tmp[j]));
+				var tmp2=tmp[j];
+				var tmp3=tmp2[0];
+				dataElements[tmp['name']]="";
+				if(tmp3['description'])
+					dataElements[tmp['name']]+=tmp3['description'];
+				if(tmp3['time']) {
+					dataElements[tmp['name']]+= ' - ' + tmp3['time'];
+					//store latest workflow update time
+					tmpDateTime=new Date(tmp3['time'].replace(" ","T"));
+					if(tmpDateTime > lastUpdate)
+						lastUpdate=tmpDateTime
 					if(tmp3['uri'])
 						dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['uri']+"</small></li><li><small>"+tmp3['uid']+"</small></li></ul>";
 				}
-				else if(j=="metadata") {
-					var tmp2=tmp[j];
-					dataElements[tmp['name']]=dataElements[tmp['name']]+"<div>metadata:<ul>";
-					for (var z in tmp2)
-					{
-						var tmp3=tmp2[z];
-						if(tmp3['key']) {
-							dataElements[tmp['name']]=dataElements[tmp['name']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
+				if(tmp3['uri']) {
+					var fill=false;
+					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['uri']+"</small>";
+					if(tmp3['wf_link']) {
+						//dataElements[tmp['name']]+="<ul class=\"wf_links\"><li><small><em>Linked Workflows:</em></small>"; 
+						//dataElements[tmp['name']]+="<ul>";
+						for (var cnt in tmp3['wf_link']) {
+							if (tmp3['wf_link'][cnt]['work_uid'] != "{{ wid }}") {
+								fill=true;
+								//dataElements[tmp['name']]+="<li><small><a href=\"/connections/"+tmp3['wf_link'][cnt]['work_uid']+"\">"+tmp3['wf_link'][cnt]['work_uid']+"</a></small></li>";
+							}
 						}
+						//dataElements[tmp['name']]+="</ul></li></ul>"; 
+						if(fill)
+							fillSVGElement(tmp['uid']);
 					}
-					dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></div>";
+					dataElements[tmp['name']]+="</li>";
+					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
 				}
 			}
-		  }
-		}
-		//alert(JSON.stringify(dataElements));
-			
-		var lastPopover='';
-		var currentPopover='';
-
-		//$("#test").popover({title: "this is a popover", html: true, container: 'body', content: '<ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li></ul>', trigger: 'hover'});
-		//checks and adjusts svg width/height if needed
-		//var workflowWidth=560; //in pixels
-		//var workflowWidth=550;
-		var workflowWidth=500;
-
-		var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
-		var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
-		var width=parseInt(w.replace("pt",""));
-		var height=parseInt(h.replace("pt",""));
-		
-		if(width > workflowWidth) {
-			var wnew=Math.round(width*(workflowWidth/width));
-			var hnew=Math.round(height*(workflowWidth/width));
-			w=wnew.toString() + "pt";
-			h=hnew.toString() + "pt";
-			document.getElementsByTagName("svg").item(0).setAttribute("width",w);
-			document.getElementsByTagName("svg").item(0).setAttribute("height",h);
-		}
-		//end svg size adjust
-				
-		//get list of nodes for svg xml tag "g" w/ class "node"
-		var nodelist = document.querySelectorAll("g.node");
-				
-		//parse nodelist object and add click event function to each node (w/ respective data)
-		for (var key in nodelist) {
-		  if (nodelist.hasOwnProperty(key)) {
-		    var node=nodelist[key];
-			var id="";
-			
-			var sub_content="";
-			//get id of "g" element of class=nodes
-			if(key==0) {
-				id="node1";
-				var wid=node.childNodes[0].textContent;
-				sub_content=wf_desc;
+			else if(j=="metadata") {
+				var tmp2=tmp[j];
+				if(dataElements[tmp['name']])
+					dataElements[tmp['name']]=dataElements[tmp['name']]+"<div>metadata:<ul>";
+				else
+					dataElements[tmp['name']]="<div>metadata:<ul>";
+				for (var z in tmp2)
+				{
+					var tmp3=tmp2[z];
+					if(tmp3['key']) {
+						dataElements[tmp['name']]=dataElements[tmp['name']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
+					}
+				}
+				dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></div>";
 			}
-			else
-				id=node.childNodes[0].textContent;	
-			
-			//get current text content of node and add a link -- *use svg xlink instead*
-			//var nodeText=node.childNodes[4].textContent;
-			//node.childNodes[4].textContent='<a href="/">' + nodeText + '</a>';
-			
-			//create new ID attribute for <text> v.1
-			//var addTextID = document.createAttribute('id');
-			//addTextID.value = "text_" + id;
-			//node.childNodes[4].setAttributeNode(addTextID);
+		}
+		nodeCount++;
+	  }
+	}
+	//alert(JSON.stringify(dataElements));
+	
+	$("#last-updated").html(lastUpdate.toLocaleString());
+		
+	var lastPopover='';
+	var currentPopover='';
 
-			//create new ID attribute for <text> v.2
+	//$("#test").popover({title: "this is a popover", html: true, container: 'body', content: '<ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li></ul>', trigger: 'hover'});
+	//checks and adjusts svg width/height if needed
+	//var workflowWidth=560; //in pixels
+	//var workflowWidth=550;
+	var workflowWidth=500;
+
+	var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
+	var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
+	var width=parseInt(w.replace("pt",""));
+	var height=parseInt(h.replace("pt",""));
+	rightScrollHeight=h.replace("pt","px");
+	//adjust for pan/zoom functionality
+	document.getElementsByTagName("svg").item(0).removeAttribute("viewBox");
+	
+	if(width > workflowWidth) {
+		var wnew=workflowWidth;
+		var hnew=Math.round(height*(workflowWidth/width));
+		rightScrollHeight=hnew.toString()+"px";
+		$("#svg_loading").width(wnew).height(hnew);
+		w=wnew.toString() + "pt";
+		h=hnew.toString() + "pt";
+		rightScrollHeight=hnew.toString() + "px";
+		document.getElementsByTagName("svg").item(0).setAttribute("width",w);
+		document.getElementsByTagName("svg").item(0).setAttribute("height",h);
+		document.getElementById("graph1").transform.baseVal.getItem(0).setScale(".56",".56");
+	}
+	//end svg size adjust
+	
+	initZoomPan();
+	
+	//get list of nodes for svg xml tag "g" w/ class "node"
+	var nodelist = document.querySelectorAll("g.node");
+			
+	//parse nodelist object and add click event function to each node (w/ respective data)
+	for (var key in nodelist) {
+	  if (nodelist.hasOwnProperty(key)) {
+		var node=nodelist[key];
+		var id="";
+		
+		var sub_content="";
+		var popcontent="";
+		//get id of "g" element of class=nodes
+		if(key==0) {
+			id="node1";
+			wid=node.childNodes[0].textContent;
+			sub_content=wf_desc;
+		}
+		else if (typeof(node.childNodes) !== "undefined")
+			id=node.childNodes[0].textContent;
+		
+		//create new ID attribute for <text>
+		if (typeof(node.childNodes) !== "undefined") {
 			node.childNodes[2].setAttribute("fill","white"); //shapes fill color
 			node.childNodes[4].setAttribute("style",'fill:rgb(0,76,153);cursor:pointer;'); //text styles
 			node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
-			//node.childNodes[4].id = "text_" + id; 
-			
-			//link popover to new text_id
-			//var popcontent='<div><span>'+ node.childNodes[4].textContent +': <br/><small><em>' + dataElements[node.childNodes[4].textContent] + '</em></small></span><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span></div><hr/><div><small><a href="#">add comment</a> &nbsp;|&nbsp; <a href="#">show comments</a></small></div>'
-			
-			
-			if(typeof(dataElements[node.childNodes[4].textContent]) != 'undefined') {
+			//node.childNodes[4].id = "text_" + id;
+			if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
 				sub_content = dataElements[node.childNodes[4].textContent];
+				popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;	
 			}
-
-
-			var popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;
-			if(id=="node1")
-				popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">view/add comments</a></small></div>';
-			else
-				popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
-			
-			$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
-			//on click 'text' event for each element -- toggle popover menu
-			$("#text_"+id).click(function(e){
-					//closes last clicked popover and opens the new one that was clicked
-					if(currentPopover.length==0) {					
-						currentPopover=e.target.id;
-					}
-					else {
-						lastPopover=currentPopover;
-						currentPopover=e.target.id;
-					}
-					if(lastPopover == currentPopover) { //close same popover on 2nd click
-						closepop(lastPopover);
-						$("#acc_"+lastPopover.substring(5)).collapse('hide');
-						currentPopover='';
-						lastPopover='';
-					}
-					else {  // close other popover and open new one
-						closepop(lastPopover);
-						$(this).popover('show');
-						$("#acc_"+lastPopover.substring(5)).collapse('hide');
-						$("#acc_"+e.target.id.substring(5)).collapse('show');
-					}
-					
-				});
-			
-			//on click 'text' event for each element -- toggle popover menu
-		    /*node.addEventListener(
-			"click",
-			(function(id) {
-				return function(event) {
-					//alert(node.childNodes[4].textContent + " (" + node.childNodes[0].textContent + ")" + " node clicked.");
-					$("#text_"+id).popover('toggle')
-				}
-			})(id),
-			false
-		    );*/
-		  }
 		}
+
+		if(id=="node1")
+			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">view/add comments</a></small></div>';
+		else
+			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
+		
+		$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
+		//on click 'text' event for each element -- toggle popover menu
+		$("#text_"+id).click(function(e){
+				//closes last clicked popover and opens the new one that was clicked
+				if(currentPopover.length==0) {					
+					currentPopover=e.target.id;
+				}
+				else {
+					lastPopover=currentPopover;
+					currentPopover=e.target.id;
+				}
+				if(lastPopover == currentPopover) { //close same popover on 2nd click
+					closepop(lastPopover);
+					$("#acc_"+lastPopover.substring(5)).collapse('hide');
+					currentPopover='';
+					lastPopover='';
+				}
+				else {  // close other popover and open new one
+					closepop(lastPopover);
+					$(this).popover('show');
+					$("#acc_"+lastPopover.substring(5)).collapse('hide');
+					$("#acc_"+e.target.id.substring(5)).collapse('show');
+				}
+				
+			});
+	  }
+	}
 
 	$('.expandcollapse').click(function () {
         if ($(this).html() == "<i class=\"icon-plus-sign\"></i> Expand All") {
@@ -193,7 +266,8 @@ $(document).ready(function () {
     });
 	
 	$('#acc-container').slimScroll({
-		height: 'auto',
+		//height: 'auto',
+		height: '700px',
 		position: 'right',
 		alwaysVisible: true,
 		railOpacity: 0.1,
@@ -201,8 +275,308 @@ $(document).ready(function () {
 		color: '#ccc',
 		wheelStep: 5
 	});
-}); //end document.ready
 
+	hideToggleSubLists();
+
+	//var mpoDemo = setInterval(function(){buildPageElements()},5000);
+	
+	//mdsplus event listener
+	//e=mdsEvent(getQueryVariable('event'),1,success_cb,failure_cb,42);
+	e=mdsEvent('mpo_dataobject',1,success_cb,failure_cb,wid);
+	e=mdsEvent('mpo_activity',1,success_cb,failure_cb,wid);
+}); //end document.ready
+function hideToggleSubLists() {
+	$('.wf_links li').click(function(ev) {
+			$(this).find('>ul').slideToggle();
+			ev.stopPropagation();
+	});
+
+	$('.wf_links li').find('>ul').hide();
+}
+
+function fillSVGElement(uid) {
+	var svgElement = document.getElementById(uid);
+	if(svgElement) {
+		var childs = svgElement.childNodes;
+		//console.log(childs);
+		childs[2].style.fill="#ccffee";
+	}
+}
+
+function buildPageElements(wfID) {
+	//console.log(nodeUIDs);
+
+	var svg_h="";
+	var url="";
+	$("#svg").empty();
+	url="/mpo/graph/"+wfID+"/svg";
+	
+	
+	var jqxhr_svg = $.get( url, function( data ) {
+		$("#svg").hide();
+		$("#svg_loading").show();
+		$("#svg").html(data);
+	});
+
+	jqxhr_svg.done(function() {
+
+		url="/mpo/nodes/"+wfID;
+		var dataObjs={};
+		var wfid=wfID;
+		var jqxhr_nodes = $.getJSON( url, function( data ) {
+			dataObjs=data;
+		});
+		//wait for xhtmlhttprequest to finish before proceeding (fixes right-side append issues)
+		//console.log("all nodes:");
+		//console.log(dataObjs);
+		
+		jqxhr_nodes.done(function() {
+			
+			///// build nodelist UI elements /////
+			lastUpdate=new Date(1900,00,01); //past date for comparison --for demo only
+			
+			var dataElements = {}; //for name - desc in popover
+			
+			for (var key in dataObjs) {
+			  if (dataObjs.hasOwnProperty(key)) {
+				var tmp = dataObjs[key];
+				//console.log("node:");
+				//console.log(tmp);
+
+				//new element attributes
+				var obj_uid="";
+				var newElement=""; //html text
+				var obj_name="";
+				var obj_time="";
+				var obj_uri="";					
+				
+				// check if div id exists ...if length == 0 ...add new element
+				//if($("#div_"+tmp['uid']).length != 0) {
+					//alert("exists "+"#div_"+tmp['uid']);
+	
+				//check if uid exists in current UID array...if not add new element
+				if((!inArray(tmp['uid'], nodeUIDs)) && (tmp['uid']!=wfid)) {
+					obj_uid=tmp['uid'];
+					nodeUIDs.push(obj_uid);
+					obj_name=tmp['name'];
+					if (tmp.hasOwnProperty("data")) {
+						obj_time=tmp["data"][0]["time"];
+						obj_uri=tmp["data"][0]["uri"];
+					}
+					//$("#div_"+obj_uid).remove();
+					newElement+='<div id="div_"' + obj_uid +'"><a id="aid_' + obj_uid + '" href="#acc_' + obj_uid + '" data-toggle="collapse">' + obj_name + '</a><span class="muted"><small><em> - ' + obj_time + '</em></small></span>';
+					newElement+='<div class="accordion-body collapse" id="acc_' + obj_uid + '">';
+					newElement+='<div class="accordian-inner no-border">';
+					newElement+='<ul>';
+					newElement+='<li>'+obj_name+'</li>';
+					newElement+='<li>time: '+obj_time+'</li>';
+					newElement+='<li>uri: '+obj_uri+'</li>';
+
+					if (tmp.hasOwnProperty("metadata")) {
+						newElement+='<li>Metadata:</li><ul>';
+						for (var z in tmp['metadata']) {
+							var md_obj=tmp['metadata'][z];
+							if(md_obj['key']) {
+								newElement += "<li>" + md_obj['key'] + ': ' + md_obj['value'] + "</li>";
+							}
+						}
+						newElement+='</ul>';
+					}
+					
+					newElement+='</ul>';		
+					newElement += '</div>';
+					//alert(newElement);
+					//alert("appending #div_"+obj_uid);
+					
+					$("#acc-container").append(newElement);
+					$("#aid_"+obj_uid).addClass("alert-success");
+					$("#aid_"+obj_uid).removeClass("alert-success",5000);								
+				}//if((!inArray(tmp['uid'], nodeUIDs)) && tmp['uid']!=wid)
+				
+				for(var j in tmp) {
+					if(j=="data") {
+					//console.log(JSON.stringify(tmp[j]));
+							/*
+							 "1": {
+									"data": [
+										{
+											"username": "d3dauto",
+											"user_uid": "84dd4463-23e0-4f85-b1d4-06d7aa7b36a9",
+											"uid": "58570c7b-2a18-40fe-871d-c7b92d87d7ed",
+											"work_uid": "3872be68-570b-4aea-a68c-e22df22a8b8c",
+											"uri": "155824",
+											"name": "Shot",
+											"time": "2014-02-19 08:44",
+											"description": "Plasma shot number"
+										}
+									],
+									"type": "dataobject",
+									"uid": "58570c7b-2a18-40fe-871d-c7b92d87d7ed",
+									"name": "Shot"
+								},
+												
+							*/
+						var tmp2=tmp[j];
+						var tmp3=tmp2[0];
+						dataElements[tmp['name']]="";
+						if(tmp3['description'])
+							dataElements[tmp['name']]+=tmp3['description'];
+						if(tmp3['time']) {
+							dataElements[tmp['name']]+= ' - ' + tmp3['time'];
+							//store latest workflow update time
+							tmpDateTime=new Date(tmp3['time'].replace(" ","T"));
+							if(tmpDateTime > lastUpdate) {
+								lastUpdate=tmpDateTime
+								$("#last-updated").html(lastUpdate.toLocaleString());
+								$("#last-updated").addClass("alert-success text-success").css("font-weight","bold");
+								$("#last-updated").removeClass("alert-success",10000);								
+							}
+						}
+						if(tmp3['uri'])
+							dataElements[tmp['name']]+= '<br/><em>uri</em>: ' + tmp3['uri'];
+					}
+					else if(j=="metadata") {
+						var tmp2=tmp[j];
+						if(dataElements[tmp['name']])
+							dataElements[tmp['name']]=dataElements[tmp['name']]+"<div>metadata:<ul>";
+						else
+							dataElements[tmp['name']]="<div>metadata:<ul>";
+						for (var z in tmp2)
+						{
+							var tmp3=tmp2[z];
+							if(tmp3['key']) {
+								dataElements[tmp['name']]=dataElements[tmp['name']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
+							}
+						}
+						dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></div>";
+					}
+				}//end for
+				
+			  }//end if (dataObjs.hasOwnProperty(key))
+			  
+				//add css styles to dynamic
+				$(".accordian-inner.no-border ul").css("font-size","small");
+				//$(".accordian-inner.no-border ul").addClass("alert-success");
+				//$(".accordian-inner.no-border ul").removeClass("alert-success",10000);
+			}//end for
+
+		
+			///// build svg node UI elements /////
+			var lastPopover='';
+			var currentPopover='';
+	
+			//checks and adjusts svg width/height if needed
+			var workflowWidth=500;
+	
+			var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
+			var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
+			var width=parseInt(w.replace("pt",""));
+			var height=parseInt(h.replace("pt",""));
+			//adjust for pan/zoom functionality
+			document.getElementsByTagName("svg").item(0).removeAttribute("viewBox");
+			
+			if(width > workflowWidth) {
+				var wnew=workflowWidth;
+				var hnew=Math.round(height*(workflowWidth/width));
+				$("#svg_loading").width(wnew).height(hnew);
+				w=wnew.toString() + "pt";
+				h=hnew.toString() + "pt";
+				document.getElementsByTagName("svg").item(0).setAttribute("width",w);
+				document.getElementsByTagName("svg").item(0).setAttribute("height",h);
+				document.getElementById("graph1").transform.baseVal.getItem(0).setScale(".56",".56");
+			}
+			//end svg size adjust
+			initZoomPan();
+			//get list of nodes for svg xml tag "g" w/ class "node"
+			var nodelist = document.querySelectorAll("g.node");
+					
+			//parse nodelist object and add click event function to each node (w/ respective data)
+			for (var key in nodelist) {
+			  if (nodelist.hasOwnProperty(key)) {
+				var node=nodelist[key];
+				var id="";
+				var sub_content="";
+				var popcontent="";
+				//get id of "g" element of class=nodes
+				if(key==0) {
+					id="node1";
+					wid=node.childNodes[0].textContent;
+					sub_content=wf_desc;
+				}
+				else if (typeof(node.childNodes) !== "undefined")
+					id=node.childNodes[0].textContent;
+				
+				//create new ID attribute for <text>
+				if (typeof(node.childNodes) !== "undefined") {
+					node.childNodes[2].setAttribute("fill","white"); //shapes fill color
+					node.childNodes[4].setAttribute("style",'fill:rgb(0,76,153);cursor:pointer;'); //text styles
+					node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
+					//node.childNodes[4].id = "text_" + id;
+					if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
+						sub_content = dataElements[node.childNodes[4].textContent];
+						popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;
+					}
+				}
+				if(id=="node1")
+					popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">view/add comments</a></small></div>';
+				else
+					popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
+				
+				$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
+				//on click 'text' event for each element -- toggle popover menu
+				$("#text_"+id).click(function(e){
+						//closes last clicked popover and opens the new one that was clicked
+						if(currentPopover.length==0) {					
+							currentPopover=e.target.id;
+						}
+						else {
+							lastPopover=currentPopover;
+							currentPopover=e.target.id;
+						}
+						if(lastPopover == currentPopover) { //close same popover on 2nd click
+							closepop(lastPopover);
+							$("#acc_"+lastPopover.substring(5)).collapse('hide');
+							currentPopover='';
+							lastPopover='';
+						}
+						else {  // close other popover and open new one
+							closepop(lastPopover);
+							$(this).popover('show');
+							$("#acc_"+lastPopover.substring(5)).collapse('hide');
+							$("#acc_"+e.target.id.substring(5)).collapse('show');
+						}
+						
+					});
+	
+			  }
+			}
+			$("#svg_loading").hide();
+			$("#svg").show();
+			///// end build svg node UI elements /////	
+							
+		}); //end nodes.done jqhxr function
+		
+		//svg_h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
+		//alert(svg_h);
+	});	
+
+	//var svg_h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
+	//var svg_height=svg_h.replace("pt","px");
+	
+	//alert(svg_height);
+	//console.log(svg_height);
+	/*$('#acc-container').slimScroll({
+		//height: 'auto',
+		height: '10000px',
+		position: 'right',
+		alwaysVisible: true,
+		railOpacity: 0.1,
+		distance: '0px',
+		color: '#ccc',
+		wheelStep: 5
+	});	*/
+	
+}
 
 </script>
 <script type="text/javascript" src="/static/js/jquery.slimscroll.min.js"></script>
@@ -216,6 +590,7 @@ $(document).ready(function () {
         <h2> {{ wid_info[0].username }} / {{ wid_info[0].name }} / {{ wid_info[0].composite_seq }} </h2>
         <div><span class="text-center">{{ wid_info[0].description }}</span></div>
         <div><span class="text-center muted"><small>workflow ID: {{ wid }}</small></span></div>
+        <div><span class="text-center muted"><small>last update: <span id="last-updated"></span></small></span></div>
 	</div>
     <div class="row-fluid">
     	<div class="span12">
@@ -224,9 +599,20 @@ $(document).ready(function () {
                     <div>
                     	<small><a href="{{ url_for("graph", wid=wid) }}/jpg"><span id="img" class="label label-info">jpg</span></a></small>
                     </div>
-                    <!-- svg start -->
-                    {{ svg|safe }}
-                    <!-- svg end -->
+                    <div class="row-fluid">
+					<div id="svg_loading" class="span12">&nbsp;</div>
+	                    <div id="svg" class="span12">
+	                    <!-- svg start -->
+	                    {{ svg|safe }}
+	                    <!-- svg end -->
+					    <script>
+					      // initialize zooming and panning on svg element
+					      function initZoomPan() {
+					      	svgPanZoom.init({'selector': 'svg', });
+					      	}
+					    </script>                    
+	                    </div>
+                    </div>
 
                     <div id="node_comments">
                         <div id="accordion2" class="accordion">
