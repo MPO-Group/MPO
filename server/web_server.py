@@ -117,6 +117,7 @@ def index():
 		#get range of workflows of specified type
 		r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
 	else:
+	    wf_type=""
 	    r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
 
         #calculate number of pages
@@ -389,8 +390,7 @@ def connections(wid):
 		if wf_links_req.text != "[]":
 		    wf_links=wf_links_req.json()
 		    data[0]['wf_link']=wf_links
-		    pprint(data[0]['uri'])
-		    pprint(data[0]['wf_link'])
+
 		
             wf_objects[key]['data']=data
 
