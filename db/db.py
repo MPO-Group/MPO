@@ -779,6 +779,13 @@ def addOntologyTerm(json_request,dn):
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
     user_id = cursor.fetchone()
 
+    # make sure the term doesn't exist already
+    if not objs['parent_uid']: objs['parent_uid'] = 'None'
+    vocab = json.loads(getRecord('ontology_terms', {'parent_uid':objs['parent_uid']}, dn ))
+    for x in vocab:
+        if objs['term'] == x['name']:
+            return json.dumps(x,cls=MPOSetEncoder)
+
     ot_guid = str(uuid.uuid4())
     q = ("insert into ontology_terms "+
          "(ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) "+
