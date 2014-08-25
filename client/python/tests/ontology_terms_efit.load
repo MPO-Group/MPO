@@ -38,9 +38,9 @@ oid5=`$MPO ontology_term 'purpose' --desc='Fortran code purpose, e.g. Equilibriu
 oid6=`$MPO ontology_term 'version' --desc='code version, e.g. 05/14/2013' -p $oid2 -t 'string' -n`
 oid7=`$MPO ontology_term 'documentation' --desc='link to code documentation, e.g. https://fusion.gat.com/theory/Efit' -p $oid2 -t 'url' -n`
 oid8=`$MPO ontology_term 'source' --desc='link to code download, e.g. https://fusion.gat.com/theory/Efitsource' -p $oid2 -t 'url' -n`
-oid9=`$MPO ontology_term 'bit_size' --desc='code bit-size version, e.g. 32 or 64' -p $oid2 -t 'url' -s`
-oid9a=`$MPO ontology_term '32' --desc='32-bit code' -p $oid2 -t 'string' -s`
-oid9b=`$MPO ontology_term '64' --desc='64-bit code' -p $oid2 -t 'string' -s`
+oid9=`$MPO ontology_term 'bit_size' --desc='code bit-size version, e.g. 32 or 64' -p $oid2 -t 'string' -s`
+oid9a=`$MPO ontology_term '32' --desc='32-bit code' -p $oid9 -t 'string' -s`
+oid9b=`$MPO ontology_term '64' --desc='64-bit code' -p $oid9 -t 'string' -s`
 oid10=`$MPO ontology_term 'mode' --desc='The type of input used to run EFIT' -p $oid3 -t 'int' -s`
 oid10a=`$MPO ontology_term '2' --desc='Input used to run EFIT' -p $oid10 -t 'int' -s`
 oid10b=`$MPO ontology_term '3' --desc='Input used to run EFIT' -p $oid10 -t 'int' -s`
