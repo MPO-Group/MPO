@@ -780,8 +780,7 @@ def addOntologyTerm(json_request,dn):
     user_id = cursor.fetchone()
 
     # make sure the term doesn't exist already
-    if not objs['parent_uid']: objs['parent_uid'] = 'None'
-    vocab = json.loads(getRecord('ontology_terms', {'parent_uid':objs['parent_uid']}, dn ))
+    vocab = json.loads(getRecord('ontology_terms', {'parent_uid':objs['parent_uid'] if objs['parent_uid'] else 'None'}, dn ))
     for x in vocab:
         if objs['term'] == x['name']:
             return json.dumps(x,cls=MPOSetEncoder)
