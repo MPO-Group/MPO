@@ -275,6 +275,17 @@ $(document).ready(function () {
 	});
 
 	hideToggleSubLists();
+	
+	$('.linkedwf').each(function() {
+		// do something with each element
+		var current=$(this);
+		var wfid = $(this).html();
+		var url="/workflow/"+wfid;
+		var jqxhr_nodes = $.getJSON( url, function( data ) {
+			var text=data[0]["username"]+"/"+data[0]["name"]+"/"+data[0]["composite_seq"]+" - "+data[0]["description"];
+			current.html(text);
+		});
+	});
 
 	//var mpoDemo = setInterval(function(){buildPageElements()},5000);
 	
@@ -282,6 +293,8 @@ $(document).ready(function () {
 	//e=mdsEvent(getQueryVariable('event'),1,success_cb,failure_cb,42);
 	e=mdsEvent('mpo_dataobject',1,success_cb,failure_cb,wid);
 	e=mdsEvent('mpo_activity',1,success_cb,failure_cb,wid);
+	
+	//convert linked Workflow UIDs to compID and description.  css class: linkedwf
 }); //end document.ready
 function hideToggleSubLists() {
 	$('.wf_links li').click(function(ev) {
@@ -575,9 +588,7 @@ function buildPageElements(wfID) {
 	});	*/
 	
 }
-
 </script>
-<script type="text/javascript" src="/static/js/jquery.slimscroll.min.js"></script>
 {% endblock %}
 
 {% block container %}
@@ -718,7 +729,8 @@ function buildPageElements(wfID) {
                                                                     	<ul>
                                                                         {% for j in x.wf_link %}
                                                                         	{% if j.work_uid != wid %}
-                                                                            <li><small><a href="{{ url_for("connections", wid=j.work_uid) }}">{{ j.work_uid }}</a></small></li>
+                                                                            <li><small><a href="{{ url_for("connections", wid=j.work_uid) }}" class="linkedwf">{{ j.work_uid }}</a></small>
+                                                                            </li>
                                                                             {% endif %}
                                                                         {% endfor %}
                                                                         </ul>

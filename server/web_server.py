@@ -152,8 +152,7 @@ def index():
 	for i in results:	#i is dict
 	    if wid:
 		if wid == i['uid']:
-		    results[index]['show_comments'] = 'in' #in is the
-#name of the css class to collapse accordion body 
+		    results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
 	    else:
 	        results[index]['show_comments'] = ''
 	    pid=i['uid']
@@ -226,33 +225,8 @@ def ont_children(uid=""):
 		if n=="children":
 		    for x in value[n]:
 			for k,v in x.iteritems():
-			    pprint(k)
 			    children[k]=v["data"]
 	result = jsonify(children)
-    return result
-
-#get ontology term attributes / details
-@app.route('/ontology/term', methods=['GET'])
-@app.route('/ontology/term/<uid>', methods=['GET'])
-def ont_term(uid=""):
-    #Need to get the latest information from MPO database here
-    #and pass it to index.html template
-    dn = get_user_dn(request)
-    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
-              'verify':False, 'headers':{'Real-User-DN':dn}}
-
-    s = requests.Session()
-    a = requests.adapters.HTTPAdapter(max_retries=10)
-    s.mount('https://', a)
-    s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
-    s.verify=False
-    s.headers={'Real-User-DN':dn}
-
-    result=""
-    if uid:
-	req=requests.get("%s/ontology/term/%s"%(API_PREFIX,uid), **certargs)
-	attributes=req.json()
-	result=json.dumps(attributes)
     return result
 
 @app.route('/graph/<wid>', methods=['GET'])
@@ -366,6 +340,8 @@ def connections(wid):
     wid_info=wid_req.json()
 
     #get all data of each activity and dataobject of workflow <wid>
+    
+    wf_uid_compid = {}	#for linked workflow compIDs
     num_comment=0
     for key,value in wf_objects.iteritems():
         if value['type'] == "activity":
@@ -383,15 +359,23 @@ def connections(wid):
                 obj_time=data[0]['time']
                 data[0]['time']=obj_time[:16]
 	    
-	    #get linked workflows
-	    if data[0]['uri']:
-		#https://mpo.gat.com:8443/v0/dataobject?uri=/link/efit/2006/156000
+	    #get linked workflows using uri
+	    if len(data[0]['uri']) > 1:
 		wf_links_req=requests.get("%s/dataobject?uri=%s"%(API_PREFIX,data[0]['uri'],), **certargs)
 		if wf_links_req.text != "[]":
 		    wf_links=wf_links_req.json()
+		#    for wf in wf_links:
+		#	#get compID and desc.  ignore previous wf IDs
+		#	if wf['work_uid'] not in wf_uid_compid:
+		#	    wf_req2=requests.get("%s/workflow/%s"%(API_PREFIX,wf['work_uid'],), **certargs)
+		#	    wf_info2=wf_req2.json()
+		#	    if wf_info2 != "[]":
+		#		comp_id = wf_info2[0]['username'] + "/"
+		#		comp_id += wf_info2[0]['name'] + "/"
+		#		comp_id += str(wf_info2[0]['composite_seq'])
+		#		wfdesc=wf_info2[0]['description']
+		#		wf_uid_compid[wf['work_uid']]=comp_id+" - "+wfdesc
 		    data[0]['wf_link']=wf_links
-
-		
             wf_objects[key]['data']=data
 
         meta_req=requests.get("%s/metadata?parent_uid=%s"%
@@ -400,7 +384,7 @@ def connections(wid):
             wf_objects[key]['metadata']=meta_req.json()
 
         comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
-        print comment
+
         if comment.text != "[]":
             cm=comment.json()
             k=0
@@ -417,15 +401,35 @@ def connections(wid):
 
             num_comment+=k
             wf_objects[key]['comment']=cm
+    
+    #pprint(wf_uid_compid)
 
-    if webdebug:
-        print("WEBDEBUG: workflow objects")
-        #pprint(wf_objects)
+    #if webdebug:
+    #    print("WEBDEBUG: workflow objects")
+    #    pprint(wf_objects)
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
     return render_template('conn.html', **locals())
 
+#created because of cross site scripting issue on ajax calls in development. same as api workflow/<wid> route
+@app.route('/workflow/<wid>', methods=['GET'])
+def workflow(wid=""):
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    s = requests.Session()
+    a = requests.adapters.HTTPAdapter(max_retries=10)
+    s.mount('https://', a)
+    s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
+    s.verify=False
+    s.headers={'Real-User-DN':dn}
+    
+    req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
+    wf=req.json()
+    result=json.dumps(wf)
+    return result
 
 #returns json string of nodes w/ their info
 @app.route('/nodes/<wid>', methods=['GET'])
@@ -486,7 +490,6 @@ def nodes(wid):
     response = make_response(nodes)
     response.headers['Content-Type'] = 'text/plain'
     return response
-
 
 @app.route('/about')
 def about():
