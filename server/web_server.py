@@ -375,7 +375,7 @@ def connections(wid):
                 #       comp_id += str(wf_info2[0]['composite_seq'])
                 #       wfdesc=wf_info2[0]['description']
                 #       wf_uid_compid[wf['work_uid']]=comp_id+" - "+wfdesc
-                    data[0]['wf_link']=wf_links
+                    data[0]['wf_link']=[x for x in wf_links if x['uri'] == data[0]['uri']]
             wf_objects[key]['data']=data
 
         meta_req=requests.get("%s/metadata?parent_uid=%s"%
