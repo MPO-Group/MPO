@@ -31,6 +31,7 @@ oid0c=`$MPO ontology_term Generic --desc="Ontology terms for generic entries"`
 oid1a=`$MPO ontology_term Type --desc="Terms that describe the workflow types" -p $oid0a -t 'string' -s`
 oid1b=`$MPO ontology_term EFIT --desc="Ontology terms for workflows of type EFIT" -p $oid1a -t 'string' -s`
 oid1c=`$MPO ontology_term SWIM --desc="Ontology terms for workflows of type SWIM" -p $oid1a -t 'string' -s`
+oid1d=`$MPO ontology_term Zipfit --desc="Ontology terms for workflows of type Zipfit" -p $oid1a -t 'string' -s`
 oid1=`$MPO ontology_term Gyro --desc="Ontology terms for workflows of type Gyro" -p $oid1a -t 'string' -s`
 oid2=`$MPO ontology_term 'Code Characteristics' --desc='Terms that describe the code type' -p $oid1 -t 'string' -s`
 oid3=`$MPO ontology_term 'Run Characteristics' --desc='Terms that describe the run type' -p $oid1 -t 'string' -s`
