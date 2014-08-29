@@ -43,6 +43,8 @@ create table collection_elements
 (
   c_guid uuid,
   e_uuid uuid
+  u_guid uuid,
+  creation_time timestamp
 );
 alter table collection_elements owner to mpoadmin;
 
