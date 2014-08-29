@@ -2,12 +2,12 @@
 #
 # api_server.sh - script to run the MPO API server.
 #
-# This script uses uwsgi to to run a local copy of the MPO API server. 
-# This server listens on the specified port (default 8443) for https 
+# This script uses uwsgi to to run a local copy of the MPO API server.
+# This server listens on the specified port (default 8443) for https
 # connections.  Clients are verified using X.509 certificates.
 #
 # Exports the MPO_DB_CONNECTION string so that db.py will know where
-# to connect to. 
+# to connect to.
 #
 # Uses three ssl PEM files which are in this same directory:
 #   MPO_API_SERVER_CERT - mpo.psfc.mit.edu.crt
@@ -16,7 +16,7 @@
 #        - private key for API server (must be owned by you and 600)
 #   MPO_CA_CERT - mpo.psfc.mit.edu-ca.crt
 #        - public keys for the acceptable certificate authorities
-# 
+#
 function usage {
   echo "Usage: $0 -h | [port [db_connection_string]]
   -h                   - print this message
@@ -24,7 +24,7 @@ function usage {
   db_connection_string - string to connect to the database
 
   for example:
-    ./api_server.sh 8443 'host=localhost dbname=mpoDB user=xxx password="yyy"' 
+    ./api_server.sh 8443 'host=localhost dbname=mpoDB user=xxx password="yyy"'
 "
   exit 0
 }

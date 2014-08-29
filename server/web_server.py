@@ -12,6 +12,7 @@ import pydot
 import re,os
 import math
 from authentication import get_user_dn
+import urllib
 
 app = Flask(__name__)
 
@@ -358,25 +359,24 @@ def connections(wid):
             if data[0]['time']:
                 obj_time=data[0]['time']
                 data[0]['time']=obj_time[:16]
-	    
-	    #get linked workflows using uri
-	    if len(data[0]['uri']) > 1:
-		wf_links_req=requests.get("%s/dataobject?uri=%s"%(API_PREFIX,data[0]['uri'],), **certargs)
-		if wf_links_req.text != "[]":
-		    wf_links=wf_links_req.json()
-		#    for wf in wf_links:
-		#	#get compID and desc.  ignore previous wf IDs
-		#	if wf['work_uid'] not in wf_uid_compid:
-		#	    wf_req2=requests.get("%s/workflow/%s"%(API_PREFIX,wf['work_uid'],), **certargs)
-		#	    wf_info2=wf_req2.json()
-		#	    if wf_info2 != "[]":
-		#		comp_id = wf_info2[0]['username'] + "/"
-		#		comp_id += wf_info2[0]['name'] + "/"
-		#		comp_id += str(wf_info2[0]['composite_seq'])
-		#		wfdesc=wf_info2[0]['description']
-		#		wf_uid_compid[wf['work_uid']]=comp_id+" - "+wfdesc
-		    #data[0]['wf_link']=wf_links
-		    data[0]['wf_link']=[x for x in wf_links if x['uri'] == data[0]['uri']]
+
+            #get linked workflows using uri
+            if len(data[0]['uri']) > 1:
+                wf_links_req=requests.get("%s/dataobject?uri=%s"%(API_PREFIX,urllib.quote((data[0]['uri'])),), **certargs)
+                if wf_links_req.text != "[]":
+                    wf_links=wf_links_req.json()
+                #    for wf in wf_links:
+                #   #get compID and desc.  ignore previous wf IDs
+                #   if wf['work_uid'] not in wf_uid_compid:
+                #       wf_req2=requests.get("%s/workflow/%s"%(API_PREFIX,wf['work_uid'],), **certargs)
+                #       wf_info2=wf_req2.json()
+                #       if wf_info2 != "[]":
+                #       comp_id = wf_info2[0]['username'] + "/"
+                #       comp_id += wf_info2[0]['name'] + "/"
+                #       comp_id += str(wf_info2[0]['composite_seq'])
+                #       wfdesc=wf_info2[0]['description']
+                #       wf_uid_compid[wf['work_uid']]=comp_id+" - "+wfdesc
+                    data[0]['wf_link']=wf_links
             wf_objects[key]['data']=data
 
         meta_req=requests.get("%s/metadata?parent_uid=%s"%
