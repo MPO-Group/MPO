@@ -1,0 +1,112 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module api_server</title>
+<meta charset="utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>api_server</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mpo-head/trunk/server/api_server.py">/Users/jwright/Codes/mpo-head/trunk/server/api_server.py</a></font></td></tr></table>
+    <p></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="gevent.html">gevent</a><br>
+</td><td width="25%" valign=top><a href="json.html">json</a><br>
+</td><td width="25%" valign=top><a href="db.html">db</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="__builtin__.html#object">__builtin__.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="api_server.html#ServerSentEvent">ServerSentEvent</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="ServerSentEvent">class <strong>ServerSentEvent</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>#&nbsp;SSE&nbsp;"protocol"&nbsp;is&nbsp;described&nbsp;here:&nbsp;<a href="http://mzl.la/UPFyxY">http://mzl.la/UPFyxY</a><br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="ServerSentEvent-__init__"><strong>__init__</strong></a>(self, data)</dt></dl>
+
+<dl><dt><a name="ServerSentEvent-encode"><strong>encode</strong></a>(self)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-activity"><strong>activity</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-collection"><strong>collection</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-comment"><strong>comment</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-dataobject"><strong>dataobject</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-debug"><strong>debug</strong></a>()</dt></dl>
+ <dl><dt><a name="-getWorkflowComments"><strong>getWorkflowComments</strong></a>(id)</dt></dl>
+ <dl><dt><a name="-getWorkflowCompositeID"><strong>getWorkflowCompositeID</strong></a>(id)</dt></dl>
+ <dl><dt><a name="-getWorkflowGraph"><strong>getWorkflowGraph</strong></a>(id)</dt></dl>
+ <dl><dt><a name="-metadata"><strong>metadata</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-onlyone"><strong>onlyone</strong></a>(recordstr)</dt></dl>
+ <dl><dt><a name="-ontologyClass"><strong>ontologyClass</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-ontologyInstance"><strong>ontologyInstance</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-ontologyTerm"><strong>ontologyTerm</strong></a>(id<font color="#909090">=None</font>)</dt><dd><tt>Retrieves&nbsp;the&nbsp;record&nbsp;of&nbsp;an&nbsp;ontology&nbsp;term&nbsp;from&nbsp;its&nbsp;&lt;id&gt;&nbsp;or&nbsp;path.<br>
+valid&nbsp;routes:<br>
+ontology/term/&lt;id&gt;<br>
+ontology/term?path=term/term2/termN</tt></dd></dl>
+ <dl><dt><a name="-ontologyTermTree"><strong>ontologyTermTree</strong></a>(id<font color="#909090">=None</font>)</dt><dd><tt>This&nbsp;function&nbsp;returns&nbsp;the&nbsp;vocabulary&nbsp;of&nbsp;an&nbsp;ontology&nbsp;term&nbsp;specified&nbsp;by&nbsp;its&nbsp;&lt;id&gt;=parent_id.<br>
+Vocabulary&nbsp;is&nbsp;defined&nbsp;as&nbsp;the&nbsp;next&nbsp;set&nbsp;of&nbsp;terms&nbsp;below&nbsp;it&nbsp;in&nbsp;the&nbsp;ontology&nbsp;term&nbsp;tree.</tt></dd></dl>
+ <dl><dt><a name="-ontologyTermVocabulary"><strong>ontologyTermVocabulary</strong></a>(id<font color="#909090">=None</font>)</dt><dd><tt>This&nbsp;function&nbsp;returns&nbsp;the&nbsp;vocabulary&nbsp;of&nbsp;an&nbsp;ontology&nbsp;term&nbsp;specified&nbsp;by&nbsp;its&nbsp;&lt;id&gt;=parent_id.<br>
+Vocabulary&nbsp;is&nbsp;defined&nbsp;as&nbsp;the&nbsp;next&nbsp;set&nbsp;of&nbsp;terms&nbsp;below&nbsp;it&nbsp;in&nbsp;the<br>
+ontology&nbsp;term&nbsp;tree.<br>
+It&nbsp;is&nbsp;a&nbsp;convenience&nbsp;route&nbsp;equivalent&nbsp;to&nbsp;GET&nbsp;ontology_term?parent_uid=uid</tt></dd></dl>
+ <dl><dt><a name="-publishEvent"><strong>publishEvent</strong></a>(eventname, eventbody<font color="#909090">=None</font>)</dt><dd><tt>eventbody&nbsp;should&nbsp;be&nbsp;text&nbsp;presently&nbsp;as&nbsp;we&nbsp;do&nbsp;not&nbsp;implement<br>
+deserialization&nbsp;of&nbsp;arbitrary&nbsp;types.</tt></dd></dl>
+ <dl><dt><a name="-publishgevent"><strong>publishgevent</strong></a>(msg<font color="#909090">='1409334793.22'</font>)</dt></dl>
+ <dl><dt><a name="-subscribe"><strong>subscribe</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-user"><strong>user</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-workflow"><strong>workflow</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>MPO_API_VERSION</strong> = 'v0'<br>
+<strong>apidebug</strong> = True<br>
+<strong>app</strong> = &lt;Flask 'api_server'&gt;<br>
+<strong>k</strong> = 'metadata'<br>
+<strong>request</strong> = &lt;LocalProxy unbound&gt;<br>
+<strong>routes</strong> = {'activity': '/v0/activity', 'collection': '/v0/collection', 'comment': '/v0/comment', 'dataobject': '/v0/dataobject', 'guid': '/v0/uid', 'metadata': '/v0/metadata', 'ontology_class': '/v0/ontology/class', 'ontology_instance': '/v0/ontology/instance', 'ontology_term': '/v0/ontology/term', 'user': '/v0/user', ...}<br>
+<strong>subscriptions</strong> = []<br>
+<strong>v</strong> = 'metadata'</td></tr></table>
+</body></html>
