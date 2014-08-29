@@ -9,7 +9,6 @@ import uuid
 import datetime
 import os
 import textwrap
-import urllib
 
 dbdebug=False
 try:
