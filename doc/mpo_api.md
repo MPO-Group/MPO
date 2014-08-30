@@ -6,7 +6,7 @@ behavior is to return the bare UUID value or an error code.
 
 * Adding a type to the ontology for use in a creating a workflow for a new code.
 
-    #GET uuid of workflow types in the ontology.
+    ##GET uuid of workflow types in the ontology.
     term_id=\`mpo get -r ontology/term -p path=Workflow/Type\`
 
     {
@@ -23,7 +23,7 @@ behavior is to return the bare UUID value or an error code.
      "url":"https://mpo.psfc.mit.edu/api/ontology/term?path=Workflow/Type"
     }
 
-    #POST a new type of workflow
+    ##POST a new type of workflow
     mpo define TORLH -p $term_id -s -d "code for fullwave lower hybrid simulations" -t string
 
 

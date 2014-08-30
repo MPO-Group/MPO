@@ -2,7 +2,7 @@ This file uses [markdown](http://en.wikipedia.org/wiki/Markdown) light weight ma
 [reference](https://daringfireball.net/projects/markdown/basics) explains the basics. This file may be
 converted to `html` with
 
-     markdown2 api_doc.md > api_doc.html
+     markdown api_doc.md > api_doc.html
 
 Here is an example workflow image generated with `![a nice DAG image](./workflow.png "Example workflow"){: .scenter}`
 

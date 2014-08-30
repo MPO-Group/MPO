@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import markdown
 import os, sys
-#usage generator.py input.markdown styles.css pretty.html
+#usage md_css_generator.py example.md mpo_doc.css example.html
 
 output = """<!DOCTYPE html>
 <html lang="en">
