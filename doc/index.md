@@ -12,3 +12,5 @@ On this page may be found documentation for the Metadata Provenance and Ontology
 
        Commandline interface and python class interface
        to MPO API.
+
+* [Apache configuration for MPO](./apache_config.html)
