@@ -30,6 +30,7 @@ var nodeUIDs = new Array(); //store node UIDs for comparison with new node UIDs 
 var wid = ""; //store workflow wid
 var lastUpdate = ""; //store last update time
 var rightScrollHeight='600px';
+var clickedLinkedWorkflows=[];
 
 function closepop(id) {
 	$('#'+id).popover('hide');
@@ -284,17 +285,47 @@ $(document).ready(function () {
 	});
 
 	hideToggleSubLists();
-	
-	$('.linkedwf').each(function() {
+	hideLinkedWfLoader();
+
+	//***change to onclick instead of on page load
+	/*$('.linkedwf').each(function() {
 		// do something with each element
 		var current=$(this);
 		var wfid = $(this).html();
-		var url="/mpo/workflow/"+wfid;
+		//var url="/mpo/workflow/"+wfid;
+		var url="{{ url_for("workflow") }}/"+wfid;
 		var jqxhr_nodes = $.getJSON( url, function( data ) {
 			var text=data[0]["username"]+"/"+data[0]["name"]+"/"+data[0]["composite_seq"]+" - "+data[0]["description"];
 			current.html(text);
 		});
-	});
+	});*/
+
+	//when [+]linked workflows is clicked, convert Workflow IDs to composite names / descriptions
+	$('.wf_links li').click(function () {
+		var thisID=$(this).attr("id");
+		
+		if(clickedLinkedWorkflows.indexOf(thisID) == -1) {
+			clickedLinkedWorkflows.push(thisID);
+			var wfID_list = $(this).find('li');
+			//var numWfLinks=wfID_list.length;
+			//$("#"+thisID.substring(3)+"_loader").show();
+
+			wfID_list.each(function(index) {
+				//console.log( index + ": " + $( this ).text() );
+				var current=$(this);
+				var wfID=$( this ).text();
+				var url="{{ url_for("workflow") }}/"+wfID;
+				var jqxhr = $.getJSON( url, function( data ) {
+					var text=data[0]["username"]+"/"+data[0]["name"]+"/"+data[0]["composite_seq"]+" - "+data[0]["description"];
+					var linked_text="<a href=\"{{ url_for("connections") }}/"+data[0]["uid"]+"\"><small><em>"+text+"</em></small></a>"
+					current.html(linked_text);
+				})
+				/*if((index+1)==numWfLinks)
+					$("#"+thisID.substring(3)+"_loader").hide();*/
+			});
+		}			
+    });
+
 
 	//var mpoDemo = setInterval(function(){buildPageElements()},5000);
 	
@@ -307,11 +338,15 @@ $(document).ready(function () {
 }); //end document.ready
 function hideToggleSubLists() {
 	$('.wf_links li').click(function(ev) {
-			$(this).find('>ul').slideToggle();
-			ev.stopPropagation();
+		$(this).find('>ul').slideToggle();
+		ev.stopPropagation();
 	});
 
 	$('.wf_links li').find('>ul').hide();
+}
+
+function hideLinkedWfLoader() {
+	$("span[id$='_loader']").hide();
 }
 
 function fillSVGElement(uid) {
@@ -329,8 +364,8 @@ function buildPageElements(wfID) {
 	var svg_h="";
 	var url="";
 	$("#svg").empty();
-	url="/mpo/graph/"+wfID+"/svg";
-	
+	//url="/mpo/graph/"+wfID+"/svg";
+	url="{{ url_for("graph") }}/"+wfID+"/svg";
 	
 	var jqxhr_svg = $.get( url, function( data ) {
 		$("#svg").hide();
@@ -339,8 +374,8 @@ function buildPageElements(wfID) {
 	});
 
 	jqxhr_svg.done(function() {
-
-		url="/mpo/nodes/"+wfID;
+		//url="/mpo/nodes/"+wfID;
+		url="{{ url_for("nodes") }}/"+wfID;
 		var dataObjs={};
 		var wfid=wfID;
 		var jqxhr_nodes = $.getJSON( url, function( data ) {
@@ -746,7 +781,7 @@ function buildPageElements(wfID) {
                                                                 <li><small>uri: {{ x.uri }}</small>
                                                                     {% if x.wf_link %}
                                                                     <ul class="wf_links">
-                                                                      <li><small><em><a style="cursor:pointer;">[+] Linked Workflows</a></em></small>
+                                                                      <li id="lw_{{ x.uid }}" ><small><em><a style="cursor:pointer;">[+] Linked Workflows</a></em></small><!-- <span id="{{ x.uid }}_loader"><img src="/static/img/ajax-loader-green-small.gif"></span> -->
                                                                     	<ul>
                                                                         {% for j in x.wf_link %}
                                                                         	{% if j.work_uid != wid %}

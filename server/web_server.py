@@ -60,21 +60,21 @@ def index():
         s.headers={'Real-User-DN':dn}
         wid=request.args.get('wid')
 
-	#pagination control variables
-	wf_range=request.args.get('range')
-	wf_page=request.args.get('p')
-	wf_rpp=request.args.get('r')
-	wf_type=request.args.get('wf_type')
-	
-	wf_name=request.args.get('wf_name')
-	wf_desc=request.args.get('wf_desc')
-	wf_lname=request.args.get('wf_lname')
-	wf_fname=request.args.get('wf_fname')
-	wf_username=request.args.get('wf_username')
+        #pagination control variables
+        wf_range=request.args.get('range')
+        wf_page=request.args.get('p')
+        wf_rpp=request.args.get('r')
+        wf_type=request.args.get('wf_type')
+
+        wf_name=request.args.get('wf_name')
+        wf_desc=request.args.get('wf_desc')
+        wf_lname=request.args.get('wf_lname')
+        wf_fname=request.args.get('wf_fname')
+        wf_username=request.args.get('wf_username')
 
         if webdebug:
-	    print('WEBDEBUG: requests in index route',API_PREFIX,wf_type)
-	#req=request.args.to_dict()
+            print('WEBDEBUG: requests in index route',API_PREFIX,wf_type)
+        #req=request.args.to_dict()
 
         if wf_page:
             current_page=int(wf_page)
@@ -96,7 +96,7 @@ def index():
 
         rjson = r.json()
 
-	num_wf=len(rjson) # number of workflows returned from api call
+        num_wf=len(rjson) # number of workflows returned from api call
 
         #get start & end of range
         if wf_range:
@@ -109,66 +109,66 @@ def index():
             rmin=1
             rmax=rpp
 
-	if wf_type:
-	    if wf_type != "all":
-		#get workflows by specified type
-		r=s.get("%s/workflow?type=%s"%(API_PREFIX,wf_type,), headers={'Real-User-DN':dn})
-		rjson = r.json()
-		num_wf=len(rjson) # number of workflows of specified type
-		#get range of workflows of specified type
-		r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
-	else:
-	    wf_type=""
-	    r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
+        if wf_type:
+            if wf_type != "all":
+                #get workflows by specified type
+                r=s.get("%s/workflow?type=%s"%(API_PREFIX,wf_type,), headers={'Real-User-DN':dn})
+                rjson = r.json()
+                num_wf=len(rjson) # number of workflows of specified type
+                #get range of workflows of specified type
+                r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
+        else:
+            wf_type=""
+            r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
 
         #calculate number of pages
         num_pages=int(math.ceil(float(num_wf)/float(rpp)))
 
         results = r.json()
 
-#	#ontology tree
-	#req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
-	req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
-	ont_tree=req.json()
-	ont_result={}
-	wf_type_list=[]
-	
-	#get workflow types
-	if ont_tree["root"]["children"]:
-	    ont_result=ont_tree["root"]["children"]
-	    for i in ont_result:
-		if type(i)==dict:
-		    for key,value in i.iteritems():
-			if key=="Workflow":
-			    for n in value["children"]:
-				if type(n)==dict:
-				    for ky,vl in n.iteritems():
-					if ky=="Type":
-					    for x in vl["children"]:
-						for k,v in x.iteritems():
-						    wf_type_list.append(k)
-						
-	#get comments
-	index=0
-	for i in results:	#i is dict
-	    if wid:
-		if wid == i['uid']:
-		    results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
-	    else:
-	        results[index]['show_comments'] = ''
-	    pid=i['uid']
-	    c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
-	    comments = c.json()
+#       #ontology tree
+        #req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
+        req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
+        ont_tree=req.json()
+        ont_result={}
+        wf_type_list=[]
+        
+        #get workflow types
+        if ont_tree["root"]["children"]:
+            ont_result=ont_tree["root"]["children"]
+            for i in ont_result:
+                if type(i)==dict:
+                    for key,value in i.iteritems():
+                        if key=="Workflow":
+                            for n in value["children"]:
+                                if type(n)==dict:
+                                    for ky,vl in n.iteritems():
+                                        if ky=="Type":
+                                            for x in vl["children"]:
+                                                for k,v in x.iteritems():
+                                                    wf_type_list.append(k)
 
-	    num_comments=0
-	    if comments == None: #replace null reply in requests body
+        #get comments
+        index=0
+        for i in results:        #i is dict
+            if wid:
+                if wid == i['uid']:
+                    results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
+            else:
+                results[index]['show_comments'] = ''
+            pid=i['uid']
+            c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
+            comments = c.json()
+
+            num_comments=0
+            if comments == None: #replace null reply in requests body
                 #with empty list so below logic still works 
-		comments=[]
-	    for temp in comments: #get number of comments, truncate time string
-		num_comments+=1
-		if temp['time']:
-		    time=temp['time'][:16]
-		    temp['time']=time
+                comments=[]
+            for temp in comments: #get number of comments, truncate time string
+                num_comments+=1
+                if temp['time']:
+                    time=temp['time'][:16]
+                    temp['time']=time
 
             results[index]['num_comments']=num_comments
             results[index]['comments']=comments
@@ -218,21 +218,22 @@ def ont_children(uid=""):
 
     result=""
     if uid:
-	req=requests.get("%s/ontology/term/%s/tree"%(API_PREFIX,uid), **certargs)
-	ont_tree=req.json()
-	children={}
-	for key,value in ont_tree.iteritems():
-	    for n in value:
-		if n=="children":
-		    for x in value[n]:
-			for k,v in x.iteritems():
-			    children[k]=v["data"]
-	result = jsonify(children)
+        req=requests.get("%s/ontology/term/%s/tree"%(API_PREFIX,uid), **certargs)
+        ont_tree=req.json()
+        children={}
+        for key,value in ont_tree.iteritems():
+            for n in value:
+                if n=="children":
+                    for x in value[n]:
+                        for k,v in x.iteritems():
+                            children[k]=v["data"]
+        result = jsonify(children)
     return result
 
+@app.route('/graph', methods=['GET'])
 @app.route('/graph/<wid>', methods=['GET'])
 @app.route('/graph/<wid>/<format>', methods=['GET'])
-def graph(wid, format="svg"):
+def graph(wid="", format="svg"):
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
@@ -323,8 +324,9 @@ def getsvgxml(wid):
     ans[1] = object_order
     return ans
 
+@app.route('/connections', methods=['GET'])
 @app.route('/connections/<wid>', methods=['GET'])
-def connections(wid):
+def connections(wid=""):
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
@@ -414,6 +416,7 @@ def connections(wid):
     return render_template('conn.html', **locals())
 
 #created because of cross site scripting issue on ajax calls in development. same as api workflow/<wid> route
+@app.route('/workflow', methods=['GET'])
 @app.route('/workflow/<wid>', methods=['GET'])
 def workflow(wid=""):
     dn = get_user_dn(request)
@@ -433,8 +436,9 @@ def workflow(wid=""):
     return result
 
 #returns json string of nodes w/ their info
+@app.route('/nodes', methods=['GET'])
 @app.route('/nodes/<wid>', methods=['GET'])
-def nodes(wid):
+def nodes(wid=""):
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
@@ -634,9 +638,9 @@ def submit_comment():
         r = json.dumps(form) #convert to json
         if webdebug:
             print('WEBDEBUG: submit comment', r)
-	    print(form['wf_id'])
-	
-	wid=form['wf_id']
+            print(form['wf_id'])
+        
+        wid=form['wf_id']
 
         submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
     except:
