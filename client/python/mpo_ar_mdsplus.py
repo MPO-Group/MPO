@@ -20,7 +20,7 @@ class mpo_ar_mdsplus(_ar.mpo_ar_dataobject):
             print ("constructing an MDSplus object for server=%s tree=%s shot=%d path=%s"%(server,tree,shot,path,))
         if server==None:
             server=""
-        uri = "mdsplus://%s/%s&shot=%d&path=%s"%(server,tree,shot,path,)
+        uri = r'mdsplus://%s/%s/%d&path=%s'%(server,tree,shot,path,)
         return(uri)
 
     def archive_parse(self, *args):
