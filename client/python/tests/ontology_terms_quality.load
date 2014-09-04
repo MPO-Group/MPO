@@ -1,0 +1,39 @@
+#!/bin/sh
+#specify MPO server address. The API will read this value.
+#defaults are used if environment is not set
+if ! [ -n "${MPO_HOST:+x}" ]
+then
+  export MPO_HOST=https://localhost:8443
+fi
+
+
+if ! [ -n "${MPO_VERSION:+x}" ]
+then
+  export MPO_VERSION=v0
+fi
+
+
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+  echo MPO_HOME not defined, exitting
+  exit
+fi
+
+if ! [ -n "${MPO:+x}" ]
+then
+  export MPO="$MPO_HOME/client/python/mpo_arg.py --user=$USER"
+fi
+
+#use API methods to create a workflow
+oid1=`$MPO get --route 'ontology/term' --params='path=/Generic'`
+if [ $oid1 = "[]" ]
+then
+    echo Ontology term /Generic doesn\'t exist. Run $MPO_HOME/client/python/tests/ontology_terms_gyro.load first
+    exit
+fi
+oid2=`$MPO ontology_term 'Status' --desc='Generic status terms' -p $oid1 -t 'string' -s`
+oid3=`$MPO ontology_term 'quality' --desc='Fitness of an object for a particular purpose' -p $oid2 -t 'string' -s`
+oid4=`$MPO ontology_term '1' --desc='Low quality: Object should not be used for additional purposes' -p $oid3 -t 'int'`
+oid4=`$MPO ontology_term '2' --desc='Medium quality: Object may be useful for some purposes' -p $oid3 -t 'int'`
+oid5=`$MPO ontology_term '3' --desc='High quality: Object is broadly useful' -p $oid3 -t 'int'`
+oid6=`$MPO ontology_term '4' --desc='Notable quality: Object is of special importance or interest' -p $oid3 -t 'int'`
