@@ -161,6 +161,7 @@ class mpo_methods(object):
             print("ERROR: Could not connect to server, "+url,file=sys.stderr)
             sys.stderr.write('MPO ERROR: %s\n' % str(err))
             print(" ",file=sys.stderr)
+            print((r.status_code,r.text), file=sys.stderr)
             return 1
 
         if r.status_code!=200:

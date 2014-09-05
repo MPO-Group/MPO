@@ -32,8 +32,12 @@ routes={'collection':'collection','workflow':'workflow',
 #MDSplus Events support
 def publishEvent(eventname, eventbody=None):
     """
-    eventbody should be text presently as we do not implement
+    eventname -- name convention for this event. Tag to listen for.
+
+    eventbody -- should be text presently as we do not implement
     deserialization of arbitrary types.
+
+    events are broadcast by Event over UDP
     """
     try:
         from MDSplus import Event
@@ -170,21 +174,50 @@ else:
                 routes[k] = '/' + routes[k]
 
 
-
 @app.route(routes['collection']+'/<id>', methods=['GET'])
 @app.route(routes['collection'],  methods=['GET', 'POST'])
+@app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
+@app.route(routes['collection']+'/<id>'+'/element'+'/<oid>', methods=['GET'])
 def collection(id=None):
+    """
+    Create and add to collections.
+    Supported routes:
+    /collection - GET a list of all (or filtered) collections
+                - POST a new collection
+    /collection/<id> - GET collection information, including list of member UUIDs
+                     
+    /collection/<id>?detail=full[sparse] - GET collection information with full
+               details [or default sparse as /collection/<id>]
+    /collection/<id>/element       - GET a list of objects in a collection
+                                  - POST to add to the collection
+    /collection/<id>/element/<oid> - GET details of a single object in a collection.
+                                    Should resolve oid to full record from relevant table.
+    """
+    #JCW, replace rdb.echo with rdb.add/getRecord in integrated testing or custom method if needed
     dn=get_user_dn(request)
-    result = jsonify(json.loads(request.data),user_dn=dn)
     if request.method == 'POST':
-        pass
+        r = rdb.echo('collection',request.data,dn)
+        rr = json.loads(r)
+        id = rr['uid']
+        morer = rdb.echo('collection',{'uid':id},dn)
+        publishEvent('mpo_collection',onlyone(morer))
     elif request.method == 'GET':
-        pass
-    return result
+        if id:
+            r = rdb.echo('collection', {'uid':id})
+        else:
+            r = rdb.echo('collection',request.args) 
+    return r
+
 
 @app.route(routes['workflow']+'/<id>', methods=['GET'])
 @app.route(routes['workflow'],  methods=['GET', 'POST'])
 def workflow(id=None):
+    """
+    Implementation of the /workflow route
+    Enforces ontological constraints on workflows types retrieved from ontology_terms.
+    """
+
+    #Desperately need to add field error checking. Note, we have access to db.query_map
     dn=get_user_dn(request)
     if apidebug:
         print ('APIDEBUG: You are: %s'% str(dn) )
@@ -196,7 +229,14 @@ def workflow(id=None):
         return Response(None, status=401)
 
     if request.method == 'POST':
+        #Test for valid workflow type here.
+        #wtype = request.args.get('wtype')
+        #r = rdb.getRecord('ontology_terms', {'path':'Workflow/Type/'+wtype}, dn )
+        #rr = json.loads(r)
+        
         r = rdb.addWorkflow(request.data,dn)
+
+        
     elif request.method == 'GET':
         if id:
             darg=dict(request.args.items(multi=True)+[('uid',id)])
@@ -298,7 +338,8 @@ def comment(id=None):
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print('get comment',exc_type, fname, exc_tb.tb_lineno)
 
-            publishEvent('mpo_comment',onlyone(morer))
+        publishEvent('mpo_comment',onlyone(morer))
+            
     elif request.method == 'GET':
         if id:
             r = rdb.getRecord('comment',{'uid':id},dn)

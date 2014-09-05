@@ -28,7 +28,8 @@ except Exception, e:
 #  some protection from SQL injection
 
 query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
-                         'composite_seq':'comp_seq', 'time':'creation_time' },
+                         'composite_seq':'comp_seq', 'time':'creation_time',
+                         },
              'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time',
                           'type':'comment_type', 'parent_uid':'parent_GUID',
                           'ptype':'parent_type','user_uid':'u_guid'},
@@ -93,6 +94,14 @@ def processArgument(a):
     return qa
 
 
+def echo(table,queryargs={}, dn=None):
+    """
+    Dummy function to test route and api method construction
+    """
+    queryargs['table']=table
+    return json.dumps(queryargs,cls=MPOSetEncoder)
+
+    
 def getRecord(table,queryargs={}, dn=None):
     '''
     Generic record retrieval. Handles GET requests for all tables.
@@ -283,8 +292,15 @@ def getUser(queryargs={},dn=None):
     cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
     #    q = "select username,uuid,firstname,lastname,email,organization,phone,dn from mpousers"
-    q = "select * from mpousers"
+    #    q = "select * from mpousers"
+    # translate field names
+    q = "select "
+    qm = query_map['mpousers']
+    for key in qm:
+        q += ' aa.'+qm[key]+' AS '+key+','
+    q =  q[:-1] + ' from mpousers as aa '
 
+    
     s=""
     for key in query_map['mpousers']:
         if queryargs.has_key(key):
@@ -665,7 +681,7 @@ def addWorkflow(json_request,dn):
     # add the workflow type to the ontology_instance table
     q = ("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
          "values (%s,%s,%s,%s,%s,%s)")
-    v=(str(uuid.uuid4()),w_guid,objs['id'],objs['value'],datetime.datetime.now(),user_id)
+    v=(str(uuid.uuid4()),w_guid,objs['type_uid'],objs['value'],datetime.datetime.now(),user_id)
     cursor.execute(q,v)
     # Make the changes to the database persistent
     conn.commit()

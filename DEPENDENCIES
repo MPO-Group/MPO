@@ -14,6 +14,7 @@ Flask >= 1.0 #for requests > 2.0 as well
 flask-cors . Flask CORS extension. 
 requests >= 2.0  #bug in 1.1 when using max_retries , current latest version is 2.3 which is recommended
 psycopg2 #for postgres, requires postgres to be installed
+dateutil #pip install python-dateutil #used for timestamp processing of queries
 SQLAlchemy #for pooling of connections
 pydot 1.5.7 < 2.0.0 (for python 3) #for static graph creation. 
       : sudo pip install https://pypi.python.org/packages/source/p/pyparsing/pyparsing-1.5.7.tar.gz

@@ -35,7 +35,9 @@ function usage {
   api_url              - https url for the api server [https://localhost:8443]
 
   for example:
+
     ./web_server.sh  9443 https://localhost:8443
+
 "
   exit 0
 }
@@ -54,6 +56,10 @@ mydir=`dirname $myfp`
 
 PYTHONPATH=$mydir/db:$mydir/server
 export PYTHONPATH
+<<<<<<< .mine
+
+=======
+>>>>>>> .r283
 MPO_API_SERVER=${2:-https://localhost:8443}
 MPO_API_VERSION=v0
 export MPO_API_SERVER MPO_API_VERSION
