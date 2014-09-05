@@ -331,24 +331,24 @@ class mpo_methods(object):
 
         """
 
-        # ## get the workflowtype uid
-        # r=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type/'+wtype})
-        # ont_entry=json.loads(r.text)
+        ## get the workflowtype uid
+        r=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type/'+wtype})
+        ont_entry=json.loads(r.text)
 
-        # if (isinstance(ont_entry, dict)):
-        #     if ont_entry.get('name')==wtype:
-        #         value=wtype
-        #         uid = ont_entry.get('uid')
-        #     else: #get list of valid workflow types and return error
-        #         ro=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type'})
-        #         wtypes_uid=ro.json()['uid']
-        #         wtypes_vocab=self.get(self.ONTOLOGY_TERM_RT+'/'+wtypes_uid+'/vocabulary')
-        #         wtypes=[v['name'] for v in wtypes_vocab.json()]
-        #         print("Unknown workflow type. Must be one of: "+ str(wtypes))
-        #         sys.exit(2) #replace with exception
-        # else:
-        #     print("Error, no dictionary returned from ontology query in init method.")
-        #     sys.exit(2)
+        if (isinstance(ont_entry, dict)):
+            if ont_entry.get('name')==wtype:
+                value=wtype
+                uid = ont_entry.get('uid')
+            else: #get list of valid workflow types and return error
+                ro=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type'})
+                wtypes_uid=ro.json()['uid']
+                wtypes_vocab=self.get(self.ONTOLOGY_TERM_RT+'/'+wtypes_uid+'/vocabulary')
+                wtypes=[v['name'] for v in wtypes_vocab.json()]
+                print("Unknown workflow type. Must be one of: "+ str(wtypes))
+                sys.exit(2) #replace with exception
+        else:
+            print("Error, no dictionary returned from ontology query in init method.")
+            sys.exit(2)
 
 
         payload={"name":name,"description":desc,"type_uid":uid,"value":value}
