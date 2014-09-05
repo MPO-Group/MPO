@@ -447,7 +447,9 @@ class mpo_methods(object):
     def ontology_instance(self,target=None,path=None,value=None,**kwargs):
         """
         Add terms to the ontology instance
-        args are target,path,value
+          target      ID of annotated object
+          path        Path of ntology term type
+          value       Value of the term, must conform to ontology contraint
         """
 
         if target == None or path == None or value == None:
@@ -816,6 +818,16 @@ class mpo_cli(object):
         sgroup.add_argument('--not-specified','-n',action='store_false', dest='specified',
                                          help='Boolean',default=None)
         ontologyTerm_parser.set_defaults(func=self.mpo.ontology_term)
+
+
+        #ontology_instance
+        ontologyInstance_parser=subparsers.add_parser('ontology_term', aliases=( ('metadata','annotate') ),
+                                                  help='Add a term to the vocabulary')
+        ontologyInstance_parser.add_argument('target', action='store', help='ID of annotated object')
+        ontologyInstance_parser.add_argument('path', action='store', help='Path of ntology term type')
+        ontologyInstance_parser.add_argument('value', action='store',
+                                             help='Value of the term, must conform to ontology contraint,')
+        ontologyInstance_parser.set_defaults(func=self.mpo.ontology_instance)
 
         #archive, note all arguments must be processed by the protocol
         archive_parser=subparsers.add_parser('archive',help='Archive a data object.')
