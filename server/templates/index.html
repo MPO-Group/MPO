@@ -459,7 +459,7 @@ ul li input.user_time_wf {
             <!-- workflow list table -->
             <table class="main">
               <tr>
-                <th width="2%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th width="10%">Rating</th>
+                <th width="2%">&nbsp;</th><th width="25%">CompositeID</th><th width="42%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th>
               </tr>
     		{% for item in results %}
                 <div id="accordion2" class="accordion">
@@ -485,7 +485,22 @@ ul li input.user_time_wf {
                 </div>
                 </td>
                 <td>
-                <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png">
+                {% if item.quality %}
+                <!-- <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> -->
+                	{% if item.quality == "1" %}
+                    	<img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png">
+                    {% elif item.quality == "2" %}
+                    	<img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png">
+                    {% elif item.quality == "3" %}
+                    	<img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star_empty.png">
+                    {% elif item.quality == "4" %}
+                    	<img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star.png">
+                    {% else %}
+                		<img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png">
+                    {% endif %}
+                {% else %}
+                	<img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png">
+                {% endif %}
                 </td>
               </tr>
               <tr>

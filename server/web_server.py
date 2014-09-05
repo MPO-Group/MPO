@@ -126,7 +126,7 @@ def index():
 
         results = r.json()
 
-#       #ontology tree
+        #ontology tree
         #req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
         req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
         ont_tree=req.json()
@@ -147,6 +147,11 @@ def index():
                                             for x in vl["children"]:
                                                 for k,v in x.iteritems():
                                                     wf_type_list.append(k)
+
+        #get quality ontology term uid
+        quality_info=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,), headers={'Real-User-DN':dn})
+        qterm=quality_info.json()
+        qterm_uid=qterm['uid']
 
         #get comments
         index=0
@@ -184,13 +189,23 @@ def index():
             cid=cid.json()
             cid=cid['alias']
             results[index]['alias']=cid
+
+            #get workflow ontology terms:values
+            #https://mpo.gat.com/api/v0/ontology/instance?term_uid=29a8a81a-a7f8-45ea-ac55-c960786ed5d6&parent_uid=b26973ed-aa26-4109-9042-20a69d4409e4
+            quality_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), headers={'Real-User-DN':dn})
+            if quality_req.text != "[]": 
+                qual_data=quality_req.json()
+                if qual_data[0]['value']:
+                    quality=qual_data[0]['value']
+                    results[index]['quality']=quality
+                    pprint(quality)
             index+=1
 
         if webdebug:
             print("WEBDEBUG: results sent to index")
-            pprint(results)
-            print("WEBDEBUG: ontology_results sent to index")
-            pprint(ont_result)
+            #pprint(results)
+            #print("WEBDEBUG: ontology_results sent to index")
+            #pprint(ont_result)
 
 # This is really dangerous to catch all exceptions. It makes debugging all but impossible - JCW
 #    except Exception, err:
