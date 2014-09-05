@@ -25,7 +25,17 @@ import json
 from urlparse import urlparse
 import copy
 import argparse
+import linecache
 
+def PrintException():
+    exc_type, exc_obj, tb = sys.exc_info()
+    f = tb.tb_frame
+    lineno = tb.tb_lineno
+    filename = f.f_code.co_filename
+    linecache.checkcache(filename)
+    line = linecache.getline(filename, lineno, f.f_globals)
+    print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj),
+          file=sys.stderr)
 
 
 def str2bool(v):
@@ -168,10 +178,15 @@ class mpo_methods(object):
         if filter=='id':
             output=[]
             if isinstance(result.json(),list):
-                print("Caution, response format of 'id' used when result is a list.",file=sys.stderr)
-                print("Returning list of ID's",file=sys.stderr)
+                if self.debug:
+                    print("Caution, response format of 'id' used when result is a list.",file=sys.stderr)
+                    print("Returning list of ID's",file=sys.stderr)
+                    
                 for r in result.json():
                     output.append(str(r[self.ID]))
+
+                if len(output)==1: #if it is a one element list, just return contents.
+                    output=output[0]
             else:
                 if result.json().has_key(self.ID):
                     output=result.json()[self.ID]
@@ -316,27 +331,27 @@ class mpo_methods(object):
 
         """
 
-        ## get the workflowtype uid
-        r=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type/'+wtype})
-        ont_entry=json.loads(r.text)
+        # ## get the workflowtype uid
+        # r=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type/'+wtype})
+        # ont_entry=json.loads(r.text)
 
-        if (isinstance(ont_entry, dict)):
-            if ont_entry.get('name')==wtype:
-                value=wtype
-                uid = ont_entry.get('uid')
-            else: #get list of valid workflow types and return error
-                ro=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type'})
-                wtypes_uid=ro.json()['uid']
-                wtypes_vocab=self.get(self.ONTOLOGY_TERM_RT+'/'+wtypes_uid+'/vocabulary')
-                wtypes=[v['name'] for v in wtypes_vocab.json()]
-                print("Unknown workflow type. Must be one of: "+ str(wtypes))
-                sys.exit(2) #replace with exception
-        else:
-            print("Error, no dictionary returned from ontology query in init method.")
-            sys.exit(2)
+        # if (isinstance(ont_entry, dict)):
+        #     if ont_entry.get('name')==wtype:
+        #         value=wtype
+        #         uid = ont_entry.get('uid')
+        #     else: #get list of valid workflow types and return error
+        #         ro=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type'})
+        #         wtypes_uid=ro.json()['uid']
+        #         wtypes_vocab=self.get(self.ONTOLOGY_TERM_RT+'/'+wtypes_uid+'/vocabulary')
+        #         wtypes=[v['name'] for v in wtypes_vocab.json()]
+        #         print("Unknown workflow type. Must be one of: "+ str(wtypes))
+        #         sys.exit(2) #replace with exception
+        # else:
+        #     print("Error, no dictionary returned from ontology query in init method.")
+        #     sys.exit(2)
 
 
-        payload={"name":name,"description":desc,"id":uid,"value":value}
+        payload={"name":name,"description":desc,"type_uid":uid,"value":value}
         r=self.post(self.WORKFLOW_RT,data=payload,**kwargs)
         return r
 
@@ -821,7 +836,7 @@ class mpo_cli(object):
 
 
         #ontology_instance
-        ontologyInstance_parser=subparsers.add_parser('ontology_term', aliases=( ('metadata','annotate') ),
+        ontologyInstance_parser=subparsers.add_parser('ontology_instance', aliases=( ('metadata','annotate') ),
                                                   help='Add a term to the vocabulary')
         ontologyInstance_parser.add_argument('target', action='store', help='ID of annotated object')
         ontologyInstance_parser.add_argument('path', action='store', help='Path of ntology term type')
@@ -936,12 +951,16 @@ class mpo_cli(object):
         if self.debug:
             print('args',kwargs,args.func,file=sys.stderr)
 
-#        try:
-        r=args.func(**kwargs)
-#        except Exception,e:
-#            print("error executing command\n%s"%e, file=sys.stderr)
-#            return 0
-
+        try:
+            r=args.func(**kwargs)
+        except requests.exceptions.HTTPError as e:
+            print("URL not found: %s"%args, file=sys.stderr)
+            return -1
+        except:
+            print('Unexpected error',file=sys.stderr)
+            PrintException()
+            return -2
+            
         if kwargs.has_key('format'):
             r=self.mpo.format(r,filter=kwargs['format'])
 
