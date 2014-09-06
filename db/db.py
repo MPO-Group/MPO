@@ -101,7 +101,7 @@ def echo(table,queryargs={}, dn=None):
     queryargs['table']=table
     return json.dumps(queryargs,cls=MPOSetEncoder)
 
-    
+
 def getRecord(table,queryargs={}, dn=None):
     '''
     Generic record retrieval. Handles GET requests for all tables.
@@ -131,11 +131,11 @@ def getRecord(table,queryargs={}, dn=None):
     q=q[:-1]+', b.username' #remove trailing comma
 
     ##COMMENT and METADATA special handling
-    if (table == 'comment' or table == 'metadata') and queryargs.has_key('uid'):
+    if (table == 'comment' or table == 'metadata') and queryargs.has_key('uid') and type(queryargs['uid']) == 'uuid':
         q+=', work_uid'
 
     q+=' FROM '+table+' a, mpousers b '
-    if (table == 'comment' or table == 'metadata') and queryargs.has_key('uid'):
+    if (table == 'comment' or table == 'metadata') and queryargs.has_key('uid')  and type(queryargs['uid']) == 'uuid':
         q+=", getWID('"+processArgument(queryargs['uid'])+"') as work_uid "
 
     #map user and filter by query
@@ -300,7 +300,7 @@ def getUser(queryargs={},dn=None):
         q += ' aa.'+qm[key]+' AS '+key+','
     q =  q[:-1] + ' from mpousers as aa '
 
-    
+
     s=""
     for key in query_map['mpousers']:
         if queryargs.has_key(key):
