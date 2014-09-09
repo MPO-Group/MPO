@@ -185,7 +185,7 @@ def collection(id=None):
     /collection - GET a list of all (or filtered) collections
                 - POST a new collection
     /collection/<id> - GET collection information, including list of member UUIDs
-                     
+
     /collection/<id>?detail=full[sparse] - GET collection information with full
                details [or default sparse as /collection/<id>]
     /collection/<id>/element       - GET a list of objects in a collection
@@ -205,7 +205,7 @@ def collection(id=None):
         if id:
             r = rdb.echo('collection', {'uid':id})
         else:
-            r = rdb.echo('collection',request.args) 
+            r = rdb.echo('collection',request.args)
     return r
 
 
@@ -233,10 +233,10 @@ def workflow(id=None):
         #wtype = request.args.get('wtype')
         #r = rdb.getRecord('ontology_terms', {'path':'Workflow/Type/'+wtype}, dn )
         #rr = json.loads(r)
-        
+
         r = rdb.addWorkflow(request.data,dn)
 
-        
+
     elif request.method == 'GET':
         if id:
             darg=dict(request.args.items(multi=True)+[('uid',id)])
@@ -271,6 +271,14 @@ def getWorkflowComments(id):
     if request.method == 'GET':
         r = rdb.getWorkflowComments(id,request.args,dn)
     return r
+
+@app.route(routes['workflow']+'/<id>/type', methods=['GET'])
+def getWorkflowType(id):
+    dn=get_user_dn(request)
+    if request.method == 'GET':
+        r = rdb.getWorkflowType(id,request.args,dn)
+    return r
+
 
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
@@ -339,7 +347,7 @@ def comment(id=None):
             print('get comment',exc_type, fname, exc_tb.tb_lineno)
 
         publishEvent('mpo_comment',onlyone(morer))
-            
+
     elif request.method == 'GET':
         if id:
             r = rdb.getRecord('comment',{'uid':id},dn)
