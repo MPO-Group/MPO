@@ -304,7 +304,7 @@ function setWfQuality(wfid,numq) {
 	var imgstr="_img";
 
 	//POST data to API route
-	var url="/ontology_instance";
+	var url="{{ url_for('ontology_instance') }}";
 	var ont_path='/Generic/Status/quality';
 	var parent_uid=wfid;
 	var user="None";
