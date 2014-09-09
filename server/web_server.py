@@ -420,11 +420,9 @@ def connections(wid=""):
             num_comment+=k
             wf_objects[key]['comment']=cm
     
-    #pprint(wf_uid_compid)
-
-    #if webdebug:
-    #    print("WEBDEBUG: workflow objects")
-    #    pprint(wf_objects)
+    if webdebug:
+        print("WEBDEBUG: workflow objects")
+        pprint(wf_objects)
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
@@ -549,7 +547,7 @@ def search():
                                        'parent_uid':'parent_guid',
                                        'parent_type':'parent_type'},
                          'metadata_short' : {'n':'name', 'v':'value', 't':'type', 'c':'creation_time' }
-                     }
+                    }
 
             #wf=requests.get("%s/workflow?uid=%s"%(API_PREFIX,search_str,), **certargs)
             results={}
@@ -641,7 +639,6 @@ def ontology(uid=False):
 
     return render_template('ontology.html')
 
-
 @app.route('/submit_comment', methods=['POST'])
 def submit_comment():
     dn = get_user_dn(request)
@@ -667,10 +664,23 @@ def submit_comment():
     #                                                              # comments will show for that workflow
     return redirect(url_for('connections', wid=wid))
 
-#@app.route('/login')
-#def login():
-#    return render_template('login.html')
+@app.route('/ontology_instance', methods=['POST'])
+def ontology_instance():
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    data=request.get_json() #dict
+    data['dn']=dn
+    r = json.dumps(data) #convert to json
+    pprint(r)
+    submit = requests.post("%s/ontology/instance"%API_PREFIX, r, **certargs)
+    pprint(submit)
+    results = submit.text
+    print(results)
 
+    response = make_response(results)
+    response.headers['Content-Type'] = 'text/plain'
+    return response
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

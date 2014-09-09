@@ -29,7 +29,7 @@
 var nodeUIDs = new Array(); //store node UIDs for comparison with new node UIDs added after page load
 var wid = ""; //store workflow wid
 var lastUpdate = ""; //store last update time
-var rightScrollHeight='600px';
+var rightScrollHeight='700px';
 var clickedLinkedWorkflows=[];
 
 function closepop(id) {
@@ -79,6 +79,7 @@ function success_cb(event,data,userarg) {
 
 //handles the svg workflow plot functionality
 $(document).ready(function () {
+	var $window = $(window);
 	$("#svg_loading").hide();
 	wf_desc="{{ wid_info[0].description }}";	
 	var jsondata = '{{ nodes|tojson }}';  //single quote issue
@@ -111,7 +112,7 @@ $(document).ready(function () {
 				if(tmp3['description'])
 					dataElements[tmp['name']]+=tmp3['description'];
 				if(tmp3['time']) {
-					dataElements[tmp['name']]+= ' - ' + tmp3['time'];
+					dataElements[tmp['name']]+= "<div><small>"+tmp3['time']+"</small></div>";
 					//store latest workflow update time
 					tmpDateTime=new Date(tmp3['time'].replace(" ","T"));
 					if(tmpDateTime > lastUpdate)
@@ -140,17 +141,17 @@ $(document).ready(function () {
 			else if(j=="metadata") {
 				var tmp2=tmp[j];
 				if(dataElements[tmp['name']])
-					dataElements[tmp['name']]=dataElements[tmp['name']]+"<div>metadata:<ul>";
+					dataElements[tmp['name']]=dataElements[tmp['name']]+"<li><small>metadata:</small><ul>";
 				else
-					dataElements[tmp['name']]="<div>metadata:<ul>";
+					dataElements[tmp['name']]="<ul><li><small>metadata:</small><ul>";
 				for (var z in tmp2)
 				{
 					var tmp3=tmp2[z];
 					if(tmp3['key']) {
-						dataElements[tmp['name']]=dataElements[tmp['name']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
+						dataElements[tmp['name']]=dataElements[tmp['name']] + "<li><small>" + tmp3['key'] + ': ' + tmp3['value'] + "</small></li>";
 					}
 				}
-				dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></div>";
+				dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></li></ul>";
 			}
 		}
 		nodeCount++;
@@ -167,9 +168,12 @@ $(document).ready(function () {
 	//checks and adjusts svg width/height if needed
 	//var workflowWidth=560; //in pixels
 	//var workflowWidth=550;
-	var workflowWidth=500;
+	
+	var workflowWidth=$window.width()*.39; //span5 = 40% of window width
+	//console.log(workflowWidth);
 
 	var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
+	console.log(w);
 	var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
 	var width=parseInt(w.replace("pt",""));
 	var height=parseInt(h.replace("pt",""));
@@ -177,7 +181,13 @@ $(document).ready(function () {
 	//adjust for pan/zoom functionality
 	document.getElementsByTagName("svg").item(0).removeAttribute("viewBox");
 	
+	//**VIEWBOX SETTINGS**/
+	//**AUTO SET WIDTH ON WINDOW RESIZE */
+
 	if(width > workflowWidth) {
+		//var ratio=workflowWidth/width;
+		var ratio=(1-(workflowWidth/1166))/2+(workflowWidth/1166);
+		console.log(ratio);
 		var wnew=workflowWidth;
 		var hnew=Math.round(height*(workflowWidth/width));
 		rightScrollHeight=hnew.toString()+"px";
@@ -187,7 +197,8 @@ $(document).ready(function () {
 		rightScrollHeight=hnew.toString() + "px";
 		document.getElementsByTagName("svg").item(0).setAttribute("width",w);
 		document.getElementsByTagName("svg").item(0).setAttribute("height",h);
-		document.getElementById("graph1").transform.baseVal.getItem(0).setScale(".56",".56");
+		//document.getElementById("graph1").transform.baseVal.getItem(0).setScale(".85",".85"); //VERSUS ORIGINAL SIZE 1166 wide x 712 high**
+		document.getElementById("graph1").transform.baseVal.getItem(0).setScale(ratio.toString(),ratio.toString()); //size ratio of workflow on load compared to original size
 	}
 	//end svg size adjust
 	
@@ -672,7 +683,7 @@ function buildPageElements(wfID) {
                         <div class="accordion-group">
                             <div class="accordian-heading">
                                 <div style="padding-top:10px;padding-bottom:10px;">
-                                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne"><small> Logbook Entries {% if num_comment %}({{ num_comment }}){% endif %}</small> <i class="icon-chevron-down"></i></a>&nbsp;&nbsp;<a href="#add_{{ wid }}" class="text-success pull-right" data-toggle="collapse"></strong><small>[+] new comment</small></a></span>
+                                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne"><small> Logbook Entries {% if num_comment %}({{ num_comment }}) <i class="icon-chevron-down"></i></a>{% else %}(0){% endif %}</small> &nbsp;&nbsp;<a href="#add_{{ wid }}" class="text-success pull-right" data-toggle="collapse"></strong><small>[+] new comment</small></a></span>
                                 </div>
                                 <div class="accordion-body collapse" id="add_{{ wid }}">
                                     <div class="accordion-inner no-border">
@@ -691,7 +702,7 @@ function buildPageElements(wfID) {
                                         <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
                                       </form>
                                     </div>
-                                </div>                       
+                                </div>
                             </div>
                             <div id="collapseOne">
                         {% for obj in nodes.iteritems() %}

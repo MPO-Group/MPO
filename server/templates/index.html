@@ -293,6 +293,53 @@ function checkSubLevel(uid) {
 	});	
 }
 
+//workflow id, numq => quality value (1-4)
+function setWfQuality(wfid,numq) {
+	//ajax.post --> serialized json
+
+	//star images info
+	var numstars=4;
+	var img=["star_empty.png","star.png"];
+	var imgpath = "static/img/";
+	var imgstr="_img";
+
+	//POST data to API route
+	var url="/ontology_instance";
+	var ont_path='/Generic/Status/quality';
+	var parent_uid=wfid;
+	var user="None";
+	var postData = {'parent_uid': parent_uid, 'value': numq.toString(), 'path': ont_path, 'user': user };
+
+	var jqxhr = $.ajax({
+		type: "POST",
+		url: url,
+		data : JSON.stringify(postData),
+		contentType: 'application/json'
+	});
+	
+	//remove pointer cursor class
+	$('#'+wfid+'_quality').removeClass('set_quality');
+	
+
+	//ajax request returns uid of 'quality' instance
+	jqxhr.done(function(data) {
+		console.log(data);
+	});
+
+	//set star image src according to star clicked
+	for(i=1;i<=numstars;i++) {
+		var img_element='#'+wfid+imgstr+i;
+		if(i<=numq)
+			$(img_element).attr('src', imgpath+img[1]);
+		else
+			$(img_element).attr('src', imgpath+img[0]);
+		//remove onclick functionality
+		$(img_element).removeAttr('onclick');
+	}
+}
+
+
+
 </script>
 <style>
 #nav_split, #ont_search_header, #wf_search_header, #wf_attrib, #wf_hide {
@@ -398,6 +445,10 @@ ul li input.user_time_wf {
 	font-size: 12px;
 }
 
+.set_quality {
+	cursor: pointer;
+}
+
 </style>
 {% endblock %}
 {% block index_active %} class="active" {% endblock %}
@@ -488,18 +539,21 @@ ul li input.user_time_wf {
                 {% if item.quality %}
                 <!-- <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> -->
                 	{% if item.quality == "1" %}
-                    	<img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png">
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
                     {% elif item.quality == "2" %}
-                    	<img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png">
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
                     {% elif item.quality == "3" %}
-                    	<img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star_empty.png">
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
                     {% elif item.quality == "4" %}
-                    	<img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star.png"> <img src="/static/img/star.png">
-                    {% else %}
-                		<img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png">
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star.png">
                     {% endif %}
                 {% else %}
-                	<img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png">
+                	<span id="{{ item.uid }}_quality" class="set_quality">
+                    	<img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                        <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                        <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                        <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                    </span>
                 {% endif %}
                 </td>
               </tr>
