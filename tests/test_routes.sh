@@ -51,7 +51,7 @@ fi
 
 if ! [ -n "${MPO:+x}" ]
 then
-  export MPO=$MPO_HOME/client/python/mpo_arg.py
+  export MPO="$MPO_HOME/client/python/mpo_arg.py "
 fi
 
 export MPO="$MPO -v" #remove/add -v for quiet/verbose output
@@ -71,12 +71,14 @@ $MPO_HOME/api_server.sh $api_port "host=localhost dbname=$test_db user='mpoadmin
 $MPO_HOME/web_server.sh $web_port https://localhost:$api_port &> web_out.txt &
 
 echo %TESTING first create the ontology terms %%%%%%%%%%%%
+#JCW note, make this a script, maybe move them to $MPO_HOME/db
 $MPO_HOME/client/python/tests/ontology_terms_gyro.load
 $MPO_HOME/client/python/tests/ontology_terms_swim.load
 $MPO_HOME/client/python/tests/ontology_terms_efit.load
+$MPO_HOME/client/python/tests/ontology_terms_quality.load
 
 echo %TESTING retrieving ontology tree
-$MPO --format=pretty get -r ontology/term/tree
+$MPO_HOME/client/python/tests/make_ont_tree.py
 
 echo %TESTING postings with commandline api %%%%%%%%%%%%%%
 $MPO_HOME/client/python/tests/josh.test
@@ -88,7 +90,7 @@ echo %TESTING retrievals %%%%%%%%%%%%%%
 for route in workflow comment activity metadata dataobject
 do
   echo %---------------route $route------------------------
-  $MPO --format=pretty -v get --route=$route
+  $MPO --format=pretty -v get $route
 done
 
 

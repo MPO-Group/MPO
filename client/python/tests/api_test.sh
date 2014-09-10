@@ -15,7 +15,7 @@ fi
 
 if ! [ -n "${MPO:+x}" ]
 then
-  export MPO="$MPO_HOME/client/python/mpo_testing.py --user=$USER"
+  export MPO="$MPO_HOME/client/python/mpo_arg.py "
 fi
 
 #use API methods to create a workflow

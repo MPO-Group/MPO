@@ -300,7 +300,7 @@ def getUser(queryargs={},dn=None):
         q += ' aa.'+qm[key]+' AS '+key+','
     q =  q[:-1] + ' from mpousers as aa '
 
-
+    #translate query fields
     s=""
     for key in query_map['mpousers']:
         if queryargs.has_key(key):
@@ -429,14 +429,21 @@ def getWorkflow(queryargs={},dn=None):
     #build our Query, base query is a join between the workflow and user tables to get the username
     q = textwrap.dedent("""\
                 SELECT w_guid as uid, a.name, a.description, a.creation_time as time,
-                a.comp_seq as composite_seq, b.firstname, b.lastname, b.username, b.uuid as userid
-                FROM workflow a, mpousers b""")
-    if queryargs.has_key('type'):
-        q+= ", ontology_instances c"
-    q+=" WHERE a.u_guid=b.uuid"
+                a.comp_seq as composite_seq, b.firstname, b.lastname, b.username, b.uuid as userid,
+                c.value as w_type FROM workflow a, mpousers b""")
 
+    #JCW 9 sep 2014, changing this to always include ontology_instances table as c
+    # if queryargs.has_key('type'):
+    #     q+= ", ontology_instances c"
+    # q+=" WHERE a.u_guid=b.uuid"
+
+    #join with ontology_instance table to get workflow type
+    q += ", ontology_instances c  WHERE a.u_guid=b.uuid and a.w_guid=c.target_guid "
+    # add extra query filter on workflow type (which is stored in a separate table)
     if queryargs.has_key('type'):
-        q+= " and a.w_guid=c.target_guid and c.value='"+processArgument(queryargs['type'])+"'"
+        #q+= " and a.w_guid=c.target_guid and c.value='"+processArgument(queryargs['type'])+"'"
+        q+= " and c.value='"+processArgument(queryargs['type'])+"'"
+
 
     #logic here to convert queryargs to additional WHERE constraints
     #query is built up from getargs keys that are found in query_map
@@ -454,10 +461,10 @@ def getWorkflow(queryargs={},dn=None):
     #       q+=" and a.composite_seq='%s'"
         compid =  queryargs['alias']
         if dbdebug:
-            print('compid: username/workflow_name/seq:',compid,compid.split('/'))
+            print('compid: username/workflow_type/seq:',compid,compid.split('/'))
         compid = compid.split('/')
         q+=" and b.username     ='%s'" % compid[0]
-        q+=" and a.name     ='%s'" % compid[1]
+        q+=" and c.type     ='%s'" % compid[1]
         q+=" and a.comp_seq='%s'" % compid[2]
 
     if queryargs.has_key('username'): #handle username queries
@@ -481,21 +488,37 @@ def getWorkflow(queryargs={},dn=None):
     records = cursor.fetchall()
     #regroup user fields, first convert records from namedtuple to dict
     jr=json.loads(json.dumps(records,cls=MPOSetEncoder))
+
     for r in jr:
         r['user']={'firstname':r['firstname'], 'lastname':r['lastname'],
                'userid':r['userid'],'username':r['username']}
         r.pop('firstname')
         r.pop('lastname')
         r.pop('userid')
+        #JCW 9 SEP 2014, also add workflow type
+        
+        r['type'] = r['w_type']
+        r.pop('w_type')
+
 
     #add total records count
     #cursor.execute('select count ('+q+'))
     #       records = cursor.fetchone()
     #       r['total_count'] = records
-    count=cursor.rowcount
+    #count=cursor.rowcount
     # Close communication with the database
     cursor.close()
     conn.close()
+
+    #JCW keep only records with workflow types, this is a hack
+    #since all ontology instance are in one table, we get a workflow
+    #entry from the cross product for each ontology instance attached to a workflow
+    #including status
+    ro=getRecord('ontology_terms', {'path':'Workflow/Type'}, dn )
+    wtypes_uid=json.loads(ro)['uid']
+    wtypes_vocab=json.loads( getRecord('ontology_terms', {'parent_uid':wtypes_uid}, dn ) )
+    wtypes=[v['name'] for v in wtypes_vocab]
+    jr = [r for r in jr if r['type'] in wtypes]
 
     return json.dumps(jr,cls=MPOSetEncoder)
 
@@ -503,7 +526,7 @@ def getWorkflow(queryargs={},dn=None):
 def getWorkflowCompositeID(id):
     "Returns composite id of the form user/workflow_name/composite_seq"
     wf=json.loads(getWorkflow({'uid':id}))[0]
-    compid = {'alias':wf['user']['username']+'/'+wf['name']+'/'+str(wf['composite_seq']),'uid':id}
+    compid = {'alias':wf['user']['username']+'/'+wf['type']+'/'+str(wf['composite_seq']),'uid':id}
     if dbdebug:
         print('DBDEBUG: compid ',wf,compid)
     return json.dumps(compid,cls=MPOSetEncoder)
@@ -608,6 +631,7 @@ def addRecord(table,request,dn):
     objs = json.loads(request)
     objs['uid']=str(uuid.uuid4())
     objs['time']=datetime.datetime.now()
+
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
@@ -663,9 +687,7 @@ def addRecord(table,request,dn):
     return json.dumps(records,cls=MPOSetEncoder)
 
 
-def addWorkflow(json_request,dn):
-    objs = json.loads(json_request)
-
+def addWorkflow(request,dn):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
@@ -678,7 +700,7 @@ def addWorkflow(json_request,dn):
 
     #determine max composite sequence for incrementing.
     cursor.execute("select MAX(comp_seq) from workflow where name=%s and U_GUID=%s",
-               (objs['name'], user_id ) )
+               (request['name'], user_id ) )
     count=cursor.fetchone()
 
     if dbdebug:
@@ -691,12 +713,12 @@ def addWorkflow(json_request,dn):
 
     q = ("insert into workflow (w_guid, name, description, u_guid, creation_time, comp_seq) " +
          "values (%s,%s,%s,%s,%s,%s)")
-    v= (w_guid, objs['name'], objs['description'], user_id, datetime.datetime.now(),seq_no)
+    v= (w_guid, request['name'], request['description'], user_id, datetime.datetime.now(),seq_no)
     cursor.execute(q,v)
     # add the workflow type to the ontology_instance table
     q = ("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
          "values (%s,%s,%s,%s,%s,%s)")
-    v=(str(uuid.uuid4()),w_guid,objs['type_uid'],objs['value'],datetime.datetime.now(),user_id)
+    v=(str(uuid.uuid4()),w_guid,request['type_uid'],request['value'],datetime.datetime.now(),user_id)
     cursor.execute(q,v)
     # Make the changes to the database persistent
     conn.commit()

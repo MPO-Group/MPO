@@ -290,14 +290,14 @@ class mpo_methods(object):
 
         url=self.api_url+route
 
-        if self.debug:
-            print('MPO.POST',url,workflow_ID,obj_ID,json.dumps(datadict),file=sys .stderr)
-
         #if obj_ID: #commented out to permit null for ontology entries
         datadict[self.PARENTID]=obj_ID
 
         if workflow_ID:
             datadict[self.WORKID]=workflow_ID
+
+        if self.debug:
+            print('MPO.POST',url,workflow_ID,obj_ID,json.dumps(datadict),file=sys .stderr)
 
         # note we convert python dict to json format and tell the server and requests.py
         #    in the header it is JSON
@@ -319,7 +319,7 @@ class mpo_methods(object):
             return r
 
 
-    def init(self,name, desc="", wtype='None', **kwargs):
+    def init(self,name=None, desc="", wtype='None', **kwargs):
         """
         The INIT method starts a workflow.
         It returns the server response for a new workflow.
@@ -335,23 +335,10 @@ class mpo_methods(object):
         r=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type/'+wtype})
         ont_entry=json.loads(r.text)
 
-        if (isinstance(ont_entry, dict)):
-            if ont_entry.get('name')==wtype:
-                value=wtype
-                uid = ont_entry.get('uid')
-            else: #get list of valid workflow types and return error
-                ro=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type'})
-                wtypes_uid=ro.json()['uid']
-                wtypes_vocab=self.get(self.ONTOLOGY_TERM_RT+'/'+wtypes_uid+'/vocabulary')
-                wtypes=[v['name'] for v in wtypes_vocab.json()]
-                print("Unknown workflow type. Must be one of: "+ str(wtypes))
-                sys.exit(2) #replace with exception
-        else:
-            print("Error, no dictionary returned from ontology query in init method.")
-            sys.exit(2)
+        if not name:
+            return {"status":"error", "uid":"-1"}
 
-
-        payload={"name":name,"description":desc,"type_uid":uid,"value":value}
+        payload={"name":name,"description":desc,"type":wtype}
         r=self.post(self.WORKFLOW_RT,data=payload,**kwargs)
         return r
 
@@ -463,7 +450,7 @@ class mpo_methods(object):
         """
         Add terms to the ontology instance
           target      ID of annotated object
-          path        Path of ntology term type
+          path        Path of ontology term type
           value       Value of the term, must conform to ontology contraint
         """
 
@@ -774,7 +761,7 @@ class mpo_cli(object):
         #get
         get_parser=subparsers.add_parser('get',help='GET from a route')
            #add positional argument which will be passed to func 'route' in 'Namespace' named tuple
-        get_parser.add_argument('-r','--route',action='store',help='Route of resource to query')
+        get_parser.add_argument('route',action='store',help='Route of resource to query')
            #add keyword argument passed to func as 'params'
         get_parser.add_argument('-p','--params',action='store',nargs='*',
                                 help='Query arguments as key=value')

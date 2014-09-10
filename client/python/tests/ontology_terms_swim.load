@@ -25,12 +25,13 @@ then
 fi
 
 #use API methods to create a workflow
-oid1=`$MPO get --route 'ontology/term' --params='path=/Workflow/Type/SWIM'`
+oid1=`$MPO get 'ontology/term' --params='path=/Workflow/Type/SWIM'`
 if [ $oid1 = "[]" ]
 then
     echo Ontology term /Workflow/Type/SWIM doesn\'t exist. Run $MPO_HOME/client/python/tests/ontology_terms_gyro.load first
     exit
 fi
+echo Loading SWIM framework ontology
 oid2=`$MPO ontology_term 'Code Characteristics' --desc='Terms that describe the code type' -p $oid1 -t 'string' -s`
 oid3=`$MPO ontology_term 'Run Characteristics' --desc='Terms that describe the run type' -p $oid1 -t 'string' -s`
 oid4=`$MPO ontology_term 'Run Metadata' --desc='Metadata terms associated with the run' -p $oid1 -t 'string' -s`

@@ -176,8 +176,6 @@ else:
 
 @app.route(routes['collection']+'/<id>', methods=['GET'])
 @app.route(routes['collection'],  methods=['GET', 'POST'])
-@app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
-@app.route(routes['collection']+'/<id>'+'/element'+'/<oid>', methods=['GET'])
 def collection(id=None):
     """
     Create and add to collections.
@@ -188,10 +186,6 @@ def collection(id=None):
 
     /collection/<id>?detail=full[sparse] - GET collection information with full
                details [or default sparse as /collection/<id>]
-    /collection/<id>/element       - GET a list of objects in a collection
-                                  - POST to add to the collection
-    /collection/<id>/element/<oid> - GET details of a single object in a collection.
-                                    Should resolve oid to full record from relevant table.
     """
     #JCW, replace rdb.echo with rdb.add/getRecord in integrated testing or custom method if needed
     dn=get_user_dn(request)
@@ -206,6 +200,20 @@ def collection(id=None):
             r = rdb.echo('collection', {'uid':id})
         else:
             r = rdb.echo('collection',request.args)
+    return r
+
+
+#these routes need a second function to be resolved
+@app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
+@app.route(routes['collection']+'/<id>'+'/element'+'/<oid>', methods=['GET'])
+def addtoCollection(id=None):
+    """
+    /collection/<id>/element       - GET a list of objects in a collection
+                                  - POST to add to the collection
+    /collection/<id>/element/<oid> - GET details of a single object in a collection.
+                                    Should resolve oid to full record from relevant table.
+    """
+    r=""
     return r
 
 
@@ -229,13 +237,25 @@ def workflow(id=None):
         return Response(None, status=401)
 
     if request.method == 'POST':
-        #Test for valid workflow type here.
-        #wtype = request.args.get('wtype')
-        #r = rdb.getRecord('ontology_terms', {'path':'Workflow/Type/'+wtype}, dn )
-        #rr = json.loads(r)
-
-        r = rdb.addWorkflow(request.data,dn)
-
+        #check for valid workflow type
+        wtype = json.loads(request.data).get('type')
+        ont_entry = json.loads(rdb.getRecord('ontology_terms', {'path':'Workflow/Type/'+wtype}, dn ))
+        if (isinstance(ont_entry, dict) and len(ont_entry)>0): #JCW really should check status field
+            ##Add logic to check for fields or exceptions from query
+            type_uid = ont_entry.get('uid')
+            p=json.loads(request.data)
+            payload={"name":p['name'],"description":p['description'],"type_uid":type_uid,"value":wtype}
+            r = rdb.addWorkflow(payload,dn)
+            #should return ENTIRE record created. use rdb.getworkflow internally
+        else:
+            ro=rdb.getRecord('ontology_terms', {'path':'Workflow/Type'}, dn )
+            wtypes_uid=json.loads(ro)['uid']
+            wtypes_vocab=json.loads( rdb.getRecord('ontology_terms', {'parent_uid':wtypes_uid}, dn ) )
+            wtypes=[v['name'] for v in wtypes_vocab]
+            r = make_response("",404)
+            errmsg = 'Invalid workflow type specified'
+            r.headers['X-Error'] = errmsg
+            r.data = json.dumps( {"error":errmsg, "hint":wtypes} )
 
     elif request.method == 'GET':
         if id:
@@ -245,6 +265,7 @@ def workflow(id=None):
             r = rdb.getWorkflow({'uid':id},dn)
         else:
             r = rdb.getWorkflow(request.args,dn)
+            #add workflow type here in return. Use complete path?
 
         if apidebug:
             print ('APIDEBUG: workflow returning "%s" len %d'% (r,len(r),))
@@ -263,6 +284,7 @@ def getWorkflowGraph(id):
     if request.method == 'GET':
         r = rdb.getWorkflowElements(id,request.args,dn)
         return r
+
 
 
 @app.route(routes['workflow']+'/<id>/comments', methods=['GET'])
