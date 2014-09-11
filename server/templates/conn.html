@@ -13,6 +13,7 @@
 }
 #svg {
 	background-color:#fff;
+	overflow: hidden;
 }
 
 .logbook_row {
@@ -57,7 +58,6 @@ function success_cb(event,data,userarg) {
 // that can be used.
 // You may want to define different callbacks for different events you want to monitor
 // or have logic on the value of 'event'
- //alert(JSON.stringify(data));
 	if (typeof(data.event) !== "undefined") {
 		var tmpDataObj=JSON.parse(data.event.data.text["#text"]);
 		//var tmpDataObj=jQuery.parseJSON(data.event.data.text["#text"]);
@@ -65,10 +65,8 @@ function success_cb(event,data,userarg) {
 		var wfID="";
 		for (var key in tmpDataObj) {
 			if(key=="parent_uid")
-			//console.log('parent_uid: ' + tmpDataObj[key]);
 				wfID=tmpDataObj[key];
 			else if (key=="work_uid")
-			//console.log('work_uid: ' + tmpDataObj[key]);
 				wfID=tmpDataObj[key];
 		}
 	}
@@ -88,10 +86,8 @@ $(document).ready(function () {
 	tmp_str=tmp_str.replace(/&#39;/g,'\''); //replace single quote with \'
 	tmp_str=tmp_str.replace(/\\/g, "\\\\");  //replace single backslash with double \\
 	var jdata=tmp_str;
-	//console.log(jdata);
 
 	var dataObjs=jQuery.parseJSON(jdata);
-	//console.log(JSON.stringify(dataObjs[4].data));
 	
 	lastUpdate=new Date(1900,00,01); //past date for demo
 	//lastUpdate=new Date(); //GET CURRENT DATE ON PAGE LOAD for newest added element comparison
@@ -105,7 +101,6 @@ $(document).ready(function () {
 		nodeUIDs[nodeCount]=tmp['uid'];
 		for(var j in tmp) {
 			if(j=="data") {
-				//alert(JSON.stringify(tmp[j]));
 				var tmp2=tmp[j];
 				var tmp3=tmp2[0];
 				dataElements[tmp['name']]="";
@@ -157,7 +152,6 @@ $(document).ready(function () {
 		nodeCount++;
 	  }
 	}
-	//alert(JSON.stringify(dataElements));
 	
 	$("#last-updated").html(lastUpdate.toLocaleString());
 		
@@ -166,30 +160,29 @@ $(document).ready(function () {
 
 	//$("#test").popover({title: "this is a popover", html: true, container: 'body', content: '<ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li></ul>', trigger: 'hover'});
 	//checks and adjusts svg width/height if needed
-	//var workflowWidth=560; //in pixels
-	//var workflowWidth=550;
-	
-	var workflowWidth=$window.width()*.39; //span5 = 40% of window width
-	//console.log(workflowWidth);
+	var workflowWidth=$("#svg").width();
 
 	var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
-	console.log(w);
 	var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
 	var width=parseInt(w.replace("pt",""));
 	var height=parseInt(h.replace("pt",""));
 	rightScrollHeight=h.replace("pt","px");
+	
 	//adjust for pan/zoom functionality
 	document.getElementsByTagName("svg").item(0).removeAttribute("viewBox");
-	
-	//**VIEWBOX SETTINGS**/
-	//**AUTO SET WIDTH ON WINDOW RESIZE */
 
+	//var maxWfHeight=500;
 	if(width > workflowWidth) {
-		//var ratio=workflowWidth/width;
-		var ratio=(1-(workflowWidth/1166))/2+(workflowWidth/1166);
-		console.log(ratio);
+		var hratio=workflowWidth/width;
+		var vratio=hratio;
 		var wnew=workflowWidth;
-		var hnew=Math.round(height*(workflowWidth/width));
+		var hnew=Math.round(height*(vratio-.15));
+		/*if(hnew > 500) {
+			hnew=500;
+			hratio=.8;
+			vratio=.8;
+		}*/
+		//var hnew=460;
 		rightScrollHeight=hnew.toString()+"px";
 		$("#svg_loading").width(wnew).height(hnew);
 		w=wnew.toString() + "pt";
@@ -198,10 +191,14 @@ $(document).ready(function () {
 		document.getElementsByTagName("svg").item(0).setAttribute("width",w);
 		document.getElementsByTagName("svg").item(0).setAttribute("height",h);
 		//document.getElementById("graph1").transform.baseVal.getItem(0).setScale(".85",".85"); //VERSUS ORIGINAL SIZE 1166 wide x 712 high**
-		document.getElementById("graph1").transform.baseVal.getItem(0).setScale(ratio.toString(),ratio.toString()); //size ratio of workflow on load compared to original size
+		document.getElementById("graph1").transform.baseVal.getItem(0).setScale(hratio.toString(),vratio.toString()); //size ratio of workflow on load compared to original size
 	}
 	//end svg size adjust
-	
+
+	/*$( window ).resize(function() {
+
+	});*/
+
 	initZoomPan();
 	
 	//get list of nodes for svg xml tag "g" w/ class "node"
@@ -298,19 +295,6 @@ $(document).ready(function () {
 	hideToggleSubLists();
 	hideLinkedWfLoader();
 
-	//***change to onclick instead of on page load
-	/*$('.linkedwf').each(function() {
-		// do something with each element
-		var current=$(this);
-		var wfid = $(this).html();
-		//var url="/mpo/workflow/"+wfid;
-		var url="{{ url_for("workflow") }}/"+wfid;
-		var jqxhr_nodes = $.getJSON( url, function( data ) {
-			var text=data[0]["username"]+"/"+data[0]["name"]+"/"+data[0]["composite_seq"]+" - "+data[0]["description"];
-			current.html(text);
-		});
-	});*/
-
 	//when [+]linked workflows is clicked, convert Workflow IDs to composite names / descriptions
 	$('.wf_links li').click(function () {
 		var thisID=$(this).attr("id");
@@ -322,7 +306,6 @@ $(document).ready(function () {
 			//$("#"+thisID.substring(3)+"_loader").show();
 
 			wfID_list.each(function(index) {
-				//console.log( index + ": " + $( this ).text() );
 				var current=$(this);
 				var wfID=$( this ).text();
 				var url="{{ url_for("workflow") }}/"+wfID;
@@ -364,13 +347,11 @@ function fillSVGElement(uid) {
 	var svgElement = document.getElementById(uid);
 	if(svgElement) {
 		var childs = svgElement.childNodes;
-		//console.log(childs);
 		childs[2].style.fill="#ccffff";
 	}
 }
 
 function buildPageElements(wfID) {
-	//console.log(nodeUIDs);
 
 	var svg_h="";
 	var url="";
@@ -393,9 +374,7 @@ function buildPageElements(wfID) {
 			dataObjs=data;
 		});
 		//wait for xhtmlhttprequest to finish before proceeding (fixes right-side append issues)
-		//console.log("all nodes:");
-		//console.log(dataObjs);
-		
+	
 		jqxhr_nodes.done(function() {
 			
 			///// build nodelist UI elements /////
@@ -406,8 +385,6 @@ function buildPageElements(wfID) {
 			for (var key in dataObjs) {
 			  if (dataObjs.hasOwnProperty(key)) {
 				var tmp = dataObjs[key];
-				//console.log("node:");
-				//console.log(tmp);
 
 				//new element attributes
 				var obj_uid="";
@@ -415,11 +392,7 @@ function buildPageElements(wfID) {
 				var obj_name="";
 				var obj_time="";
 				var obj_uri="";					
-				
-				// check if div id exists ...if length == 0 ...add new element
-				//if($("#div_"+tmp['uid']).length != 0) {
-					//alert("exists "+"#div_"+tmp['uid']);
-	
+
 				//check if uid exists in current UID array...if not add new element
 				if((!inArray(tmp['uid'], nodeUIDs)) && (tmp['uid']!=wfid)) {
 					obj_uid=tmp['uid'];
@@ -451,8 +424,6 @@ function buildPageElements(wfID) {
 					
 					newElement+='</ul>';		
 					newElement += '</div>';
-					//alert(newElement);
-					//alert("appending #div_"+obj_uid);
 					
 					$("#acc-container").append(newElement);
 					$("#aid_"+obj_uid).addClass("alert-success");
@@ -461,27 +432,6 @@ function buildPageElements(wfID) {
 				
 				for(var j in tmp) {
 					if(j=="data") {
-					//console.log(JSON.stringify(tmp[j]));
-							/*
-							 "1": {
-									"data": [
-										{
-											"username": "d3dauto",
-											"user_uid": "84dd4463-23e0-4f85-b1d4-06d7aa7b36a9",
-											"uid": "58570c7b-2a18-40fe-871d-c7b92d87d7ed",
-											"work_uid": "3872be68-570b-4aea-a68c-e22df22a8b8c",
-											"uri": "155824",
-											"name": "Shot",
-											"time": "2014-02-19 08:44",
-											"description": "Plasma shot number"
-										}
-									],
-									"type": "dataobject",
-									"uid": "58570c7b-2a18-40fe-871d-c7b92d87d7ed",
-									"name": "Shot"
-								},
-												
-							*/
 						var tmp2=tmp[j];
 						var tmp3=tmp2[0];
 						dataElements[tmp['name']]="";
@@ -538,6 +488,7 @@ function buildPageElements(wfID) {
 			var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
 			var width=parseInt(w.replace("pt",""));
 			var height=parseInt(h.replace("pt",""));
+			
 			//adjust for pan/zoom functionality
 			document.getElementsByTagName("svg").item(0).removeAttribute("viewBox");
 			
@@ -622,26 +573,8 @@ function buildPageElements(wfID) {
 							
 		}); //end nodes.done jqhxr function
 		
-		//svg_h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
-		//alert(svg_h);
-	});	
 
-	//var svg_h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
-	//var svg_height=svg_h.replace("pt","px");
-	
-	//alert(svg_height);
-	//console.log(svg_height);
-	/*$('#acc-container').slimScroll({
-		//height: 'auto',
-		height: '10000px',
-		position: 'right',
-		alwaysVisible: true,
-		railOpacity: 0.1,
-		distance: '0px',
-		color: '#ccc',
-		wheelStep: 5
-	});	*/
-	
+	});		
 }
 </script>
 {% endblock %}
