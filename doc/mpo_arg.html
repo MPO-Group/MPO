@@ -9,7 +9,7 @@
 <td valign=bottom>&nbsp;<br>
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>mpo_arg</strong></big></big></font></td
 ><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mpo-head/trunk/client/python/mpo_arg.py">/Users/jwright/Codes/mpo-head/trunk/client/python/mpo_arg.py</a></font></td></tr></table>
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mposvn/trunk/client/python/mpo_arg.py">/Users/jwright/Codes/mposvn/trunk/client/python/mpo_arg.py</a></font></td></tr></table>
     <p><tt>Test&nbsp;commandline&nbsp;parsing<br>
 Will&nbsp;permit&nbsp;all&nbsp;parsing&nbsp;to&nbsp;be&nbsp;moved&nbsp;to&nbsp;the&nbsp;meta&nbsp;command&nbsp;where&nbsp;it&nbsp;belongs.<br>
 Then&nbsp;methods&nbsp;can&nbsp;stay&nbsp;put&nbsp;functional&nbsp;invocation.<br>
@@ -36,11 +36,12 @@ help</tt></p>
 <a href="copy.html">copy</a><br>
 </td><td width="25%" valign=top><a href="datetime.html">datetime</a><br>
 <a href="json.html">json</a><br>
-<a href="os.html">os</a><br>
-</td><td width="25%" valign=top><a href="requests.html">requests</a><br>
+<a href="linecache.html">linecache</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="requests.html">requests</a><br>
 <a href="sys.html">sys</a><br>
-<a href="textwrap.html">textwrap</a><br>
-</td><td width="25%" valign=top><a href="unittest.html">unittest</a><br>
+</td><td width="25%" valign=top><a href="textwrap.html">textwrap</a><br>
+<a href="unittest.html">unittest</a><br>
 </td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
@@ -196,7 +197,7 @@ internal&nbsp;format&nbsp;returned.</tt></dd></dl>
 
 <dl><dt><a name="mpo_methods-get_wid"><strong>get_wid</strong></a>(self, cid)</dt><dd><tt>###&nbsp;Persistent&nbsp;store&nbsp;methods&nbsp;###</tt></dd></dl>
 
-<dl><dt><a name="mpo_methods-init"><strong>init</strong></a>(self, name, desc<font color="#909090">=''</font>, wtype<font color="#909090">='None'</font>, **kwargs)</dt><dd><tt>The&nbsp;INIT&nbsp;method&nbsp;starts&nbsp;a&nbsp;workflow.<br>
+<dl><dt><a name="mpo_methods-init"><strong>init</strong></a>(self, name<font color="#909090">=None</font>, desc<font color="#909090">=''</font>, wtype<font color="#909090">='None'</font>, **kwargs)</dt><dd><tt>The&nbsp;INIT&nbsp;method&nbsp;starts&nbsp;a&nbsp;workflow.<br>
 It&nbsp;returns&nbsp;the&nbsp;server&nbsp;response&nbsp;for&nbsp;a&nbsp;new&nbsp;workflow.<br>
 &nbsp;<br>
 args&nbsp;are:<br>
@@ -215,7 +216,9 @@ key&nbsp;--&nbsp;key&nbsp;identifying&nbsp;the&nbsp;type&nbsp;of&nbsp;metadata&n
 value&nbsp;--&nbsp;string&nbsp;containing&nbsp;the&nbsp;stored&nbsp;value</tt></dd></dl>
 
 <dl><dt><a name="mpo_methods-ontology_instance"><strong>ontology_instance</strong></a>(self, target<font color="#909090">=None</font>, path<font color="#909090">=None</font>, value<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Add&nbsp;terms&nbsp;to&nbsp;the&nbsp;ontology&nbsp;instance<br>
-args&nbsp;are&nbsp;target,path,value</tt></dd></dl>
+&nbsp;&nbsp;target&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ID&nbsp;of&nbsp;annotated&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;&nbsp;path&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Path&nbsp;of&nbsp;ontology&nbsp;term&nbsp;type<br>
+&nbsp;&nbsp;value&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value&nbsp;of&nbsp;the&nbsp;term,&nbsp;must&nbsp;conform&nbsp;to&nbsp;ontology&nbsp;contraint</tt></dd></dl>
 
 <dl><dt><a name="mpo_methods-ontology_term"><strong>ontology_term</strong></a>(self, term<font color="#909090">=None</font>, parent_ID<font color="#909090">=None</font>, specified<font color="#909090">=None</font>, vtype<font color="#909090">=None</font>, desc<font color="#909090">=None</font>, units<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Add&nbsp;terms&nbsp;to&nbsp;the&nbsp;ontology<br>
 &nbsp;&nbsp;&nbsp;args:<br>
@@ -362,7 +365,8 @@ Data descriptors inherited from <a href="exceptions.html#BaseException">exceptio
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-str2bool"><strong>str2bool</strong></a>(v)</dt></dl>
+<td width="100%"><dl><dt><a name="-PrintException"><strong>PrintException</strong></a>()</dt></dl>
+ <dl><dt><a name="-str2bool"><strong>str2bool</strong></a>(v)</dt></dl>
 </td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#55aa55">

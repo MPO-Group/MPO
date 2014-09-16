@@ -1,38 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <style type="text/css">
+img.scenter { display:block; margin-left:auto; margin-right:auto; width: 50% }
+img.sright { float: right; width: 50% }
+
+    </style>
+</head>
+
+<body>
 <h2>Steps for configuraing the apache web server for MPO</h2>
-
 <ul>
-<li><p>Step 1. Install libapache2-mod-wsgi: 
-<blockquote>
-  <p></p></p>
-</blockquote>
-
+<li>
+<p>Step 1. Install libapache2-mod-wsgi: </p>
 <blockquote>
 <pre><code>apt-get install libapache2-mod-wsgi
 </code></pre>
-</blockquote></li>
-<li><p>Step 2. Install Apache mod:
-<blockquote>
-  <p></p></p>
 </blockquote>
-
+</li>
+<li>
+<p>Step 2. Install Apache mod:</p>
 <blockquote>
 <pre><code>sudo a2enmod ssl
 </code></pre>
-</blockquote></li>
-<li><p>Step 3. Activate apache mod:
-<blockquote>
-  <p></p></p>
 </blockquote>
-
+</li>
+<li>
+<p>Step 3. Activate apache mod:</p>
 <blockquote>
 <pre><code>sudo a2enmod rewrite
 </code></pre>
-</blockquote></li>
-<li><p>Step 4. Modify the the following items in Apache config file:
-<blockquote>
-  <p></p></p>
 </blockquote>
-
+</li>
+<li>
+<p>Step 4. Modify the the following items in Apache config file:</p>
 <blockquote>
 <pre><code>#security directives:
 
@@ -46,16 +49,17 @@
 
 /etc/apache2/httpd.conf
 </code></pre>
-</blockquote></li>
-<li><p>Step 5. Check/open needed ports: 
-<blockquote>
-  <p></p></p>
 </blockquote>
-
+</li>
+<li>
+<p>Step 5. Check/open needed ports: </p>
 <blockquote>
 <pre><code>sudo lsof -i :8443
 
 (please note that the web UI is on 443; API is on 443 and 8443.)
 </code></pre>
-</blockquote></li>
-</ul>
+</blockquote>
+</li>
+</ul></body>
+
+</html>
