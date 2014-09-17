@@ -26,6 +26,7 @@ from urlparse import urlparse
 import copy
 import argparse
 import linecache
+import traceback
 
 def PrintException():
     exc_type, exc_obj, tb = sys.exc_info()
@@ -34,8 +35,8 @@ def PrintException():
     filename = f.f_code.co_filename
     linecache.checkcache(filename)
     line = linecache.getline(filename, lineno, f.f_globals)
-    print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj),
-          file=sys.stderr)
+    var = traceback.format_exc()
+    return var
 
 
 def str2bool(v):
@@ -51,7 +52,7 @@ class AliasedSubParsersAction(argparse._SubParsersAction):
     parser.register('action', 'parsers', AliasedSubParsersAction)
     then subparsers can take aliases=()
 
-    Note, this functionality is added to argparse for python 3.2 
+    Note, this functionality is added to argparse for python 3.2
     """
     class _AliasedPseudoAction(argparse.Action):
         def __init__(self, name, aliases, help):
@@ -59,7 +60,7 @@ class AliasedSubParsersAction(argparse._SubParsersAction):
             if aliases:
                 dest += ' (%s)' % ','.join(aliases)
             sup = super(AliasedSubParsersAction._AliasedPseudoAction, self)
-            sup.__init__(option_strings=[], dest=dest, help=help) 
+            sup.__init__(option_strings=[], dest=dest, help=help)
 
     def add_parser(self, name, **kwargs):
         if 'aliases' in kwargs:
@@ -181,7 +182,7 @@ class mpo_methods(object):
                 if self.debug:
                     print("Caution, response format of 'id' used when result is a list.",file=sys.stderr)
                     print("Returning list of ID's",file=sys.stderr)
-                    
+
                 for r in result.json():
                     output.append(str(r[self.ID]))
 
@@ -204,7 +205,7 @@ class mpo_methods(object):
         return output
 
 # define api methods here. All methods must be declared as method(**kwargs).
-# explict arguments are allowed but must be keyword=value, this is required 
+# explict arguments are allowed but must be keyword=value, this is required
 # for compatibility with the commandline parser invokacion
 
     def test(self,route='default',*a,**kw):
@@ -342,7 +343,7 @@ class mpo_methods(object):
         r=self.post(self.WORKFLOW_RT,data=payload,**kwargs)
         return r
 
-    
+
     def add(self, workflow_ID=None, parentobj_ID=None, **kwargs):
         """
         Add at dataobject to a workflow.
@@ -395,7 +396,7 @@ class mpo_methods(object):
 
         return ans
 
-    
+
     def step(self,workflow_ID=None,parentobj_ID=None,input_objs=None,**kwargs):
         """
         For adding actions
@@ -431,7 +432,7 @@ class mpo_methods(object):
         Add terms to the ontology
            args:
            term --
-           parent_ID -- term above this one in the hierachy, 
+           parent_ID -- term above this one in the hierachy,
                            ie the is adding the the parent terms vocabulary
            desc -- the description of the term
            vtype -- its type
@@ -495,12 +496,12 @@ class mpo_methods(object):
         if not (isinstance(key,str) or isinstance(key,unicode)):
             print('Error in mpo_meta, should be a plain string')
             return -1
-            
+
         r=self.post(self.METADATA_RT,None,obj_ID,data={'value':str(value),'key':key}, **kwargs)
 
         return r
 
-        
+
     def search(self,route,params,**kwargs):
         """Find objects by query. An supermethod of GET.
         Presently, identical to 'get' but can be generalized.
@@ -815,7 +816,7 @@ class mpo_cli(object):
         ontologyTerm_parser.add_argument('--vtype','-t', action='store', help='The value type')
         ontologyTerm_parser.add_argument('--units','-u', action='store', help='The units, if any')
         sgroup = ontologyTerm_parser.add_mutually_exclusive_group(required=False)
-        sgroup.add_argument('--specified','-s',action='store_true', dest='specified', 
+        sgroup.add_argument('--specified','-s',action='store_true', dest='specified',
                                          help='Boolean',default=None) #default is otherwise false if not set
         sgroup.add_argument('--not-specified','-n',action='store_false', dest='specified',
                                          help='Boolean',default=None)
@@ -833,7 +834,7 @@ class mpo_cli(object):
 
         #archive, note all arguments must be processed by the protocol
         archive_parser=subparsers.add_parser('archive',help='Archive a data object.')
-        archive_parser.add_argument('--protocol', '-p', action='store',metavar='protocol', 
+        archive_parser.add_argument('--protocol', '-p', action='store',metavar='protocol',
                                    nargs=argparse.REMAINDER)
         archive_parser.set_defaults(func=self.mpo.archive)
 
@@ -941,13 +942,10 @@ class mpo_cli(object):
         try:
             r=args.func(**kwargs)
         except requests.exceptions.HTTPError as e:
-            print("URL not found: %s"%args, file=sys.stderr)
-            return -1
+            return "Route not found: %s"%args.route
         except:
-            print('Unexpected error',file=sys.stderr)
-            PrintException()
-            return -2
-            
+            return PrintException()
+
         if kwargs.has_key('format'):
             r=self.mpo.format(r,filter=kwargs['format'])
 
