@@ -134,9 +134,10 @@ class mpo_methods(object):
                  user='noone',password='pass',cert='cert',
                  archive_host='psfcstor1.psfc.mit.edu',
                  archive_user='psfcmpo', archive_key=None,
-                 archive_prefix=None, debug=False,filter=False):
+                 archive_prefix=None, debug=False,filter=False,dryrun=False):
 
         self.debug=debug
+        self.dryrun=dryrun
         self.filter=filter
         self.user=user
         self.password=password
@@ -242,9 +243,9 @@ class mpo_methods(object):
             #throw error
             datadict={}
 
-        if self.debug or verbose:
-            print('MPO.GET',url,datadict, self.GETheaders,self.requestargs,file=sys.stderr)
-
+        if self.debug or verbose or self.dryrun:
+            print('MPO.GET from {u} with headers of {h}, request options, {ra}, and arguments of {a}'.format(
+                  u=url,h=self.GETheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
 
         r = requests.get(url,params=datadict,
                              headers=self.GETheaders,**self.requestargs)
@@ -298,7 +299,15 @@ class mpo_methods(object):
             datadict[self.WORKID]=workflow_ID
 
         if self.debug:
-            print('MPO.POST',url,workflow_ID,obj_ID,json.dumps(datadict),file=sys .stderr)
+            print('MPO.POST to {u} with workflow:{wid}, parent:{pid} and payload of {p}'.format(
+                  u=url,wid=workflow_ID,pid=obj_ID,p=json.dumps(datadict) ),file=sys.stderr)
+
+        if self.dryrun:
+            if not self.debug:
+                print('DRYRUN in MPO.POST', file=sys.stderr)
+                print('MPO.POST to {u} with workflow:{wid}, parent:{pid} and payload of {p}'.format(
+                  u=url,wid=workflow_ID,pid=obj_ID,p=json.dumps(datadict) ),file=sys.stderr)
+            return
 
         # note we convert python dict to json format and tell the server and requests.py
         #    in the header it is JSON
@@ -516,135 +525,29 @@ class mpo_methods(object):
         r=self.get(route,params) # ,params=ast.literal_eval(params))
         return r
 
+
+    def collection(self, name="New_Collection", desc="", collection=None, elements=[], **kwargs):
+        """
+        Create a new collection of objects from a list of UUIDS.
+
+        args are:
+        name -- name
+        desc -- description
+        elements -- list of UUID strings to initialize collection with (may be empty)
+        collection -- UUID of existing collection. If present, name and desc are ignored.
+        """
+        
+        #in the future, MPO may support updates of values such as name and desc. At that point,
+        #specifying a UUID will enable updates of those values. May want to be able to remove element
+        #from a collection too.
+        
+        #r=self.post(self.COLLECTION_RT, data=payload, **kwargs)
+        r=0
+        
+        return r
+
+    
     ### Persistent store methods ###
-    def get_wid(self, cid):
-        self.filter='id'
-        res = self.get("%s?alias=%s"%(self.WORKFLOW_RT, cid[0]))
-        return res[0]
-
-    def get_cid(self, wid):
-        self.filter='json'
-        res = self.get("%s/%s/alias"%(self.WORKFLOW_RT, wid[0],))
-        ans = res[u'alias']
-
-        if self.debug>0:
-            print("get_cid returning %s"%ans,file=sys.stderr)
-        return ans
-
-#    def shell(self,cmd):
-#        import subprocess
-#        import sys
-#        retcode = subprocess.call(cmd,shell=True)
-#        if retcode != 0:
-#            raise shell_exception(retcode, "Error Executing command %s - returned %d"%(cmd,retcode,))
-#
-#    def archive_file(self, cid, prefix, name):
-#        import os
-#        if self.debug:
-#            print("archive_file", cid, prefix, name, file=sys.stderr)
-#        destspec=None
-#        if name:
-#            if os.path.isfile(name):
-#                if os.access(name, os.R_OK):
-#                    destspec=name
-#            elif os.path.isdir(name):
-#                if os.access(name, os.R_OK):
-#                    if os.access(name, os.X_OK):
-#                        destspec=name
-#        if not destspec:
-#            raise Exception("Source not specified or not readable - can not archive")
-#        ans=""
-#        if self.archive_prefix:
-#            ans = "%s/"%(self.archive_prefix,)
-#        if prefix:
-#            ans = "%s/%s/"%(ans, prefix,)
-#        ans = "%s%s"%(ans,cid,)
-#        cmd=" ssh  -i %s %s@%s mkdir -p %s"%(self.archive_key,self.archive_user,self.archive_host,ans,)
-#        self.shell(cmd)
-#        destspec="%s/%s"%(ans,destspec,)
-#        cmd="rsync -av -e \"ssh -i %s\" %s %s@%s:%s"%(self.archive_key,
-#                                                      name,
-#                                                      self.archive_user,
-#                                                      self.archive_host,
-#                                                      destspec,)
-#        if self.debug:
-#            print("archive_file about to '%s'"%(cmd,), file=sys.stderr)
-#        self.shell(cmd)
-#        ans = "rsync://%s/%s"%(self.archive_host,destspec)
-#        return ans
-#
-#    def archive(self, prefix=None, workflow_id=None, composite_id=None, source=None, *arg,  **kw):
-#        if self.debug:
-#            print('archive', workflow_id, composite_id, source, file=sys.stderr)
-#        if composite_id != None :
-#            wid=self.get_wid(composite_id)
-#            cid=composite_id[0]
-#        elif workflow_id != None :
-#            cid = self.get_cid(workflow_id)
-#        else:
-#            raise Execption("one of workflow_id or composite_id must be specified")
-#        url = self.archive_file(cid, prefix, source[0])
-#        return url
-#
-#    def ls_archive(self, cid, prefix, files):
-#        path = ""
-#        if self.archive_prefix:
-#            path=self.archive_prefix
-#        if prefix:
-#            path="%s%s" %(path, prefix)
-#        path="%s%s"%(path,cid,)
-#        paths = ""
-#        for f in files:
-#            paths+="%s/%s "%(path, f)
-#        cmd = "ssh -i %s %s@%s ls -Rl %s"%(self.archive_key,self.archive_user,self.archive_host, paths,)
-#        if self.debug:
-#            print ("about to execute ", cmd, file=sys.stderr)
-#        try:
-#            ans = self.shell(cmd)
-#        except shell_exception,e:
-#            ans=None
-#            if e.return_status !=2:
-#                raise
-#        return ans
-#
-#    def ls(self, prefix=None, workflow_id=None, composite_id=None, files=None, *arg,  **kw):
-#        if self.debug:
-#            print('ls', workflow_id, composite_id, files, file=sys.stderr)
-#        if composite_id != None :
-#            wid=self.get_wid(composite_id)
-#            cid=composite_id[0]
-#        elif workflow_id != None :
-#            cid = self.get_cid(workflow_id)
-#        else:
-#            raise Execption("one of workflow_id or composite_id must be specified")
-#        answer = self.ls_archive(cid, prefix, files)
-#        return answer
-#
-#    def restore_archive(self, cid, prefix, filename):
-#        path = ""
-#        if self.archive_prefix:
-#            path=self.archive_prefix
-#        if prefix:
-#            path="%s%s" %(path, prefix)
-#        path="%s%s/%s"%(path,cid,filename,)
-#        cmd = "rsync -av  -e \"ssh  -i %s\" %s@%s:%s ."%(self.archive_key, self.archive_user, self.archive_host, path,)
-#        if self.debug:
-#            print ("about to execute ", cmd, file=sys.stderr)
-#        ans = self.shell(cmd)
-#        return ans
-#
-#    def restore(self, prefix=None, workflow_id=None, composite_id=None, filename=None, *arg,  **kw):
-#        if self.debug:
-#            print('restore', workflow_id, composite_id, filename, file=sys.stderr)
-#        if composite_id != None :
-#            wid=self.get_wid(composite_id)
-#            cid=composite_id[0]
-#        elif workflow_id != None :
-#            cid = self.get_cid(workflow_id)
-#        else:
-#            raise Execption("one of workflow_id or composite_id must be specified")
-#        answer = self.restore_archive(cid, prefix, filename[0])
-#        return answer
 
     def archive(self, protocol=None, *arg, **kw):
         import importlib
@@ -693,14 +596,6 @@ class mpo_methods(object):
         print("ls args = %s"%protocol[1])
         return archiver.ls(protocol[1])
 
-#    def create(self, protocol=None, *arg, **kw):
-#        import importlib
-#        modname= "mpo_do_%s"%protocol[0]
-#        mod = importlib.import_module(modname)
-#        creator_class=getattr(mod, modname)
-#        creator=creator_class(self)
-#        args = creator.cli(protocol[1:])
-#        return creator.create(**args)
 
 class mpo_cli(object):
     """
@@ -715,9 +610,10 @@ class mpo_cli(object):
                  user='noone',password='pass',mpo_cert='',
                  archive_host='psfcstor1.psfc.mit.edu',
                  archive_user='psfcmpo', archive_key=None,
-                 archive_prefix=None, debug=False):
+                 archive_prefix=None, debug=False, dryrun=False):
 
         self.debug=debug
+        self.dryrun=dryrun
         self.api_url=api_url
         self.user=user
         self.password=password
@@ -730,7 +626,8 @@ class mpo_cli(object):
 
         #initialize foreign methods here
         #print('init',mpo_cert,archive_key,file=sys.stderr)
-        self.mpo=mpo_methods(api_url,version,debug=self.debug,cert=mpo_cert,archive_key=archive_key)
+        self.mpo=mpo_methods(api_url,version,debug=self.debug,dryrun=self.dryrun,
+                             cert=mpo_cert,archive_key=archive_key)
 
     def type_uuid(self,uuid):
         if not isinstance(uuid,str):
@@ -744,7 +641,6 @@ class mpo_cli(object):
         parser = argparse.ArgumentParser(description='MPO Command line API',
                                          epilog="""Metadata Provenance Ontology project""")
 
-    #note that arguments will be available in functions as arg.var
 
         #global mpo options
         parser.add_argument('--user','-u',action='store',help='''Specify user.''',default=self.user)
@@ -753,6 +649,9 @@ class mpo_cli(object):
         parser.add_argument('--format','-f',action='store',help='Set the format of the response.',
                             choices=['id','raw','text','json','pretty'], default='id') #case insensitive?
         parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
+                            default=False)
+        parser.add_argument('--dryrun','-d',action='store_true',
+                            help='Show the resulting POST without actually issuing the request',
                             default=False)
         parser.register('action', 'parsers', AliasedSubParsersAction)
 
@@ -838,6 +737,18 @@ class mpo_cli(object):
                                    nargs=argparse.REMAINDER)
         archive_parser.set_defaults(func=self.mpo.archive)
 
+
+        #collect
+        collect_parser=subparsers.add_parser('collect',help='Create a new collection')
+        collect_parser.add_argument('-n','--name',action='store',help='Name of the collection')
+        collect_parser.add_argument('-d','--desc',action='store',help='Describe the collection')
+        collect_parser.add_argument('-c','--collection',action='store',
+                                    help='specify the collection for additional elements and updates')
+        collect_parser.add_argument('-e','--elements',action='store',nargs='*',
+                                help='Add a list of elements to the collection')
+        collect_parser.set_defaults(func=self.mpo.collection)
+
+
         #ls
         ls_parser=subparsers.add_parser('ls',help='list the Archive of a data object.')
         grp = ls_parser.add_mutually_exclusive_group(required=True)
@@ -881,50 +792,6 @@ class mpo_cli(object):
         search_parser.add_argument('-p','--params',action='store',help='Query arguments as {key:value,key2:value2}')
         search_parser.set_defaults(func=self.mpo.search)
 
-        #archive
-#        archive_parser=subparsers.add_parser('archive',help='Archive a file or directory')
-#        archive_parser.add_argument('source', nargs=1,
-#                                    help='File or directory to archive')
-#        group = archive_parser.add_mutually_exclusive_group(required=True)
-#        group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store',
-#                           help='Workflow ID of the workflow this data is part of')
-#        group.add_argument('--composite_id','--cid', '-c',nargs=1, action='store',
-#                           help='Composite ID of the workflow this data is part of')
-#        archive_parser.add_argument('--prefix','--pre', '-p', required=False,
-#                                    action='store',
-#                                    help='Optional string to prefix archived files with')
-#        archive_parser.set_defaults(func=self.mpo.archive)
-#
-        #restore
-#        restore_parser=subparsers.add_parser('restore',help='Restore a file or directory')
-#        group = restore_parser.add_mutually_exclusive_group(required=True)
-#        group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store',
-#                           help='Workflow ID of the workflow this data is part of')
-#        group.add_argument('--composite_id','--cid', '-c', nargs=1, action='store',
-#                           help='Composite ID of the workflow this data is part of')
-#        restore_parser.add_argument('filename', nargs=1,
-#                                    help='Optional name of file or directory to restore')
-#        restore_parser.set_defaults(func=self.mpo.restore)
-#
-        #ls
-#        ls_parser=subparsers.add_parser('ls',help='list file(s) or directories')
-#        group = ls_parser.add_mutually_exclusive_group(required=True)
-#        group.add_argument('--workflow_id','--wid', '-w', nargs=1, action='store',
-#                           help='Workflow ID of the workflow this data is part of')
-#        group.add_argument('--composite_id','--cid', '-c', nargs=1, action='store',
-#                           help='Composite ID of the workflow this data is part of')
-#        ls_parser.add_argument('files', nargs='*',
-#                                    help='Optional name of file(s) or directories to list')
-#        ls_parser.set_defaults(func=self.mpo.ls)
-#
-        #print parser.parse_args(['-a', '-bval', '-c', '3'])
-        # here we handle global arguments
-        # now execute method
-        # There are basically two choices for these methods.
-        # 1) arguments passed as a named tuple and references in the method as args.var
-        # 2) arguments passed as a dictionary of keywords and accessed
-        # in the method as kwargs[value] OR have method(key1=default)
-        # in the function definition, we do the later in mpo methods
 
         args=parser.parse_args()
         kwargs=copy.deepcopy(args.__dict__)
@@ -933,6 +800,11 @@ class mpo_cli(object):
         if kwargs.get('verbose'):
             self.debug=True
             self.mpo.debug=True
+
+        if kwargs.get('dryrun'):
+            self.dryrun=kwargs.get('dryrun')
+            self.mpo.dryrun=kwargs.get('dryrun')
+            kwargs['format']='raw'
 
         # strip out 'func' method
         del(kwargs['func'])
@@ -967,7 +839,7 @@ if __name__ == '__main__':
     cli_app=mpo_cli(version=mpo_version, api_url=mpo_api_url,
                     archive_host=archive_host, archive_user=archive_user,
                     archive_key=archive_key, archive_prefix=archive_prefix,
-                    mpo_cert=mpo_cert,debug=False)
+                    mpo_cert=mpo_cert)
     result=cli_app.cli()
 #    print(json.dumps(result.json(),separators=(',', ':'),indent=4))
     print(result)
