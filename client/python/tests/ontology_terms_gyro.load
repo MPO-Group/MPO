@@ -21,7 +21,7 @@ fi
 
 if ! [ -n "${MPO:+x}" ]
 then
-  export MPO="$MPO_HOME/client/python/mpo_arg.py --user=$USER"
+  export MPO="$MPO_HOME/client/python/mpo_arg.py"
 fi
 echo Loading ontology for GYRO code using $MPO
 #use API methods to create a workflow

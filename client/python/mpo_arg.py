@@ -22,7 +22,10 @@ import ast, textwrap
 import unittest
 import sys,os,datetime
 import json
-from urlparse import urlparse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 import copy
 import argparse
 import linecache
@@ -190,7 +193,7 @@ class mpo_methods(object):
                 if len(output)==1: #if it is a one element list, just return contents.
                     output=output[0]
             else:
-                if result.json().has_key(self.ID):
+                if self.ID in result.json():
                     output=result.json()[self.ID]
         elif filter=='json':
             output=result.json()
@@ -315,7 +318,7 @@ class mpo_methods(object):
         try:
             r = requests.post(url, json.dumps(datadict),
                               headers=self.POSTheaders, **self.requestargs)
-        except requests.exceptions.ConnectionError,err:
+        except requests.exceptions.ConnectionError as err:
             print("ERROR: Could not connect to server, "+url,file=sys.stderr)
             sys.stderr.write('MPO ERROR: %s\n' % str(err))
             print(" ",file=sys.stderr)
@@ -536,17 +539,17 @@ class mpo_methods(object):
         elements -- list of UUID strings to initialize collection with (may be empty)
         collection -- UUID of existing collection. If present, name and desc are ignored.
         """
-        
+
         #in the future, MPO may support updates of values such as name and desc. At that point,
         #specifying a UUID will enable updates of those values. May want to be able to remove element
         #from a collection too.
-        
+
         #r=self.post(self.COLLECTION_RT, data=payload, **kwargs)
         r=0
-        
+
         return r
 
-    
+
     ### Persistent store methods ###
 
     def archive(self, protocol=None, *arg, **kw):
@@ -818,7 +821,7 @@ class mpo_cli(object):
         except:
             return PrintException()
 
-        if kwargs.has_key('format'):
+        if 'format' in kwargs:
             r=self.mpo.format(r,filter=kwargs['format'])
 
         return r
