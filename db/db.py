@@ -30,6 +30,8 @@ except Exception, e:
 query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
                          'composite_seq':'comp_seq', 'time':'creation_time',
                          },
+             'collection':{'name':'name', 'description':'description', 'uid':'c_guid',
+                           'user_uid':'u_guid', 'time':'creation_time'},
              'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time',
                           'type':'comment_type', 'parent_uid':'parent_GUID',
                           'ptype':'parent_type','user_uid':'u_guid'},
@@ -496,7 +498,7 @@ def getWorkflow(queryargs={},dn=None):
         r.pop('lastname')
         r.pop('userid')
         #JCW 9 SEP 2014, also add workflow type
-        
+
         r['type'] = r['w_type']
         r.pop('w_type')
 

@@ -197,9 +197,9 @@ def collection(id=None):
         publishEvent('mpo_collection',onlyone(morer))
     elif request.method == 'GET':
         if id:
-            r = rdb.echo('collection', {'uid':id})
+            r = rdb.getRecord('collection',{'uid':id})
         else:
-            r = rdb.echo('collection',request.args)
+            r = rdb.getRecord('collection',request.args)
     return r
 
 
