@@ -127,6 +127,8 @@ class mpo_methods(object):
     COMMENT_RT  = 'comment'
     METADATA_RT = 'metadata'
     CONNECTION_RT='connection'
+    COLLECTION_RT='collection'
+    COLLECTION_ELEMENT_RT='collection/{cid}/element'
     DATAOBJECT_RT='dataobject'
     ACTIVITY_RT=  'activity'
     ONTOLOGY_TERM_RT = 'ontology/term'
@@ -544,8 +546,14 @@ class mpo_methods(object):
         #specifying a UUID will enable updates of those values. May want to be able to remove element
         #from a collection too.
 
-        #r=self.post(self.COLLECTION_RT, data=payload, **kwargs)
-        r=0
+        #still need some input validation
+        if collection: #add to existing collection
+            payload={"name":name,"description":desc,"elements":elements,}
+            r=self.post(self.COLLECTION_ELEMENT_RT.format(cid=collection), None,
+                        collection, data=payload, **kwargs)
+        else:  #make new collection
+            payload={"name":name,"description":desc,"elements":elements}
+            r=self.post(self.COLLECTION_RT, None, None, data=payload, **kwargs)
 
         return r
 
