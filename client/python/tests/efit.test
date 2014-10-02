@@ -24,7 +24,7 @@ fi
 
 if ! [ -n "${MPO_AUTH:+x}" ]
 then
-  export MPO_AUTH=$MPO_HOME/MPODemoUser.pem
+  export MPO_AUTH=$MPO_HOME/MPO\ Demo\ User.pem
 fi
 
 if [ $# -lt 1 ]
@@ -45,10 +45,10 @@ shot=$1
 #use API methods to create a workflow
 wid=`$MPO init --name=EFIT --desc="EFIT$efitnum for $shot" --type=EFIT`
 oid1=`$MPO add  $wid $wid --name=Shot --desc="Plasma shot number" --uri=$shot`
-oid2=`$MPO add  $wid $wid --name="Snap file" --desc="EFIT input file" --uri="\\efit$efitnum:namelist"`
-oid3=`$MPO add  $wid $wid --name="Green's table" --desc="Green's table files" --uri="/link/efit/ec6565.ddd"`
-oid4=`$MPO add  $wid $wid --name="Magnetic probes list" --desc="Magnetic probes list and geometric configuration" --uri="/link/efit/dprobe.dat"`
-oid5=`$MPO add  $wid $wid --name="Setup and configuration files" --desc="Setup and configuration files" --uri="???"`
+oid2=`$MPO add  $wid $wid --name="Snap file" --desc="EFIT input file" --uri="$shot||\\efit$efitnum:namelist"`
+oid3=`$MPO add  $wid $wid --name="Green's table" --desc="Green's table files" --uri="/link/efit/2006/156000"`
+oid4=`$MPO add  $wid $wid --name="Magnetic probes list" --desc="Magnetic probes list and geometric configuration" --uri="$shot||Probes and geom config"`
+oid5=`$MPO add  $wid $wid --name="Setup and configuration files" --desc="Setup and configuration files" --uri="$shot||setup and config files"`
 ignore=`$MPO meta $oid5 'Experimental_data_compensation_Ccoil' '/link/efit/ccoil.ddd'`
 ignore=`$MPO meta $oid5 'Experimental_data_compensation_N1coil' '/link/efit/n1coil.ddd'`
 ignore=`$MPO meta $oid5 'Fitting weight data' '/link/efit/fitweight.dat'`
@@ -56,7 +56,7 @@ ignore=`$MPO comment $oid5 "Fitting weights updated 2013-06-01"`
 
 aid1=`$MPO step $wid $oid1 --input=$oid2 --input=$oid3 --input=$oid4 --input=$oid5 --name="Read Input Files" --desc="Read shot number, snap file etc..."`
 
-oid7=`$MPO add  $wid $wid --name="PTDATA pointnames" --desc="Point Data" --uri="???"`
+oid7=`$MPO add  $wid $wid --name="PTDATA pointnames" --desc="Point Data" --uri="$shot||PTDATA"`
 
 aid2=`$MPO step $wid $oid7 --name="Read PTDATA and calibrate" --desc="Read PTDATA pointnames and calibrate" --uri=EFIT`
 
@@ -81,8 +81,8 @@ ignore=`$MPO meta $aid7 'compilation_date' '2013-06-05'`
 aid8=`$MPO step $wid $aid7 --name="Run EFIT" --desc="Fit equilibrium and compute plasma parameters" --uri=EFIT`
 aid9=`$MPO step $wid $aid8  --name="Write EFIT Outputs" --desc="Write the EFIT output files" --uri=EFIT`
 
-oid8=`$MPO add  $wid $aid9 --name="A File" --desc="A EQDSK File" --uri="\\efit$efitnum::results:aeqdsk"`
-oid9=`$MPO add  $wid $aid9 --name="G File" --desc="G EQDSK File" --uri="\\efit$efitnum::results:geqdsk"`
-oid10=`$MPO add  $wid $aid9 --name="M File" --desc="M File" --uri="\\efit$efitnum::measurements"`
+oid8=`$MPO add  $wid $aid9 --name="A File" --desc="A EQDSK File" --uri="$shot||\\efit$efitnum::results:aeqdsk"`
+oid9=`$MPO add  $wid $aid9 --name="G File" --desc="G EQDSK File" --uri="$shot||\\efit$efitnum::results:geqdsk"`
+oid10=`$MPO add  $wid $aid9 --name="M File" --desc="M File" --uri="$shot||\\efit$efitnum::measurements"`
 
 aid10=`$MPO step $wid $oid8 --input $oid9 --input $oid10 --name="Archive data" --desc="Load data to MDSplus" --uri=EFIT`
