@@ -858,8 +858,8 @@ def addOntologyInstance(json_request,dn):
     oi_guid = str(uuid.uuid4())
     # get the ontology term
     term = json.loads(getRecord('ontology_terms', {'path':processArgument(objs['path'])}, dn ))[0]
-    if term.specified:
-        vocab = json.loads(getRecord('ontology_terms', {'parent_uid':term.uid}, dn ))
+    if term['specified']:
+        vocab = json.loads(getRecord('ontology_terms', {'parent_uid':term['uid']}, dn ))
         #added term has to exist in the controlled vocabulary.
         valid= tuple(x['name'] for x in vocab)
         if objs['value'] not in valid:
