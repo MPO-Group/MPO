@@ -857,7 +857,7 @@ def addOntologyInstance(json_request,dn):
 
     oi_guid = str(uuid.uuid4())
     # get the ontology term
-    term = json.loads(getRecord('ontology_terms', {'path':processArguments(objs['path'])}, dn ))[0]
+    term = json.loads(getRecord('ontology_terms', {'path':processArgument(objs['path'])}, dn ))[0]
     if term.specified:
         vocab = json.loads(getRecord('ontology_terms', {'parent_uid':term.uid}, dn ))
         #added term has to exist in the controlled vocabulary.
