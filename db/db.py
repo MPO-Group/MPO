@@ -153,14 +153,7 @@ def getRecord(table,queryargs={}, dn=None):
     ##ONTOLOGY/TERMS handling
     ontology_terms = []
     if table == 'ontology_terms' and queryargs.has_key('path'):
-        ontology_terms=processArgument(queryargs['path']).split("/")
-        if '' in ontology_terms: ontology_terms.remove('')
-        s+=" and ("
-        for i in ontology_terms:
-            s+=" name = '%s' or" % (i,)
-        #remove the last or
-        s=s[:-3]
-        s+=")"
+        s+= " and ot_guid=getTermUidByPath('"+processArgument(queryargs['path'])+"')"
     if (s): q+=s
 
     if dbdebug:
@@ -440,7 +433,7 @@ def getWorkflow(queryargs={},dn=None):
     # q+=" WHERE a.u_guid=b.uuid"
 
     #join with ontology_instance table to get workflow type
-    q += ", ontology_instances c  WHERE a.u_guid=b.uuid and a.w_guid=c.target_guid "
+    q += ", ontology_instances c  WHERE a.u_guid=b.uuid and a.w_guid=c.target_guid and c.term_guid=getTermUidByPath('/Workflow/Type')"
     # add extra query filter on workflow type (which is stored in a separate table)
     if queryargs.has_key('type'):
         #q+= " and a.w_guid=c.target_guid and c.value='"+processArgument(queryargs['type'])+"'"
@@ -511,16 +504,6 @@ def getWorkflow(queryargs={},dn=None):
     # Close communication with the database
     cursor.close()
     conn.close()
-
-    #JCW keep only records with workflow types, this is a hack
-    #since all ontology instance are in one table, we get a workflow
-    #entry from the cross product for each ontology instance attached to a workflow
-    #including status
-    ro=getRecord('ontology_terms', {'path':'Workflow/Type'}, dn )
-    wtypes_uid=json.loads(ro)['uid']
-    wtypes_vocab=json.loads( getRecord('ontology_terms', {'parent_uid':wtypes_uid}, dn ) )
-    wtypes=[v['name'] for v in wtypes_vocab]
-    jr = [r for r in jr if r['type'] in wtypes]
 
     return json.dumps(jr,cls=MPOSetEncoder)
 
