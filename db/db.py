@@ -423,7 +423,7 @@ def getWorkflow(queryargs={},dn=None):
 
     #build our Query, base query is a join between the workflow and user tables to get the username
     q = textwrap.dedent("""\
-                SELECT w_guid as uid, a.name, a.description, a.creation_time as time,
+                SELECT a.w_guid as uid, a.name, a.description, a.creation_time as time,
                 a.comp_seq as composite_seq, b.firstname, b.lastname, b.username, b.uuid as userid,
                 c.value as w_type FROM workflow a, mpousers b""")
 
@@ -867,13 +867,13 @@ def addOntologyInstance(json_request,dn):
 
     # make sure the instance doesn't already exist.
     cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
-                   "target_guid=%s",(term[0].uid,objs['parent_uid']))
+                   "target_guid=%s",(term['uid'],objs['parent_uid']))
     if cursor.fetchone():
         return json.dumps({},cls=MPOSetEncoder)
 
     q=("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
        "values(%s,%s,%s,%s,%s,%s)")
-    v=(oi_guid,objs['parent_uid'],term[0].uid,objs['value'],datetime.datetime.now(),user_id)
+    v=(oi_guid,objs['parent_uid'],term['uid'],objs['value'],datetime.datetime.now(),user_id)
     cursor.execute(q,v)
     # Make the changes to the database persistent
     conn.commit()
