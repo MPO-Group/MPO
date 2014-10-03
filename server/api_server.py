@@ -240,7 +240,9 @@ def workflow(id=None):
         #check for valid workflow type
         wtype = json.loads(request.data).get('type')
         ont_entry = json.loads(rdb.getRecord('ontology_terms', {'path':'/Workflow/Type'}, dn ))[0]
-        if (isinstance(ont_entry, dict) and len(ont_entry)>0): #JCW really should check status field
+        vocab=json.loads( rdb.getRecord('ontology_terms', {'parent_uid':ont_entry['uid']}, dn ) )
+        valid= tuple(x['name'] for x in vocab)
+        if (wtype in valid):
             ##Add logic to check for fields or exceptions from query
             type_uid = ont_entry.get('uid')
             p=json.loads(request.data)
@@ -248,14 +250,10 @@ def workflow(id=None):
             r = rdb.addWorkflow(payload,dn)
             #should return ENTIRE record created. use rdb.getworkflow internally
         else:
-            ro=json.loads(rdb.getRecord('ontology_terms', {'path':'/Workflow/Type'}, dn ))
-            wtypes_uid=ro[0]['uid']
-            wtypes_vocab=json.loads( rdb.getRecord('ontology_terms', {'parent_uid':wtypes_uid}, dn ) )
-            wtypes=[v['name'] for v in wtypes_vocab]
             r = make_response("",404)
             errmsg = 'Invalid workflow type specified'
             r.headers['X-Error'] = errmsg
-            r.data = json.dumps( {"error":errmsg, "hint":wtypes} )
+            r.data = json.dumps( {"error":errmsg, "hint":valid} )
 
     elif request.method == 'GET':
         if id:
