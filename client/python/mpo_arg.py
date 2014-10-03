@@ -203,6 +203,8 @@ class mpo_methods(object):
             output=json.dumps(result.json(),separators=(',', ':'),indent=4)
         elif filter=='raw':
             output=result
+            print('raw type',str(type(output)),file=sys.stderr)
+            print('raw dir',dir(output),file=sys.stderr)
         elif filter=='text':
             output=result.text
         else:
@@ -326,11 +328,15 @@ class mpo_methods(object):
             print(" ",file=sys.stderr)
             return 1
 
+        if self.debug:
+            ('MPO.POST return type', str(type(r)), r.status_code)
+
         if r.status_code!=200:
-            return r.status_code, r.text
+            return r  # do something else here, r.status_code, r.text
         else:
             if self.filter:
                 r=self.format(r,self.filter)
+
             return r
 
 

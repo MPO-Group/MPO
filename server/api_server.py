@@ -129,6 +129,56 @@ def onlyone(recordstr): #error codes are made up for now
 
 
 ###############ROUTE handling###############################
+@app.errorhandler(404)
+def not_found(error=None):
+    message = {
+            'status': 404,
+            'message': 'Not Found: ' + request.url,
+            'uid' : -9,
+    }
+    resp = json.dumps(message)
+    resp.status_code = 404
+
+    return resp
+
+@app.errorhandler(400)
+def syntax_error(error=None):
+    message = {
+            'status': 400,
+            'message': 'Query error: ' + request.url,
+            'request_body': request.data,
+            'uid' : -1,
+    }
+    resp = json.dumps(message)
+    resp.status_code = 400
+
+    return resp
+
+
+class InvalidAPIUsage(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
+
+@app.errorhandler(InvalidAPIUsage)
+def handle_invalid_usage(error):
+    resp = jsonify(error.to_dict())
+    resp.status_code = error.status_code
+    return resp
+#make_response(Response,status=error.status_code)
+
+
 @app.route("/subscribe")
 @cross_origin()
 def subscribe(): #subscribe returns the gen() function. gen() returns an iterator
@@ -250,11 +300,11 @@ def workflow(id=None):
             r = rdb.addWorkflow(payload,dn)
             #should return ENTIRE record created. use rdb.getworkflow internally
         else:
-            r = make_response("",404)
-            errmsg = 'Invalid workflow type specified'
-            r.headers['X-Error'] = errmsg
-            r.data = json.dumps( {"error":errmsg, "hint":valid} )
+            payload={"url":request.url, "body":request.data, "hint":valid, "uid":-1}
+            raise InvalidAPIUsage(message='Invalid workflow type specified',status_code=400,
+                                    payload=payload)
 
+            
     elif request.method == 'GET':
         if id:
             darg=dict(request.args.items(multi=True)+[('uid',id)])
