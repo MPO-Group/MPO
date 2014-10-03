@@ -94,6 +94,11 @@ do
 done
 
 
+echo %TESTING UNIT doing tests of specific functionality
+
+echo %TESTING UNIT Can not make workflow with invalid type
+$MPO -v init -n Test_rev  -d 'This workflow should be rejected.' -t TORICblah
+
 
 echo Commandline tests done. launch a browser at https://localhost:$web_port to check the web browser client
 echo When done, run kill your servers. Inspect api.out.txt and web_out.txt for errors.
