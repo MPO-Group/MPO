@@ -346,10 +346,6 @@ class mpo_methods(object):
 
         """
 
-        ## get the workflowtype uid
-        r=self.get(self.ONTOLOGY_TERM_RT,params={'path':'Workflow/Type/'+wtype})
-        ont_entry=json.loads(r.text)
-
         if not name:
             return {"status":"error", "uid":"-1"}
 

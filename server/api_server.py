@@ -239,7 +239,7 @@ def workflow(id=None):
     if request.method == 'POST':
         #check for valid workflow type
         wtype = json.loads(request.data).get('type')
-        ont_entry = json.loads(rdb.getRecord('ontology_terms', {'path':'Workflow/Type/'+wtype}, dn ))
+        ont_entry = json.loads(rdb.getRecord('ontology_terms', {'path':'/Workflow/Type'}, dn ))[0]
         if (isinstance(ont_entry, dict) and len(ont_entry)>0): #JCW really should check status field
             ##Add logic to check for fields or exceptions from query
             type_uid = ont_entry.get('uid')
@@ -248,8 +248,8 @@ def workflow(id=None):
             r = rdb.addWorkflow(payload,dn)
             #should return ENTIRE record created. use rdb.getworkflow internally
         else:
-            ro=rdb.getRecord('ontology_terms', {'path':'Workflow/Type'}, dn )
-            wtypes_uid=json.loads(ro)['uid']
+            ro=json.loads(rdb.getRecord('ontology_terms', {'path':'/Workflow/Type'}, dn ))
+            wtypes_uid=ro[0]['uid']
             wtypes_vocab=json.loads( rdb.getRecord('ontology_terms', {'parent_uid':wtypes_uid}, dn ) )
             wtypes=[v['name'] for v in wtypes_vocab]
             r = make_response("",404)
@@ -498,7 +498,6 @@ def user(id=None):
             r = rdb.getUser( request.args, dn )
 
     return r
-
 
 
 if __name__ == '__main__':

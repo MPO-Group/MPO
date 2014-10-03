@@ -859,26 +859,10 @@ def addOntologyInstance(json_request,dn):
     user_id = cursor.fetchone().uuid
 
     oi_guid = str(uuid.uuid4())
-    # get the ontology term uid
-    terms=objs['path'].split("/")
-    terms.remove('')
-    cursor.execute("select ot_guid,parent_guid from ontology_terms where name=%s",(terms[0],))
-    parent=[]
-    parent.insert(0,cursor.fetchall())
-    if len(parent[0]) != 1 and parent[0][0].parent_guid != None:
-        return json.dumps({},cls=MPOSetEncoder)
-
-    for i,o in list(enumerate(terms[1:])):
-        cursor.execute("select ot_guid,parent_guid,specified from ontology_terms where name=%s",(o,))
-        parent.insert(i+1,cursor.fetchall())
-        for l in parent[i+1]:
-            if l.parent_guid != parent[i][0].ot_guid:
-                parent[i+1].remove(l)
-            if len(parent[i+1]) != 1:
-                return json.dumps({},cls=MPOSetEncoder)
-
-    if parent[-1][0].specified:
-        vocab = json.loads(getRecord('ontology_terms', {'parent_uid':parent[-1][0].ot_guid}, dn ))
+    # get the ontology term
+    term = json.loads(getRecord('ontology_terms', {'path':processArguments(objs['path'])}, dn ))
+    if term[0].specified:
+        vocab = json.loads(getRecord('ontology_terms', {'parent_uid':term[0].uid}, dn ))
         #added term has to exist in the controlled vocabulary.
         valid= tuple(x['name'] for x in vocab)
         if objs['value'] not in valid:
@@ -886,13 +870,13 @@ def addOntologyInstance(json_request,dn):
 
     # make sure the instance doesn't already exist.
     cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
-                   "target_guid=%s",(parent[-1][0].ot_guid,objs['parent_uid']))
+                   "target_guid=%s",(term[0].uid,objs['parent_uid']))
     if cursor.fetchone():
         return json.dumps({},cls=MPOSetEncoder)
 
     q=("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
        "values(%s,%s,%s,%s,%s,%s)")
-    v=(oi_guid,objs['parent_uid'],parent[-1][0].ot_guid,objs['value'],datetime.datetime.now(),user_id)
+    v=(oi_guid,objs['parent_uid'],term[0].uid,objs['value'],datetime.datetime.now(),user_id)
     cursor.execute(q,v)
     # Make the changes to the database persistent
     conn.commit()
