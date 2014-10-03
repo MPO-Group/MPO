@@ -604,10 +604,7 @@ def getWorkflowType(id,queryargs={},dn=None):
     cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
     #get term_id
     term_id=json.loads(getRecord('ontology_terms',{'path':'/Workflow/Type'}))[0]
-    vocab = json.loads(getRecord('ontology_terms', {'parent_uid':term_id['uid']}, dn ))
-    uids = [x['uid'] for x in vocab]
-    uids.append(id)
-    cursor.execute("select value from ontology_instances where term_guid in ("+",".join(["%s" for x in vocab])+") and target_guid=%s", tuple(uids))
+    cursor.execute("select value from ontology_instances where term_guid=%s and target_guid=%s", (term_id['uid'],id))
     records = cursor.fetchone()
     return json.dumps(records.value,cls=MPOSetEncoder)
 

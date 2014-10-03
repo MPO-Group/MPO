@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Test commandline parsing
 Will permit all parsing to be moved to the meta command where it belongs.
