@@ -32,6 +32,8 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                          },
              'collection':{'name':'name', 'description':'description', 'uid':'c_guid',
                            'user_uid':'u_guid', 'time':'creation_time'},
+             'collection_elements':{'parent_uid':'c_guid','uid':'e_uuid',
+                                    'user_uid':'u_guid', 'time':'creation_time'},
              'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time',
                           'type':'comment_type', 'parent_uid':'parent_GUID',
                           'ptype':'parent_type','user_uid':'u_guid'},
@@ -639,7 +641,7 @@ def addRecord(table,request,dn):
         print(q,v)
 
     cursor.execute(q,v)
-    if objs.has_key('parent_uid'):  #JCW/JAS allow unattached dataobjects
+    if objs.has_key('parent_uid'):
     #connectivity table
         wc_guid = str(uuid.uuid4())
         for parent in objs['parent_uid']:
@@ -666,6 +668,38 @@ def addRecord(table,request,dn):
     # Close communication with the database
     cursor.close()
     conn.close()
+    return json.dumps(records,cls=MPOSetEncoder)
+
+
+def addCollection(request,dn):
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    c_guid = str(uuid.uuid4())
+
+    #get the user id
+
+    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    user_id = cursor.fetchone()
+
+    p = json.loads(request)
+    q = ("insert into collection (c_guid, name, description, u_guid, creation_time) " +
+         "values (%s,%s,%s,%s,%s)")
+    v= (c_guid, p['name'], p['description'], user_id.uuid, datetime.datetime.now())
+    print q, v
+    cursor.execute(q,v)
+
+    for e in  p['elements']:
+        q = ("insert into collection_elements (c_guid, e_guid, u_guid, creation_time) " +
+             "values (%s,%s,%s,%s)")
+        v= (c_guid, str(uuid.uuid4()), user_id.uuid, datetime.datetime.now())
+        cursor.execute(q,v)
+
+    # Make the changes to the database persistent
+    conn.commit()
+    records = {} #JCW we are not returning the full record here.
+    records['uid'] = c_guid
+
     return json.dumps(records,cls=MPOSetEncoder)
 
 

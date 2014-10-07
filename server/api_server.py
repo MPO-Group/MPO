@@ -240,10 +240,8 @@ def collection(id=None):
     #JCW, replace rdb.echo with rdb.add/getRecord in integrated testing or custom method if needed
     dn=get_user_dn(request)
     if request.method == 'POST':
-        r = rdb.echo('collection',request.data,dn)
-        rr = json.loads(r)
-        id = rr['uid']
-        morer = rdb.echo('collection',{'uid':id},dn)
+        r = rdb.addCollection(request.data,dn)
+        morer = rdb.getRecord('collection',{'uid':json.loads(r)['uid']},dn)
         publishEvent('mpo_collection',onlyone(morer))
     elif request.method == 'GET':
         if id:
@@ -304,7 +302,7 @@ def workflow(id=None):
             raise InvalidAPIUsage(message='Invalid workflow type specified',status_code=400,
                                     payload=payload)
 
-            
+
     elif request.method == 'GET':
         if id:
             darg=dict(request.args.items(multi=True)+[('uid',id)])

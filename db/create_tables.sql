@@ -42,7 +42,7 @@ drop table if exists collection_elements;
 create table collection_elements
 (
   c_guid uuid,
-  e_uuid uuid,
+  e_guid uuid,
   u_guid uuid,
   creation_time timestamp
 );
