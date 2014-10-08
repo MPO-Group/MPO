@@ -692,7 +692,7 @@ def addCollection(request,dn):
     for e in  p['elements']:
         q = ("insert into collection_elements (c_guid, e_guid, u_guid, creation_time) " +
              "values (%s,%s,%s,%s)")
-        v= (c_guid, str(uuid.uuid4()), user_id.uuid, datetime.datetime.now())
+        v= (c_guid, e, user_id.uuid, datetime.datetime.now())
         cursor.execute(q,v)
 
     # Make the changes to the database persistent
