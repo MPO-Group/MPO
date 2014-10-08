@@ -266,7 +266,7 @@ def addToCollection(id=None, oid=None):
         payload = json.loads(request.data)
         elems = payload['elements']
         for e in elems[:]:
-            r = rdb.getRecord('collection_elements',{'uid':e})
+            r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
             if json.loads(r)['uid']: elems.remove(e)
         payload['elements'] = elems
         r = rdb.addRecord('collection_elements',json.dumps(payload),dn)
