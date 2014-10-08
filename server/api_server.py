@@ -262,7 +262,14 @@ def addToCollection(id=None, oid=None):
     """
     dn=get_user_dn(request)
     if request.method == 'POST':
-        r = rdb.addRecord('collection_elements',request.data,dn)
+        #make sure the element hasn't been added to the collection already
+        payload = json.loads(request.data)
+        elems = payload['elements']
+        for e in elems[:]:
+            r = rdb.getRecord('collection_elements',{'uid':e})
+            if json.loads(r)['uid']: elems.remove(e)
+        payload['elements'] = elems
+        r = rdb.addRecord('collection_elements',json.dumps(payload),dn)
         morer = rdb.getRecord('collection_elements',{'uid':json.loads(r)['uid']},dn)
         publishEvent('mpo_collection_elements',onlyone(morer))
     elif request.method == 'GET':
