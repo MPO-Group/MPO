@@ -32,7 +32,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                          },
              'collection':{'name':'name', 'description':'description', 'uid':'c_guid',
                            'user_uid':'u_guid', 'time':'creation_time'},
-             'collection_elements':{'parent_uid':'c_guid','uid':'e_uuid',
+             'collection_elements':{'parent_uid':'c_guid','uid':'e_guid',
                                     'user_uid':'u_guid', 'time':'creation_time'},
              'comment' : {'content':'content', 'uid':'cm_guid', 'time':'creation_time',
                           'type':'comment_type', 'parent_uid':'parent_GUID',
