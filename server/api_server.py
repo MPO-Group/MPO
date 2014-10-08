@@ -237,7 +237,6 @@ def collection(id=None):
     /collection/<id>?detail=full[sparse] - GET collection information with full
                details [or default sparse as /collection/<id>]
     """
-    #JCW, replace rdb.echo with rdb.add/getRecord in integrated testing or custom method if needed
     dn=get_user_dn(request)
     if request.method == 'POST':
         r = rdb.addCollection(request.data,dn)
@@ -254,14 +253,26 @@ def collection(id=None):
 #these routes need a second function to be resolved
 @app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
 @app.route(routes['collection']+'/<id>'+'/element'+'/<oid>', methods=['GET'])
-def addtoCollection(id=None):
+def addToCollection(id=None, oid=None):
     """
     /collection/<id>/element       - GET a list of objects in a collection
                                   - POST to add to the collection
     /collection/<id>/element/<oid> - GET details of a single object in a collection.
                                     Should resolve oid to full record from relevant table.
     """
-    r=""
+    dn=get_user_dn(request)
+    if request.method == 'POST':
+        r = rdb.addRecord('collection_elements',request.data,dn)
+        morer = rdb.getRecord('collection_elements',{'uid':json.loads(r)['uid']},dn)
+        publishEvent('mpo_collection_elements',onlyone(morer))
+    elif request.method == 'GET':
+        if oid:
+            r = rdb.getRecord('collection_elements',{'uid':oid})
+        else:
+            r = rdb.getRecord('collection_elements',{'parent_uid':id})
+ 	if len(r) == 0 :
+            r = make_response(r, 404)
+
     return r
 
 
