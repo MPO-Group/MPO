@@ -8,11 +8,11 @@ create user mpoadmin with password 'mpo2013';
 /* create database mpodbdev OWNER mpoadmin; */
 
 
-drop table if exists mpousers cascade;
+drop table if exists mpousers;
 create table mpousers
 (
-  username text unique not null,
-  uuid uuid primary key,
+  username text,
+  uuid uuid,
   firstname text,
   lastname text,
   email text,
@@ -30,10 +30,10 @@ alter table mpousers OWNER TO mpoadmin;
 drop table if exists collection;
 create table collection
 (
-  c_guid uuid unique not null,
+  c_guid uuid,
   name text,
   description text,
-  u_guid uuid references mpousers,
+  u_guid uuid,
   creation_time timestamp
 );
 alter table collection owner to mpoadmin;
@@ -43,19 +43,19 @@ create table collection_elements
 (
   c_guid uuid,
   e_guid uuid,
-  u_guid uuid references mpousers,
+  u_guid uuid,
   creation_time timestamp
 );
 alter table collection_elements owner to mpoadmin;
 
-drop table if exists workflow cascade;
+drop table if exists workflow;
 create table workflow
 (
-  W_GUID uuid primary key,
+  W_GUID uuid,
   name text,
   WS_GUID uuid,
   description text,
-  U_GUID uuid references mpousers,
+  U_GUID uuid,
   comp_seq integer,
   creation_time timestamp,
   start_time timestamp,
@@ -68,12 +68,12 @@ alter table workflow OWNER TO mpoadmin;
 drop table if exists dataobject;
 create table dataobject
 (
-  DO_GUID uuid unique not null,
+  DO_GUID uuid,
   name text,
   DOV_GUID uuid,
-  W_GUID uuid references workflow,
+  W_GUID uuid,
   creation_time timestamp,
-  U_GUID  uuid references mpousers,
+  U_GUID  uuid,
   description text,
   URI text
 );
@@ -83,14 +83,14 @@ alter table dataobject OWNER TO mpoadmin;
 drop table if exists activity;
 create table activity
 (
-  A_GUID uuid unique not null,
+  A_GUID uuid,
   name text,
   AV_GUID uuid,
-  W_GUID uuid references workflow,
+  W_GUID uuid,
   description text,
   URI text,
   creation_time timestamp,
-  U_GUID  uuid references mpousers,
+  U_GUID  uuid,
   start_time timestamp,
   end_time timestamp,
   completion_status text,
@@ -101,11 +101,11 @@ ALTER TABLE activity OWNER to mpoadmin;
 drop table if exists comment;
 create table comment
 (
-  CM_GUID uuid primary key,
+  CM_GUID uuid,
   content text,
   URI text,
   creation_time timestamp,
-  U_GUID  uuid references mpousers,
+  U_GUID  uuid,
   comment_type text,
   parent_GUID uuid,
   parent_type text
@@ -115,8 +115,8 @@ ALTER TABLE comment OWNER to mpoadmin;
 drop table if exists workflow_connectivity;
 create table workflow_connectivity
 (
-  WC_GUID uuid primary key,
-  W_GUID uuid references workflow,
+  WC_GUID uuid,
+  W_GUID uuid,
   parent_GUID uuid,
   parent_type text,
   child_GUID uuid,
@@ -128,7 +128,7 @@ ALTER TABLE workflow_connectivity OWNER TO mpoadmin;
 drop table if exists metadata;
 create table metadata
 (
-  md_guid uuid primary key,
+  md_guid uuid,
   name text,
   value text,
   type text,
@@ -136,7 +136,7 @@ create table metadata
   parent_guid uuid,
   parent_type text,
   creation_time timestamp,
-  U_GUID  uuid references mpousers
+  U_GUID  uuid
 );
 ALTER TABLE metadata OWNER TO mpoadmin;
 
@@ -154,10 +154,10 @@ create table ontology_classes
 );
 ALTER TABLE ontology_classes OWNER TO mpoadmin;
 
-drop table if exists ontology_terms cascade;
+drop table if exists ontology_terms;
 create table ontology_terms
 (
-  ot_guid uuid primary key,
+  ot_guid uuid,
   class uuid,
   name text,
   description text,
@@ -165,7 +165,7 @@ create table ontology_terms
   value_type text,
   units text,
   specified boolean,
-  added_by uuid references mpousers,
+  added_by uuid,
   date_added timestamp,
   reviewed_by uuid,
   date_reviewed timestamp
@@ -175,12 +175,12 @@ ALTER TABLE ontology_terms OWNER TO mpoadmin;
 drop table if exists ontology_instances;
 create table ontology_instances
 (
-  oi_guid uuid unique not null,
+  oi_guid uuid,
   target_guid uuid,
-  term_guid uuid references ontology_terms,
+  term_guid uuid,
   value text,
   creation_time timestamp,
-  u_guid uuid references mpousers
+  u_guid uuid
 );
 ALTER TABLE ontology_instances OWNER TO mpoadmin;
 
