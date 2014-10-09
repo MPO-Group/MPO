@@ -6,11 +6,12 @@ Then methods can stay put functional invocation.
 argument layout for mpo:
 post
 get
-not implemented: delete
+delete
 not implemented: put
 add
 step
 init
+collect
 comment
 record/meta
 help
@@ -267,6 +268,28 @@ class mpo_methods(object):
         return r
 
 
+    def delete(self,route="",params={},verbose=False,**kwargs):
+        """
+        Delete a resource.
+        Keyword arguments:
+        params -- python dictionary or a list of tuples, not supported yet
+        route -- API route for resource        
+        """
+        url=self.api_url+route
+        if self.debug or verbose or self.dryrun:
+            print('MPO.DELETE from {u} with headers of {h}, request options, {ra}, and arguments of {a}'.format(
+                  u=url,h=self.GETheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
+
+        r = requests.delete(url,params=datadict,
+                             headers=self.DELETEheaders,**self.requestargs)
+        if self.debug or verbose:
+            print('MPO.DELETE response',r.url,r.status_code,file=sys.stderr)
+
+        r.raise_for_status()
+
+        return r
+
+    
     def post(self,route="",workflow_ID=None,obj_ID=None,data=None,**kwargs):
         """POST a messsage to an MPO route.
         Used by all methods that create objects in an MPO workflow.
@@ -533,7 +556,8 @@ class mpo_methods(object):
         return r
 
 
-    def collection(self, name="New_Collection", desc="", collection=None, elements=[], **kwargs):
+    def collection(self, name="New_Collection", desc="", collection=None, remove=False,
+                   elements=[], **kwargs):
         """
         Create a new collection of objects from a list of UUIDS.
 
@@ -542,17 +566,28 @@ class mpo_methods(object):
         desc -- description
         elements -- list of UUID strings to initialize collection with (may be empty)
         collection -- UUID of existing collection. If present, name and desc are ignored.
+        remove -- if set to True, remove rather than add the element to the collection.
         """
 
         #in the future, MPO may support updates of values such as name and desc. At that point,
         #specifying a UUID will enable updates of those values. May want to be able to remove element
         #from a collection too.
+        #remove option could apply to the entire collection in future api extensions
 
         #still need some input validation
         if collection: #add to existing collection
-            payload={"name":name,"description":desc,"elements":elements,}
-            r=self.post(self.COLLECTION_ELEMENT_RT.format(cid=collection), None,
-                        collection, data=payload, **kwargs)
+            
+            if remove:
+                for element in elements:
+                    payload={"name":name,"description":desc,"elements":elements}
+                    r=self.delete(self.COLLECTION_ELEMENT_RT.format(cid=collection)+'/'+element, None,
+                                collection, **kwargs)
+                               
+            else:
+                payload={"name":name,"description":desc,"elements":elements}
+                r=self.post(self.COLLECTION_ELEMENT_RT.format(cid=collection), None,
+                            collection, data=payload, **kwargs)
+                
         else:  #make new collection
             payload={"name":name,"description":desc,"elements":elements}
             r=self.post(self.COLLECTION_RT, None, None, data=payload, **kwargs)

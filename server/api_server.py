@@ -154,6 +154,21 @@ def syntax_error(error=None):
 
     return resp
 
+@app.errorhandler(401)
+def unathorized_error(error=None):
+    message = {
+            'status': 401,
+            'message': 'Unauthorized error: ' + request.url,
+            'request_body': request.data,
+            'uid' : -1,
+    }
+    if apidebug:
+        print('401 error',error)
+    resp = json.dumps(message)
+    resp.status_code = 401
+
+    return resp
+
 
 class InvalidAPIUsage(Exception):
     status_code = 400
@@ -256,7 +271,7 @@ def collection(id=None):
 def addToCollection(id=None, oid=None):
     """
     /collection/<id>/element       - GET a list of objects in a collection
-                                  - POST to add to the collection
+                                   - POST to add to the collection
     /collection/<id>/element/<oid> - GET details of a single object in a collection.
                                     Should resolve oid to full record from relevant table.
     """

@@ -164,6 +164,7 @@ def getRecord(table,queryargs={}, dn=None):
     # execute our Query
     cursor.execute(q)
     # retrieve the records from the database
+    # filter to match uri if given in query otherwise do a normal retrieve
     records = [x for x in cursor.fetchall() if x.uri == queryargs['uri']] if queryargs.has_key('uri') else cursor.fetchall()
     # Close communication with the database
     cursor.close()
