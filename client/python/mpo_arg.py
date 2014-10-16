@@ -22,7 +22,7 @@ import requests
 import ast, textwrap
 import unittest
 import sys,os,datetime
-import json
+import json,warnings
 try:
     from urllib.parse import urlparse
 except ImportError:
@@ -117,6 +117,7 @@ class mpo_methods(object):
     #function call
     POSTheaders = {'content-type': 'application/json'}
     GETheaders= {'ACCEPT': 'application/json'}
+    DELETEheaders= {'ACCEPT': 'application/json'}
     ID='uid'
     WORKID='work_uid'
     PARENTID='parent_uid' #field for object id to which comments and metadata are attached
@@ -273,12 +274,24 @@ class mpo_methods(object):
         Delete a resource.
         Keyword arguments:
         params -- python dictionary or a list of tuples, not supported yet
-        route -- API route for resource        
+        route -- API route for resource
         """
         url=self.api_url+route
+
+        if isinstance(params,str): #string repr of a dict
+            datadict=ast.literal_eval(params)
+        elif isinstance(params,dict):
+            datadict=params
+        elif isinstance(params,list): #list of key=value strings
+            datadict=dict(re.findall(r'(\S+)=(".*?"|\S+)', ' '.join(params) ))
+        else:
+            #throw error
+            datadict={}
+
         if self.debug or verbose or self.dryrun:
             print('MPO.DELETE from {u} with headers of {h}, request options, {ra}, and arguments of {a}'.format(
-                  u=url,h=self.GETheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
+                  u=url,h=self.DELETEheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
+            return
 
         r = requests.delete(url,params=datadict,
                              headers=self.DELETEheaders,**self.requestargs)
@@ -556,7 +569,7 @@ class mpo_methods(object):
         return r
 
 
-    def collection(self, name="New_Collection", desc="", collection=None, remove=False,
+    def collection(self, name="", desc="", collection=None, remove=False,
                    elements=[], **kwargs):
         """
         Create a new collection of objects from a list of UUIDS.
@@ -566,7 +579,8 @@ class mpo_methods(object):
         desc -- description
         elements -- list of UUID strings to initialize collection with (may be empty)
         collection -- UUID of existing collection. If present, name and desc are ignored.
-        remove -- if set to True, remove rather than add the element to the collection.
+        remove -- if set to True, remove rather than add the element to the collection. Requires
+                  collection and element list and no name or description. 
         """
 
         #in the future, MPO may support updates of values such as name and desc. At that point,
@@ -578,10 +592,15 @@ class mpo_methods(object):
         if collection: #add to existing collection
             
             if remove:
+                if desc!="":
+                    warnings.warn("InvalidArgs in collect. No description used when removing an element.")
+                if name!="":
+                    warnings.warn("InvalidArgs in collect. No name used when removing an element.")
+                assert len(elements)>0,"InvalidArgs in collect. Must specify an element to remove."
+                assert collection!=None,"InvalidArgs in collect. Must specify the collection from which to remove the element."
+                    
                 for element in elements:
-                    payload={"name":name,"description":desc,"elements":elements}
-                    r=self.delete(self.COLLECTION_ELEMENT_RT.format(cid=collection)+'/'+element, None,
-                                collection, **kwargs)
+                    r=self.delete(self.COLLECTION_ELEMENT_RT.format(cid=collection)+'/'+element)
                                
             else:
                 payload={"name":name,"description":desc,"elements":elements}
@@ -790,6 +809,8 @@ class mpo_cli(object):
         collect_parser=subparsers.add_parser('collect',help='Create a new collection')
         collect_parser.add_argument('-n','--name',action='store',help='Name of the collection')
         collect_parser.add_argument('-d','--desc',action='store',help='Describe the collection')
+        collect_parser.add_argument('-r','--remove',action='store_true',help='Remove an element from a collection.',
+                                    default=False)
         collect_parser.add_argument('-c','--collection',action='store',
                                     help='specify the collection for additional elements and updates')
         collect_parser.add_argument('-e','--elements',action='store',nargs='*',
