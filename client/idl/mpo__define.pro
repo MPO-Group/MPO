@@ -14,6 +14,9 @@
 ;start
 ;comment
 ;meta
+;archive
+;restore
+;ls
 ;
 ; CATEGORY:
 ;      database, provenance, webtools
@@ -600,7 +603,9 @@ FUNCTION mpo::error, key
   ERRORSTR = create_struct($
               'get_route','{"error":"1", "message":"Invalid Route"}',$
               'post_route','{"error":"2", "message":"Invalid Route"}',$
-              'post_payload','{"error":"3", "message":"Payload missing"}'$
+              'post_payload','{"error":"3", "message":"Payload missing"}',$
+              'unsupported_archive_protocol', $
+	      '{"error":"4", "message":"The archive protocol must be one of (mdsplus,filesys)"}'$
                           )
   tnames=tag_names(errorstr)
   tindex=where( strcmp(tnames,strupcase(key) ) eq 1)
@@ -610,6 +615,26 @@ end
 PRO mpo::cleanup
  obj_destroy,self.req
  return
+end
+
+FUNCTION mpo::archive_mdsplus, server, tree, shot, path
+  return, self->archive('mdsplus', {server:server, tree:tree, shot:shot, path:path})
+end
+
+FUNCTION mpo::archive_filesys, filespec
+  return, self->archive('filesys', {filespec:filespec})
+end
+
+FUNCTION mpo::archive, protocol, arg_struct
+  if protocol eq 'mdsplus' then begin
+    return, string(arg_struct.server, arg_struct.tree, $
+		arg_struct.shot, arg_struct.path, $ 
+		format='(%"mdsplus://%s/%s/%d&path=%s")') 
+  endif else if protocol eq 'filesys' then begin
+      return, string(arg_struct.filespec, format='(%"filesys:///%s")')
+  endif else begin
+    return, self->error('unsupported_archive_protocol')
+  endelse
 end
 
 FUNCTION mpo::init , host=host, version=version, cert=cert, debug=debug
