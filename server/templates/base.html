@@ -149,6 +149,7 @@ function qs(search_for) {
           <div class="nav-collapse collapse">
             <ul class="nav">
                 <li {% block index_active %}{% endblock %}><a href="{{ url_for("index") }}">Home</a></li>
+                <li {% block collect_active %}{% endblock %}><a href="{{ url_for("collections") }}">Collections</a></li>
                 <li {% block search_active %}{% endblock %}><a href="{{ url_for("search") }}">Search</a></li>
                 <li {% block docs_active %}{% endblock %}><a href="doc" target="_blank">Documentation</a></li>
             </ul>

@@ -72,10 +72,6 @@ def index():
         wf_fname=request.args.get('wf_fname')
         wf_username=request.args.get('wf_username')
 
-        if webdebug:
-            print('WEBDEBUG: requests in index route',API_PREFIX,wf_type)
-        #req=request.args.to_dict()
-
         if wf_page:
             current_page=int(wf_page)
         else:
@@ -132,7 +128,7 @@ def index():
         ont_tree=req.json()
         ont_result={}
         wf_type_list=[]
-
+        
         #get workflow types
         if ont_tree["root"]["children"]:
             ont_result=ont_tree["root"]["children"]
@@ -149,9 +145,11 @@ def index():
                                                     wf_type_list.append(k)
 
         #get quality ontology term uid
-        quality_info=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,), **certargs)
-        qterm=quality_info.json()
-        qterm_uid=qterm[0]['uid']
+        quality_info=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,), headers={'Real-User-DN':dn})
+        qterms=quality_info.json()
+        for i in qterms:
+            if i['name']=='quality':
+                qterm_uid=i['uid']
 
         #get comments
         index=0
@@ -167,7 +165,7 @@ def index():
 
             num_comments=0
             if comments == None: #replace null reply in requests body
-                #with empty list so below logic still works
+                #with empty list so below logic still works 
                 comments=[]
             for temp in comments: #get number of comments, truncate time string
                 num_comments+=1
@@ -193,16 +191,15 @@ def index():
             #get workflow ontology terms:values
             #https://mpo.gat.com/api/v0/ontology/instance?term_uid=29a8a81a-a7f8-45ea-ac55-c960786ed5d6&parent_uid=b26973ed-aa26-4109-9042-20a69d4409e4
             quality_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), headers={'Real-User-DN':dn})
-            if quality_req.text != "[]":
+            if quality_req.text != "[]": 
                 qual_data=quality_req.json()
                 if qual_data[0]['value']:
                     quality=qual_data[0]['value']
                     results[index]['quality']=quality
-                    pprint(quality)
             index+=1
 
-        if webdebug:
-            print("WEBDEBUG: results sent to index")
+        #if webdebug:
+            #print("WEBDEBUG: results sent to index")
             #pprint(results)
             #print("WEBDEBUG: ontology_results sent to index")
             #pprint(ont_result)
@@ -358,8 +355,8 @@ def connections(wid=""):
     wid_info=wid_req.json()
 
     #get all data of each activity and dataobject of workflow <wid>
-
-    wf_uid_compid = {}	#for linked workflow compIDs
+    
+    wf_uid_compid = {}   #for linked workflow compIDs
     num_comment=0
     for key,value in wf_objects.iteritems():
         if value['type'] == "activity":
@@ -409,7 +406,7 @@ def connections(wid=""):
             for i in cm:
                 if i['user_uid']:
                     user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
-                    user_info=user_req.json();
+                    user_info=user_req.json()
                     username=user_info[0]['username']
                     cm[k]['user']=username
                 if i['time']:
@@ -419,7 +416,7 @@ def connections(wid=""):
 
             num_comment+=k
             wf_objects[key]['comment']=cm
-
+    
     if webdebug:
         print("WEBDEBUG: workflow objects")
         pprint(wf_objects)
@@ -442,7 +439,7 @@ def workflow(wid=""):
     s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
     s.verify=False
     s.headers={'Real-User-DN':dn}
-
+    
     req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
     wf=req.json()
     result=json.dumps(wf)
@@ -493,7 +490,7 @@ def nodes(wid=""):
             for i in cm:
                 if i['user_uid']:
                     user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,i['user_uid'],), **certargs)
-                    user_info=user_req.json();
+                    user_info=user_req.json()
                     username=user_info[0]['username']
                     cm[k]['user']=username
                 if i['time']:
@@ -555,27 +552,26 @@ def search():
                 for pkey,pvalue in query_map.iteritems():
                     obj_result=[]
                     found=False
+                    i=0
                     for ckey in pvalue:
                         if(pkey != "metadata_short" and pkey != "dataobject_short" and pkey != "activity_short"): #these get requests do not work and break the loop
                             if(pkey=="mpousers"): #api route is /user and not /mpousers
                                 pkey="user"
-
                             req=requests.get("%s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,), **certargs)
                             if req.text != "[]":
                                 obj_result.extend(req.json())
                                 found=True
-
                                 if webdebug:
+                                    print('searching route:')
                                     print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
-
                     if found:
                         results[pkey]=obj_result
 
                 if webdebug:
                     print('WEBDEBUG: user query')
                     pprint(form)
-                    print('WEBDEBUG: search results')
-                    pprint(results)
+                    #print('WEBDEBUG: search results')
+                    #pprint(results)
 
         except:
             pass
@@ -631,7 +627,7 @@ def ontology(uid=False):
                         if y['uid']:
                             result[n]['child'][x]['child']=get_child_terms(y['uid'])
                         x+=1
-                n+=1;
+                n+=1
 
             if webdebug:
                 pprint(result)
@@ -651,7 +647,7 @@ def submit_comment():
         if webdebug:
             print('WEBDEBUG: submit comment', r)
             print(form['wf_id'])
-
+        
         wid=form['wf_id']
 
         submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
@@ -682,6 +678,141 @@ def ontology_instance():
     response.headers['Content-Type'] = 'text/plain'
     return response
 
+@app.route('/collections')
+@app.route('/collections/<uid>', methods=['GET'])
+def collections(uid=False):
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    results=False
+    if True:
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=10)
+        s.mount('https://', a)
+        s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
+        s.verify=False
+        s.headers={'Real-User-DN':dn}
+        rpp=15
+
+        #get collections
+        rc=s.get("%s/collection"%(API_PREFIX), headers={'Real-User-DN':dn})
+        coll_list=rc.json()
+        #pprint("All COLLECTIONS:")
+        #pprint(coll_list)
+
+        if uid:
+            r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
+            results=r_coll.json()
+            r_coll=s.get("%s/collection/%s"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
+            this_coll=r_coll.json()
+            coll_name=this_coll[0]['name']
+            coll_desc=this_coll[0]['description']
+            #pprint("FIRST COLLECTION:")
+            #pprint(results)
+        else:
+            r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,coll_list[0]['uid']), headers={'Real-User-DN':dn})
+            results=r_coll.json()
+            coll_name=coll_list[0]['name']
+            coll_desc=coll_list[0]['description']
+            #pprint("FIRST COLLECTION:")
+            #pprint(results)
+
+
+        #ontology tree
+        #req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
+        req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
+        ont_tree=req.json()
+        ont_result={}
+        wf_type_list=[]
+
+        #get workflow types
+        if ont_tree["root"]["children"]:
+            ont_result=ont_tree["root"]["children"]
+            for i in ont_result:
+                if type(i)==dict:
+                    for key,value in i.iteritems():
+                        if key=="Workflow":
+                            for n in value["children"]:
+                                if type(n)==dict:
+                                    for ky,vl in n.iteritems():
+                                        if ky=="Type":
+                                            for x in vl["children"]:
+                                                for k,v in x.iteritems():
+                                                    wf_type_list.append(k)
+
+        #get quality ontology term uid
+        quality_info=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,), headers={'Real-User-DN':dn})
+        qterms=quality_info.json()
+        for i in qterms:
+            if i['name']=='quality':
+                qterm_uid=i['uid']
+
+        #get comments
+        index=0
+        for i in results:        #i is dict
+            pid=i['uid']
+            pprint(pid)
+            #get workflow info
+            wf_req=requests.get("%s/workflow/%s"%(API_PREFIX,pid,), **certargs)
+            wf_info=wf_req.json()
+
+            results[index]['workflow']=wf_info
+
+            c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
+            comments = c.json()
+
+            num_comments=0
+            if comments == None: #replace null reply in requests body
+                #with empty list so below logic still works
+                comments=[]
+            for temp in comments: #get number of comments, truncate time string
+                num_comments+=1
+                if temp['time']:
+                    time=temp['time'][:16]
+                    temp['time']=time
+
+            results[index]['num_comments']=num_comments
+            results[index]['comments']=comments
+#JCW 19 JUL 2013. Change 'start_time' to 'creation_time'. 'start_time'
+#is not at presently set or returned by db
+# need to clarify two different times. index.html does request 'start_time'
+# this was throwing an exception because 'start_time' field wasn't
+# found and breaking adding commments or displaying them
+#JCW 9 SEP 2013 API exposure of 'creation_time' is 'time' for comments.
+            time=results[index]['time'][:16]
+            results[index]['time']=time
+            cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
+            cid=cid.json()
+
+            cid=cid['alias']
+            results[index]['alias']=cid
+
+            #get workflow ontology terms:values
+            #https://mpo.gat.com/api/v0/ontology/instance?term_uid=29a8a81a-a7f8-45ea-ac55-c960786ed5d6&parent_uid=b26973ed-aa26-4109-9042-20a69d4409e4
+            quality_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), headers={'Real-User-DN':dn})
+            if quality_req.text != "[]":
+                qual_data=quality_req.json()
+                if qual_data[0]['value']:
+                    quality=qual_data[0]['value']
+                    results[index]['quality']=quality
+            index+=1
+
+        if webdebug:
+            #print("WEBDEBUG: results sent to index")
+            pprint(results)
+            #print("WEBDEBUG: ontology_results sent to index")
+            #pprint(ont_result)
+
+# This is really dangerous to catch all exceptions. It makes debugging all but impossible - JCW
+#    except Exception, err:
+#   print "web_server.index()- there was an exception"
+#   print "error is", err
+
+    return render_template('collections.html', **locals())
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     dn = get_user_dn(request)
@@ -697,7 +828,7 @@ def register():
             check="<strong>Missing required fields: </strong>"
             n=0
             for k,v in form.iteritems():
-                tmp=v.strip();
+                tmp=v.strip()
                 if not tmp:
                     if n>0:
                         check+=', '
@@ -752,7 +883,6 @@ def register():
 
     if request.method == 'GET':
         return render_template('register.html', form="_")
-
 
 @app.route('/profile')
 def profile():
