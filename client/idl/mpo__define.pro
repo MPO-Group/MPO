@@ -416,32 +416,53 @@ Function debug_req, StatusInfo, ProgressInfo,    CallbackData
 return, 1
 end
 
-Function get_payload,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,$
-                     v11,v12,v13,v14,v15,v16,v17,v18,v19,v20
+
+Function get_payload,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20
   ;hash and create_struct will ignore !NULL/{} but not <Undefined>
-  if n_elements(v1) eq 0 then v1={}
-  if n_elements(v2) eq 0 then v2={}
-  if n_elements(v3) eq 0 then v3={}
-  if n_elements(v4) eq 0 then v4={}
-  if n_elements(v5) eq 0 then v5={}
-  if n_elements(v6) eq 0 then v6={}
-  if n_elements(v7) eq 0 then v7={}
-  if n_elements(v8) eq 0 then v8={}
-  if n_elements(v9) eq 0 then v9={}
-  if n_elements(v10) eq 0 then v10={}
-  if n_elements(v11) eq 0 then v11={}
-  if n_elements(v12) eq 0 then v12={}
-  if n_elements(v13) eq 0 then v13={}
-  if n_elements(v14) eq 0 then v14={}
-  if n_elements(v15) eq 0 then v15={}
-  if n_elements(v16) eq 0 then v16={}
-  if n_elements(v17) eq 0 then v17={}
-  if n_elements(v18) eq 0 then v18={}
-  if n_elements(v19) eq 0 then v19={}
-  if n_elements(v20) eq 0 then v20={}
-  if float(!VERSION.release) ge 8.2 then begin
-     pay=hash(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v7,v18,v19,v20)
-  endif else pay=create_struct(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20)
+  ;but this doesn't work in 7.0, so do something ugly
+                                ;note, the whole point of this routine
+                                ;is to choose hash or create_struct
+                                ;base on version. If we could just
+                                ;depend on 8.2, it'd be easier
+;we create a structure with repeated calls to create_struct, and
+;convert to hash if we are using 8.2
+
+  if n_elements(v1) eq 0 or n_elements(v2) eq 0 then begin
+     print,"Must provide at least 2 arguments: 1 key and 1 value"
+     return, create_struct(pay,'error',-1)
+  endif
+  pay=create_struct(v1,v2)
+;a bit sloppy here. should do a return after each endif
+  if n_elements(v3) ne 0 and n_elements(v4) ne 0 then begin
+     pay=create_struct(pay,v3,v4)
+  endif
+  if n_elements(v5) ne 0 and n_elements(v6) ne 0 then begin
+     pay=create_struct(pay,v5,v6)
+  endif
+  if n_elements(v7) ne 0 and n_elements(v8) ne 0 then begin
+     pay=create_struct(pay,v7,v8)
+  endif
+  if n_elements(v9) ne 0 and n_elements(v10) ne 0 then begin
+     pay=create_struct(pay,v9,v10)
+  endif
+  if n_elements(v11) ne 0 and n_elements(v12) ne 0 then begin
+     pay=create_struct(pay,v11,v12)
+  endif
+  if n_elements(v13) ne 0 and n_elements(v14) ne 0 then begin
+     pay=create_struct(pay,v13,v14)
+  endif
+  if n_elements(v15) ne 0 and n_elements(v16) ne 0 then begin
+     pay=create_struct(pay,v15,v16)
+  endif
+  if n_elements(v17) ne 0 and n_elements(v18) ne 0 then begin
+     pay=create_struct(pay,v17,v18)
+  endif
+  if n_elements(v19) ne 0 and n_elements(v20) ne 0 then begin
+     pay=create_struct(pay,v19,v20)
+  endif
+
+  if float(!VERSION.release) ge 8.2 then pay=hash(pay)
+  
   return, pay
 end
 
@@ -485,9 +506,9 @@ FUNCTION mpo::get, route, args
     res=JSON_PARSE( str_resp  ) ;, /TOSTRUCT )
     if typename(res) eq 'LIST' then begin
         for i=0,n_elements(res)-1 do begin
-            res[i]=res[i].tostruct()
+            res[i]=res[i].tostruct;() ;uncomment for 8.2
         endfor
-    endif else res = res.tostruct()
+    endif else res = res.tostruct;() ;uncomment for 8.2
     ;print,'get',string(self.req->GET(/BUFFER))
  endif else res=json_to_struct(str_resp)
  
@@ -526,9 +547,9 @@ FUNCTION mpo::post, route, payload
     res = JSON_PARSE(res);,/tostruct)
     if typename(res) eq 'LIST' then begin
         for i=0,n_elements(res)-1 do begin
-            res[i]=res[i].tostruct()
+            res[i]=res[i].tostruct;() ;uncomment for 8.2
         endfor
-    endif else res = res.tostruct()
+    endif else res = res.tostruct;()  ;uncomment for 8.2
  endif else  res=json_to_struct(res)
 
  return, res 
@@ -570,11 +591,14 @@ FUNCTION mpo::add , workflow_uid, parent_uid, name, description, uri
  return, res
 end
 
-FUNCTION mpo::step , workflow_uid, parent_uid, name, description, uri
-;todo add additional inputs to parent_uid
+FUNCTION mpo::step , workflow_uid, parent_uid, name, description, uri, inputs=inputs
+
+ input_objs=[parent_uid]
+ if keyword_set(inputs) ne 0 then input_objs = [ inputs, input_objs ]
+
  payload =   get_payload($
                                   self.workid,workflow_uid,$
-                                  self.parentid,[parent_uid],$
+                                  self.parentid,[input_objs],$
                                   "name",name,"description",description,$
                                   "uri",uri   )
  res = self->post(self.activity_rt, payload)

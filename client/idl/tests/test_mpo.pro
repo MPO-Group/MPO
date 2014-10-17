@@ -1,5 +1,4 @@
-m=obj_new('mpo',host='https://mpo.psfc.mit.edu/api',version='v0')
-;m=obj_new('mpo',host='https://charon.psfc.mit.edu:8080/api',version='v0')
+m=obj_new('mpo',host='https://mpo.psfc.mit.edu/api',version='v0',/debug)
 
 ;Start method takes name, description, workflow type
 wf=m->start('GYRO-prep','idl test-final','Gyro' )
@@ -7,8 +6,11 @@ wf=m->start('GYRO-prep','idl test-final','Gyro' )
 ;Add method takes workflow id, parent id, name, description, uri
 obj1=m->add(wf.uid,wf.uid,'Transp_Shot','Transp simulation number','12345')
 
+;Add method takes workflow id, parent id, name, description, uri
+obj2=m->add(wf.uid,wf.uid,'EQDSK_params','inputs to efit','file://somewhere')
+
 ;Step method takes workflow id, parent id, name, description, 
-act1=m->step(wf.uid,obj1.uid,'Export','Save equilibrium','Transp-Export')
+act1=m->step(wf.uid,obj1.uid,'Export','Save equilibrium','Transp-Export',inputs=[obj2.uid])
 
 ;Meta method takes target id, type, value
 tmp=m->meta(wf.uid,'format','ascii')
