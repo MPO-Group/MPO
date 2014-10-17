@@ -72,7 +72,7 @@ FUNCTION mpo_ar_mdsplus::init, arg_struct
   self.tree=arg_struct.tree
   self.server=arg_struct.server
   self.shot=arg_struct.shot
-  self.path=arg_struct.path
+  self.path=strjoin(strsplit(arg_struct.path,'\',/extract, /preserve), '\\')
   return, 1
 end
 
