@@ -883,7 +883,9 @@ class mpo_cli(object):
         try:
             r=args.func(**kwargs)
         except requests.exceptions.HTTPError as e:
-            return "Route not found: %s"%args.route
+            print(str(e),file=sys.stderr)
+            PrintException(,file=sys.stderr)
+            return "Route not found: %s. HTTP error code: %s. "%{e.url,e.response.status_code}
         except:
             return PrintException()
 
