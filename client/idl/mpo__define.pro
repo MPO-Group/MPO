@@ -641,24 +641,9 @@ PRO mpo::cleanup
  return
 end
 
-FUNCTION mpo::archive_mdsplus, server, tree, shot, path
-  return, self->archive('mdsplus', {server:server, tree:tree, shot:shot, path:path})
-end
-
-FUNCTION mpo::archive_filesys, filespec
-  return, self->archive('filesys', {filespec:filespec})
-end
-
 FUNCTION mpo::archive, protocol, arg_struct
-  if protocol eq 'mdsplus' then begin
-    return, string(arg_struct.server, arg_struct.tree, $
-		arg_struct.shot, arg_struct.path, $ 
-		format='(%"mdsplus://%s/%s/%d&path=%s")') 
-  endif else if protocol eq 'filesys' then begin
-      return, string(arg_struct.filespec, format='(%"filesys:///%s")')
-  endif else begin
-    return, self->error('unsupported_archive_protocol')
-  endelse
+  archiver=obj_new('mpo_ar_'+protocol, arg_struct)
+  return, archiver->archive()
 end
 
 FUNCTION mpo::init , host=host, version=version, cert=cert, debug=debug
