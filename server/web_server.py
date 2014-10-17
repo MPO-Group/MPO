@@ -375,7 +375,7 @@ def connections(wid=""):
                 data[0]['time']=obj_time[:16]
 
             #get linked workflows using uri
-            if len(data[0]['uri']) > 1:
+            if data[0]['uri'] and len(data[0]['uri']) > 1:
                 wf_links_req=requests.get("%s/dataobject?uri=%s"%(API_PREFIX,urllib.quote((data[0]['uri'])),), **certargs)
                 if wf_links_req.text != "[]":
                     wf_links=wf_links_req.json()
