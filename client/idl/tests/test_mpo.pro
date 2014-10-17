@@ -10,13 +10,13 @@ obj1=m->add(wf.uid,wf.uid,'Transp_Shot','Transp simulation number','12345')
 uri = archive_filesys(m, "/a/file/in/the/filesystem")
 
 ;Add method takes workflow id, parent id, name, description, uri
-obj2=m->add(wf.uid,wf.uid,'EQDSK_params',uri)
+obj2=m->add(wf.uid,wf.uid,'EQDSK_params','These parameters live in a file in the file syswtem', uri)
 
 ;Make a URI for an mdsplus object so we can use it to create a data object
 uri = archive_mdsplus(m, "alcdata.psfc.mit.edu", "cmod", 1090909009, '\IP')
 
 ;Add method takes workflow id, parent id, name, description, uri
-obj2=m->add(wf.uid,wf.uid,'Plasma Current',uri)
+obj2=m->add(wf.uid,wf.uid,'Plasma Current', 'The plasma current in amps from this shot', uri)
 
 
 ;Step method takes workflow id, parent id, name, description, 
@@ -30,4 +30,3 @@ tmp=m->comment(wf.uid,'A workflow created from IDL')
 
 obj_destroy,m
 end
-
