@@ -136,7 +136,7 @@ def not_found(error=None):
             'message': 'Not Found: ' + request.url,
             'uid' : -9,
     }
-    resp = json.dumps(message)
+    resp = jsonify(message)
     resp.status_code = 404
 
     return resp
@@ -149,7 +149,7 @@ def syntax_error(error=None):
             'request_body': request.data,
             'uid' : -1,
     }
-    resp = json.dumps(message)
+    resp = jsonify(message)
     resp.status_code = 400
 
     return resp
@@ -164,7 +164,7 @@ def unathorized_error(error=None):
     }
     if apidebug:
         print('401 error',error)
-    resp = json.dumps(message)
+    resp = jsonify(message)
     resp.status_code = 401
 
     return resp
@@ -173,7 +173,7 @@ def unathorized_error(error=None):
 class InvalidAPIUsage(Exception):
     status_code = 400
 
-    def __init__(self, message, status_code=None, payload=None):
+    def __init__(self, message="", status_code=None, payload=None):
         Exception.__init__(self)
         self.message = message
         if status_code is not None:
