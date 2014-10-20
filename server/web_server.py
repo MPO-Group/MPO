@@ -128,7 +128,7 @@ def index():
         ont_tree=req.json()
         ont_result={}
         wf_type_list=[]
-        
+
         #get workflow types
         if ont_tree["root"]["children"]:
             ont_result=ont_tree["root"]["children"]
@@ -165,7 +165,7 @@ def index():
 
             num_comments=0
             if comments == None: #replace null reply in requests body
-                #with empty list so below logic still works 
+                #with empty list so below logic still works
                 comments=[]
             for temp in comments: #get number of comments, truncate time string
                 num_comments+=1
@@ -191,7 +191,7 @@ def index():
             #get workflow ontology terms:values
             #https://mpo.gat.com/api/v0/ontology/instance?term_uid=29a8a81a-a7f8-45ea-ac55-c960786ed5d6&parent_uid=b26973ed-aa26-4109-9042-20a69d4409e4
             quality_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), headers={'Real-User-DN':dn})
-            if quality_req.text != "[]": 
+            if quality_req.text != "[]":
                 qual_data=quality_req.json()
                 if qual_data[0]['value']:
                     quality=qual_data[0]['value']
@@ -355,7 +355,7 @@ def connections(wid=""):
     wid_info=wid_req.json()
 
     #get all data of each activity and dataobject of workflow <wid>
-    
+
     wf_uid_compid = {}   #for linked workflow compIDs
     num_comment=0
     for key,value in wf_objects.iteritems():
@@ -416,7 +416,7 @@ def connections(wid=""):
 
             num_comment+=k
             wf_objects[key]['comment']=cm
-    
+
     if webdebug:
         print("WEBDEBUG: workflow objects")
         pprint(wf_objects)
@@ -439,7 +439,7 @@ def workflow(wid=""):
     s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
     s.verify=False
     s.headers={'Real-User-DN':dn}
-    
+
     req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
     wf=req.json()
     result=json.dumps(wf)
@@ -454,8 +454,7 @@ def nodes(wid=""):
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
     #get workflow svg xml and object order
-    getsvg=getsvgxml(wid)
-    wf_objects=getsvg[1] #dict of workflow elements: name & type
+    wf_objects = requests.get("%s/workflow/%s/graph"%(API_PREFIX,wid,), **certargs).json()
 
     #get workflow info/alias
     wid_req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
@@ -647,7 +646,7 @@ def submit_comment():
         if webdebug:
             print('WEBDEBUG: submit comment', r)
             print(form['wf_id'])
-        
+
         wid=form['wf_id']
 
         submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
