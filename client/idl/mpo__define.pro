@@ -466,19 +466,20 @@ Function get_payload,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,
   return, pay
 end
 
-FUNCTION mpo::get, route, args
+FUNCTION mpo::get, route, args=args
  if n_elements(route) eq 0 then return,self.error.get_route
- sargs='?'
- if self.debug eq 1 then print,'GET', n_elements(args), args
+ sargs=''
  if n_elements(args) eq 0 then begin
     args='' 
  endif else begin
     ;add arguments
+   sargs='&'
    for i = 0,n_elements(args)-1 do begin
        sargs=sargs+args[i]
        if i lt n_elements(args)-1 then sargs=sargs+'&'
     endfor
  endelse
+ if self.debug eq 1 then print,'GET', n_elements(args), args
 
  url=self.mpo_host+'/'+self.mpo_version+'/'+route
 
