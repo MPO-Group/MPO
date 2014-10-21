@@ -322,7 +322,7 @@ def getsvgxml(wid):
         name=nodes[cid]['name']
         if prev_name != name:
             #print(str(count) + " " + name)
-            object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'], 'time':nodes[wid]['time'] }
+            object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'], 'time':nodes[cid]['time'] }
             prev_name=name
             count+=1
 
