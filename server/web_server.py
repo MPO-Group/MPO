@@ -334,7 +334,7 @@ def getsvgxml(wid):
 
     ans ={}
     ans[0] = graph.create_svg()
-    ans[1] = OrderedDict(sorted(object_order.items(), key=lambda t: t[1]['time']))
+    ans[1] = OrderedDict(sorted(object_order.items(), key=lambda t: datetime.datetime.strptime(t[1]['time'], '%Y-%m-%d %H:%M:%S.%f')))
     return ans
 
 @app.route('/connections', methods=['GET'])
