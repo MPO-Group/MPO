@@ -641,25 +641,33 @@ def submit_comment():
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
+    newc=''
     try:
         form = request.form.to_dict() #gets POSTed form fields as dict; fields: 'parent_uid','comment'
         form['dn'] = dn
         r = json.dumps(form) #convert to json
         if webdebug:
-            print('WEBDEBUG: submit comment', r)
-            print(form['wf_id'])
+            print('WEBDEBUG: submit comment')
+            pprint(r)
 
-        wid=form['wf_id']
+        #wid=form['wf_id']
 
         submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
+        cid = submit.json()
+        result = requests.get("%s/comment/%s"%(API_PREFIX,cid['uid']), **certargs)
+        newc = result.text
+        if webdebug:
+            pprint(newc)
+
     except:
         pass
 
+    return newc
     #return redirect(url_for('index', wid=form['parent_uid'])) # redirects to a refreshed homepage
     #                                                              # after comment submission,
     #                                                              # passes workflow ID so that the
     #                                                              # comments will show for that workflow
-    return redirect(url_for('connections', wid=wid))
+    #return redirect(url_for('connections', wid=wid))
 
 @app.route('/ontology_instance', methods=['POST'])
 def ontology_instance():

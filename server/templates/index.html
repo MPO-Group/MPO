@@ -50,11 +50,48 @@ $(document).ready(function () {
 		return false;
 	});
 
+	/**
+	*function handles comment submit event for each workflow in the list
+	*/
+	$('[id^=submit_comment_]').submit(function(event) {
+		var fadeTime = 5000;
+		var formData = $(this).serialize();
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('submit_comment') }}', // the url where we want to POST
+			data 		: formData, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			console.log(data);	
+			prependHtml = '<blockquote id="block_' + data[0].uid  + '" >';
+			prependHtml += '<p style="font-size: 12px">' + data[0].content + '</p>';
+			prependHtml += '<small>by <cite title="Source Title"> '+ data[0].username +' - ' + data[0].time.substring(0,16) + ' </cite></small>';
+			prependHtml += '</blockquote><hr>';
+			
+			$("#commentDrop"+data[0].parent_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
+			$('#submit_results_'+data[0].parent_uid).show();
+			$('#submit_results_'+data[0].parent_uid).html("Comment submitted.");
+			$('#submit_results_'+data[0].parent_uid).fadeOut(fadeTime, function() {
+					// Animation complete.
+					$('#submit_results_'+data[0].parent_uid).html("");
+				});
+			$('#block_' + data[0].uid).css('background-color', '#ddffdd');
+			$('#block_' + data[0].uid).animate({backgroundColor:"#fff"},fadeTime);
+		});
+		// stop the form from submitting the normal way and refreshing the page
+		event.preventDefault();
+	});
+
 	//traverse(jsondata,process);
 	getMenuTopLevel(jsondata);
 	$("#ont_listing").append(ontTreeMenu);
 	//$("#wf_attr_list").find('>ul').show();
 	//$("#ont_tree").find('>ul').show();
+
 });
 
 function addOntPath(parent,subparent,child) {
@@ -330,11 +367,10 @@ function setWfQuality(wfid,numq) {
 	for(i=1;i<=numstars;i++) {
 		var img_element='#'+wfid+imgstr+i;
 		if(i<=numq)
-			$(img_element).attr('src', imgpath+img[1]);
+			$(img_element).attr('src', imgpath+img[1]); //star on
 		else
-			$(img_element).attr('src', imgpath+img[0]);
-		//remove onclick functionality
-		$(img_element).removeAttr('onclick');
+			$(img_element).attr('src', imgpath+img[0]); //star off
+		$(img_element).removeAttr('onclick'); //remove onclick functionality
 	}
 }
 
@@ -510,15 +546,14 @@ ul li input.user_time_wf {
             <!-- workflow list table -->
             <table class="main">
               <tr>
-                <th width="2%">&nbsp;</th><th width="15%">CompositeID</th><th width="10%">Name</th><th width="25%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th width="10%">Quality</th>
+                <th width="2%">&nbsp;</th><th width="25%">CompositeID</th><th width="42%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th>
               </tr>
     		{% for item in results %}
                 <div id="accordion2" class="accordion">
                 <tr>
                     {% set wf_number=loop.index+(current_page-1)*rpp %}
                     <td><span class="muted"><em><small>{{ wf_number }}</small></em></td>
-                    <td><a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.type }} / {{ item.composite_seq }}</a></td>
-                    <td>{{ item.name }}</a></td>
+                    <td><a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.name }} / {{ item.composite_seq }}</a></td>
                     <td>{{ item.description }}</a></td>
                     <td class="xsmall">{{ item.time }}</td>
                     <!-- <td>{{ item.username }}</td> -->
@@ -562,9 +597,9 @@ ul li input.user_time_wf {
             <td colspan="8" class="comments"> 
               <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
                 <div class="accordion-inner no-border bot-border">
-                  <form action="{{ url_for("submit_comment") }}" method="post">
-                <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
-                <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                  <form id="submit_comment_{{ item.uid }}">
+                    <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
+                    <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button>&nbsp;&nbsp;<span id="submit_results_{{ item.uid }}"></span></div>
                   </form>
                 </div>
               </div>
