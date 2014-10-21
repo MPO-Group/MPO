@@ -544,7 +544,7 @@ def getWorkflowElements(id,queryargs={},dn=None):
     r = cursor.fetchall()
     nodes={}
     for n in r:
-        nodes[n.uid]={'type':n.type,'name':n.name}
+        nodes[n.uid]={'type':n.type,'name':n.name,'time':n.creation_time}
     records['nodes']=nodes
     # fetch connectors from the database
     cursor.execute("select parent_guid as parent_uid, parent_type, child_guid as child_uid, "+

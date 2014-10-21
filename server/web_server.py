@@ -13,6 +13,7 @@ import re,os
 import math
 from authentication import get_user_dn
 import urllib
+from collections import OrderedDict
 
 app = Flask(__name__)
 
@@ -128,7 +129,7 @@ def index():
         ont_tree=req.json()
         ont_result={}
         wf_type_list=[]
-        
+
         #get workflow types
         if ont_tree["root"]["children"]:
             ont_result=ont_tree["root"]["children"]
@@ -165,7 +166,7 @@ def index():
 
             num_comments=0
             if comments == None: #replace null reply in requests body
-                #with empty list so below logic still works 
+                #with empty list so below logic still works
                 comments=[]
             for temp in comments: #get number of comments, truncate time string
                 num_comments+=1
@@ -191,7 +192,7 @@ def index():
             #get workflow ontology terms:values
             #https://mpo.gat.com/api/v0/ontology/instance?term_uid=29a8a81a-a7f8-45ea-ac55-c960786ed5d6&parent_uid=b26973ed-aa26-4109-9042-20a69d4409e4
             quality_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), headers={'Real-User-DN':dn})
-            if quality_req.text != "[]": 
+            if quality_req.text != "[]":
                 qual_data=quality_req.json()
                 if qual_data[0]['value']:
                     quality=qual_data[0]['value']
@@ -312,7 +313,7 @@ def getsvgxml(wid):
 
     object_order={} #stores numerical order of workflow objects.  used
 #for object list display order on workflow detail page
-    object_order[0]={ 'uid':wid, 'name':nodes[wid]['name'], 'type':nodes[wid]['type'] }
+    object_order[0]={ 'uid':wid, 'name':nodes[wid]['name'], 'type':nodes[wid]['type'], 'time':nodes[wid]['time'] }
     count=1
     prev_name=""
     for item in r['connectivity']:
@@ -321,7 +322,7 @@ def getsvgxml(wid):
         name=nodes[cid]['name']
         if prev_name != name:
             #print(str(count) + " " + name)
-            object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'] }
+            object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'], 'time':nodes[wid]['time'] }
             prev_name=name
             count+=1
 
@@ -333,7 +334,7 @@ def getsvgxml(wid):
 
     ans ={}
     ans[0] = graph.create_svg()
-    ans[1] = object_order
+    ans[1] = OrderedDict(sorted(object_order.items(), key=lambda t: t[1]['time']))
     return ans
 
 @app.route('/connections', methods=['GET'])
@@ -355,7 +356,7 @@ def connections(wid=""):
     wid_info=wid_req.json()
 
     #get all data of each activity and dataobject of workflow <wid>
-    
+
     wf_uid_compid = {}   #for linked workflow compIDs
     num_comment=0
     for key,value in wf_objects.iteritems():
@@ -416,7 +417,7 @@ def connections(wid=""):
 
             num_comment+=k
             wf_objects[key]['comment']=cm
-    
+
     if webdebug:
         print("WEBDEBUG: workflow objects")
         pprint(wf_objects)
@@ -439,7 +440,7 @@ def workflow(wid=""):
     s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
     s.verify=False
     s.headers={'Real-User-DN':dn}
-    
+
     req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
     wf=req.json()
     result=json.dumps(wf)
@@ -647,7 +648,7 @@ def submit_comment():
         if webdebug:
             print('WEBDEBUG: submit comment', r)
             print(form['wf_id'])
-        
+
         wid=form['wf_id']
 
         submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
