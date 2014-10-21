@@ -67,20 +67,30 @@ $(document).ready(function () {
 		//callback
 		.done(function(data) {
 			console.log(data);	
-			prependHtml = '<blockquote id="block_' + data[0].uid  + '" >';
+			var prependHtml = '<blockquote id="block_' + data[0].uid  + '" >';
 			prependHtml += '<p style="font-size: 12px">' + data[0].content + '</p>';
 			prependHtml += '<small>by <cite title="Source Title"> '+ data[0].username +' - ' + data[0].time.substring(0,16) + ' </cite></small>';
 			prependHtml += '</blockquote><hr>';
 			
-			$("#commentDrop"+data[0].parent_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
-			$('#submit_results_'+data[0].parent_uid).show();
-			$('#submit_results_'+data[0].parent_uid).html("Comment submitted.");
-			$('#submit_results_'+data[0].parent_uid).fadeOut(fadeTime, function() {
+			var p_uid=data[0].parent_uid;
+			var c_uid=data[0].uid;
+			
+			$("#commentDrop"+p_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
+			
+			//drop comment section if it is not already dropped
+			if(!($('#commentDrop'+p_uid).hasClass('in'))) {
+				$('#commentDrop'+p_uid).addClass('in');
+				$('#commentDrop'+p_uid).css('height','auto');
+			}
+
+			$('#submit_results_'+p_uid).show();
+			$('#submit_results_'+p_uid).html("Comment submitted.");
+			$('#submit_results_'+p_uid).fadeOut(fadeTime, function() {
 					// Animation complete.
 					$('#submit_results_'+data[0].parent_uid).html("");
 				});
-			$('#block_' + data[0].uid).css('background-color', '#ddffdd');
-			$('#block_' + data[0].uid).animate({backgroundColor:"#fff"},fadeTime);
+			$('#block_' + c_uid).css('background-color', '#ddffdd');
+			$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);
 		});
 		// stop the form from submitting the normal way and refreshing the page
 		event.preventDefault();
