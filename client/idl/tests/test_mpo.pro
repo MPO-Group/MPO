@@ -1,15 +1,32 @@
-mpo=obj_new('mpo',host='mpo-dev.psfc.mit.edu',port='8080',version='v0')
+m=obj_new('mpo',host='https://mpo.psfc.mit.edu/api',version='v0',/debug)
 
-wf=mpo->start('Transp','idl test')
+;Start method takes name, description, workflow type
+wf=m->start('GYRO-prep','idl test-final','Gyro' )
 
-obj1=mpo->add(wf.uid,wf.uid,'Transp_Shot','Transp simulation number','12345')
+;Add method takes workflow id, parent id, name, description, uri
+obj1=m->add(wf.uid,wf.uid,'Transp_Shot','Transp simulation number','12345')
 
-act1=mpo->step(wf.uid,obj1.uid,'Export','Save equilibrium','Transp-Export')
+;Make a URI for a filesys object so we can use it to create a data object
+uri = archive_filesys(m, "/a/file/in/the/filesystem")
 
-tmp=mpo->meta(wf.uid,'format','ascii')
+;Add method takes workflow id, parent id, name, description, uri
+obj2=m->add(wf.uid,wf.uid,'EQDSK_params','These parameters live in a file in the file syswtem', uri)
 
-tmp=mpo->comment(wf.uid,'A workflow created from IDL')
+;Make a URI for an mdsplus object so we can use it to create a data object
+uri = archive_mdsplus(m, "alcdata.psfc.mit.edu", "cmod", 1090909009, '\IP')
 
-obj_destroy,mpo
+;Add method takes workflow id, parent id, name, description, uri
+obj2=m->add(wf.uid,wf.uid,'Plasma Current', 'The plasma current in amps from this shot', uri)
+
+
+;Step method takes workflow id, parent id, name, description, 
+act1=m->step(wf.uid,obj1.uid,'Export','Save equilibrium','Transp-Export',inputs=[obj2.uid])
+
+;Meta method takes target id, type, value
+tmp=m->meta(wf.uid,'format','ascii')
+
+;Comment method takes target id, text
+tmp=m->comment(wf.uid,'A workflow created from IDL')
+
+obj_destroy,m
 end
-

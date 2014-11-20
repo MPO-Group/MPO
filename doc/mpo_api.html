@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <style type="text/css">
+img.scenter { display:block; margin-left:auto; margin-right:auto; width: 50% }
+img.sright { float: right; width: 50% }
+
+    </style>
+</head>
+
+<body>
+<p>A list of example usages of the API. Examples below will quote the command line
+syntax beginning with <code>mpo</code> and give the full response. The url field indicates the api 
+route used. Note that using the command line option <code>--format=pretty</code> will produce nice
+json output to the screen. In scripts, this option is generally not used and the default 
+behavior is to return the bare UUID value or an error code.</p>
+<ul>
+<li>
+<p>Adding a type to the ontology for use in a creating a workflow for a new code.</p>
+<h2>GET uuid of workflow types in the ontology.</h2>
+<p>term_id=`mpo get ontology/term -p path=Workflow/Type`</p>
+<p>{
+ "username":"mpodemo",
+ "user_uid":"f223db41-d1c5-41db-b8af-fde6c0a16f76",
+ "description":"Terms that describe the workflow types",
+ "name":"Type",
+ "specified":true,
+ "units":null,
+ "date_added":"2014-07-09 17:38:26.506827",
+ "type":"string",
+ "parent_uid":"58c19102-b1b7-4f8d-8202-18fde0a88bad",
+ "uid":"ee39ae67-139e-433e-b666-441437faa413",
+ "url":"https://mpo.psfc.mit.edu/api/v0/ontology/term?path=Workflow/Type"
+}</p>
+<h2>POST a new type of workflow</h2>
+<p>mpo define TORLH -p $term_id -s -d "code for fullwave lower hybrid simulations" -t string</p>
+</li>
+<li>
+<p>Setting the 'ratings' quality of a work flow.</p>
+<h2>GET uuid of quality status.</h2>
+<p>term_id = `mpo get ontology/term -p path=Generic/Status/quality`</p>
+<p 14:22:44.350747_type_:_string_parent_uid_:_34f6f31b-45d2-460e-b557-7363107d8e93_uid_:_29a8a81a-a7f8-45ea-ac55-c960786ed5d6_url_:_https:_mpo.psfc.mit.edu_api_v0_ontology_term_path="Generic/Status/quality&quot;
+" _username_:_mpodemo_user_uid_:_f223db41-d1c5-41db-b8af-fde6c0a16f76_description_:_Fitness="
+&quot;username&quot;:&quot;mpodemo&quot;,
+&quot;user_uid&quot;:&quot;f223db41-d1c5-41db-b8af-fde6c0a16f76&quot;,
+&quot;description&quot;:&quot;Fitness" a="a" an="an" for="for" object="object" of="of" particular="particular" purpose_name_:_quality_specified_:true_units_:null_date_added_:_2014-09-04="purpose&quot;,
+&quot;name&quot;:&quot;quality&quot;,
+&quot;specified&quot;:true,
+&quot;units&quot;:null,
+&quot;date_added&quot;:&quot;2014-09-04">Result:</p>
+<p>Previous step shows the entry, but is not needed to actually set
+the value, you can just use the path. You do need the uuid of the
+workflow.</p>
+<p>wid=`mpo get workflow alias=jwright/EFIT/4`</p>
+<h2>POST a rating</h2>
+<p><code>mpo --format=pretty ontology_instance -p vocabulary=/Generic/Status/quality 1</code></p>
+</li>
+<li>
+<p>Get the controlled vocabulary for a term.
+  For example, to see valid values for a tracked code input or Status
+  attribute, or to see what inputs can be tracked for a given code.</p>
+<p>term_id = `mpo get ontology/term -p path=Generic/Status/quality`
+<code>mpo --format=pretty get ontology/term/$term_id/vocabulary</code></p>
+</li>
+</ul></body>
+
+</html>

@@ -2,22 +2,43 @@
 {% block title %}MPO Home{% endblock %}
 {% block hscripts %}
 <script>
-
+var debug=0;
 var userPaths = [];
 var wfAttrib = [];
+var ontTreeMenu = "";
+var ont_selections = [];
+var subTree="";
 
 $(document).ready(function () {
+
 	$("input.user_entry:text").val("");
 	$("input.user_entry_wf:text").val("");
-	//left nav accordian function
-    $('li').click(function(ev) {
+	
+	var jsonstr = '{{ ont_result|tojson }}';
+	var jsondata = jQuery.parseJSON(jsonstr);
+	
+	//left nav accordian function (old way with full ont obj)
+    /*$('li').click(function(ev) {
         $(this).find('>ul').slideToggle();
         ev.stopPropagation();
-    });
+    });*/
 
 	$('.user_entry_wf').on('keydown', function ( evt ) {
+		//user presses enter key
+
 		if( evt.keyCode == 13 ) {
-			addWfAttrib(evt.target.id, $(this).val());
+			var this_name=$(this).attr("name");
+			var this_value=$(this).val();		
+			//loop through dom by class
+			/*$('.user_entry_wf').each(function(i, obj) {
+				//i is index; obj is dom obj
+			});*/
+			//addWfAttrib(evt.target.id, $(this).val());
+			var url='/home';
+			var wftype="{{ wf_type }}";
+			var r="{{ rpp }}";
+			url+="?wf_type=" + wftype + "&r=" + r + "&"+this_name+"="+this_value;
+			window.location=url;
 		}
 	}); 
 
@@ -28,10 +49,59 @@ $(document).ready(function () {
 		}
 		return false;
 	});
-	
-	$("#wf_attr_list").find('>ul').show();
-	$("#ont_tree").find('>ul').show();
-		
+
+	/**
+	*function handles comment submit event for each workflow in the list
+	*/
+	$('[id^=submit_comment_]').submit(function(event) {
+		var fadeTime = 5000;
+		var formData = $(this).serialize();
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('submit_comment') }}', // the url where we want to POST
+			data 		: formData, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			console.log(data);	
+			var prependHtml = '<blockquote id="block_' + data[0].uid  + '" >';
+			prependHtml += '<p style="font-size: 12px">' + data[0].content + '</p>';
+			prependHtml += '<small>by <cite title="Source Title"> '+ data[0].username +' - ' + data[0].time.substring(0,16) + ' </cite></small>';
+			prependHtml += '</blockquote><hr>';
+			
+			var p_uid=data[0].parent_uid;
+			var c_uid=data[0].uid;
+			
+			$("#commentDrop"+p_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
+			
+			//drop comment section if it is not already dropped
+			if(!($('#commentDrop'+p_uid).hasClass('in'))) {
+				$('#commentDrop'+p_uid).addClass('in');
+				$('#commentDrop'+p_uid).css('height','auto');
+			}
+
+			$('#submit_results_'+p_uid).show();
+			$('#submit_results_'+p_uid).html("Comment submitted.");
+			$('#submit_results_'+p_uid).fadeOut(fadeTime, function() {
+					// Animation complete.
+					$('#submit_results_'+data[0].parent_uid).html("");
+				});
+			$('#block_' + c_uid).css('background-color', '#ddffdd');
+			$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);
+		});
+		// stop the form from submitting the normal way and refreshing the page
+		event.preventDefault();
+	});
+
+	//traverse(jsondata,process);
+	getMenuTopLevel(jsondata);
+	$("#ont_listing").append(ontTreeMenu);
+	//$("#wf_attr_list").find('>ul').show();
+	//$("#ont_tree").find('>ul').show();
+
 });
 
 function addOntPath(parent,subparent,child) {
@@ -93,7 +163,7 @@ function addOntPath(parent,subparent,child) {
 		}
 	}
 	
-	console.log(userPaths);
+	if(debug) console.log(userPaths);
 	
 	//var tmpArr=ontologyPathStr.split(",");
 	$("#ont_path").empty();
@@ -141,7 +211,6 @@ function addWfAttrib(eleID,value) {
 	$("#wf_path").empty();
 	$("#nav_split").show();
 	$("#wf_search_header").show();
-	//console.log(wfAttrib);
 	var output="";
 	for(var key in wfAttrib) {
 		if (wfAttrib.hasOwnProperty(key)) {
@@ -158,6 +227,165 @@ function showWfMore() {
 	$("#wf_hide").toggle();
 }
 
+//called with every property and it's value
+function process(key,value) {
+    if(debug) console.log(key + " : "+value);
+}
+//recursive loop through json tree
+function traverse(obj,func) {
+    for (var i in obj) {
+        func.apply(this,[i,obj[i]]);
+        if (obj[i] !== null && typeof(obj[i])=="object") {
+			traverse(obj[i],func);
+        }
+    }
+}
+
+//build first level of ontology tree menu
+function getMenuTopLevel(obj) {
+	for (var key in obj) {
+		if(obj.hasOwnProperty(key)) {
+			ontTreeMenu+="<ul>";
+			for(var x in obj[key]) {
+				if(obj[key][x].hasOwnProperty("data")) {
+					//if(debug) { console.log(obj[key][x]["data"].name); }
+					var onclickStr = 'onClick="getSubLevel(\''+obj[key][x]["data"].uid+'\');"';
+					ontTreeMenu+="<li id=\""+obj[key][x]["data"].uid+"\"><a "+onclickStr+">"+obj[key][x]["data"].name;
+					if(obj[key][x].hasOwnProperty("children")) {
+						ontTreeMenu+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>"; //add down arrow
+					}
+					ontTreeMenu+="</a></li>";
+				}
+			}
+			ontTreeMenu+="</ul>";
+		}
+	}
+}
+
+//append list to parent
+function getMenuChildren(obj,parent_id) {
+	//Object {"Type": {"name": "Type", "parent_uid": "58c19102-b1b7-4f8d-8202-18fde0a88bad", "uid": "ee39ae67-139e-433e-b666-441437faa413"}}
+	subTree="<ul>";
+	for (var key in obj) {
+		if(obj.hasOwnProperty(key)) {
+			var onclickStr = 'onClick="getSubLevel(\''+obj[key].uid+'\');"';
+			subTree+="<li id=\""+obj[key].uid+"\"><a "+onclickStr+">"+obj[key].name;
+			if(checkSubLevel(obj[key].uid))
+				subTree+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>"; //add down arrow
+			subTree+="</a></li>";
+		}
+	}
+	subTree+="</ul>";
+	$("#"+parent_id).append(subTree);
+}
+
+function getSubLevel(uid) {
+	if(ont_selections.indexOf(uid) > -1) {
+		$("#"+uid).find('>ul').slideToggle();
+	}
+	else {
+		ont_selections.push(uid);
+		//url="/mpo/ontology/children/"+uid;
+		url="{{ url_for("ont_children") }}" + "/" + uid;
+		var jqxhr = $.ajax(url)
+		.done(function(data) {
+			if(!$.isEmptyObject(data)) {
+				getMenuChildren(data,uid);
+			}
+			else {
+				//show attributes
+				//alert("empty");
+			}
+		});
+	}
+}
+
+function getAttrib(uid) {
+	if(ont_selections.indexOf(uid) > -1) {
+		//$("#"+uid).slideToggle();
+		$("#"+uid).find('>ul').slideToggle();
+	}
+	else {
+		ont_selections.push(uid);
+		//url="/mpo/ontology/children/"+uid;
+		url="{{ url_for("ont_children") }}" + "/" + uid;
+		var jqxhr = $.ajax(url)
+		.done(function(data) {
+			getMenuChildren(data,uid);
+		});
+	}
+}
+
+function checkSubLevel(uid) {
+	//url="/mpo/ontology/children/"+uid;
+	url="{{ url_for("ont_children") }}" + "/" + uid;
+	var tmp1=0;
+
+	/*var jqxhr = $.ajax(url).done(function(data) {
+		console.log(data);
+		if(!$.isEmptyObject(data)) {
+			subTree+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>";
+			console.log(subTree);
+		}
+	});*/
+	var jqxhr = $.ajax({
+		url: url,
+		async: false
+	});
+	
+	jqxhr.done(function(data) {
+		if(!$.isEmptyObject(data)) {
+			subTree+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>";
+		}
+	});	
+}
+
+//workflow id, numq => quality value (1-4)
+function setWfQuality(wfid,numq) {
+	//ajax.post --> serialized json
+
+	//star images info
+	var numstars=4;
+	var img=["star_empty.png","star.png"];
+	var imgpath = "static/img/";
+	var imgstr="_img";
+
+	//POST data to API route
+	var url="{{ url_for('ontology_instance') }}";
+	var ont_path='/Generic/Status/quality';
+	var parent_uid=wfid;
+	var user="None";
+	var postData = {'parent_uid': parent_uid, 'value': numq.toString(), 'path': ont_path, 'user': user };
+
+	var jqxhr = $.ajax({
+		type: "POST",
+		url: url,
+		data : JSON.stringify(postData),
+		contentType: 'application/json'
+	});
+	
+	//remove pointer cursor class
+	$('#'+wfid+'_quality').removeClass('set_quality');
+	
+
+	//ajax request returns uid of 'quality' instance
+	jqxhr.done(function(data) {
+		console.log(data);
+	});
+
+	//set star image src according to star clicked
+	for(i=1;i<=numstars;i++) {
+		var img_element='#'+wfid+imgstr+i;
+		if(i<=numq)
+			$(img_element).attr('src', imgpath+img[1]); //star on
+		else
+			$(img_element).attr('src', imgpath+img[0]); //star off
+		$(img_element).removeAttr('onclick'); //remove onclick functionality
+	}
+}
+
+
+
 </script>
 <style>
 #nav_split, #ont_search_header, #wf_search_header, #wf_attrib, #wf_hide {
@@ -170,7 +398,7 @@ function showWfMore() {
 }
 
 ul ul {
-    display:none;   
+    /*display:none;   */
 }
 ul li:hover > ul {
     /*display:block;   */
@@ -249,18 +477,22 @@ ul li input.user_time_wf {
           border-radius: 0px;	
 }
 
-#ont_tree ul li {
+#ont_listing ul li {
 	font-size: 12px;
 	font-weight: normal;	
 }
-#ont_tree ul li ul li {
+#ont_listing ul li ul li {
 	font-size: 12px;
 	font-weight: normal;
 	font-style: normal;
 	text-transform: none;
 }
-#ont_tree ul li ul li ul li {
-	font-size: 14px;
+#ont_listing ul li ul li ul li {
+	font-size: 12px;
+}
+
+.set_quality {
+	cursor: pointer;
 }
 
 </style>
@@ -272,7 +504,7 @@ ul li input.user_time_wf {
         <div class="span3">
         	<br/>
           <div class="well sidebar-nav">
-        	{% if ont_result %}
+          	<!-- workflow nav menu -->
 				<ul class="nav nav-list">
 	                <li>
                     	<div id="wf_search_header" class="nav_search_header">Workflow Attributes: </div>
@@ -285,71 +517,37 @@ ul li input.user_time_wf {
                     <li id="nav_split">
                     	<hr>
                     </li>
-                    <li id="wf_attr_list" class="nav-header" style="cursor:pointer;">Workflow <span style="font-size:x-small;color:#ccc;">&#9660;</span>
+                    <li id="wf_attr_list" class="nav-header" style="cursor:pointer;">Workflow
                 	<ul>
                         <li class="attrib"><a href="#">type</a> <span class="muted">=</span>
                         <select id="wf_type_sel" class="type_sel">
                         	<option value="{{ url_for("index", r=rpp) }}">ALL</option>
-                            <option value="{{ url_for("index", wf_name="EFIT",r=rpp) }}" {% if wf_name=="EFIT" %} selected="selected" {% endif %}>EFIT</option>
-                            <option>GYRO</option>
-                            <option value="{{ url_for("index", wf_name="SWIM",r=rpp) }}" {% if wf_name=="SWIM" %} selected="selected" {% endif %}>SWIM</option>
+                            {% if wf_type_list %}
+                            	{% for t in wf_type_list %}
+                           			<option value="{{ url_for("index", wf_type=t,r=rpp) }}" {% if wf_type==t %} selected="selected" {% endif %}>{{ t }}</option>
+                            	{% endfor %}
+                            {% endif %}
                         </select>                    
                         </li>
-                        <li class="attrib"><a href="#">time</a> <span class="muted">=</span> <input type="text" class="user_time_wf" id="wf_time_val1" /> to <input type="text" class="user_time_wf" id="wf_time_val2" /></li>
+                        <li class="attrib"><a href="#">time</a> <span class="muted">=</span> <input type="text" class="user_time_wf" id="wf_time_val1" name="wf_t1" /> to <input type="text" class="user_time_wf" id="wf_time_val2" name="wf_t2" /></li>
                         <li id="wf_more" class="wf_more"><a href="#" onClick="showWfMore()">more... <span style="font-size:x-small;color:#ccc">&#9660;</span></a></li>
                         <div id="wf_attrib">
-                        <li class="attrib"><a href="#">name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_name_val" /></li>
-                        <li class="attrib"><a href="#">description</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_desc_val" /></li>
-                        <li class="attrib"><a href="#">last name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_ln_val" /></li>
-                        <li class="attrib"><a href="#">first name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_fn_val" /></li>
-                        <li class="attrib"><a href="#">user</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_user_val" /></li>
+                        <li class="attrib"><a href="#">name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_name_val" name="wf_name" /></li>
+                        <li class="attrib"><a href="#">description</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_desc_val" name="wf_description"  /></li>
+                        <li class="attrib"><a href="#">last name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_ln_val" name="wf_lname"  /></li>
+                        <li class="attrib"><a href="#">first name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_fn_val" name="wf_fname"  /></li>
+                        <li class="attrib"><a href="#">user</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_user_val" name="wf_username"  /></li>
                         <li id="wf_hide" class="wf_more"><a href="#" onClick="showWfMore()">hide...</a></li>
                         </div>
                     </ul>
 					</li>
                 </ul>
+                <!-- ontology nav menu -->
                 <ul class="nav nav-list">
-                	<li id="ont_tree" class="nav-header" style="cursor:pointer;">Ontology <span style="font-size:x-small;color:#ccc;">&#9660;</span>
-                    <ul>
-	            {% for obj in ont_result %}
-					<!-- <li id="{{ obj.ot_guid }}"><a href="#" title="{{ obj.description }}" onClick="expandTerm('{{ obj.ot_guid }}');">{{ obj.name }}</a></li> -->
-                    <li id="{{ obj.ot_guid }}"><a style="cursor:pointer;" title="{{ obj.description }}" onClick="addOntPath('{{obj.name}}');">{{ obj.name }} {% if obj.child %} <span style="font-size:x-small;color:#ccc">&#9660;</span> {% endif %}</a>
-                    {% if obj.child %}
-                    	<ul>
-                    	{% for n in obj.child %}
-                         	<li id="{{ n.ot_guid }}"><a style="cursor:pointer;" title="{{ n.description }}" onClick="addOntPath('{{obj.name}}','{{n.name}}');">{{ n.name }} {% if n.child %} <span style="font-size:x-small;color:#CCC">&#9660;</span> {% endif %}</a>
-                            {% if n.child %}
-                                <ul>
-                                {% for x in n.child %}
-                                    <li id="{{ x.ot_guid }}">
-                                    <small>
-                                    <a style="cursor:pointer;" title="{{ x.description }}" {% if x.specified %} onClick="addOntPath('{{obj.name}}','{{n.name}}','{{x.name}}');" {% endif %}>{{ x.name }} </a></small>
-                                    {% if not x.specified %}
-                                    	<span class="muted">=</span> <input type="text" class="user_entry" id="{{ x.ot_guid }}_value" onKeyUp="getSpecifiedValue(event,'{{ x.ot_guid }}_value','{{obj.name}}','{{n.name}}','{{x.name}}')" />
-                                    {% endif %}
-                         
-                                        <ul>
-                                        <li class="muted"><small><em>value type</em>: <span class="text-success">{{ x.value_type }}</span></small></li>
-                                        <li class="muted"><small><em>units</em>: <span class="text-success">{{ x.units }}</span></small></li>                                        
-                                        <li class="muted"><small><em>description</em>: <span class="text-success">{{ x.description }}</span></small></li>
-                                        </ul>
-                                    
-                                    </li>
-                                {% endfor %}
-                                </ul>
-                            {% endif %}
-                            </li>
-                        {% endfor %}
-                        </ul>
-                    {% endif %}
-                    </li><!-- end of top tree term# {{ loop.index }} -->
-            	{% endfor %}
-               		<li><a href="#" title="">EFIT</a></li>
-                    <li><a href="#" title="">SWIM</a></li>
-                	</ul>
-            {% endif %}
-                </li>
-			</ul>
+                	<li id="ont_listing" class="nav-header" style="cursor:pointer;">Ontology
+
+                    </li>
+				</ul>
           </div><!--/.well -->
         </div><!--/span left navigation-->    
     	<!-- workflow table list span -->
@@ -358,14 +556,14 @@ ul li input.user_time_wf {
             <!-- workflow list table -->
             <table class="main">
               <tr>
-                <th width="2%">&nbsp;</th><th width="20%">CompositeID</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th>
+                <th width="2%">&nbsp;</th><th width="25%">CompositeID</th><th width="42%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th>
               </tr>
     		{% for item in results %}
                 <div id="accordion2" class="accordion">
                 <tr>
                     {% set wf_number=loop.index+(current_page-1)*rpp %}
                     <td><span class="muted"><em><small>{{ wf_number }}</small></em></td>
-                    <td><a href="#">{{ item.username }}</a> / <a href="{{ url_for("index", wf_name=item.name) }}">{{ item.name }}</a> / <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.comp_seq }}</a></td>
+                    <td><a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.name }} / {{ item.composite_seq }}</a></td>
                     <td>{{ item.description }}</a></td>
                     <td class="xsmall">{{ item.time }}</td>
                     <!-- <td>{{ item.username }}</td> -->
@@ -383,14 +581,35 @@ ul li input.user_time_wf {
                   </div>
                 </div>
                 </td>
+                <td>
+                {% if item.quality %}
+                <!-- <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> -->
+                	{% if item.quality == "1" %}
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
+                    {% elif item.quality == "2" %}
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
+                    {% elif item.quality == "3" %}
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
+                    {% elif item.quality == "4" %}
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star.png">
+                    {% endif %}
+                {% else %}
+                	<span id="{{ item.uid }}_quality" class="set_quality">
+                    	<img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                        <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                        <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                        <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                    </span>
+                {% endif %}
+                </td>
               </tr>
               <tr>
-            <td colspan="7" class="comments"> 
+            <td colspan="8" class="comments"> 
               <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
                 <div class="accordion-inner no-border bot-border">
-                  <form action="{{ url_for("submit_comment") }}" method="post">
-                <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
-                <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                  <form id="submit_comment_{{ item.uid }}">
+                    <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
+                    <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button>&nbsp;&nbsp;<span id="submit_results_{{ item.uid }}"></span></div>
                   </form>
                 </div>
               </div>
@@ -398,7 +617,7 @@ ul li input.user_time_wf {
               </tr>	      
               <!-- Comment Drop -->
               <tr>
-                  <td colspan="7" class="comments"> 
+                  <td colspan="8" class="comments"> 
                 <div class="accordion-body collapse {{ item.show_comments }}" id="commentDrop{{ item.uid }}">
                   <div class="accordion-inner no-border bot-border">
                   {% for i in item.comments %}
@@ -426,26 +645,26 @@ ul li input.user_time_wf {
                     <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li>&nbsp;<a href="{{ url_for("index", wf_name=wf_name,r=15) }}">15</a></li>
-                        <li>&nbsp;<a href="{{ url_for("index", wf_name=wf_name,r=30) }}">30</a></li>
-                        <li>&nbsp;<a href="{{ url_for("index", wf_name=wf_name,r=90) }}">90</a></li>
+                        <li>&nbsp;<a href="{{ url_for("index", wf_type=wf_type,r=15) }}">15</a></li>
+                        <li>&nbsp;<a href="{{ url_for("index", wf_type=wf_type,r=30) }}">30</a></li>
+                        <li>&nbsp;<a href="{{ url_for("index", wf_type=wf_type,r=90) }}">90</a></li>
                     </ul>
                 </span>
-                <span class="btn-group">
+               <!-- <span class="btn-group">
                     <a class="btn btn-mini dropdown-toggle" data-toggle="dropdown" href="#">
-                    {% if wf_name %}
-                        {{ wf_name }}
+                    {% if wf_type %}
+                        {{ wf_type }}
                     {% else %}
                         all
                     {% endif %}
                     <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li>&nbsp;<a href="{{ url_for("index", wf_name="EFIT",r=rpp) }}">EFIT</a></li>
-                        <li>&nbsp;<a href="{{ url_for("index", wf_name="SWIM",r=rpp) }}">SWIM</a></li>
+                        <li>&nbsp;<a href="{{ url_for("index", wf_type="EFIT",r=rpp) }}">EFIT</a></li>
+                        <li>&nbsp;<a href="{{ url_for("index", wf_type="SWIM",r=rpp) }}">SWIM</a></li>
                         <li>&nbsp;<a href="{{ url_for("index", r=rpp) }}">all</a></li>
                     </ul>
-                </span>
+                </span> -->
                 <!-- <span class="pull-right"><a href="search" role="button" class="btn btn-mini btn-success"><i class="icon-search icon-white"></i>&nbsp;Search</a></span> -->
             </div> <!-- /sort menu -->  
             <div class="pagination pagination-mini text-center">
@@ -466,7 +685,7 @@ ul li input.user_time_wf {
                             range1=1;
                             range2={{ rpp }};			
                         }
-                        return "{{ url_for("index") }}"+"?p="+page+"&range="+range1+","+range2+"&r={{ rpp }}"{% if wf_name %}+"&wf_name={{ wf_name }}"{% endif %};
+                        return "{{ url_for("index") }}"+"?p="+page+"&range="+range1+","+range2+"&r={{ rpp }}"{% if wf_type %}+"&wf_type={{ wf_type }}"{% endif %};
                     }
                 }
                 $('#pages2').bootstrapPaginator(options);

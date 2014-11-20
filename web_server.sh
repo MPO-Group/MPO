@@ -2,8 +2,8 @@
 #
 # web_server.sh - script to run the MPO WEB GUI server.
 #
-# This script uses uwsgi to to run a local copy of the MPO WEB GUI server. 
-# This server listens on the specified port (default 9443) for https 
+# This script uses uwsgi to to run a local copy of the MPO WEB GUI server.
+# This server listens on the specified port (default 9443) for https
 # connections.  Clients are verified using X.509 certificates.
 #
 # Exports:
@@ -26,18 +26,18 @@
 #          (must be owned by you and 600)
 #   MPO_CA_CERT - mpo.psfc.mit.edu-ca.crt
 #        - public keys for the acceptable certificate authorities
-# 
+#
 
 function usage {
   echo "Usage: $0 -h | [port [api_url ]]
   -h                   - print this message
   port                 - network port to listen on [9443]
   api_url              - https url for the api server [https://localhost:8443]
-  db_connection_string - string to connect to the database
-                         (web server will eventually not need this)
 
   for example:
+
     ./web_server.sh  9443 https://localhost:8443
+
 "
   exit 0
 }
@@ -56,6 +56,7 @@ mydir=`dirname $myfp`
 
 PYTHONPATH=$mydir/db:$mydir/server
 export PYTHONPATH
+
 MPO_API_SERVER=${2:-https://localhost:8443}
 MPO_API_VERSION=v0
 export MPO_API_SERVER MPO_API_VERSION

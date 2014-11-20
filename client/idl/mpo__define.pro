@@ -14,6 +14,9 @@
 ;start
 ;comment
 ;meta
+;archive
+;restore
+;ls
 ;
 ; CATEGORY:
 ;      database, provenance, webtools
@@ -38,6 +41,9 @@
 ;
 ; SIDE EFFECTS:
 ;      None
+;      chatty because procedures made by json converter continually
+;      compiled, recommend setting !quiet=1 before running
+;   
 ;
 ; RESTRICTIONS:
 ;      Needs web connection to server
@@ -48,7 +54,7 @@
 ;
 ; mpo=obj_new('mpo',host='mpo-dev.psfc.mit.edu',port='8080',version='v0')
 ;
-; wf=mpo->start('Transp','idl test')
+; wf=mpo->start('Transp run','idl test', 'Transp')
 ;
 ; obj1=mpo->add(wf['uid'],wf['uid'],'Transp_Shot','Transp simulation number','12345')
 ;
@@ -305,6 +311,7 @@ FUNCTION json_to_struct, json, nodelete=nodelete
         ; Create a working copy of the string
         ;
         ; jj = STRCOMPRESS(STRTRIM(json[k],2))
+       ;print,'json length',k
         jj = json[k]
         ;
         ; Search for (possibly hex) numbers in quotes.  IDL doesn't like
@@ -409,30 +416,102 @@ Function debug_req, StatusInfo, ProgressInfo,    CallbackData
 return, 1
 end
 
+
 Function get_payload,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20
-  if !VERSION.release ge 8.2 then begin
-     pay=hash(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v7,v18,v19,v20)
-  endif else pay=create_struct(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20)
+  ;hash and create_struct will ignore !NULL/{} but not <Undefined>
+  ;but this doesn't work in 7.0, so do something ugly
+                                ;note, the whole point of this routine
+                                ;is to choose hash or create_struct
+                                ;base on version. If we could just
+                                ;depend on 8.2, it'd be easier
+;we create a structure with repeated calls to create_struct, and
+;convert to hash if we are using 8.2
+
+  if n_elements(v1) eq 0 or n_elements(v2) eq 0 then begin
+     print,"Must provide at least 2 arguments: 1 key and 1 value"
+     return, create_struct(pay,'error',-1)
+  endif
+  pay=create_struct(v1,v2)
+;a bit sloppy here. should do a return after each endif
+  if n_elements(v3) ne 0 and n_elements(v4) ne 0 then begin
+     pay=create_struct(pay,v3,v4)
+  endif
+  if n_elements(v5) ne 0 and n_elements(v6) ne 0 then begin
+     pay=create_struct(pay,v5,v6)
+  endif
+  if n_elements(v7) ne 0 and n_elements(v8) ne 0 then begin
+     pay=create_struct(pay,v7,v8)
+  endif
+  if n_elements(v9) ne 0 and n_elements(v10) ne 0 then begin
+     pay=create_struct(pay,v9,v10)
+  endif
+  if n_elements(v11) ne 0 and n_elements(v12) ne 0 then begin
+     pay=create_struct(pay,v11,v12)
+  endif
+  if n_elements(v13) ne 0 and n_elements(v14) ne 0 then begin
+     pay=create_struct(pay,v13,v14)
+  endif
+  if n_elements(v15) ne 0 and n_elements(v16) ne 0 then begin
+     pay=create_struct(pay,v15,v16)
+  endif
+  if n_elements(v17) ne 0 and n_elements(v18) ne 0 then begin
+     pay=create_struct(pay,v17,v18)
+  endif
+  if n_elements(v19) ne 0 and n_elements(v20) ne 0 then begin
+     pay=create_struct(pay,v19,v20)
+  endif
+
+  if float(!VERSION.release) ge 8.2 then pay=hash(pay)
+  
   return, pay
 end
 
-FUNCTION mpo::get, route, args
- if n_elements(args) eq 0 then args=''
+FUNCTION mpo::get, route, args=args
  if n_elements(route) eq 0 then return,self.error.get_route
- self.req->SetProperty, URL_QUERY=args
- self.req->SetProperty, URL_PATH= self.mpo_version+'/'+route
+ sargs=''
+ if n_elements(args) eq 0 then begin
+    args='' 
+ endif else begin
+    ;add arguments
+   sargs='&'
+   for i = 0,n_elements(args)-1 do begin
+       sargs=sargs+args[i]
+       if i lt n_elements(args)-1 then sargs=sargs+'&'
+    endfor
+ endelse
+ if self.debug eq 1 then print,'GET', n_elements(args), args
 
+ url=self.mpo_host+'/'+self.mpo_version+'/'+route
+
+ ;self.req->SetProperty, URL_QUERY=args ;wants a scalar?
+ ;self.req->SetProperty, URL_PATH= url  
+
+ url=url+sargs
+
+;make query
+ ;resp=string(self.req->GET(/BUFFER))
+ ;Close your eyes, this is ugly. IDL cannot use personal certificates
+ ;print,'Making query GET ',url
+ a='""'
+ b='"Null"' 
+ q="curl -s -k  --cert '" +self.MPO_AUTH+ "' " + url 
+ q=q+' --header "ACCEPT : application/json" '
+ ;replace null records and empty strings with "Null"
+ q=q+ "| sed 's/"+a+"/"+b+"/g' |sed 's/null/"+b+"/g' "
+
+ if self.debug eq 1 then print,'MPO.GET, curl query',q
+ spawn,q,str_resp
 ;return a structure or list of structures even when using hashes internally
 ;Convert json response to an idl structure
- if !VERSION.release ge 8.2 then begin
-    res=JSON_PARSE( string(self.req->GET(/BUFFER)) ) ;, /TOSTRUCT )
+ if float(!VERSION.release) ge 8.2 then begin
+    res=JSON_PARSE( str_resp  ) ;, /TOSTRUCT )
     if typename(res) eq 'LIST' then begin
         for i=0,n_elements(res)-1 do begin
-            res[i]=res[i].tostruct()
+            res[i]=res[i].tostruct;() ;uncomment for 8.2
         endfor
-    endif else res = res.tostruct()
+    endif else res = res.tostruct;() ;uncomment for 8.2
     ;print,'get',string(self.req->GET(/BUFFER))
- endif else res=json_to_struct(string(self.req->GET(/BUFFER)))
+ endif else res=json_to_struct(str_resp)
  
  return, res
 end
@@ -442,29 +521,36 @@ FUNCTION mpo::post, route, payload
  if n_elements(route) eq 0 then return,self->error('post_route')
 ;route is a string
 ;payload should be a IDL STRUCT
-
+ url=self.mpo_host+'/'+self.mpo_version+'/'+route
  self.req->SetProperty, URL_PATH= self.mpo_version+'/'+route
  self.req->SetProperty, HEADERS=self.POSTheaders
 
 ;problem with structures, tags are always upper case 
-; print,'post ',payload
-; help,/st,payload
+ if self.debug eq 1 then help,/st,payload
 ;Convert json response to an idl structure
- if !VERSION.release ge 8.2 then begin
+ if (!VERSION.release) ge 8.2 then begin
     json=JSON_SERIALIZE(payload)
  endif else json=struct_to_json(payload)
 
- r=self.req->PUT(json,/BUFFER,/POST)
- readstring,r,res
+ ;r=self.req->PUT(json,/BUFFER,/POST)  ;puts it into file 'r'
+
+ q="curl -s -k -X 'POST' --cert '" +self.MPO_AUTH+ "' " + url 
+ q=q+ " -d '"+json+"'"
+ q=q+ ' --header "content-type: application/json" '
+ if self.debug eq 1  then print,'MPO.POST, curl query',q
+ spawn,q,r
+
+ ;readstring,r,res
+ res=r
 
 ;return a structure or list of structures even when using hashes internally
- if !VERSION.release ge 8.2 then begin ;was 8.2
+ if float(!VERSION.release) ge 8.2 then begin ;was 8.2
     res = JSON_PARSE(res);,/tostruct)
     if typename(res) eq 'LIST' then begin
         for i=0,n_elements(res)-1 do begin
-            res[i]=res[i].tostruct()
+            res[i]=res[i].tostruct;() ;uncomment for 8.2
         endfor
-    endif else res = res.tostruct()
+    endif else res = res.tostruct;()  ;uncomment for 8.2
  endif else  res=json_to_struct(res)
 
  return, res 
@@ -486,15 +572,17 @@ end
 ;-
 
 
-FUNCTION mpo::start, name, description ;because IDL uses 'init' for class initialization
-  payload = get_payload("name",name,"description",description)
+FUNCTION mpo::start, name, description, type ;because IDL uses 'init' for class initialization
+  payload = get_payload("name",name,"description",description,"type",type)
 
+  
   Res = self->post(self.workflow_rt, payload)
   return, res
 end
 
 FUNCTION mpo::add , workflow_uid, parent_uid, name, description, uri
 
+ parent_uid = [parent_uid]
  payload =   get_payload($
                                   self.workid,workflow_uid,$
                                   self.parentid,parent_uid,$
@@ -504,11 +592,14 @@ FUNCTION mpo::add , workflow_uid, parent_uid, name, description, uri
  return, res
 end
 
-FUNCTION mpo::step , workflow_uid, parent_uid, name, description, uri
-;todo add additional inputs to parent_uid
+FUNCTION mpo::step , workflow_uid, parent_uid, name, description, uri, inputs=inputs
+
+ input_objs=[parent_uid]
+ if keyword_set(inputs) ne 0 then input_objs = [ inputs, input_objs ]
+
  payload =   get_payload($
                                   self.workid,workflow_uid,$
-                                  self.parentid,[parent_uid],$
+                                  self.parentid,[input_objs],$
                                   "name",name,"description",description,$
                                   "uri",uri   )
  res = self->post(self.activity_rt, payload)
@@ -518,7 +609,7 @@ end
 FUNCTION mpo::comment, parent_uid, text
  payload =   get_payload($
                                   self.parentid,parent_uid,$
-                                  "text",text)
+                                  "content",text)
  res = self->post(self.comment_rt, payload)
  return, res
 end
@@ -537,7 +628,9 @@ FUNCTION mpo::error, key
   ERRORSTR = create_struct($
               'get_route','{"error":"1", "message":"Invalid Route"}',$
               'post_route','{"error":"2", "message":"Invalid Route"}',$
-              'post_payload','{"error":"3", "message":"Payload missing"}'$
+              'post_payload','{"error":"3", "message":"Payload missing"}',$
+              'unsupported_archive_protocol', $
+	      '{"error":"4", "message":"The archive protocol must be one of (mdsplus,filesys)"}'$
                           )
   tnames=tag_names(errorstr)
   tindex=where( strcmp(tnames,strupcase(key) ) eq 1)
@@ -549,34 +642,48 @@ PRO mpo::cleanup
  return
 end
 
-FUNCTION mpo::init , host=host, port=port, version=version
+FUNCTION mpo::archive, protocol, arg_struct
+  archiver=obj_new('mpo_ar_'+protocol, arg_struct)
+  return, archiver->archive()
+end
+
+FUNCTION mpo::init , host=host, version=version, cert=cert, debug=debug
 
  if not keyword_set(host)    then host='mpo.psfc.mit.edu'
- if not keyword_set(port)    then port='8080'
+;;just put port in host name; if not keyword_set(port)    then port='443'
  if not keyword_set(version) then version='v0'
+ if not keyword_set(cert) then cert='./MPO Demo User.pem'
+ self.debug=0
+ if keyword_set(debug) then self.debug=1
 
  self.POSTheaders = "content-type:application/json"
  self.GETheaders= "ACCEPT:application/json"
  self.ID='uid'
  self.WORKID='work_uid'
  self.PARENTID='parent_uid'
-
  self.MPO_VERSION=version
  self.WORKFLOW_RT = 'workflow'
  self.COMMENT_RT  = 'comment'
  self.METADATA_RT = 'metadata'
  self.DATAOBJECT_RT='dataobject'
  self.ACTIVITY_RT=  'activity'
+ self.MPO_HOST=host
+ self.MPO_AUTH=cert
 
 ; self.ERROR.get_route='{"error":"1", "message":"Invalid Route"}'
  self.req=OBJ_NEW('IDLnetUrl')
 ; uncomment for debugging
-; self.req->SetProperty, CALLBACK_FUNCTION='debug_req'
+ self.req->SetProperty, CALLBACK_FUNCTION='debug_req'
  self.req->SetProperty, URL_PORT=port
- self.req->SetProperty, URL_SCHEME='http' ;important
+ self.req->SetProperty, URL_SCHEME='https' ;important
  self.req->SetProperty, HEADERS=self.POSTheaders
  self.req->Setproperty, URL_HOST=host
-; For when authentication is implemented
+ self.req->Setproperty, SSL_VERSION=3
+
+;; For when authentication is implemented
+ self.req->Setproperty, SSL_CERTIFICATE_FILE=cert
+ self.req->Setproperty, SSL_VERIFY_HOST=0
+ self.req->Setproperty, SSL_VERIFY_PEER=0
 ; self.req->Setproperty, URL_PASSWORD=''
 ; self.req->Setproperty, URL_USERNAME=''
 
@@ -587,9 +694,10 @@ end
 ;This needs to go last so other methods are loaded.
 PRO mpo__define
  void = { mpo, req:OBJ_NEW(), $
-          POSTheaders:"", GETheaders:"",ID:'',WORKID:'',PARENTID:'',$
+          POSTheaders:'', GETheaders:'',ID:'',WORKID:'',PARENTID:'',$
           MPO_VERSION:'',WORKFLOW_RT:'', COMMENT_RT:'',METADATA_RT:'', $
-          DATAOBJECT_RT:'',ACTIVITY_RT:'' $
+          DATAOBJECT_RT:'',ACTIVITY_RT:'',MPO_HOST:'',MPO_AUTH:'', $
+          DEBUG:0 $
         }
 
  return

@@ -1,0 +1,3 @@
+Any .md file in this directory will be converted to html and styled with mpo_doc.css
+The script, make_doc.sh is intended to be run in this directory possibly by an svn 
+checkin hook.

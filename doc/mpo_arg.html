@@ -1,0 +1,378 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module mpo_arg</title>
+<meta charset="utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>mpo_arg</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mposvn/trunk/client/python/mpo_arg.py">/Users/jwright/Codes/mposvn/trunk/client/python/mpo_arg.py</a></font></td></tr></table>
+    <p><tt>Test&nbsp;commandline&nbsp;parsing<br>
+Will&nbsp;permit&nbsp;all&nbsp;parsing&nbsp;to&nbsp;be&nbsp;moved&nbsp;to&nbsp;the&nbsp;meta&nbsp;command&nbsp;where&nbsp;it&nbsp;belongs.<br>
+Then&nbsp;methods&nbsp;can&nbsp;stay&nbsp;put&nbsp;functional&nbsp;invocation.<br>
+argument&nbsp;layout&nbsp;for&nbsp;mpo:<br>
+post<br>
+get<br>
+not&nbsp;implemented:&nbsp;delete<br>
+not&nbsp;implemented:&nbsp;put<br>
+add<br>
+step<br>
+init<br>
+comment<br>
+record/meta<br>
+help</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="argparse.html">argparse</a><br>
+<a href="ast.html">ast</a><br>
+<a href="copy.html">copy</a><br>
+</td><td width="25%" valign=top><a href="datetime.html">datetime</a><br>
+<a href="json.html">json</a><br>
+<a href="linecache.html">linecache</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="requests.html">requests</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="textwrap.html">textwrap</a><br>
+<a href="unittest.html">unittest</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="__builtin__.html#object">__builtin__.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="mpo_arg.html#mpo_cli">mpo_cli</a>
+</font></dt><dt><font face="helvetica, arial"><a href="mpo_arg.html#mpo_methods">mpo_methods</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="argparse.html#_SubParsersAction">argparse._SubParsersAction</a>(<a href="argparse.html#Action">argparse.Action</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="mpo_arg.html#AliasedSubParsersAction">AliasedSubParsersAction</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="exceptions.html#Exception">exceptions.Exception</a>(<a href="exceptions.html#BaseException">exceptions.BaseException</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="mpo_arg.html#shell_exception">shell_exception</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="AliasedSubParsersAction">class <strong>AliasedSubParsersAction</strong></a>(<a href="argparse.html#_SubParsersAction">argparse._SubParsersAction</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Support&nbsp;'aliases'&nbsp;of&nbsp;commands.<br>
+use<br>
+parser.register('action',&nbsp;'parsers',&nbsp;<a href="#AliasedSubParsersAction">AliasedSubParsersAction</a>)<br>
+then&nbsp;subparsers&nbsp;can&nbsp;take&nbsp;aliases=()<br>
+&nbsp;<br>
+Note,&nbsp;this&nbsp;functionality&nbsp;is&nbsp;added&nbsp;to&nbsp;argparse&nbsp;for&nbsp;python&nbsp;3.2<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="mpo_arg.html#AliasedSubParsersAction">AliasedSubParsersAction</a></dd>
+<dd><a href="argparse.html#_SubParsersAction">argparse._SubParsersAction</a></dd>
+<dd><a href="argparse.html#Action">argparse.Action</a></dd>
+<dd><a href="argparse.html#_AttributeHolder">argparse._AttributeHolder</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="AliasedSubParsersAction-add_parser"><strong>add_parser</strong></a>(self, name, **kwargs)</dt></dl>
+
+<hr>
+Methods inherited from <a href="argparse.html#_SubParsersAction">argparse._SubParsersAction</a>:<br>
+<dl><dt><a name="AliasedSubParsersAction-__call__"><strong>__call__</strong></a>(self, parser, namespace, values, option_string<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="AliasedSubParsersAction-__init__"><strong>__init__</strong></a>(self, option_strings, prog, parser_class, dest<font color="#909090">='==SUPPRESS=='</font>, help<font color="#909090">=None</font>, metavar<font color="#909090">=None</font>)</dt></dl>
+
+<hr>
+Methods inherited from <a href="argparse.html#_AttributeHolder">argparse._AttributeHolder</a>:<br>
+<dl><dt><a name="AliasedSubParsersAction-__repr__"><strong>__repr__</strong></a>(self)</dt></dl>
+
+<hr>
+Data descriptors inherited from <a href="argparse.html#_AttributeHolder">argparse._AttributeHolder</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="mpo_cli">class <strong>mpo_cli</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>mpo&nbsp;command&nbsp;line&nbsp;interface&nbsp;to&nbsp;restful&nbsp;primitives.<br>
+Commandline&nbsp;invocation:<br>
+mpo&nbsp;&lt;mpo&nbsp;flags&gt;&nbsp;method&nbsp;&lt;url&gt;&nbsp;&lt;method&nbsp;flags&gt;&nbsp;&lt;payload&gt;<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="mpo_cli-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, mpo_cert<font color="#909090">=''</font>, archive_host<font color="#909090">='psfcstor1.psfc.mit.edu'</font>, archive_user<font color="#909090">='psfcmpo'</font>, archive_key<font color="#909090">=None</font>, archive_prefix<font color="#909090">=None</font>, debug<font color="#909090">=False</font>)</dt></dl>
+
+<dl><dt><a name="mpo_cli-cli"><strong>cli</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="mpo_cli-type_uuid"><strong>type_uuid</strong></a>(self, uuid)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="mpo_methods">class <strong>mpo_methods</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Class&nbsp;of&nbsp;RESTful&nbsp;primitives.&nbsp;I/O&nbsp;is&nbsp;through&nbsp;stdin/stdout.<br>
+Implementation&nbsp;of&nbsp;MPO&nbsp;client&nbsp;side&nbsp;API&nbsp;as&nbsp;described&nbsp;at<br>
+<a href="http://www.psfc.mit.edu/mpo/">http://www.psfc.mit.edu/mpo/</a><br>
+&nbsp;<br>
+Functional&nbsp;invocation:<br>
+import&nbsp;mpo.<a href="#mpo_methods">mpo_methods</a>&nbsp;as&nbsp;m<br>
+m.flags=values&nbsp;#set&nbsp;some&nbsp;defaults,&nbsp;eg&nbsp;m.server=$MPO_HOST<br>
+m.mpo_method(url=url,payload=payload,arg1=arg1,arg2=arg2)<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="mpo_methods-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, cert<font color="#909090">='cert'</font>, archive_host<font color="#909090">='psfcstor1.psfc.mit.edu'</font>, archive_user<font color="#909090">='psfcmpo'</font>, archive_key<font color="#909090">=None</font>, archive_prefix<font color="#909090">=None</font>, debug<font color="#909090">=False</font>, filter<font color="#909090">=False</font>)</dt></dl>
+
+<dl><dt><a name="mpo_methods-add"><strong>add</strong></a>(self, workflow_ID<font color="#909090">=None</font>, parentobj_ID<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Add&nbsp;at&nbsp;dataobject&nbsp;to&nbsp;a&nbsp;workflow.<br>
+&nbsp;<br>
+args&nbsp;are:<br>
+workflow_ID&nbsp;--<br>
+parentobj_ID&nbsp;--<br>
+name&nbsp;--<br>
+desc&nbsp;--&nbsp;description<br>
+uri&nbsp;--&nbsp;uri&nbsp;for&nbsp;the&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;added</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-add_do"><strong>add_do</strong></a>(self, **kwargs)</dt><dd><tt>Add&nbsp;a&nbsp;dataobject&nbsp;with&nbsp;no&nbsp;workflow&nbsp;or&nbsp;partentobj_id.<br>
+This&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;can&nbsp;then&nbsp;be&nbsp;connected&nbsp;to&nbsp;one&nbsp;or&nbsp;more<br>
+workflows.<br>
+&nbsp;<br>
+if&nbsp;a&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;with&nbsp;this&nbsp;workflow&nbsp;already&nbsp;exists,&nbsp;then&nbsp;return&nbsp;it.<br>
+&nbsp;<br>
+args&nbsp;are:<br>
+name&nbsp;--<br>
+desc&nbsp;--&nbsp;description<br>
+uri&nbsp;--&nbsp;uri&nbsp;for&nbsp;the&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;added</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-archive"><strong>archive</strong></a>(self, protocol<font color="#909090">=None</font>, *arg, **kw)</dt></dl>
+
+<dl><dt><a name="mpo_methods-comment"><strong>comment</strong></a>(self, obj_ID<font color="#909090">=None</font>, comment<font color="#909090">='empty'</font>, **kwargs)</dt><dd><tt>Takes&nbsp;a&nbsp;returned&nbsp;record&nbsp;and&nbsp;adds&nbsp;a&nbsp;comment&nbsp;to&nbsp;it.<br>
+In&nbsp;this&nbsp;case,&nbsp;data&nbsp;should&nbsp;be&nbsp;a&nbsp;plain&nbsp;string.<br>
+args:<br>
+obj_ID&nbsp;--&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;being&nbsp;commented&nbsp;on<br>
+comment&nbsp;--&nbsp;string&nbsp;containing&nbsp;the&nbsp;comment</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-format"><strong>format</strong></a>(self, result, filter<font color="#909090">='id'</font>)</dt><dd><tt>Routine&nbsp;to&nbsp;handle&nbsp;reformatting&nbsp;of&nbsp;responses&nbsp;from&nbsp;submethods.&nbsp;It&nbsp;is&nbsp;aware&nbsp;of&nbsp;the<br>
+internal&nbsp;format&nbsp;returned.</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-get"><strong>get</strong></a>(self, route<font color="#909090">=''</font>, params<font color="#909090">={}</font>, verbose<font color="#909090">=False</font>, **kwargs)</dt></dl>
+
+<dl><dt><a name="mpo_methods-get_cid"><strong>get_cid</strong></a>(self, wid)</dt></dl>
+
+<dl><dt><a name="mpo_methods-get_uri"><strong>get_uri</strong></a>(self, uri<font color="#909090">=None</font>, do_uid<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="mpo_methods-get_wid"><strong>get_wid</strong></a>(self, cid)</dt><dd><tt>###&nbsp;Persistent&nbsp;store&nbsp;methods&nbsp;###</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-init"><strong>init</strong></a>(self, name<font color="#909090">=None</font>, desc<font color="#909090">=''</font>, wtype<font color="#909090">='None'</font>, **kwargs)</dt><dd><tt>The&nbsp;INIT&nbsp;method&nbsp;starts&nbsp;a&nbsp;workflow.<br>
+It&nbsp;returns&nbsp;the&nbsp;server&nbsp;response&nbsp;for&nbsp;a&nbsp;new&nbsp;workflow.<br>
+&nbsp;<br>
+args&nbsp;are:<br>
+name&nbsp;--&nbsp;name<br>
+desc&nbsp;--&nbsp;description<br>
+wtype&nbsp;--&nbsp;workflow&nbsp;type</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-ls"><strong>ls</strong></a>(self, uri<font color="#909090">=None</font>, do_uid<font color="#909090">=None</font>, *arg, **kw)</dt></dl>
+
+<dl><dt><a name="mpo_methods-meta"><strong>meta</strong></a>(self, obj_ID<font color="#909090">=None</font>, key<font color="#909090">=None</font>, value<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Takes&nbsp;a&nbsp;returned&nbsp;record&nbsp;and&nbsp;adds&nbsp;a&nbsp;metadata&nbsp;to&nbsp;it.<br>
+In&nbsp;this&nbsp;case,&nbsp;data&nbsp;should&nbsp;be&nbsp;a&nbsp;plain&nbsp;string.<br>
+&nbsp;<br>
+args:<br>
+obj_ID&nbsp;--&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;being&nbsp;commented&nbsp;on<br>
+key&nbsp;--&nbsp;key&nbsp;identifying&nbsp;the&nbsp;type&nbsp;of&nbsp;metadata&nbsp;stored<br>
+value&nbsp;--&nbsp;string&nbsp;containing&nbsp;the&nbsp;stored&nbsp;value</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-ontology_instance"><strong>ontology_instance</strong></a>(self, target<font color="#909090">=None</font>, path<font color="#909090">=None</font>, value<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Add&nbsp;terms&nbsp;to&nbsp;the&nbsp;ontology&nbsp;instance<br>
+&nbsp;&nbsp;target&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ID&nbsp;of&nbsp;annotated&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;&nbsp;path&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Path&nbsp;of&nbsp;ontology&nbsp;term&nbsp;type<br>
+&nbsp;&nbsp;value&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value&nbsp;of&nbsp;the&nbsp;term,&nbsp;must&nbsp;conform&nbsp;to&nbsp;ontology&nbsp;contraint</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-ontology_term"><strong>ontology_term</strong></a>(self, term<font color="#909090">=None</font>, parent_ID<font color="#909090">=None</font>, specified<font color="#909090">=None</font>, vtype<font color="#909090">=None</font>, desc<font color="#909090">=None</font>, units<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Add&nbsp;terms&nbsp;to&nbsp;the&nbsp;ontology<br>
+&nbsp;&nbsp;&nbsp;args:<br>
+&nbsp;&nbsp;&nbsp;term&nbsp;--<br>
+&nbsp;&nbsp;&nbsp;parent_ID&nbsp;--&nbsp;term&nbsp;above&nbsp;this&nbsp;one&nbsp;in&nbsp;the&nbsp;hierachy,&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ie&nbsp;the&nbsp;is&nbsp;adding&nbsp;the&nbsp;the&nbsp;parent&nbsp;terms&nbsp;vocabulary<br>
+&nbsp;&nbsp;&nbsp;desc&nbsp;--&nbsp;the&nbsp;description&nbsp;of&nbsp;the&nbsp;term<br>
+&nbsp;&nbsp;&nbsp;vtype&nbsp;--&nbsp;its&nbsp;type<br>
+&nbsp;&nbsp;&nbsp;specified&nbsp;--&nbsp;boolean<br>
+&nbsp;&nbsp;&nbsp;units&nbsp;--&nbsp;dimensional&nbsp;units&nbsp;if&nbsp;any</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-post"><strong>post</strong></a>(self, route<font color="#909090">=''</font>, workflow_ID<font color="#909090">=None</font>, obj_ID<font color="#909090">=None</font>, data<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>POST&nbsp;a&nbsp;messsage&nbsp;to&nbsp;an&nbsp;MPO&nbsp;route.<br>
+Used&nbsp;by&nbsp;all&nbsp;methods&nbsp;that&nbsp;create&nbsp;objects&nbsp;in&nbsp;an&nbsp;MPO&nbsp;workflow.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+workflow_ID&nbsp;--&nbsp;the&nbsp;workflow&nbsp;being&nbsp;added&nbsp;to<br>
+obj_ID&nbsp;--&nbsp;the&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;we&nbsp;are&nbsp;making&nbsp;a&nbsp;connection&nbsp;from<br>
+data&nbsp;--&nbsp;the&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;being&nbsp;posted</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-restore"><strong>restore</strong></a>(self, uri<font color="#909090">=None</font>, do_uid<font color="#909090">=None</font>, *arg, **kw)</dt></dl>
+
+<dl><dt><a name="mpo_methods-search"><strong>search</strong></a>(self, route, params, **kwargs)</dt><dd><tt>Find&nbsp;objects&nbsp;by&nbsp;query.&nbsp;An&nbsp;supermethod&nbsp;of&nbsp;GET.<br>
+Presently,&nbsp;identical&nbsp;to&nbsp;'get'&nbsp;but&nbsp;can&nbsp;be&nbsp;generalized.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+params&nbsp;--&nbsp;python&nbsp;dictionary<br>
+route&nbsp;--&nbsp;API&nbsp;route&nbsp;for&nbsp;resource</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-step"><strong>step</strong></a>(self, workflow_ID<font color="#909090">=None</font>, parentobj_ID<font color="#909090">=None</font>, input_objs<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>For&nbsp;adding&nbsp;actions<br>
+args:<br>
+workflow_ID&nbsp;--<br>
+parentobj_ID&nbsp;--<br>
+name&nbsp;--&nbsp;name&nbsp;of&nbsp;activity<br>
+desc&nbsp;--&nbsp;description<br>
+uri&nbsp;--&nbsp;uri&nbsp;for&nbsp;the&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;added<br>
+input_objs&nbsp;--&nbsp;array&nbsp;of&nbsp;additional&nbsp;inputs</tt></dd></dl>
+
+<dl><dt><a name="mpo_methods-test"><strong>test</strong></a>(self, route<font color="#909090">='default'</font>, *a, **kw)</dt><dd><tt>NOP&nbsp;routine.&nbsp;Useful&nbsp;for&nbsp;new&nbsp;subcommand&nbsp;development</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>ACTIVITY_RT</strong> = 'activity'</dl>
+
+<dl><dt><strong>COMMENT_RT</strong> = 'comment'</dl>
+
+<dl><dt><strong>CONNECTION_RT</strong> = 'connection'</dl>
+
+<dl><dt><strong>DATAOBJECT_RT</strong> = 'dataobject'</dl>
+
+<dl><dt><strong>GETheaders</strong> = {'ACCEPT': 'application/json'}</dl>
+
+<dl><dt><strong>ID</strong> = 'uid'</dl>
+
+<dl><dt><strong>METADATA_RT</strong> = 'metadata'</dl>
+
+<dl><dt><strong>MPO_PORT</strong> = '8080'</dl>
+
+<dl><dt><strong>MPO_VERSION</strong> = 'v0'</dl>
+
+<dl><dt><strong>ONTOLOGY_INSTANCE_RT</strong> = 'ontology/instance'</dl>
+
+<dl><dt><strong>ONTOLOGY_TERM_RT</strong> = 'ontology/term'</dl>
+
+<dl><dt><strong>PARENTID</strong> = 'parent_uid'</dl>
+
+<dl><dt><strong>POSTheaders</strong> = {'content-type': 'application/json'}</dl>
+
+<dl><dt><strong>WORKFLOW_RT</strong> = 'workflow'</dl>
+
+<dl><dt><strong>WORKID</strong> = 'work_uid'</dl>
+
+<dl><dt><strong>WORKID_QRY</strong> = 'workid'</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="shell_exception">class <strong>shell_exception</strong></a>(<a href="exceptions.html#Exception">exceptions.Exception</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="mpo_arg.html#shell_exception">shell_exception</a></dd>
+<dd><a href="exceptions.html#Exception">exceptions.Exception</a></dd>
+<dd><a href="exceptions.html#BaseException">exceptions.BaseException</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="shell_exception-__init__"><strong>__init__</strong></a>(self, status, *args, **kwargs)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes inherited from <a href="exceptions.html#Exception">exceptions.Exception</a>:<br>
+<dl><dt><strong>__new__</strong> = &lt;built-in method __new__ of type object&gt;<dd><tt>T.<a href="#shell_exception-__new__">__new__</a>(S,&nbsp;...)&nbsp;-&gt;&nbsp;a&nbsp;new&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;with&nbsp;type&nbsp;S,&nbsp;a&nbsp;subtype&nbsp;of&nbsp;T</tt></dl>
+
+<hr>
+Methods inherited from <a href="exceptions.html#BaseException">exceptions.BaseException</a>:<br>
+<dl><dt><a name="shell_exception-__delattr__"><strong>__delattr__</strong></a>(...)</dt><dd><tt>x.<a href="#shell_exception-__delattr__">__delattr__</a>('name')&nbsp;&lt;==&gt;&nbsp;del&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="shell_exception-__getattribute__"><strong>__getattribute__</strong></a>(...)</dt><dd><tt>x.<a href="#shell_exception-__getattribute__">__getattribute__</a>('name')&nbsp;&lt;==&gt;&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="shell_exception-__getitem__"><strong>__getitem__</strong></a>(...)</dt><dd><tt>x.<a href="#shell_exception-__getitem__">__getitem__</a>(y)&nbsp;&lt;==&gt;&nbsp;x[y]</tt></dd></dl>
+
+<dl><dt><a name="shell_exception-__getslice__"><strong>__getslice__</strong></a>(...)</dt><dd><tt>x.<a href="#shell_exception-__getslice__">__getslice__</a>(i,&nbsp;j)&nbsp;&lt;==&gt;&nbsp;x[i:j]<br>
+&nbsp;<br>
+Use&nbsp;of&nbsp;negative&nbsp;indices&nbsp;is&nbsp;not&nbsp;supported.</tt></dd></dl>
+
+<dl><dt><a name="shell_exception-__reduce__"><strong>__reduce__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="shell_exception-__repr__"><strong>__repr__</strong></a>(...)</dt><dd><tt>x.<a href="#shell_exception-__repr__">__repr__</a>()&nbsp;&lt;==&gt;&nbsp;repr(x)</tt></dd></dl>
+
+<dl><dt><a name="shell_exception-__setattr__"><strong>__setattr__</strong></a>(...)</dt><dd><tt>x.<a href="#shell_exception-__setattr__">__setattr__</a>('name',&nbsp;value)&nbsp;&lt;==&gt;&nbsp;x.name&nbsp;=&nbsp;value</tt></dd></dl>
+
+<dl><dt><a name="shell_exception-__setstate__"><strong>__setstate__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="shell_exception-__str__"><strong>__str__</strong></a>(...)</dt><dd><tt>x.<a href="#shell_exception-__str__">__str__</a>()&nbsp;&lt;==&gt;&nbsp;str(x)</tt></dd></dl>
+
+<dl><dt><a name="shell_exception-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data descriptors inherited from <a href="exceptions.html#BaseException">exceptions.BaseException</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+</dl>
+<dl><dt><strong>args</strong></dt>
+</dl>
+<dl><dt><strong>message</strong></dt>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-PrintException"><strong>PrintException</strong></a>()</dt></dl>
+ <dl><dt><a name="-str2bool"><strong>str2bool</strong></a>(v)</dt></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>print_function</strong> = _Feature((2, 6, 0, 'alpha', 2), (3, 0, 0, 'alpha', 0), 65536)</td></tr></table>
+</body></html>

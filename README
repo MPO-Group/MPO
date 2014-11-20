@@ -166,7 +166,7 @@ psql -d mpoDB -a -f $MPO_HOME/db/create_tables.sql
 export MPO_HOME=$PWD
 export MPO_VERSION=v0
 export MPO_HOST=https://localhost:8443
-export MPO=$MPO_HOME/client/python/mpo_testing.py
+export MPO=$MPO_HOME/client/python/mpo_arg.py
 alias mpo=$MPO #if you like
 export MPO_AUTH='~/Desktop/keyStore.pem' #p12 support to be added. requires autogeneration of pem file
 #or

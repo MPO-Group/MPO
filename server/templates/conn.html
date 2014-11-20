@@ -3,8 +3,35 @@
 {% block title %}MPO Workflow Detail{% endblock %}
 
 {% block hscripts %}
+<script type="text/javascript" src="/static/js/svg-pan-zoom.js"></script> 
+<!-- <script type="text/javascript" src="/static/js/jquery-ui.js"></script> -->
+<script type="text/javascript" src="/static/js/jquery.slimscroll.min.js"></script>
+<style>
+#svg_loading {
+	background:url(/static/img/ajax-loader.gif) no-repeat center center;
+	height:60px;
+}
+#svg {
+	background-color:#fff;
+	overflow: hidden;
+}
 
+.logbook_row {
+	background-color:#fff;
+}
+
+.comment_table {
+	border: 1px solid #ddd;
+	background-color: #fff;
+}
+
+</style>
 <script>
+var nodeUIDs = new Array(); //store node UIDs for comparison with new node UIDs added after page load
+var wid = ""; //store workflow wid
+var lastUpdate = ""; //store last update time
+var rightScrollHeight='700px';
+var clickedLinkedWorkflows=[];
 
 function closepop(id) {
 	$('#'+id).popover('hide');
@@ -14,166 +41,230 @@ function showComments() {
 	$( "#node_comments" ).toggle();
 }
 
+function inArray(value, array) {
+  return array.indexOf(value) > -1;
+}
+
+function failure_cb(event,msg,userarg) {
+//what to do on failure (status !=200 or 204) eg event server down.
+  alert(msg);
+}
+
+function success_cb(event,data,userarg) { 
+//define your callback here.
+//you probably want JSON.parse(data.event.data.text["#text"]) which selects the string 
+//serialized json object containing the mpo event payload that is contained in the larger
+// json object that is parsed out of XMLHTTPrequest and converts it to a local JSON object
+// that can be used.
+// You may want to define different callbacks for different events you want to monitor
+// or have logic on the value of 'event'
+	if (typeof(data.event) !== "undefined") {
+		var tmpDataObj=JSON.parse(data.event.data.text["#text"]);
+		//var tmpDataObj=jQuery.parseJSON(data.event.data.text["#text"]);
+		
+		var wfID="";
+		for (var key in tmpDataObj) {
+			if(key=="parent_uid")
+				wfID=tmpDataObj[key];
+			else if (key=="work_uid")
+				wfID=tmpDataObj[key];
+		}
+	}
+	 
+	if(userarg==wfID)
+		buildPageElements(wfID);
+}
+
 //handles the svg workflow plot functionality
 $(document).ready(function () {
-		wf_desc="{{ wid_info[0].description }}";	
-		var jsondata = '{{ nodes|tojson }}';  //single quote issue
-		var tmp_str=jsondata.replace(/&#34;/g,'"');
-		tmp_str=tmp_str.replace(/(\r\n|\n|\r)/g,'<br/>');
-		tmp_str=tmp_str.replace(/&#39;/g,'\''); //replace single quote with \'
-		tmp_str=tmp_str.replace(/\\/g, "\\\\");  //replace single backslash with double \\
-		var jdata=tmp_str;
-		//console.log(jdata);
+	var $window = $(window);
+	$("#svg_loading").hide();
+	wf_desc="{{ wid_info[0].description }}";	
+	var jsondata = '{{ nodes|tojson }}';  //single quote issue
+	var tmp_str=jsondata.replace(/&#34;/g,'"');
+	tmp_str=tmp_str.replace(/(\r\n|\n|\r)/g,'<br/>');
+	tmp_str=tmp_str.replace(/&#39;/g,'\''); //replace single quote with \'
+	tmp_str=tmp_str.replace(/\\/g, "\\\\");  //replace single backslash with double \\
+	var jdata=tmp_str;
 
-		var dataObjs=jQuery.parseJSON(jdata);
-		//alert(JSON.stringify(dataObjs[4].data));
-		
-		var dataElements = {}; //for name - desc in popover
-		
-		name='';
-		desc='';
-		for (var key in dataObjs) {
-		  if (dataObjs.hasOwnProperty(key)) {
-			var tmp = dataObjs[key];
-			for(var j in tmp) {
-				if(j=="data") {
-					//alert(JSON.stringify(tmp[j]));
-					var tmp2=tmp[j];
-					var tmp3=tmp2[0];
-					if(tmp3['time'])
-						dataElements[tmp['name']]=tmp3['description'] + ' - ' + tmp3['time'];
-					else
-						dataElements[tmp['name']]=tmp3['description'];
+	var dataObjs=jQuery.parseJSON(jdata);
+	
+	lastUpdate=new Date(1900,00,01); //past date for demo
+	//lastUpdate=new Date(); //GET CURRENT DATE ON PAGE LOAD for newest added element comparison
+
+	var nodeCount=0;
+	var dataElements = {}; //for name - desc in popover
+	
+	for (var key in dataObjs) {
+	  if (dataObjs.hasOwnProperty(key)) {
+		var tmp = dataObjs[key];
+		nodeUIDs[nodeCount]=tmp['uid'];
+		for(var j in tmp) {
+			if(j=="data") {
+				var tmp2=tmp[j];
+				var tmp3=tmp2[0];
+				dataElements[tmp['name']]="";
+				if(tmp3['description'])
+					dataElements[tmp['name']]+=tmp3['description'];
+				if(tmp3['time']) {
+					dataElements[tmp['name']]+= "<div><small>"+tmp3['time']+"</small></div>";
+					//store latest workflow update time
+					tmpDateTime=new Date(tmp3['time'].replace(" ","T"));
+					if(tmpDateTime > lastUpdate)
+						lastUpdate=tmpDateTime
 				}
-				else if(j=="metadata") {
-					var tmp2=tmp[j];
-					dataElements[tmp['name']]=dataElements[tmp['name']]+"<div>metadata:<ul>";
-					for (var z in tmp2)
-					{
-						var tmp3=tmp2[z];
-						if(tmp3['key']) {
-							dataElements[tmp['name']]=dataElements[tmp['name']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
+				if(tmp3['uri']) {
+					var fill=false;
+					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['uri']+"</small>";
+					if(tmp3['wf_link']) {
+						//dataElements[tmp['name']]+="<ul class=\"wf_links\"><li><small><em>Linked Workflows:</em></small>"; 
+						//dataElements[tmp['name']]+="<ul>";
+						for (var cnt in tmp3['wf_link']) {
+							if (tmp3['wf_link'][cnt]['work_uid'] != "{{ wid }}") {
+								fill=true;
+								//dataElements[tmp['name']]+="<li><small><a href=\"/connections/"+tmp3['wf_link'][cnt]['work_uid']+"\">"+tmp3['wf_link'][cnt]['work_uid']+"</a></small></li>";
+							}
 						}
+						//dataElements[tmp['name']]+="</ul></li></ul>"; 
+						if(fill)
+							fillSVGElement(tmp['uid']);
 					}
-					dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></div>";
+					dataElements[tmp['name']]+="</li>";
+					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
 				}
 			}
-		  }
-		}
-		//alert(JSON.stringify(dataElements));
-			
-		var lastPopover='';
-		var currentPopover='';
-
-		//$("#test").popover({title: "this is a popover", html: true, container: 'body', content: '<ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li></ul>', trigger: 'hover'});
-		//checks and adjusts svg width/height if needed
-		//var workflowWidth=560; //in pixels
-		//var workflowWidth=550;
-		var workflowWidth=500;
-
-		var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
-		var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
-		var width=parseInt(w.replace("pt",""));
-		var height=parseInt(h.replace("pt",""));
-		
-		if(width > workflowWidth) {
-			var wnew=Math.round(width*(workflowWidth/width));
-			var hnew=Math.round(height*(workflowWidth/width));
-			w=wnew.toString() + "pt";
-			h=hnew.toString() + "pt";
-			document.getElementsByTagName("svg").item(0).setAttribute("width",w);
-			document.getElementsByTagName("svg").item(0).setAttribute("height",h);
-		}
-		//end svg size adjust
-				
-		//get list of nodes for svg xml tag "g" w/ class "node"
-		var nodelist = document.querySelectorAll("g.node");
-				
-		//parse nodelist object and add click event function to each node (w/ respective data)
-		for (var key in nodelist) {
-		  if (nodelist.hasOwnProperty(key)) {
-		    var node=nodelist[key];
-			var id="";
-			
-			var sub_content="";
-			//get id of "g" element of class=nodes
-			if(key==0) {
-				id="node1";
-				var wid=node.childNodes[0].textContent;
-				sub_content=wf_desc;
+			else if(j=="metadata") {
+				var tmp2=tmp[j];
+				if(dataElements[tmp['name']])
+					dataElements[tmp['name']]=dataElements[tmp['name']]+"<li><small>metadata:</small><ul>";
+				else
+					dataElements[tmp['name']]="<ul><li><small>metadata:</small><ul>";
+				for (var z in tmp2)
+				{
+					var tmp3=tmp2[z];
+					if(tmp3['key']) {
+						dataElements[tmp['name']]=dataElements[tmp['name']] + "<li><small>" + tmp3['key'] + ': ' + tmp3['value'] + "</small></li>";
+					}
+				}
+				dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></li></ul>";
 			}
-			else
-				id=node.childNodes[0].textContent;	
-			
-			//get current text content of node and add a link -- *use svg xlink instead*
-			//var nodeText=node.childNodes[4].textContent;
-			//node.childNodes[4].textContent='<a href="/">' + nodeText + '</a>';
-			
-			//create new ID attribute for <text> v.1
-			//var addTextID = document.createAttribute('id');
-			//addTextID.value = "text_" + id;
-			//node.childNodes[4].setAttributeNode(addTextID);
+		}
+		nodeCount++;
+	  }
+	}
+	
+	$("#last-updated").html(lastUpdate.toLocaleString());
+		
+	var lastPopover='';
+	var currentPopover='';
 
-			//create new ID attribute for <text> v.2
+	//$("#test").popover({title: "this is a popover", html: true, container: 'body', content: '<ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li></ul>', trigger: 'hover'});
+	//checks and adjusts svg width/height if needed
+	var workflowWidth=$("#svg").width();
+
+	var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
+	var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
+	var width=parseInt(w.replace("pt",""));
+	var height=parseInt(h.replace("pt",""));
+	rightScrollHeight=h.replace("pt","px");
+	
+	//adjust for pan/zoom functionality
+	document.getElementsByTagName("svg").item(0).removeAttribute("viewBox");
+
+	//var maxWfHeight=500;
+	if(width > workflowWidth) {
+		var hratio=workflowWidth/width;
+		var vratio=hratio;
+		var wnew=workflowWidth;
+		var hnew=Math.round(height*(vratio-.15));
+		/*if(hnew > 500) {
+			hnew=500;
+			hratio=.8;
+			vratio=.8;
+		}*/
+		//var hnew=460;
+		rightScrollHeight=hnew.toString()+"px";
+		$("#svg_loading").width(wnew).height(hnew);
+		w=wnew.toString() + "pt";
+		h=hnew.toString() + "pt";
+		rightScrollHeight=hnew.toString() + "px";
+		document.getElementsByTagName("svg").item(0).setAttribute("width",w);
+		document.getElementsByTagName("svg").item(0).setAttribute("height",h);
+		//document.getElementById("graph1").transform.baseVal.getItem(0).setScale(".85",".85"); //VERSUS ORIGINAL SIZE 1166 wide x 712 high**
+		document.getElementById("graph1").transform.baseVal.getItem(0).setScale(hratio.toString(),vratio.toString()); //size ratio of workflow on load compared to original size
+	}
+	//end svg size adjust
+
+	/*$( window ).resize(function() {
+
+	});*/
+
+	initZoomPan();
+	
+	//get list of nodes for svg xml tag "g" w/ class "node"
+	var nodelist = document.querySelectorAll("g.node");
+			
+	//parse nodelist object and add click event function to each node (w/ respective data)
+	for (var key in nodelist) {
+	  if (nodelist.hasOwnProperty(key)) {
+		var node=nodelist[key];
+		var id="";
+		
+		var sub_content="";
+		var popcontent="";
+		//get id of "g" element of class=nodes
+		if(key==0) {
+			id="node1";
+			wid=node.childNodes[0].textContent;
+			sub_content=wf_desc;
+		}
+		else if (typeof(node.childNodes) !== "undefined")
+			id=node.childNodes[0].textContent;
+		
+		//create new ID attribute for <text>
+		if (typeof(node.childNodes) !== "undefined") {
 			node.childNodes[2].setAttribute("fill","white"); //shapes fill color
 			node.childNodes[4].setAttribute("style",'fill:rgb(0,76,153);cursor:pointer;'); //text styles
 			node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
-			//node.childNodes[4].id = "text_" + id; 
-			
-			//link popover to new text_id
-			//var popcontent='<div><span>'+ node.childNodes[4].textContent +': <br/><small><em>' + dataElements[node.childNodes[4].textContent] + '</em></small></span><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span></div><hr/><div><small><a href="#">add comment</a> &nbsp;|&nbsp; <a href="#">show comments</a></small></div>'
-			
-			
-			if(typeof(dataElements[node.childNodes[4].textContent]) != 'undefined') {
+			//node.childNodes[4].id = "text_" + id;
+			if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
 				sub_content = dataElements[node.childNodes[4].textContent];
+				popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;	
 			}
-
-
-			var popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;
-			if(id=="node1")
-				popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">view/add comments</a></small></div>';
-			else
-				popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
-			
-			$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
-			//on click 'text' event for each element -- toggle popover menu
-			$("#text_"+id).click(function(e){
-					//closes last clicked popover and opens the new one that was clicked
-					if(currentPopover.length==0) {					
-						currentPopover=e.target.id;
-					}
-					else {
-						lastPopover=currentPopover;
-						currentPopover=e.target.id;
-					}
-					if(lastPopover == currentPopover) { //close same popover on 2nd click
-						closepop(lastPopover);
-						$("#acc_"+lastPopover.substring(5)).collapse('hide');
-						currentPopover='';
-						lastPopover='';
-					}
-					else {  // close other popover and open new one
-						closepop(lastPopover);
-						$(this).popover('show');
-						$("#acc_"+lastPopover.substring(5)).collapse('hide');
-						$("#acc_"+e.target.id.substring(5)).collapse('show');
-					}
-					
-				});
-			
-			//on click 'text' event for each element -- toggle popover menu
-		    /*node.addEventListener(
-			"click",
-			(function(id) {
-				return function(event) {
-					//alert(node.childNodes[4].textContent + " (" + node.childNodes[0].textContent + ")" + " node clicked.");
-					$("#text_"+id).popover('toggle')
-				}
-			})(id),
-			false
-		    );*/
-		  }
 		}
+
+		if(id=="node1")
+			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">view/add comments</a></small></div>';
+		else
+			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
+		
+		$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
+		//on click 'text' event for each element -- toggle popover menu
+		$("#text_"+id).click(function(e){
+				//closes last clicked popover and opens the new one that was clicked
+				if(currentPopover.length==0) {					
+					currentPopover=e.target.id;
+				}
+				else {
+					lastPopover=currentPopover;
+					currentPopover=e.target.id;
+				}
+				if(lastPopover == currentPopover) { //close same popover on 2nd click
+					closepop(lastPopover);
+					$("#acc_"+lastPopover.substring(5)).collapse('hide');
+					currentPopover='';
+					lastPopover='';
+				}
+				else {  // close other popover and open new one
+					closepop(lastPopover);
+					$(this).popover('show');
+					$("#acc_"+lastPopover.substring(5)).collapse('hide');
+					$("#acc_"+e.target.id.substring(5)).collapse('show');
+				}
+				
+			});
+	  }
+	}
 
 	$('.expandcollapse').click(function () {
         if ($(this).html() == "<i class=\"icon-plus-sign\"></i> Expand All") {
@@ -191,7 +282,8 @@ $(document).ready(function () {
     });
 	
 	$('#acc-container').slimScroll({
-		height: 'auto',
+		//height: 'auto',
+		height: '700px',
 		position: 'right',
 		alwaysVisible: true,
 		railOpacity: 0.1,
@@ -199,11 +291,292 @@ $(document).ready(function () {
 		color: '#ccc',
 		wheelStep: 5
 	});
+
+	hideToggleSubLists();
+	hideLinkedWfLoader();
+
+	//when [+]linked workflows is clicked, convert Workflow IDs to composite names / descriptions
+	$('.wf_links li').click(function () {
+		var thisID=$(this).attr("id");
+		
+		if(clickedLinkedWorkflows.indexOf(thisID) == -1) {
+			clickedLinkedWorkflows.push(thisID);
+			var wfID_list = $(this).find('li');
+			//var numWfLinks=wfID_list.length;
+			//$("#"+thisID.substring(3)+"_loader").show();
+
+			wfID_list.each(function(index) {
+				var current=$(this);
+				var wfID=$( this ).text();
+				var url="{{ url_for("workflow") }}/"+wfID;
+				var jqxhr = $.getJSON( url, function( data ) {
+					var text=data[0]["username"]+"/"+data[0]["name"]+"/"+data[0]["composite_seq"]+" - "+data[0]["description"];
+					var linked_text="<a href=\"{{ url_for("connections") }}/"+data[0]["uid"]+"\"><small><em>"+text+"</em></small></a>"
+					current.html(linked_text);
+				})
+				/*if((index+1)==numWfLinks)
+					$("#"+thisID.substring(3)+"_loader").hide();*/
+			});
+		}			
+    });
+
+
+	//var mpoDemo = setInterval(function(){buildPageElements()},5000);
+	
+	//mdsplus event listener
+	//e=mdsEvent(getQueryVariable('event'),1,success_cb,failure_cb,42);
+	e=mdsEvent('mpo_dataobject',1,success_cb,failure_cb,wid);
+	e=mdsEvent('mpo_activity',1,success_cb,failure_cb,wid);
+	
+	//convert linked Workflow UIDs to compID and description.  css class: linkedwf
 }); //end document.ready
+function hideToggleSubLists() {
+	$('.wf_links li').click(function(ev) {
+		$(this).find('>ul').slideToggle();
+		ev.stopPropagation();
+	});
 
+	$('.wf_links li').find('>ul').hide();
+}
 
+function hideLinkedWfLoader() {
+	$("span[id$='_loader']").hide();
+}
+
+function fillSVGElement(uid) {
+	var svgElement = document.getElementById(uid);
+	if(svgElement) {
+		var childs = svgElement.childNodes;
+		childs[2].style.fill="#ccffff";
+	}
+}
+
+function buildPageElements(wfID) {
+
+	var svg_h="";
+	var url="";
+	$("#svg").empty();
+	//url="/mpo/graph/"+wfID+"/svg";
+	url="{{ url_for("graph") }}/"+wfID+"/svg";
+	
+	var jqxhr_svg = $.get( url, function( data ) {
+		$("#svg").hide();
+		$("#svg_loading").show();
+		$("#svg").html(data);
+	});
+
+	jqxhr_svg.done(function() {
+		//url="/mpo/nodes/"+wfID;
+		url="{{ url_for("nodes") }}/"+wfID;
+		var dataObjs={};
+		var wfid=wfID;
+		var jqxhr_nodes = $.getJSON( url, function( data ) {
+			dataObjs=data;
+		});
+		//wait for xhtmlhttprequest to finish before proceeding (fixes right-side append issues)
+	
+		jqxhr_nodes.done(function() {
+			
+			///// build nodelist UI elements /////
+			lastUpdate=new Date(1900,00,01); //past date for comparison --for demo only
+			
+			var dataElements = {}; //for name - desc in popover
+			
+			for (var key in dataObjs) {
+			  if (dataObjs.hasOwnProperty(key)) {
+				var tmp = dataObjs[key];
+
+				//new element attributes
+				var obj_uid="";
+				var newElement=""; //html text
+				var obj_name="";
+				var obj_time="";
+				var obj_uri="";					
+
+				//check if uid exists in current UID array...if not add new element
+				if((!inArray(tmp['uid'], nodeUIDs)) && (tmp['uid']!=wfid)) {
+					obj_uid=tmp['uid'];
+					nodeUIDs.push(obj_uid);
+					obj_name=tmp['name'];
+					if (tmp.hasOwnProperty("data")) {
+						obj_time=tmp["data"][0]["time"];
+						obj_uri=tmp["data"][0]["uri"];
+					}
+					//$("#div_"+obj_uid).remove();
+					newElement+='<div id="div_"' + obj_uid +'"><a id="aid_' + obj_uid + '" href="#acc_' + obj_uid + '" data-toggle="collapse">' + obj_name + '</a><span class="muted"><small><em> - ' + obj_time + '</em></small></span>';
+					newElement+='<div class="accordion-body collapse" id="acc_' + obj_uid + '">';
+					newElement+='<div class="accordian-inner no-border">';
+					newElement+='<ul>';
+					newElement+='<li>'+obj_name+'</li>';
+					newElement+='<li>time: '+obj_time+'</li>';
+					newElement+='<li>uri: '+obj_uri+'</li>';
+
+					if (tmp.hasOwnProperty("metadata")) {
+						newElement+='<li>Metadata:</li><ul>';
+						for (var z in tmp['metadata']) {
+							var md_obj=tmp['metadata'][z];
+							if(md_obj['key']) {
+								newElement += "<li>" + md_obj['key'] + ': ' + md_obj['value'] + "</li>";
+							}
+						}
+						newElement+='</ul>';
+					}
+					
+					newElement+='</ul>';		
+					newElement += '</div>';
+					
+					$("#acc-container").append(newElement);
+					$("#aid_"+obj_uid).addClass("alert-success");
+					$("#aid_"+obj_uid).removeClass("alert-success",5000);								
+				}//if((!inArray(tmp['uid'], nodeUIDs)) && tmp['uid']!=wid)
+				
+				for(var j in tmp) {
+					if(j=="data") {
+						var tmp2=tmp[j];
+						var tmp3=tmp2[0];
+						dataElements[tmp['name']]="";
+						if(tmp3['description'])
+							dataElements[tmp['name']]+=tmp3['description'];
+						if(tmp3['time']) {
+							dataElements[tmp['name']]+= ' - ' + tmp3['time'];
+							//store latest workflow update time
+							tmpDateTime=new Date(tmp3['time'].replace(" ","T"));
+							if(tmpDateTime > lastUpdate) {
+								lastUpdate=tmpDateTime
+								$("#last-updated").html(lastUpdate.toLocaleString());
+								$("#last-updated").addClass("alert-success text-success").css("font-weight","bold");
+								$("#last-updated").removeClass("alert-success",10000);								
+							}
+						}
+						if(tmp3['uri'])
+							dataElements[tmp['name']]+= '<br/><em>uri</em>: ' + tmp3['uri'];
+					}
+					else if(j=="metadata") {
+						var tmp2=tmp[j];
+						if(dataElements[tmp['name']])
+							dataElements[tmp['name']]=dataElements[tmp['name']]+"<div>metadata:<ul>";
+						else
+							dataElements[tmp['name']]="<div>metadata:<ul>";
+						for (var z in tmp2)
+						{
+							var tmp3=tmp2[z];
+							if(tmp3['key']) {
+								dataElements[tmp['name']]=dataElements[tmp['name']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
+							}
+						}
+						dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></div>";
+					}
+				}//end for
+				
+			  }//end if (dataObjs.hasOwnProperty(key))
+			  
+				//add css styles to dynamic
+				$(".accordian-inner.no-border ul").css("font-size","small");
+				//$(".accordian-inner.no-border ul").addClass("alert-success");
+				//$(".accordian-inner.no-border ul").removeClass("alert-success",10000);
+			}//end for
+
+		
+			///// build svg node UI elements /////
+			var lastPopover='';
+			var currentPopover='';
+	
+			//checks and adjusts svg width/height if needed
+			var workflowWidth=500;
+	
+			var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
+			var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
+			var width=parseInt(w.replace("pt",""));
+			var height=parseInt(h.replace("pt",""));
+			
+			//adjust for pan/zoom functionality
+			document.getElementsByTagName("svg").item(0).removeAttribute("viewBox");
+			
+			if(width > workflowWidth) {
+				var wnew=workflowWidth;
+				var hnew=Math.round(height*(workflowWidth/width));
+				$("#svg_loading").width(wnew).height(hnew);
+				w=wnew.toString() + "pt";
+				h=hnew.toString() + "pt";
+				document.getElementsByTagName("svg").item(0).setAttribute("width",w);
+				document.getElementsByTagName("svg").item(0).setAttribute("height",h);
+				document.getElementById("graph1").transform.baseVal.getItem(0).setScale(".56",".56");
+			}
+			//end svg size adjust
+			initZoomPan();
+			//get list of nodes for svg xml tag "g" w/ class "node"
+			var nodelist = document.querySelectorAll("g.node");
+					
+			//parse nodelist object and add click event function to each node (w/ respective data)
+			for (var key in nodelist) {
+			  if (nodelist.hasOwnProperty(key)) {
+				var node=nodelist[key];
+				var id="";
+				var sub_content="";
+				var popcontent="";
+				//get id of "g" element of class=nodes
+				if(key==0) {
+					id="node1";
+					wid=node.childNodes[0].textContent;
+					sub_content=wf_desc;
+				}
+				else if (typeof(node.childNodes) !== "undefined")
+					id=node.childNodes[0].textContent;
+				
+				//create new ID attribute for <text>
+				if (typeof(node.childNodes) !== "undefined") {
+					node.childNodes[2].setAttribute("fill","white"); //shapes fill color
+					node.childNodes[4].setAttribute("style",'fill:rgb(0,76,153);cursor:pointer;'); //text styles
+					node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
+					//node.childNodes[4].id = "text_" + id;
+					if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
+						sub_content = dataElements[node.childNodes[4].textContent];
+						popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;
+					}
+				}
+				if(id=="node1")
+					popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">view/add comments</a></small></div>';
+				else
+					popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
+				
+				$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
+				//on click 'text' event for each element -- toggle popover menu
+				$("#text_"+id).click(function(e){
+						//closes last clicked popover and opens the new one that was clicked
+						if(currentPopover.length==0) {					
+							currentPopover=e.target.id;
+						}
+						else {
+							lastPopover=currentPopover;
+							currentPopover=e.target.id;
+						}
+						if(lastPopover == currentPopover) { //close same popover on 2nd click
+							closepop(lastPopover);
+							$("#acc_"+lastPopover.substring(5)).collapse('hide');
+							currentPopover='';
+							lastPopover='';
+						}
+						else {  // close other popover and open new one
+							closepop(lastPopover);
+							$(this).popover('show');
+							$("#acc_"+lastPopover.substring(5)).collapse('hide');
+							$("#acc_"+e.target.id.substring(5)).collapse('show');
+						}
+						
+					});
+	
+			  }
+			}
+			$("#svg_loading").hide();
+			$("#svg").show();
+			///// end build svg node UI elements /////	
+							
+		}); //end nodes.done jqhxr function
+		
+
+	});		
+}
 </script>
-<script type="text/javascript" src="/static/js/jquery.slimscroll.min.js"></script>
 {% endblock %}
 
 {% block container %}
@@ -211,9 +584,10 @@ $(document).ready(function () {
     <noscript>This page requires a javascript enabled browser.</noscript>
 	<div align="center">
 	  	<!-- <h3> Workflow: {{ wid }} </h3> -->
-        <h2> {{ wid_info[0].username }} / {{ wid_info[0].name }} / {{ wid_info[0].comp_seq }} </h2>
+        <h2> {{ wid_info[0].username }} / {{ wid_info[0].name }} / {{ wid_info[0].composite_seq }} </h2>
         <div><span class="text-center">{{ wid_info[0].description }}</span></div>
         <div><span class="text-center muted"><small>workflow ID: {{ wid }}</small></span></div>
+        <div><span class="text-center muted"><small>last update: <span id="last-updated"></span></small></span></div>
 	</div>
     <div class="row-fluid">
     	<div class="span12">
@@ -222,77 +596,100 @@ $(document).ready(function () {
                     <div>
                     	<small><a href="{{ url_for("graph", wid=wid) }}/jpg"><span id="img" class="label label-info">jpg</span></a></small>
                     </div>
-                    <!-- svg start -->
-                    {{ svg|safe }}
-                    <!-- svg end -->
+                    <div class="row-fluid">
+					<div id="svg_loading">&nbsp;</div>
+	                    <div id="svg">
+	                    <!-- svg start -->
+	                    {{ svg|safe }}
+	                    <!-- svg end -->
+					    <script>
+					      // initialize zooming and panning on svg element
+					      function initZoomPan() {
+					      	svgPanZoom.init({'selector': 'svg', });
+					      	}
+					    </script>                    
+	                    </div>
+                    </div>
 
                     <div id="node_comments">
                         <div id="accordion2" class="accordion">
                         <div class="accordion-group">
                             <div class="accordian-heading">
                                 <div style="padding-top:10px;padding-bottom:10px;">
-                                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne"><small><i class="icon-plus-sign"></i> comments {% if num_comment %}({{ num_comment }}){% endif %}</small></a>
-                                </div>                            
+                                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne"><small> Logbook Entries {% if num_comment %}({{ num_comment }}) <i class="icon-chevron-down"></i></a>{% else %}(0){% endif %}</small> &nbsp;&nbsp;<a href="#add_{{ wid }}" class="text-success pull-right" data-toggle="collapse"></strong><small>[+] new comment</small></a></span>
+                                </div>
+                                <div class="accordion-body collapse" id="add_{{ wid }}">
+                                    <div class="accordion-inner no-border">
+                                      <form action="{{ url_for("submit_comment") }}" method="post">
+                                      		<input type="hidden" value="{{ wid }}" name="wf_id">
+                                            <select name="parent_uid">
+                                            	<option value="">select a workflow object...</option>
+                                            {% for obj in nodes.iteritems() %}
+                                                {% for n in obj %}
+                                                	{% if n.name %}
+                                                    <option value="{{ n.uid }}">{{ n.name }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                             {% endfor %}
+                                             </select>
+                                        <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                                      </form>
+                                    </div>
+                                </div>
                             </div>
-                            <div id="collapseOne" class="accordion-body collapse">
+                            <div id="collapseOne">
                         {% for obj in nodes.iteritems() %}
                             {% for n in obj %}
-                                <div>
-                                    <small>
-                                            <a href="#modal_{{ n.uid }}"  data-toggle="modal">{{ n.name }}
-                                            {% if n.comment %}
-                                                {% for c in n.comment %}
-                                                    {% if loop.last %} ({{ loop.length }}) {% endif %}
-                                                {% endfor %}
-                                            {% endif %}
-                                            </a>                                                	
-                                    </small>
-                                    <div id="modal_{{ n.uid }}" class="modal hide" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-                                        <div class="modal-header">
-                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                                            <h4>{{ n.name }}
-                                            {% if n.comment %}
-                                                {% for c in n.comment %}
-                                                    {% if loop.last %} ({{ loop.length }}) {% endif %}
-                                                {% endfor %}
-                                            {% else %}
-                                                (0)
-                                            {% endif %}
-                                            </h4>
-                                            <small><a href="#add_{{ n.uid }}" data-parent="#accordion{{ n.uid }}" data-toggle="collapse">(+) add comment</a></small>
-                                        </div>
-                                        <div class="modal-body">
-                                              <div class="accordion-body collapse" id="add_{{ n.uid }}">
-                                                <div class="accordion-inner no-border bot-border">
-                                                  <form action="{{ url_for("submit_comment") }}" method="post">
-                                                <div><input type="hidden" name="parent_uid" value="{{ n.uid }}" /></div> 
-                                                <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
-                                                  </form>
-                                                </div>
-                                              </div>
-                                            <ul>
-                                                {% if n.comment %}
-                                                    {% for c in n.comment %}
-                                                        <li><small>{{ c.content }}  <span class="muted"><em>{{ c.user }} - {{ c.time }}</em></span> <a href="#add_{{ c.uid }}" class="text-success" data-parent="#accordion{{ c.uid }}" data-toggle="collapse"><em>(reply)</em></a></small> 
-                                                           	 <div class="accordion-body collapse" id="add_{{ c.uid }}">
-                                                                <div class="accordion-inner no-border bot-border">
-                                                                  <form action="{{ url_for("submit_comment") }}" method="post">
-                                                                  <!-- comment's uid -->
-                                                                <div><input type="hidden" name="parent_uid" value="{{ c.uid }}" /></div> 
-                                                                <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
-                                                                  </form>
-                                                                </div>
-                                                              </div>
-                                                        </li>
+                                    	{% if n.comment %}
+                                        <div style="padding-bottom:1.5em;">
+                                            <span><strong><i class="icon-chevron-right"></i> {{ n.name }}
+                                            <a href="#add_{{ n.uid }}" class="text-success" data-toggle="collapse"></strong><small>[+] add</small></a></span>
+                                                {% if n.data %}
+                                                    {% for x in n.data %}
+                                                         {% if x.time %}                                                	
+                                                        <span class="muted pull-right">{{ x.time }}</span>
+                                                        {% endif %}
                                                     {% endfor %}
-                                                {% endif %}                                        
-                                            </ul>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button class="btn btn-mini" data-dismiss="modal" aria-hidden="true">Close</button>
-                                        </div>
-                                    </div>
-                                 </div>
+                                                {% endif %}
+                                                <div class="accordion-body collapse" id="add_{{ n.uid }}">
+                                                    <div class="accordion-inner no-border">
+                                                      <form action="{{ url_for("submit_comment") }}" method="post">
+                                                        <input type="hidden" value="{{ wid }}" name="wf_id">
+                                                        <input type="hidden" name="parent_uid" value="{{ n.uid }}" />
+                                                        <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                                                      </form>
+                                                    </div>
+                                                </div>
+
+                                            {% if n.comment %}
+                                                {% for c in n.comment %}
+													{% if c.content %}
+														<div>
+                                                        <table class="comment_table">
+                                                        	<tr>
+                                                        		<td width="50%"><strong>{{ c.user }}</strong></td><td width="50%" align="right"><strong>{{ c.time }}</strong></td>
+                                                            </tr>
+                                                            <tr>
+                                                            	<td colspan="2"><em>{{ c.content }}</em>
+                                                                <div class="pull-right"><a href="#add_{{ c.uid }}" class="text-success" data-parent="#accordion{{ c.uid }}" data-toggle="collapse"><small><em>[+] reply</em></small></a></div>
+                                                                <div class="accordion-body collapse" id="add_{{ c.uid }}">
+                                                                    <div class="accordion-inner no-border">
+                                                                      <form action="{{ url_for("submit_comment") }}" method="post">
+                                                                      	<input type="hidden" value="{{ wid }}" name="wf_id">
+																		<input type="hidden" name="parent_uid" value="{{ c.uid }}" />
+                                                                        <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                                                                      </form>
+                                                                    </div>
+                                                              	</div>
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                         </div>
+                                        {% endif %}                                    	
                              {% endfor %}
                         {% endfor %}
                         	</div><!-- end collapseone -->
@@ -324,9 +721,28 @@ $(document).ready(function () {
                                                         {% if n.data %}
                                                             {% for x in n.data %}
                                                                 <li><small>{{ x.description }}</small></li>
+                                                                {% if x.uri %}                                                	
+                                                                <li><small>uri: {{ x.uri }}</small>
+                                                                    {% if x.wf_link %}
+                                                                    <ul class="wf_links">
+                                                                      <li id="lw_{{ x.uid }}" ><small><em><a style="cursor:pointer;">[+] Linked Workflows</a></em></small><!-- <span id="{{ x.uid }}_loader"><img src="/static/img/ajax-loader-green-small.gif"></span> -->
+                                                                    	<ul>
+                                                                        {% for j in x.wf_link %}
+                                                                        	{% if j.work_uid != wid %}
+                                                                            <li><small><a href="{{ url_for("connections", wid=j.work_uid) }}" class="linkedwf">{{ j.work_uid }}</a></small>
+                                                                            </li>
+                                                                            {% endif %}
+                                                                        {% endfor %}
+                                                                        </ul>
+                                                                      </li>
+                                                                     </ul>
+                                                                    {% endif %}
+                                                                </li>                                                               
+                                                                {% endif %}                                                                
                                                                 {% if x.time %}                                                	
                                                                 <li><small>time: {{ x.time }}</small></li>
                                                                 {% endif %}
+                                                                <li><small>uid: {{ x.uid }}</small></li>
                                                             {% endfor %}
                                                         {% endif %}
                                                         {% if n.metadata %}

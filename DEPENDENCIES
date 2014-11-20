@@ -10,14 +10,17 @@ $HOME/mposvn/db
 
 ##External python packages
 simplejson >2.2 #provides namedtuple->json in db.py
-Flask >= 0.9
+Flask >= 1.0 #for requests > 2.0 as well
 flask-cors . Flask CORS extension. 
-requests >= 1.0.3
-psycopg2 #for postgres
+requests >= 2.0  #bug in 1.1 when using max_retries , current latest version is 2.3 which is recommended
+psycopg2 #for postgres, requires postgres to be installed
+dateutil #pip install python-dateutil #used for timestamp processing of queries
 SQLAlchemy #for pooling of connections
 pydot 1.5.7 < 2.0.0 (for python 3) #for static graph creation. 
       : sudo pip install https://pypi.python.org/packages/source/p/pyparsing/pyparsing-1.5.7.tar.gz
       : sudo pip install -U pydot  pyparsing==1.5.7
+
+treelib - for manipulation and creation of tree structures, particularly in the ontology routes
 
 uwsgi > 1.3 - web services for api server. tested with version 1.9.13. Version 1.9 IS required for gevent.
               Note that as of Aug 2013 with Ubuntu Precise Pangolin, apt-get installs 1.0

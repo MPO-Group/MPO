@@ -75,7 +75,7 @@ echo Workflow ID is $wid.
 $MPO --user=$mpo_user comment    $wid "$run_comment"
 
 #Get alias for the workflow
-compid=`$MPO  get --route=workflow/$wid/alias`
+compid=`$MPO  get workflow/$wid/alias`
 
 #Add an action to the workflow
 aid=`$MPO --user=$mpo_user step       $wid $wid --name="Archive" --desc="Store run and extract meta data."`

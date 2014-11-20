@@ -42,7 +42,9 @@ drop table if exists collection_elements;
 create table collection_elements
 (
   c_guid uuid,
-  e_uuid uuid
+  e_guid uuid,
+  u_guid uuid,
+  creation_time timestamp
 );
 alter table collection_elements owner to mpoadmin;
 
@@ -205,3 +207,25 @@ begin
 end;
 $$ LANGUAGE plpgsql;
 alter function getWID(cid uuid) OWNER TO mpoadmin;
+
+create or replace function getTermUidByPath(text) returns uuid as $$
+declare
+  tuid uuid;
+  puid uuid;
+  i text;
+begin
+  for i in select * from unnest(string_to_array($1, '/'))
+  where unnest!=''
+  loop
+    if (puid is not null) then
+      select ot_guid from ontology_terms where name= i and parent_guid=puid into puid;
+    else
+      select ot_guid from ontology_terms where name=i and parent_guid is null into puid;
+    end if;
+  end loop;
+
+  return puid;
+
+end;
+$$ LANGUAGE plpgsql;
+alter function getTermUidByPath(text) OWNER TO mpoadmin;
