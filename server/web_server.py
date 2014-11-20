@@ -958,4 +958,4 @@ if __name__ == "__main__":
     app.debug = True
     #app.run()
     #app.run(host='0.0.0.0', port=8080) #api server
-    #app.run(host='0.0.0.0', port=8889) #web server
+    app.run(host='0.0.0.0', port=8889) #web server

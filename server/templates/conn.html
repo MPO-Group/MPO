@@ -177,6 +177,8 @@ $(document).ready(function () {
 		var vratio=hratio;
 		var wnew=workflowWidth;
 		var hnew=Math.round(height*(vratio-.15));
+                if (hnew < 300) { hnew = 300; hratio=0.5; vratio=0.5; }
+                if (wnew < 300) { hnew = 300; hratio=0.5; vratio=0.5; }
 		/*if(hnew > 500) {
 			hnew=500;
 			hratio=.8;
@@ -200,6 +202,7 @@ $(document).ready(function () {
 	});*/
 
 	initZoomPan();
+        
 	
 	//get list of nodes for svg xml tag "g" w/ class "node"
 	var nodelist = document.querySelectorAll("g.node");
