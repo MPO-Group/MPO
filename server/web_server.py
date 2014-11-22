@@ -14,8 +14,11 @@ import math
 from authentication import get_user_dn
 import urllib
 from collections import OrderedDict
+import memcache
 
 app = Flask(__name__)
+
+mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 
 MPO_API_SERVER=os.environ['MPO_API_SERVER']
 MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
@@ -35,11 +38,9 @@ API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
 webdebug = True
 app.debug = True
 
-
 @app.route('/')
 def landing():
     return render_template('landing.html')
-
 
 @app.route('/home')
 def index():
@@ -340,15 +341,19 @@ def getsvgxml(wid):
 @app.route('/connections', methods=['GET'])
 @app.route('/connections/<wid>', methods=['GET'])
 def connections(wid=""):
-    dn = get_user_dn(request)
-    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+  dn = get_user_dn(request)
+  certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
-
-    #get workflow svg xml
+   
+  cache_id = "connections_%s" %(str(wid))    
+  everything = mc.get(cache_id) 
+  if everything:
+    return render_template('conn.html', **everything)
+  else:
     getsvg=getsvgxml(wid)
     svgdoc=getsvg[0]
     wf_objects=getsvg[1] #dict of workflow elements: name & type
-    #svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
+    svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
     svg=svgdoc[245:] #removes the svg doctype header so only: <svg>...</svg>
 
     #get workflow info/alias
@@ -424,7 +429,10 @@ def connections(wid=""):
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
-    return render_template('conn.html', **locals())
+    everything = {"wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
+    mc.set(cache_id, everything, time=600)
+    #return render_template('conn.html', **locals())
+    return render_template('conn.html', **everything)
 
 #created because of cross site scripting issue on ajax calls in development. same as api workflow/<wid> route
 @app.route('/workflow', methods=['GET'])
