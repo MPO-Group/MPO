@@ -15,6 +15,7 @@ from authentication import get_user_dn
 import urllib
 from collections import OrderedDict
 import memcache
+import timeit
 
 app = Flask(__name__)
 
@@ -344,12 +345,25 @@ def connections(wid=""):
   dn = get_user_dn(request)
   certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
-   
-  cache_id = "connections_%s" %(str(wid))    
-  everything = mc.get(cache_id) 
+  
+  begin_to_end = 0;
+  cache_id = "connections_%s" %(str(wid))
+
+  ##timing begin
+  time_begin = time.time()
+  ##timing end
+  everything = mc.get(cache_id)
+
   if everything:
+    #cache hit 
+    ##timing begin
+    time_end = time.time()
+    begin_to_end = time_end - time_begin
+    ##timing end
+    everything["page_created"] = "%s" %((str(begin_to_end))[:6])
     return render_template('conn.html', **everything)
   else:
+    #cache missed
     getsvg=getsvgxml(wid)
     svgdoc=getsvg[0]
     wf_objects=getsvg[1] #dict of workflow elements: name & type
@@ -385,17 +399,6 @@ def connections(wid=""):
                 wf_links_req=requests.get("%s/dataobject?uri=%s"%(API_PREFIX,urllib.quote((data[0]['uri'])),), **certargs)
                 if wf_links_req.text != "[]":
                     wf_links=wf_links_req.json()
-                #    for wf in wf_links:
-                #   #get compID and desc.  ignore previous wf IDs
-                #   if wf['work_uid'] not in wf_uid_compid:
-                #       wf_req2=requests.get("%s/workflow/%s"%(API_PREFIX,wf['work_uid'],), **certargs)
-                #       wf_info2=wf_req2.json()
-                #       if wf_info2 != "[]":
-                #       comp_id = wf_info2[0]['username'] + "/"
-                #       comp_id += wf_info2[0]['name'] + "/"
-                #       comp_id += str(wf_info2[0]['composite_seq'])
-                #       wfdesc=wf_info2[0]['description']
-                #       wf_uid_compid[wf['work_uid']]=comp_id+" - "+wfdesc
                     data[0]['wf_link']=wf_links
             wf_objects[key]['data']=data
 
@@ -430,8 +433,15 @@ def connections(wid=""):
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
     everything = {"wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
+
     mc.set(cache_id, everything, time=600)
-    #return render_template('conn.html', **locals())
+
+    ##timing begin
+    time_end = time.time()
+    begin_to_end = time_end - time_begin
+    ##timing end
+  
+    everything["page_created"] = "%s" %((str(begin_to_end))[:6]) 
     return render_template('conn.html', **everything)
 
 #created because of cross site scripting issue on ajax calls in development. same as api workflow/<wid> route
