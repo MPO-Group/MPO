@@ -726,7 +726,7 @@ class mpo_cli(object):
         subparsers = parser.add_subparsers(help='commands')
 
         #get
-        get_parser=subparsers.add_parser('get',help='GET from a route')
+        get_parser=subparsers.add_parser('get', help='GET from a route')
            #add positional argument which will be passed to func 'route' in 'Namespace' named tuple
         get_parser.add_argument('route',action='store',help='Route of resource to query')
            #add keyword argument passed to func as 'params'
@@ -735,14 +735,14 @@ class mpo_cli(object):
         get_parser.set_defaults(func=self.mpo.get)
 
         #post
-        post_parser=subparsers.add_parser('post',help='POST to a route')
+        post_parser=subparsers.add_parser('post', help='POST to a route')
         post_parser.add_argument('route',action='store',help='Route of resource to query')
         post_parser.add_argument('--params',action='store',
                                  help='Payload arguments as {key:value,key2:value2}')
         post_parser.set_defaults(func=self.mpo.post)
 
         #init
-        init_parser=subparsers.add_parser('init',help='Start a new workflow')
+        init_parser=subparsers.add_parser('init', aliases=( ('start_workflow',)),help='Start a new workflow')
         init_parser.add_argument('-n','--name',action='store',help='''Name to assign the workflow\n.
         Label used on workflow graphs.''', default='NoName')
         init_parser.add_argument('-d','--desc',action='store',help='Describe the workflow')
@@ -752,7 +752,7 @@ class mpo_cli(object):
         init_parser.set_defaults(func=self.mpo.init)
 
         #add
-        add_parser=subparsers.add_parser('add',help='Add a data object to a workflow.')
+        add_parser=subparsers.add_parser('add', aliases=( ('add_data',)),help='Add a data object to a workflow.')
 #        addio = add_parser.add_mutually_exclusive_group() #needed for child vs parent.
         add_parser.add_argument('workflow_ID', action='store',metavar='workflow')
         add_parser.add_argument('parentobj_ID', action='store',metavar='parent')
@@ -762,7 +762,7 @@ class mpo_cli(object):
         add_parser.set_defaults(func=self.mpo.add)
 
         #step, nearly identical to add
-        step_parser=subparsers.add_parser('step',help='Add an action to a workflow.')
+        step_parser=subparsers.add_parser('step', aliases=( ('add_action',)),help='Add an action to a workflow.')
         step_parser.add_argument('workflow_ID', action='store',metavar='workflow')
         step_parser.add_argument('parentobj_ID', action='store',metavar='parent')
         step_parser.add_argument('--input', '-i', action='append',dest='input_objs')
@@ -790,7 +790,7 @@ class mpo_cli(object):
 
 
         #ontology_instance
-        ontologyInstance_parser=subparsers.add_parser('ontology_instance', aliases=( ('metadata','annotate') ),
+        ontologyInstance_parser=subparsers.add_parser('ontology_instance', aliases=( ('add_metadata','metadata','annotate') ),
                                                   help='Add a term to the vocabulary')
         ontologyInstance_parser.add_argument('target', action='store', help='ID of annotated object')
         ontologyInstance_parser.add_argument('path', action='store', help='Path of ntology term type')
@@ -834,7 +834,7 @@ class mpo_cli(object):
 
 
         #comment
-        comment_parser=subparsers.add_parser('comment',help='Attach a comment an object.')
+        comment_parser=subparsers.add_parser('comment', aliases=( ('add_comment',)),help='Attach a comment an object.')
         comment_parser.add_argument('obj_ID',action='store',metavar='object',
                                     help='UUID of object to comment on',
                                     type=self.type_uuid)
@@ -884,7 +884,7 @@ class mpo_cli(object):
             r=args.func(**kwargs)
         except requests.exceptions.HTTPError as e:
             print(str(e),file=sys.stderr)
-            return "Route not found: %s. HTTP error code: %s. "%{e.url,e.response.status_code}
+            return "Route not found: %s. HTTP error code: %s. "%(e.response.url,e.response.status_code)
         except:
             return PrintException()
 
