@@ -173,7 +173,7 @@ def index():
             for temp in comments: #get number of comments, truncate time string
                 num_comments+=1
                 if temp['time']:
-                    time=temp['time'][:16]
+                    time=temp['time'][:19]
                     temp['time']=time
 
             results[index]['num_comments']=num_comments
@@ -184,7 +184,7 @@ def index():
 # this was throwing an exception because 'start_time' field wasn't
 # found and breaking adding commments or displaying them
 #JCW 9 SEP 2013 API exposure of 'creation_time' is 'time' for comments.
-            time=results[index]['time'][:16]
+            time=results[index]['time'][:19]
             results[index]['time']=time
             cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
             cid=cid.json()
@@ -384,7 +384,7 @@ def connections(wid=""):
             data=req.json()
             if data[0]['time']:
                 obj_time=data[0]['time']
-                data[0]['time']=obj_time[:16]
+                data[0]['time']=obj_time[:19]
             wf_objects[key]['data']=data
         elif value['type'] == "dataobject":
             #get data on each workflow element
@@ -392,7 +392,7 @@ def connections(wid=""):
             data=req.json()
             if data[0]['time']:
                 obj_time=data[0]['time']
-                data[0]['time']=obj_time[:16]
+                data[0]['time']=obj_time[:19]
 
             #get linked workflows using uri
             if data[0]['uri'] and len(data[0]['uri']) > 1:
@@ -420,7 +420,7 @@ def connections(wid=""):
                     cm[k]['user']=username
                 if i['time']:
                     cm_time=i['time']
-                    cm[k]['time']=cm_time[:16]
+                    cm[k]['time']=cm_time[:19]
                 k+=1
 
             num_comment+=k
@@ -488,14 +488,14 @@ def nodes(wid=""):
             data=req.json()
             if data[0]['time']:
                 obj_time=data[0]['time']
-                data[0]['time']=obj_time[:16]
+                data[0]['time']=obj_time[:19]
             wf_objects[key]['data']=data
         elif value['type'] == "dataobject":
             req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs) #get data on each workflow element
             data=req.json()
             if data[0]['time']:
                 obj_time=data[0]['time']
-                data[0]['time']=obj_time[:16]
+                data[0]['time']=obj_time[:19]
                 wf_objects[key]['data']=data
 
         meta_req=requests.get("%s/metadata?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
@@ -514,7 +514,7 @@ def nodes(wid=""):
                     cm[k]['user']=username
                 if i['time']:
                     cm_time=i['time']
-                    cm[k]['time']=cm_time[:16]
+                    cm[k]['time']=cm_time[:19]
                 k+=1
 
             num_comment+=k
@@ -798,7 +798,7 @@ def collections(uid=False):
             for temp in comments: #get number of comments, truncate time string
                 num_comments+=1
                 if temp['time']:
-                    time=temp['time'][:16]
+                    time=temp['time'][:19]
                     temp['time']=time
 
             results[index]['num_comments']=num_comments
@@ -809,7 +809,7 @@ def collections(uid=False):
 # this was throwing an exception because 'start_time' field wasn't
 # found and breaking adding commments or displaying them
 #JCW 9 SEP 2013 API exposure of 'creation_time' is 'time' for comments.
-            time=results[index]['time'][:16]
+            time=results[index]['time'][:19]
             results[index]['time']=time
             cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn})
             cid=cid.json()
@@ -951,6 +951,10 @@ def testfeed():
      </html>
     """%MPO_API_SERVER
     return(debug_template)
+
+@app.route('/docs')
+def docs():
+    return app.send_static_file('docs.html')
 
 
 def get_child_terms(uid):
