@@ -563,7 +563,7 @@ ul li input.user_time_wf {
                 <tr>
                     {% set wf_number=loop.index+(current_page-1)*rpp %}
                     <td><span class="muted"><em><small>{{ wf_number }}</small></em></td>
-                    <td><a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.name }} / {{ item.composite_seq }}</a></td>
+                    <td><a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.type }} / {{ item.composite_seq }}</a></td>
                     <td>{{ item.description }}</a></td>
                     <td class="xsmall">{{ item.time }}</td>
                     <!-- <td>{{ item.username }}</td> -->

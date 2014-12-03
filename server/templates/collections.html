@@ -554,7 +554,7 @@ ul li input.user_time_wf {
                     	{% if item.workflow %}
                     <td>
                         	{% for wf in item.workflow %}
-                    	<a href="{{ url_for("connections", wid=item.uid) }}">{{ wf.username }} / {{ wf.name }} / {{ wf.composite_seq }}</a>
+                    	<a href="{{ url_for("connections", wid=item.uid) }}">{{ wf.username }} / {{ wf.type }} / {{ wf.composite_seq }}</a>
                     </td>
                     <td>{{ wf.description }}</a></td>
                     	

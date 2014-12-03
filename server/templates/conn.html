@@ -587,7 +587,7 @@ function buildPageElements(wfID) {
     <noscript>This page requires a javascript enabled browser.</noscript>
 	<div align="center">
 	  	<!-- <h3> Workflow: {{ wid }} </h3> -->
-        <h2> {{ wid_info[0].username }} / {{ wid_info[0].name }} / {{ wid_info[0].composite_seq }} </h2>
+        <h2> {{ wid_info[0].username }} / {{ wid_info[0].type }} / {{ wid_info[0].composite_seq }} </h2>
         <div><span class="text-center">{{ wid_info[0].description }}</span></div>
         <div><span class="text-center muted"><small>workflow ID: {{ wid }}</small></span></div>
         <div><span class="text-center muted"><small>last update: <span id="last-updated"></span></small></span></div>
