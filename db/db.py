@@ -164,7 +164,6 @@ def getRecord(table,queryargs={}, dn=None):
     # execute our Query
     cursor.execute(q)
     # retrieve the records from the database
-    # filter to match uri if given in query otherwise do a normal retrieve
     records = [x for x in cursor.fetchall() if x.uri == queryargs['uri']] if queryargs.has_key('uri') else cursor.fetchall()
     # Close communication with the database
     cursor.close()
@@ -428,15 +427,10 @@ def getWorkflow(queryargs={},dn=None):
     q = textwrap.dedent("""\
                 SELECT a.w_guid as uid, a.name, a.description, a.creation_time as time,
                 a.comp_seq as composite_seq, b.firstname, b.lastname, b.username, b.uuid as userid,
-                c.value as w_type FROM workflow a, mpousers b""")
-
-    #JCW 9 sep 2014, changing this to always include ontology_instances table as c
-    # if queryargs.has_key('type'):
-    #     q+= ", ontology_instances c"
-    # q+=" WHERE a.u_guid=b.uuid"
+                c.value as w_type FROM workflow a, mpousers b, ontology_instances c """)
 
     #join with ontology_instance table to get workflow type
-    q += ", ontology_instances c  WHERE a.u_guid=b.uuid and a.w_guid=c.target_guid and c.term_guid=getTermUidByPath('/Workflow/Type')"
+    q += " WHERE a.u_guid=b.uuid and a.w_guid=c.target_guid and c.term_guid=getTermUidByPath('/Workflow/Type')"
     # add extra query filter on workflow type (which is stored in a separate table)
     if queryargs.has_key('type'):
         #q+= " and a.w_guid=c.target_guid and c.value='"+processArgument(queryargs['type'])+"'"
@@ -462,7 +456,7 @@ def getWorkflow(queryargs={},dn=None):
             print('compid: username/workflow_type/seq:',compid,compid.split('/'))
         compid = compid.split('/')
         q+=" and b.username     ='%s'" % compid[0]
-        q+=" and c.type     ='%s'" % compid[1]
+        q+=" and c.value     ='%s'" % compid[1]
         q+=" and a.comp_seq='%s'" % compid[2]
 
     if queryargs.has_key('username'): #handle username queries
@@ -644,6 +638,7 @@ def addRecord(table,request,dn):
     cursor.execute(q,v)
     if objs.has_key('parent_uid'):
     #connectivity table
+        wc_guid = str(uuid.uuid4())
         for parent in objs['parent_uid']:
             if objs['parent_uid'] == objs['work_uid']:
                 parent_type = 'workflow'
@@ -655,7 +650,6 @@ def addRecord(table,request,dn):
                                "from dataobject where do_guid=%s",(parent,parent,parent))
                 records = cursor.fetchone()
                 parent_type = records.type
-            wc_guid = str(uuid.uuid4())
             cursor.execute("insert into workflow_connectivity "+
                            "(wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) "+
                            "values (%s,%s,%s,%s,%s,%s,%s)",
@@ -716,8 +710,9 @@ def addWorkflow(request,dn):
     user_id = cursor.fetchone()
 
     #determine max composite sequence for incrementing.
-    cursor.execute("select MAX(comp_seq) from workflow where name=%s and U_GUID=%s",
-               (request['name'], user_id ) )
+    #  find all workflows of this type that the users already has and increament the largest composite seq number
+    cursor.execute("select MAX(comp_seq) from workflow a, ontology_instances c WHERE c.value=%s and a.U_GUID=%s and c.target_guid=a.w_guid",
+               (request['value'], user_id ) )
     count=cursor.fetchone()
 
     if dbdebug:
