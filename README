@@ -200,3 +200,18 @@ pg_dump mpoDB > $MPO_HOME/db/mpoDB_reference
 
 This will reset the default database to the reference DB from GA with 75 workflows 
 that was introduced in the summer of 2013.
+
+
+
+#######Debugging
+
+When something goes wrong, here's what to do:
+
+Use -v argument for your $MPO command. It will tell you what it's posting.
+svn status -uv #Make sure your install has no local mods. This will also tell you if it
+               #is up to date.
+
+Check the output of 
+pip list
+
+and compare to the list in DEPENDENCIES
