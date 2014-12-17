@@ -4,6 +4,44 @@ route used. Note that using the command line option `--format=pretty` will produ
 json output to the screen. In scripts, this option is generally not used and the default 
 behavior is to return the bare UUID value or an error code.
 
+* Getting a workflow UUID from an alias and vice-versa
+
+	`mpo --format=pretty get workflow -p uid=37d86ba6-d4ad-4437-87a0-c62e3ba0263e`
+	The response contains the composite sequence, type, and
+	user. Together these form the composite id, /user/type/composite_seq
+
+	[
+    {
+        "username":"john",
+        "description":"EFIT equilbrium. Testing mode coupling for COMSOL.  Resolving singular behavior near edges",
+        "composite_seq":1,
+        "user":{
+            "username":"john",
+            "lastname":"Wright",
+            "userid":"6f0b016c-2952-4d8c-9876-a86f73a04808",
+            "firstname":"John"
+        },
+        "time":"2014-11-07 16:19:27.646942",
+        "uid":"37d86ba6-d4ad-4437-87a0-c62e3ba0263e",
+        "type":"TORIC",
+        "name":"r505"
+    }
+	]
+
+	The user does not have to construct the composite sequence (or alias)
+    themselves though; the `alias` subroute of `workflow` will do that.
+    `mpo --format=pretty get workflow/37d86ba6-d4ad-4437-87a0-c62e3ba0263e/alias `
+
+	{
+    "alias":"john/TORIC/1",
+    "uid":"37d86ba6-d4ad-4437-87a0-c62e3ba0263e"
+	}
+
+
+	Finally, if your friend told you the alias, you can use that to
+    retrieve the workflow id.
+   `mpo --format=pretty get workflow -p alias=john/TORIC/1`
+
 * Adding a type to the ontology for use in a creating a workflow for a new code.
 
     ##GET uuid of workflow types in the ontology.
