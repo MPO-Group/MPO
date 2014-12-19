@@ -8,11 +8,11 @@ create user mpoadmin with password 'mpo2013';
 /* create database mpodbdev OWNER mpoadmin; */
 
 
-drop table if exists mpousers;
+drop table if exists mpousers cascade;
 create table mpousers
 (
-  username text,
-  uuid uuid,
+  username text unique not null,
+  uuid uuid primary key,
   firstname text,
   lastname text,
   email text,
@@ -30,10 +30,10 @@ alter table mpousers OWNER TO mpoadmin;
 drop table if exists collection;
 create table collection
 (
-  c_guid uuid,
+  c_guid uuid primary key,
   name text,
   description text,
-  u_guid uuid,
+  u_guid uuid references mpousers,
   creation_time timestamp
 );
 alter table collection owner to mpoadmin;
@@ -41,21 +41,21 @@ alter table collection owner to mpoadmin;
 drop table if exists collection_elements;
 create table collection_elements
 (
-  c_guid uuid,
-  e_guid uuid,
-  u_guid uuid,
+  c_guid uuid references collection,
+  e_guid uuid primary key,
+  u_guid uuid references mpousers,
   creation_time timestamp
 );
 alter table collection_elements owner to mpoadmin;
 
-drop table if exists workflow;
+drop table if exists workflow cascade;
 create table workflow
 (
-  W_GUID uuid,
+  W_GUID uuid primary key,
   name text,
   WS_GUID uuid,
   description text,
-  U_GUID uuid,
+  U_GUID uuid references mpousers,
   comp_seq integer,
   creation_time timestamp,
   start_time timestamp,
@@ -68,12 +68,12 @@ alter table workflow OWNER TO mpoadmin;
 drop table if exists dataobject;
 create table dataobject
 (
-  DO_GUID uuid,
+  DO_GUID uuid primary key,
   name text,
   DOV_GUID uuid,
-  W_GUID uuid,
+  W_GUID uuid references workflow,
   creation_time timestamp,
-  U_GUID  uuid,
+  U_GUID  uuid references mpousers,
   description text,
   URI text
 );
@@ -83,14 +83,14 @@ alter table dataobject OWNER TO mpoadmin;
 drop table if exists activity;
 create table activity
 (
-  A_GUID uuid,
+  A_GUID uuid primary key,
   name text,
   AV_GUID uuid,
-  W_GUID uuid,
+  W_GUID uuid references workflow,
   description text,
   URI text,
   creation_time timestamp,
-  U_GUID  uuid,
+  U_GUID  uuid references mpousers,
   start_time timestamp,
   end_time timestamp,
   completion_status text,
@@ -101,11 +101,11 @@ ALTER TABLE activity OWNER to mpoadmin;
 drop table if exists comment;
 create table comment
 (
-  CM_GUID uuid,
+  CM_GUID uuid primary key,
   content text,
   URI text,
   creation_time timestamp,
-  U_GUID  uuid,
+  U_GUID  uuid references mpousers,
   comment_type text,
   parent_GUID uuid,
   parent_type text
@@ -115,8 +115,8 @@ ALTER TABLE comment OWNER to mpoadmin;
 drop table if exists workflow_connectivity;
 create table workflow_connectivity
 (
-  WC_GUID uuid,
-  W_GUID uuid,
+  WC_GUID uuid primary key,
+  W_GUID uuid references workflow,
   parent_GUID uuid,
   parent_type text,
   child_GUID uuid,
@@ -128,7 +128,7 @@ ALTER TABLE workflow_connectivity OWNER TO mpoadmin;
 drop table if exists metadata;
 create table metadata
 (
-  md_guid uuid,
+  md_guid uuid primary key,
   name text,
   value text,
   type text,
@@ -136,7 +136,7 @@ create table metadata
   parent_guid uuid,
   parent_type text,
   creation_time timestamp,
-  U_GUID  uuid
+  U_GUID  uuid references mpousers
 );
 ALTER TABLE metadata OWNER TO mpoadmin;
 
@@ -154,10 +154,10 @@ create table ontology_classes
 );
 ALTER TABLE ontology_classes OWNER TO mpoadmin;
 
-drop table if exists ontology_terms;
+drop table if exists ontology_terms cascade;
 create table ontology_terms
 (
-  ot_guid uuid,
+  ot_guid uuid primary key,
   class uuid,
   name text,
   description text,
@@ -165,7 +165,7 @@ create table ontology_terms
   value_type text,
   units text,
   specified boolean,
-  added_by uuid,
+  added_by uuid references mpousers,
   date_added timestamp,
   reviewed_by uuid,
   date_reviewed timestamp
@@ -175,12 +175,12 @@ ALTER TABLE ontology_terms OWNER TO mpoadmin;
 drop table if exists ontology_instances;
 create table ontology_instances
 (
-  oi_guid uuid,
+  oi_guid uuid primary key,
   target_guid uuid,
-  term_guid uuid,
+  term_guid uuid references ontology_terms,
   value text,
   creation_time timestamp,
-  u_guid uuid
+  u_guid uuid references mpousers
 );
 ALTER TABLE ontology_instances OWNER TO mpoadmin;
 
