@@ -638,7 +638,6 @@ def addRecord(table,request,dn):
     cursor.execute(q,v)
     if objs.has_key('parent_uid'):
     #connectivity table
-        wc_guid = str(uuid.uuid4())
         for parent in objs['parent_uid']:
             if objs['parent_uid'] == objs['work_uid']:
                 parent_type = 'workflow'
@@ -650,6 +649,7 @@ def addRecord(table,request,dn):
                                "from dataobject where do_guid=%s",(parent,parent,parent))
                 records = cursor.fetchone()
                 parent_type = records.type
+            wc_guid = str(uuid.uuid4())
             cursor.execute("insert into workflow_connectivity "+
                            "(wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) "+
                            "values (%s,%s,%s,%s,%s,%s,%s)",
