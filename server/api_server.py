@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from flask import Flask, render_template, request, jsonify
+#from flask.ext.jsonpify import jsonify #uncomment to support JSONP CORS access
 from flask import redirect, Response, make_response
 import json
 import db as rdb
@@ -17,7 +18,7 @@ MPO_API_VERSION = 'v0'
 
 app = Flask(__name__)
 app.debug=True
-apidebug=True
+apidebug=False
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
@@ -268,7 +269,7 @@ def collection(id=None):
 #these routes need a second function to be resolved
 @app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
 @app.route(routes['collection']+'/<id>'+'/element'+'/<oid>', methods=['GET'])
-def addToCollection(id=None, oid=None):
+def collectionElement(id=None, oid=None):
     """
     /collection/<id>/element       - GET a list of objects in a collection
                                    - POST to add to the collection
@@ -291,6 +292,7 @@ def addToCollection(id=None, oid=None):
         if oid:
             r = rdb.getRecord('collection_elements',{'uid':oid})
         else:
+            print('getting list of collection elements in collection',id)
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
  	if len(r) == 0 :
             r = make_response(r, 404)
@@ -340,7 +342,7 @@ def workflow(id=None):
         if id:
             darg=dict(request.args.items(multi=True)+[('uid',id)])
             if apidebug:
-                print('darg is %s' %darg)
+                print('APIDEBUG: darg is %s' %darg)
             r = rdb.getWorkflow({'uid':id},dn)
         else:
             r = rdb.getWorkflow(request.args,dn)
@@ -509,6 +511,7 @@ def ontologyTermVocabulary(id=None):
 
 @app.route(routes['ontology_term']+'/<id>/tree', methods=['GET'])
 @app.route(routes['ontology_term']+'/tree', methods=['GET'])
+@cross_origin()
 def ontologyTermTree(id=None):
     '''
     This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
@@ -521,7 +524,7 @@ def ontologyTermTree(id=None):
 
     r = rdb.getOntologyTermTree(id, dn )
 
-    return r
+    return jsonify(**r)
 
 
 @app.route(routes['ontology_term']+'/<id>', methods=['GET'])

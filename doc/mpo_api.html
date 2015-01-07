@@ -18,8 +18,41 @@ json output to the screen. In scripts, this option is generally not used and the
 behavior is to return the bare UUID value or an error code.</p>
 <ul>
 <li>
+<p>Getting a workflow UUID from an alias and vice-versa</p>
+<p><code>mpo --format=pretty get workflow -p uid=37d86ba6-d4ad-4437-87a0-c62e3ba0263e</code>
+The response contains the composite sequence, type, and
+user. Together these form the composite id, /user/type/composite_seq</p>
+<p>[
+{
+    "username":"john",
+    "description":"EFIT equilbrium. Testing mode coupling for COMSOL.  Resolving singular behavior near edges",
+    "composite_seq":1,
+    "user":{
+        "username":"john",
+        "lastname":"Wright",
+        "userid":"6f0b016c-2952-4d8c-9876-a86f73a04808",
+        "firstname":"John"
+    },
+    "time":"2014-11-07 16:19:27.646942",
+    "uid":"37d86ba6-d4ad-4437-87a0-c62e3ba0263e",
+    "type":"TORIC",
+    "name":"r505"
+}
+]</p>
+<p>The user does not have to construct the composite sequence (or alias)
+themselves though; the <code>alias</code> subroute of <code>workflow</code> will do that.
+<code>mpo --format=pretty get workflow/37d86ba6-d4ad-4437-87a0-c62e3ba0263e/alias</code></p>
+<p>{
+"alias":"john/TORIC/1",
+"uid":"37d86ba6-d4ad-4437-87a0-c62e3ba0263e"
+}</p>
+<p>Finally, if your friend told you the alias, you can use that to
+retrieve the workflow id.
+   <code>mpo --format=pretty get workflow -p alias=john/TORIC/1</code></p>
+</li>
+<li>
 <p>Adding a type to the ontology for use in a creating a workflow for a new code.</p>
-<h2>GET uuid of workflow types in the ontology.</h2>
+<h3>GET uuid of workflow types in the ontology.</h3>
 <p>term_id=`mpo get ontology/term -p path=Workflow/Type`</p>
 <p>{
  "username":"mpodemo",
@@ -34,7 +67,7 @@ behavior is to return the bare UUID value or an error code.</p>
  "uid":"ee39ae67-139e-433e-b666-441437faa413",
  "url":"https://mpo.psfc.mit.edu/api/v0/ontology/term?path=Workflow/Type"
 }</p>
-<h2>POST a new type of workflow</h2>
+<h3>POST a new type of workflow</h3>
 <p>mpo define TORLH -p $term_id -s -d "code for fullwave lower hybrid simulations" -t string</p>
 </li>
 <li>
@@ -54,15 +87,15 @@ behavior is to return the bare UUID value or an error code.</p>
 the value, you can just use the path. You do need the uuid of the
 workflow.</p>
 <p>wid=`mpo get workflow alias=jwright/EFIT/4`</p>
-<h2>POST a rating</h2>
+<h3>POST a rating</h3>
 <p><code>mpo --format=pretty ontology_instance -p vocabulary=/Generic/Status/quality 1</code></p>
 </li>
 <li>
 <p>Get the controlled vocabulary for a term.
   For example, to see valid values for a tracked code input or Status
   attribute, or to see what inputs can be tracked for a given code.</p>
-<p>term_id = `mpo get ontology/term -p path=Generic/Status/quality`
-<code>mpo --format=pretty get ontology/term/$term_id/vocabulary</code></p>
+<p>term_id = `mpo get ontology/term -p path=Generic/Status/quality` </p>
+<p><code>mpo --format=pretty get ontology/term/$term_id/vocabulary</code></p>
 </li>
 </ul></body>
 

@@ -44,7 +44,7 @@ behavior is to return the bare UUID value or an error code.
 
 * Adding a type to the ontology for use in a creating a workflow for a new code.
 
-    ##GET uuid of workflow types in the ontology.
+    ###GET uuid of workflow types in the ontology.
     term_id=\`mpo get ontology/term -p path=Workflow/Type\`
 
     {
@@ -61,7 +61,7 @@ behavior is to return the bare UUID value or an error code.
      "url":"https://mpo.psfc.mit.edu/api/v0/ontology/term?path=Workflow/Type"
     }
 
-    ##POST a new type of workflow
+    ###POST a new type of workflow
     mpo define TORLH -p $term_id -s -d "code for fullwave lower hybrid simulations" -t string
 
 
@@ -91,7 +91,7 @@ behavior is to return the bare UUID value or an error code.
 
 	wid=\`mpo get workflow alias=jwright/EFIT/4\`
 
-    ##POST a rating
+    ###POST a rating
 	`mpo --format=pretty ontology_instance -p vocabulary=/Generic/Status/quality 1`
 
 
@@ -100,6 +100,7 @@ behavior is to return the bare UUID value or an error code.
   attribute, or to see what inputs can be tracked for a given code.
 
   
- 	term_id = \`mpo get ontology/term -p path=Generic/Status/quality\`
+ 	term_id = \`mpo get ontology/term -p path=Generic/Status/quality\` 
+
 	`mpo --format=pretty get ontology/term/$term_id/vocabulary`
 	

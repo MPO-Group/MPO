@@ -1,7 +1,6 @@
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: module mpo_arg</title>
-<meta charset="utf-8">
 </head><body bgcolor="#f0f0f8">
 
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
@@ -9,18 +8,19 @@
 <td valign=bottom>&nbsp;<br>
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>mpo_arg</strong></big></big></font></td
 ><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mposvn/trunk/client/python/mpo_arg.py">/Users/jwright/Codes/mposvn/trunk/client/python/mpo_arg.py</a></font></td></tr></table>
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/mpo/mposvn/client/python/mpo_arg.py">/home/mpo/mposvn/client/python/mpo_arg.py</a></font></td></tr></table>
     <p><tt>Test&nbsp;commandline&nbsp;parsing<br>
 Will&nbsp;permit&nbsp;all&nbsp;parsing&nbsp;to&nbsp;be&nbsp;moved&nbsp;to&nbsp;the&nbsp;meta&nbsp;command&nbsp;where&nbsp;it&nbsp;belongs.<br>
 Then&nbsp;methods&nbsp;can&nbsp;stay&nbsp;put&nbsp;functional&nbsp;invocation.<br>
 argument&nbsp;layout&nbsp;for&nbsp;mpo:<br>
 post<br>
 get<br>
-not&nbsp;implemented:&nbsp;delete<br>
+delete<br>
 not&nbsp;implemented:&nbsp;put<br>
 add<br>
 step<br>
 init<br>
+collect<br>
 comment<br>
 record/meta<br>
 help</tt></p>
@@ -34,14 +34,16 @@ help</tt></p>
 <td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="argparse.html">argparse</a><br>
 <a href="ast.html">ast</a><br>
 <a href="copy.html">copy</a><br>
-</td><td width="25%" valign=top><a href="datetime.html">datetime</a><br>
-<a href="json.html">json</a><br>
+<a href="datetime.html">datetime</a><br>
+</td><td width="25%" valign=top><a href="json.html">json</a><br>
 <a href="linecache.html">linecache</a><br>
-</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="os.html">os</a><br>
 <a href="requests.html">requests</a><br>
-<a href="sys.html">sys</a><br>
-</td><td width="25%" valign=top><a href="textwrap.html">textwrap</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<a href="textwrap.html">textwrap</a><br>
+<a href="traceback.html">traceback</a><br>
 <a href="unittest.html">unittest</a><br>
+</td><td width="25%" valign=top><a href="warnings.html">warnings</a><br>
 </td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
@@ -125,7 +127,7 @@ Commandline&nbsp;invocation:<br>
 mpo&nbsp;&lt;mpo&nbsp;flags&gt;&nbsp;method&nbsp;&lt;url&gt;&nbsp;&lt;method&nbsp;flags&gt;&nbsp;&lt;payload&gt;<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="mpo_cli-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, mpo_cert<font color="#909090">=''</font>, archive_host<font color="#909090">='psfcstor1.psfc.mit.edu'</font>, archive_user<font color="#909090">='psfcmpo'</font>, archive_key<font color="#909090">=None</font>, archive_prefix<font color="#909090">=None</font>, debug<font color="#909090">=False</font>)</dt></dl>
+<dl><dt><a name="mpo_cli-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, mpo_cert<font color="#909090">=''</font>, archive_host<font color="#909090">='psfcstor1.psfc.mit.edu'</font>, archive_user<font color="#909090">='psfcmpo'</font>, archive_key<font color="#909090">=None</font>, archive_prefix<font color="#909090">=None</font>, debug<font color="#909090">=False</font>, dryrun<font color="#909090">=False</font>)</dt></dl>
 
 <dl><dt><a name="mpo_cli-cli"><strong>cli</strong></a>(self)</dt></dl>
 
@@ -156,7 +158,7 @@ m.flags=values&nbsp;#set&nbsp;some&nbsp;defaults,&nbsp;eg&nbsp;m.server=$MPO_HOS
 m.mpo_method(url=url,payload=payload,arg1=arg1,arg2=arg2)<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="mpo_methods-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, cert<font color="#909090">='cert'</font>, archive_host<font color="#909090">='psfcstor1.psfc.mit.edu'</font>, archive_user<font color="#909090">='psfcmpo'</font>, archive_key<font color="#909090">=None</font>, archive_prefix<font color="#909090">=None</font>, debug<font color="#909090">=False</font>, filter<font color="#909090">=False</font>)</dt></dl>
+<dl><dt><a name="mpo_methods-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, cert<font color="#909090">='cert'</font>, archive_host<font color="#909090">='psfcstor1.psfc.mit.edu'</font>, archive_user<font color="#909090">='psfcmpo'</font>, archive_key<font color="#909090">=None</font>, archive_prefix<font color="#909090">=None</font>, debug<font color="#909090">=False</font>, filter<font color="#909090">=False</font>, dryrun<font color="#909090">=False</font>)</dt></dl>
 
 <dl><dt><a name="mpo_methods-add"><strong>add</strong></a>(self, workflow_ID<font color="#909090">=None</font>, parentobj_ID<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Add&nbsp;at&nbsp;dataobject&nbsp;to&nbsp;a&nbsp;workflow.<br>
 &nbsp;<br>
@@ -180,22 +182,33 @@ uri&nbsp;--&nbsp;uri&nbsp;for&nbsp;the&nbsp;data&nbsp;<a href="__builtin__.html#
 
 <dl><dt><a name="mpo_methods-archive"><strong>archive</strong></a>(self, protocol<font color="#909090">=None</font>, *arg, **kw)</dt></dl>
 
+<dl><dt><a name="mpo_methods-collection"><strong>collection</strong></a>(self, name<font color="#909090">=''</font>, desc<font color="#909090">=''</font>, collection<font color="#909090">=None</font>, remove<font color="#909090">=False</font>, elements<font color="#909090">=[]</font>, **kwargs)</dt><dd><tt>Create&nbsp;a&nbsp;new&nbsp;collection&nbsp;of&nbsp;objects&nbsp;from&nbsp;a&nbsp;list&nbsp;of&nbsp;UUIDS.<br>
+&nbsp;<br>
+args&nbsp;are:<br>
+name&nbsp;--&nbsp;name<br>
+desc&nbsp;--&nbsp;description<br>
+elements&nbsp;--&nbsp;list&nbsp;of&nbsp;UUID&nbsp;strings&nbsp;to&nbsp;initialize&nbsp;collection&nbsp;with&nbsp;(may&nbsp;be&nbsp;empty)<br>
+collection&nbsp;--&nbsp;UUID&nbsp;of&nbsp;existing&nbsp;collection.&nbsp;If&nbsp;present,&nbsp;name&nbsp;and&nbsp;desc&nbsp;are&nbsp;ignored.<br>
+remove&nbsp;--&nbsp;if&nbsp;set&nbsp;to&nbsp;True,&nbsp;remove&nbsp;rather&nbsp;than&nbsp;add&nbsp;the&nbsp;element&nbsp;to&nbsp;the&nbsp;collection.&nbsp;Requires<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;collection&nbsp;and&nbsp;element&nbsp;list&nbsp;and&nbsp;no&nbsp;name&nbsp;or&nbsp;description.</tt></dd></dl>
+
 <dl><dt><a name="mpo_methods-comment"><strong>comment</strong></a>(self, obj_ID<font color="#909090">=None</font>, comment<font color="#909090">='empty'</font>, **kwargs)</dt><dd><tt>Takes&nbsp;a&nbsp;returned&nbsp;record&nbsp;and&nbsp;adds&nbsp;a&nbsp;comment&nbsp;to&nbsp;it.<br>
 In&nbsp;this&nbsp;case,&nbsp;data&nbsp;should&nbsp;be&nbsp;a&nbsp;plain&nbsp;string.<br>
 args:<br>
 obj_ID&nbsp;--&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;being&nbsp;commented&nbsp;on<br>
 comment&nbsp;--&nbsp;string&nbsp;containing&nbsp;the&nbsp;comment</tt></dd></dl>
 
+<dl><dt><a name="mpo_methods-delete"><strong>delete</strong></a>(self, route<font color="#909090">=''</font>, params<font color="#909090">={}</font>, verbose<font color="#909090">=False</font>, **kwargs)</dt><dd><tt>Delete&nbsp;a&nbsp;resource.<br>
+Keyword&nbsp;arguments:<br>
+params&nbsp;--&nbsp;python&nbsp;dictionary&nbsp;or&nbsp;a&nbsp;list&nbsp;of&nbsp;tuples,&nbsp;not&nbsp;supported&nbsp;yet<br>
+route&nbsp;--&nbsp;API&nbsp;route&nbsp;for&nbsp;resource</tt></dd></dl>
+
 <dl><dt><a name="mpo_methods-format"><strong>format</strong></a>(self, result, filter<font color="#909090">='id'</font>)</dt><dd><tt>Routine&nbsp;to&nbsp;handle&nbsp;reformatting&nbsp;of&nbsp;responses&nbsp;from&nbsp;submethods.&nbsp;It&nbsp;is&nbsp;aware&nbsp;of&nbsp;the<br>
 internal&nbsp;format&nbsp;returned.</tt></dd></dl>
 
 <dl><dt><a name="mpo_methods-get"><strong>get</strong></a>(self, route<font color="#909090">=''</font>, params<font color="#909090">={}</font>, verbose<font color="#909090">=False</font>, **kwargs)</dt></dl>
 
-<dl><dt><a name="mpo_methods-get_cid"><strong>get_cid</strong></a>(self, wid)</dt></dl>
-
 <dl><dt><a name="mpo_methods-get_uri"><strong>get_uri</strong></a>(self, uri<font color="#909090">=None</font>, do_uid<font color="#909090">=None</font>)</dt></dl>
-
-<dl><dt><a name="mpo_methods-get_wid"><strong>get_wid</strong></a>(self, cid)</dt><dd><tt>###&nbsp;Persistent&nbsp;store&nbsp;methods&nbsp;###</tt></dd></dl>
 
 <dl><dt><a name="mpo_methods-init"><strong>init</strong></a>(self, name<font color="#909090">=None</font>, desc<font color="#909090">=''</font>, wtype<font color="#909090">='None'</font>, **kwargs)</dt><dd><tt>The&nbsp;INIT&nbsp;method&nbsp;starts&nbsp;a&nbsp;workflow.<br>
 It&nbsp;returns&nbsp;the&nbsp;server&nbsp;response&nbsp;for&nbsp;a&nbsp;new&nbsp;workflow.<br>
@@ -223,7 +236,7 @@ value&nbsp;--&nbsp;string&nbsp;containing&nbsp;the&nbsp;stored&nbsp;value</tt></
 <dl><dt><a name="mpo_methods-ontology_term"><strong>ontology_term</strong></a>(self, term<font color="#909090">=None</font>, parent_ID<font color="#909090">=None</font>, specified<font color="#909090">=None</font>, vtype<font color="#909090">=None</font>, desc<font color="#909090">=None</font>, units<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Add&nbsp;terms&nbsp;to&nbsp;the&nbsp;ontology<br>
 &nbsp;&nbsp;&nbsp;args:<br>
 &nbsp;&nbsp;&nbsp;term&nbsp;--<br>
-&nbsp;&nbsp;&nbsp;parent_ID&nbsp;--&nbsp;term&nbsp;above&nbsp;this&nbsp;one&nbsp;in&nbsp;the&nbsp;hierachy,&nbsp;<br>
+&nbsp;&nbsp;&nbsp;parent_ID&nbsp;--&nbsp;term&nbsp;above&nbsp;this&nbsp;one&nbsp;in&nbsp;the&nbsp;hierachy,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ie&nbsp;the&nbsp;is&nbsp;adding&nbsp;the&nbsp;the&nbsp;parent&nbsp;terms&nbsp;vocabulary<br>
 &nbsp;&nbsp;&nbsp;desc&nbsp;--&nbsp;the&nbsp;description&nbsp;of&nbsp;the&nbsp;term<br>
 &nbsp;&nbsp;&nbsp;vtype&nbsp;--&nbsp;its&nbsp;type<br>
@@ -270,11 +283,17 @@ Data descriptors defined here:<br>
 Data and other attributes defined here:<br>
 <dl><dt><strong>ACTIVITY_RT</strong> = 'activity'</dl>
 
+<dl><dt><strong>COLLECTION_ELEMENT_RT</strong> = 'collection/{cid}/element'</dl>
+
+<dl><dt><strong>COLLECTION_RT</strong> = 'collection'</dl>
+
 <dl><dt><strong>COMMENT_RT</strong> = 'comment'</dl>
 
 <dl><dt><strong>CONNECTION_RT</strong> = 'connection'</dl>
 
 <dl><dt><strong>DATAOBJECT_RT</strong> = 'dataobject'</dl>
+
+<dl><dt><strong>DELETEheaders</strong> = {'ACCEPT': 'application/json'}</dl>
 
 <dl><dt><strong>GETheaders</strong> = {'ACCEPT': 'application/json'}</dl>
 

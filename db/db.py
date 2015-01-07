@@ -10,7 +10,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=False
+dbdebug=True
 try:
     conn_string = os.environ['MPO_DB_CONNECTION']
 except Exception, e:
@@ -278,7 +278,7 @@ def getOntologyTermTree(id='0',dn=None):
     #patch the method now for this instance only
     ot_subtree.to_dict=types.MethodType(to_dict, ot_subtree)
 
-    return json.dumps(ot_subtree.to_dict(),cls=MPOSetEncoder)
+    return ot_subtree.to_dict() #json.dumps(ot_subtree.to_dict(),cls=MPOSetEncoder)
 
 
 def getUser(queryargs={},dn=None):
@@ -507,8 +507,12 @@ def getWorkflow(queryargs={},dn=None):
 
 def getWorkflowCompositeID(id):
     "Returns composite id of the form user/workflow_name/composite_seq"
-    wf=json.loads(getWorkflow({'uid':id}))[0]
-    compid = {'alias':wf['user']['username']+'/'+wf['type']+'/'+str(wf['composite_seq']),'uid':id}
+    wf=json.loads(getWorkflow({'uid':id}))
+    compid=''
+    #catch exception here if thrown by getWorkflow?
+    if len(wf) == 1: #record found
+        wf=wf[0] #getWorkflow always returns a list
+        compid = {'alias':wf['user']['username']+'/'+wf['type']+'/'+str(wf['composite_seq']),'uid':id}
     if dbdebug:
         print('DBDEBUG: compid ',wf,compid)
     return json.dumps(compid,cls=MPOSetEncoder)
