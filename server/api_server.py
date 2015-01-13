@@ -371,21 +371,35 @@ def getWorkflowGraph(id):
 @app.route(routes['workflow']+'/<id>/comments', methods=['GET'])
 def getWorkflowComments(id):
     dn=get_user_dn(request)
-    if request.method == 'GET':
-        r = rdb.getWorkflowComments(id,request.args,dn)
-    return r
+
+    ids=id.strip().split(',')
+    r={} #[]
+    for id in ids:
+        rs = json.loads(rdb.getWorkflowComments(id,request.args,dn))
+        if rs:        #append a dict query_id:result. strip off [].
+            r[id]=rs
+        else:
+            rs=[]#{'uid':'0'} #not found
+            r[id]=rs
+
+    if len(r)==1:
+        r=rs
+    return Response(json.dumps(r), mimetype='application/json')
+
 
 @app.route(routes['workflow']+'/<id>/type', methods=['GET'])
 def getWorkflowType(id):
     dn=get_user_dn(request)
-    if request.method == 'GET':
-        r = rdb.getWorkflowType(id,request.args,dn)
+    r = rdb.getWorkflowType(id,request.args,dn)
     return r
 
 
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
 def getWorkflowCompositeID(id):
+"""
+    Method to retrieve a workflow composite id in the field 'alias'.
+"""
     dn=get_user_dn(request)
     if request.method == 'GET':
         r = rdb.getWorkflowCompositeID(id)
@@ -453,11 +467,20 @@ def comment(id=None):
 
     elif request.method == 'GET':
         if id:
-            r = rdb.getRecord('comment',{'uid':id},dn)
+            ids=id.strip().split(',')
+            r={}
+            for id in ids:
+                rs = json.loads(rdb.getRecord('comment',{'uid':id},dn))
+                if len(rs)==1:
+                    r[id]=json.loads(rs)[0] #unpack single element list
+                else:
+                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+            if len(id)==1: #return just single record if one uid
+                r=json.loads(rs)
         else:
-            r = rdb.getRecord('comment',request.args,dn)
+            r = json.loads(rdb.getRecord('comment',request.args,dn))
 
-    return r
+    return Response(json.dumps(r), mimetype='application/json')
 
 
 @app.route(routes['metadata']+'/<id>', methods=['GET'])
