@@ -10,7 +10,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=True
+dbdebug=False
 try:
     conn_string = os.environ['MPO_DB_CONNECTION']
 except Exception, e:
@@ -505,7 +505,7 @@ def getWorkflow(queryargs={},dn=None):
     return json.dumps(jr,cls=MPOSetEncoder)
 
 
-def getWorkflowCompositeID(id):
+def getWorkflowCompositeID(id, dn=None):
     "Returns composite id of the form user/workflow_name/composite_seq"
     wf=json.loads(getWorkflow({'uid':id}))
     compid=''

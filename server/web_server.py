@@ -181,10 +181,12 @@ def index():
             if qual_data:
                 if qual_data[0]['value']:
                     results[index]['quality']=qual_data[0]['value']
+            else:
+                results[index]['quality']=''
 
             if resp.status_code != 200:
                 print("Error in index.html in retrieving quality for %s %s"%(qterm_uid,pid))
-                results[index]['quality']='0'
+                results[index]['quality']=''
 
 
         def alias_cb(sess, resp, index):
@@ -224,7 +226,14 @@ def index():
         wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']),
                            headers={'Real-User-DN':dn})
 
-        
+        #list of workids for grouped requests
+        wids = ','.join([i['uid'] for i in results])
+        acm =s.get("%s/workflow/%s/comments"%(API_PREFIX,wids),  headers={'Real-User-DN':dn})
+        aal =s.get("%s/workflow/%s/alias"%(API_PREFIX,wids),  headers={'Real-User-DN':dn})
+        aqual=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,wids), 
+                           headers={'Real-User-DN':dn})
+
+
         #get comments and quality factors for workflows
         for index,i in enumerate(results):        #i is dict, loop through list of workflows
             #if ?wid=<wid> used, show comments for only that workflow
@@ -238,27 +247,52 @@ def index():
             thetime=results[index]['time'][:19]
             results[index]['time']=thetime
 
-            #get comments for a workflow
             pid=i['uid']
-            c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                    background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
-            future_list.append(c)
+            #get comments for a workflow
+#            c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+#                    background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+#            future_list.append(c)
 
             #get alias' for workflow display
-            cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                      background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
-            future_list.append(cid)
+#            cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+#                      background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
+#            future_list.append(cid)
 
             #get workflow ontology terms: quality values
-            qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), 
-                           headers={'Real-User-DN':dn}, 
-                           background_callback=lambda sess,resp,index=index: qual_cb(sess,resp,index) )
-            future_list.append(qual_req)
+#            qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), 
+#                           headers={'Real-User-DN':dn}, 
+#                           background_callback=lambda sess,resp,index=index: qual_cb(sess,resp,index) )
+#            future_list.append(qual_req)
 
 
     #JCW unroll callbacks here
     for future in future_list:
         future.result()
+
+    #process comments, alias'
+    allcomments=acm.result().json() #error checking
+    allalias=aal.result().json()
+    allqual=aqual.result().json()
+
+    for index,i in enumerate(results):        #i is dict, loop through list of workflows
+        comments=allcomments[i['uid']]
+        for temp in comments: #get number of comments, truncate time string
+            if temp['time']:
+                thetime=temp['time'][:19]
+                temp['time']=thetime
+
+        #comments=allcomments[results[index]['uid']]
+        i['num_comments']=len(comments)
+        i['comments']=comments
+        i['alias']=allalias[i['uid']]['alias']
+        print('web qual',allqual,i['uid'])
+        if allqual[i['uid']]:
+            i['quality']=allqual[i['uid']][0].get('value')
+        else:
+            i['quality']=''
+        #print('web qual comp',allqual.get(i['uid']), results[index]['quality'])
+
+
 
     ont_result=ont_tree_req.result().json().get('root').get('children')
     wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
@@ -847,6 +881,7 @@ def collections(uid=False):
             #verify response and grab value
             cid = resp.json()
             if cid:
+                print('alias_cb',str(cid))
                 results[index]['alias']=cid['alias']
 
             if resp.status_code != 200:
@@ -884,9 +919,10 @@ def collections(uid=False):
             qterm_uid='0'
             print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
 
+        print("WEBDEBUG: collection results sent to index")
+        pprint(results)
 
-        #get comments
-        for index,i in enumerate(results):        #i is dict, loop through list of workflows
+        for index,i in enumerate(results):        #i is dict, loop through list of collection elements
             pid=i['uid']
             thetime=results[index]['time'][:19]
             results[index]['time']=thetime
@@ -915,7 +951,7 @@ def collections(uid=False):
 
 
         if webdebug:
-            #print("WEBDEBUG: results sent to index")
+            print("WEBDEBUG: results sent to index")
             pprint(results)
             #print("WEBDEBUG: ontology_results sent to index")
             #pprint(ont_result)

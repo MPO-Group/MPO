@@ -266,7 +266,7 @@ def collection(id=None):
     return r
 
 
-#these routes need a second function to be resolved
+
 @app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
 @app.route(routes['collection']+'/<id>'+'/element'+'/<oid>', methods=['GET'])
 def collectionElement(id=None, oid=None):
@@ -292,12 +292,12 @@ def collectionElement(id=None, oid=None):
         if oid:
             r = rdb.getRecord('collection_elements',{'uid':oid})
         else:
-            print('getting list of collection elements in collection',id)
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
  	if len(r) == 0 :
             r = make_response(r, 404)
 
     return r
+
 
 
 @app.route(routes['workflow']+'/<id>', methods=['GET'])
@@ -359,6 +359,7 @@ def workflow(id=None):
     return r
 
 
+
 @app.route(routes['workflow']+'/<id>/graph', methods=['GET'])
 def getWorkflowGraph(id):
     dn=get_user_dn(request)
@@ -376,7 +377,7 @@ def getWorkflowComments(id):
     r={} #[]
     for id in ids:
         rs = json.loads(rdb.getWorkflowComments(id,request.args,dn))
-        if rs:        #append a dict query_id:result. strip off [].
+        if len(rs)!=0:        #append a dict query_id:result. strip off [].
             r[id]=rs
         else:
             rs=[]#{'uid':'0'} #not found
@@ -397,15 +398,26 @@ def getWorkflowType(id):
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
 def getWorkflowCompositeID(id):
-"""
+    """
     Method to retrieve a workflow composite id in the field 'alias'.
-"""
+    """
     dn=get_user_dn(request)
     if request.method == 'GET':
-        r = rdb.getWorkflowCompositeID(id)
-        if apidebug:
-            print ('APIDEBUG: ALIAS %s'% r )
-    return r
+        #Add logic to parse id if comma separated
+        if id:
+            ids=id.strip().split(',')
+            r={}
+            for id in ids:
+                rs = json.loads(rdb.getWorkflowCompositeID(id,dn))
+                if rs:
+                    r[id]=rs
+                else:
+                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+
+            if len(ids)==1: #return just single record if one uid
+                r=rs
+
+    return Response(json.dumps(r), mimetype='application/json')
 
 
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
@@ -420,13 +432,24 @@ def dataobject(id=None):
         publishEvent('mpo_dataobject',onlyone(morer))
     elif request.method == 'GET':
         if id:
-            r = rdb.getRecord('dataobject',{'uid':id})
+            ids=id.strip().split(',')
+            r={}
+            for id in ids:
+                rs = json.loads(rdb.getRecord('dataobject',{'uid':id},dn))
+                if rs:
+                    r[id]=rs
+                else:
+                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+
+            if len(ids)==1: #return just single record if one uid
+                r=rs
         else:
-            r = rdb.getRecord('dataobject',request.args)
+            r = json.loads(rdb.getRecord('dataobject',request.args,dn))
  	if len(r) == 0 :
             r = make_response(r, 404)
 
-    return r
+    return Response(json.dumps(r), mimetype='application/json')
+
 
 
 @app.route(routes['activity']+'/<id>', methods=['GET'])
@@ -441,10 +464,25 @@ def activity(id=None):
         publishEvent('mpo_activity',onlyone(morer))
     elif request.method == 'GET':
         if id:
-            r = rdb.getRecord('activity', {'uid':id})
+            ids=id.strip().split(',')
+            r={}
+            for id in ids:
+                rs = json.loads(rdb.getRecord('activity',{'uid':id},dn))
+                if rs:
+                    r[id]=rs
+                else:
+                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+
+            if len(ids)==1: #return just single record if one uid
+                r=rs
         else:
-            r = rdb.getRecord('activity',request.args)
-    return r
+            r = rdb.getRecord('activity',request.args,dn)
+ 	if len(r) == 0 :
+            r = make_response(r, 404)
+
+    return Response(json.dumps(r), mimetype='application/json')
+
+
 
 
 @app.route(routes['comment']+'/<id>', methods=['GET'])
@@ -466,17 +504,18 @@ def comment(id=None):
         publishEvent('mpo_comment',onlyone(morer))
 
     elif request.method == 'GET':
+        #Add logic to parse id if comma separated
         if id:
             ids=id.strip().split(',')
             r={}
             for id in ids:
                 rs = json.loads(rdb.getRecord('comment',{'uid':id},dn))
                 if len(rs)==1:
-                    r[id]=json.loads(rs)[0] #unpack single element list
+                    r[id]=rs[0] #unpack single element list
                 else:
                     r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
-            if len(id)==1: #return just single record if one uid
-                r=json.loads(rs)
+            if len(ids)==1: #return just single record if one uid
+                r=rs
         else:
             r = json.loads(rdb.getRecord('comment',request.args,dn))
 
@@ -494,11 +533,22 @@ def metadata(id=None):
         morer = rdb.getRecord('metadata',{'uid':id},dn)
         publishEvent('mpo_metadata',onlyone(morer))
     elif request.method == 'GET':
+        #Add logic to parse id if comma separated
         if id:
-            r = rdb.getRecord('metadata', {'uid':id}, dn )
+            ids=id.strip().split(',')
+            r={}
+            for id in ids:
+                rs = json.loads(rdb.getRecord('metadata',{'uid':id},dn))
+                if len(rs)==1:
+                    r[id]=rs[0] #unpack single element list
+                else:
+                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+            if len(ids)==1: #return just single record if one uid
+                r=rs
         else:
-            r = rdb.getRecord('metadata', request.args, dn )
-    return r
+            r = json.loads(rdb.getRecord('metadata',request.args,dn))
+
+    return Response(json.dumps(r), mimetype='application/json')
 
 
 @app.route(routes['ontology_class']+'/<id>', methods=['GET'])
@@ -586,8 +636,25 @@ def ontologyInstance(id=None):
         if id:
             r = rdb.getRecord('ontology_instances', {'uid':id}, dn )
         else:
-            r = rdb.getRecord('ontology_instances', request.args, dn )
-    return r
+            p_uids=request.args.get('parent_uid')
+            if p_uids:
+                p_uids=p_uids.strip().split(',')
+                print('ont inst',p_uids,str(len(p_uids)))
+                r={}
+                rargs=request.args.to_dict() #multidict conversion to dict
+                for pid in p_uids:
+                    rargs['parent_uid']=pid
+                    rs = json.loads(rdb.getRecord('ontology_instances', rargs, dn ))
+                    print('ont inst',pid,str(rargs),str(type(rargs)))
+                    r[pid]=rs #element list, can have multiple instances
+
+                if len(p_uids)==1: #return just single record if one uid
+                    r=rs
+            else:
+                r = json.loads(rdb.getRecord('ontology_instances', request.args, dn ))
+
+    return Response(json.dumps(r), mimetype='application/json')
+
 
 
 @app.route(routes['user']+'/<id>', methods=['GET'])
