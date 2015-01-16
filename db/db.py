@@ -88,6 +88,9 @@ def processArgument(a):
     Handle arguments in GET queries. If in double quotes, strip quotes and pass as literal search.
     Otherwise interpret possible wildcards. Spaces between words are treated as wildcards.
     """
+    #protect against empty input
+    if not a: return a
+
     if a[0]=='"' and a[-1]=='"':
         qa=a[1:-1]
     else:
