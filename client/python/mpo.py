@@ -20,7 +20,7 @@ from urlparse import urlparse
 
 # TODO
 # * Error handling on request replies, define standard replies. Server should always return 
-#    an object (JSON or XML)
+#    an object (JSON or XML(not yet supported) )
 # * santize urls, for example url/workflow and url//workflow should both work
 
 class mpo_methods(object):

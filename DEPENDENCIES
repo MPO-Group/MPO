@@ -1,5 +1,7 @@
 ######## REQUIREMENTS #########
-python >= 2.7: needed for adequate SSL support, not tested with python3
+python >= 2.7: needed for adequate SSL support, also tested with python3.4
+Note, issues with SSL in requests.py found in debian with python2.7 from apt-get
+
 
 #Internal Python Packages used
 json - comes with python
@@ -27,11 +29,11 @@ uwsgi > 1.3 - web services for api server. tested with version 1.9.13. Version 1
               We recommend 'sudo pip install uwsgi' which should grab and build the most 
 	      recent release from source. Note that libssl should be installed for https support before the install.
 
-memcache - caching queries to the webserver, requires memcached (apt-get or yum) on system.
+memcache (optional) - caching queries to the webserver, requires memcached (apt-get or yum) on system.
 
 gevent > 1.0 - optional for prototype event support under uwsgi, set GEVENT_OPT to turn on in MPO
 
-
+future_requests - provides asychronous requests. (part of requests in python3)
 
 MDSplus : provided by mdsplus-python, provides events capability
 

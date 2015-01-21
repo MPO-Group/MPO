@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
-for MD in *.md; do
-    htmlfile="${MD%.*}".html
-    python md_css_generator.py $MD mpo_doc.css $htmlfile
+
+MD() {
+    if hash pandoc 2>/dev/null; then
+	pandoc -f markdown_github -c mpo_doc.css -o $2 $1
+    else
+	python md_css_generator.py $1 mpo_doc.css $2
+    fi
+}
+
+for mdfile in *.md; do
+    htmlfile="${mdfile%.*}".html
+    MD $mdfile $htmlfile
 done
 
 SRCLIST='../server/web_server.py ../server/api_server.py\

@@ -205,8 +205,9 @@ class mpo_methods(object):
             output=json.dumps(result.json(),separators=(',', ':'),indent=4)
         elif filter=='raw':
             output=result
+            print('raw header',output.headers,file=sys.stderr)
             print('raw type',str(type(output)),file=sys.stderr)
-            print('raw dir',dir(output),file=sys.stderr)
+            print('raw content',output.text,file=sys.stderr)
         elif filter=='text':
             output=result.text
         else:

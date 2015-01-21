@@ -1,6 +1,7 @@
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: module db</title>
+<meta charset="utf-8">
 </head><body bgcolor="#f0f0f8">
 
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
@@ -8,7 +9,7 @@
 <td valign=bottom>&nbsp;<br>
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>db</strong></big></big></font></td
 ><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/mpo/mposvn/db/db.py">/home/mpo/mposvn/db/db.py</a></font></td></tr></table>
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mpo-head/trunk/db/db.py">/Users/jwright/Codes/mpo-head/trunk/db/db.py</a></font></td></tr></table>
     <p><tt>#&nbsp;file&nbsp;:&nbsp;db.py</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -191,7 +192,7 @@ id&nbsp;or&nbsp;queryarg&nbsp;arguments.</tt></dd></dl>
  <dl><dt><a name="-getUser"><strong>getUser</strong></a>(queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt></dl>
  <dl><dt><a name="-getWorkflow"><strong>getWorkflow</strong></a>(queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt><dd><tt>Processes&nbsp;the&nbsp;/workflow&nbsp;route.&nbsp;Handles&nbsp;get&nbsp;query&nbsp;arguments.</tt></dd></dl>
  <dl><dt><a name="-getWorkflowComments"><strong>getWorkflowComments</strong></a>(id, queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt></dl>
- <dl><dt><a name="-getWorkflowCompositeID"><strong>getWorkflowCompositeID</strong></a>(id)</dt><dd><tt>Returns&nbsp;composite&nbsp;id&nbsp;of&nbsp;the&nbsp;form&nbsp;user/workflow_name/composite_seq</tt></dd></dl>
+ <dl><dt><a name="-getWorkflowCompositeID"><strong>getWorkflowCompositeID</strong></a>(id, dn<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;composite&nbsp;id&nbsp;of&nbsp;the&nbsp;form&nbsp;user/workflow_name/composite_seq</tt></dd></dl>
  <dl><dt><a name="-getWorkflowElements"><strong>getWorkflowElements</strong></a>(id, queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt></dl>
  <dl><dt><a name="-getWorkflowType"><strong>getWorkflowType</strong></a>(id, queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt></dl>
  <dl><dt><a name="-getconn"><strong>getconn</strong></a>()</dt></dl>
@@ -206,7 +207,7 @@ Otherwise&nbsp;interpret&nbsp;possible&nbsp;wildcards.&nbsp;Spaces&nbsp;between&
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><strong>conn_string</strong> = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"<br>
-<strong>dbdebug</strong> = True<br>
+<strong>dbdebug</strong> = False<br>
 <strong>e</strong> = KeyError('MPO_DB_CONNECTION',)<br>
 <strong>mypool</strong> = &lt;sqlalchemy.pool.QueuePool object&gt;<br>
 <strong>query_map</strong> = {'activity': {'description': 'description', 'end': 'end_time', 'name': 'name', 'start': 'start_time', 'status': 'completion_status', 'time': 'creation_time', 'uid': 'a_guid', 'user_uid': 'u_guid', 'work_uid': 'w_guid'}, 'activity_short': {'w': 'w_guid'}, 'collection': {'description': 'description', 'name': 'name', 'time': 'creation_time', 'uid': 'c_guid', 'user_uid': 'u_guid'}, 'collection_elements': {'parent_uid': 'c_guid', 'time': 'creation_time', 'uid': 'e_guid', 'user_uid': 'u_guid'}, 'comment': {'content': 'content', 'parent_uid': 'parent_GUID', 'ptype': 'parent_type', 'time': 'creation_time', 'type': 'comment_type', 'uid': 'cm_guid', 'user_uid': 'u_guid'}, 'dataobject': {'description': 'description', 'name': 'name', 'time': 'creation_time', 'uid': 'do_guid', 'uri': 'uri', 'user_uid': 'u_guid', 'work_uid': 'w_guid'}, 'dataobject_short': {'w': 'w_guid'}, 'metadata': {'key': 'name', 'key_uid': 'type', 'parent_type': 'parent_type', 'parent_uid': 'parent_guid', 'time': 'creation_time', 'uid': 'md_guid', 'user_uid': 'u_guid', 'value': 'value'}, 'metadata_short': {'c': 'creation_time', 'n': 'name', 't': 'type', 'v': 'value'}, 'mpousers': {'dn': 'dn', 'email': 'email', 'firstname': 'firstname', 'lastname': 'lastname', 'organization': 'organization', 'phone': 'phone', 'uid': 'uuid', 'username': 'username'}, ...}</td></tr></table>

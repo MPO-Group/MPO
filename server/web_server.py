@@ -14,12 +14,20 @@ import math
 from authentication import get_user_dn
 import urllib
 from collections import OrderedDict
-import memcache
+try:
+    memcache_loaded=True
+    import memcache
+except ImportError:
+    print("MPO Web server error, could not import memcache, page loads may be slower.")
+    memcache_loaded=False
 from requests_futures.sessions import FuturesSession
 
 app = Flask(__name__)
 
-mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+if memcache_loaded:
+    mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+else:
+    mc = False
 
 MPO_API_SERVER=os.environ['MPO_API_SERVER']
 MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
@@ -46,7 +54,9 @@ def landing():
 
 @app.route('/home')
 def index():
-    #use asynchronous requests
+    #use asynchronous requests now
+    #use grouped requests:
+    groupedrequests=False
     print('WEBSERVER: timestamp start index',stime.time() )
     #Need to get the latest information from MPO database here
     #and pass it to index.html template
@@ -168,6 +178,7 @@ def index():
         #really be right in index.html: req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
         #get workflow types
         #maybe this if we change nodes to be generic worknames=[item['node']['data']['name'] for item in worktree ]
+        #JCW JAN 2015, ont request moved to delayed request below
 #        worktreeroot=requests.get("%s/ontology/term"%(API_PREFIX),params={'path':'Workflow/Type'}, **certargs).json()
 #        wf_ont_tree=requests.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']), **certargs).json()
 
@@ -227,11 +238,12 @@ def index():
                            headers={'Real-User-DN':dn})
 
         #list of workids for grouped requests
-        wids = ','.join([i['uid'] for i in results])
-        acm =s.get("%s/workflow/%s/comments"%(API_PREFIX,wids),  headers={'Real-User-DN':dn})
-        aal =s.get("%s/workflow/%s/alias"%(API_PREFIX,wids),  headers={'Real-User-DN':dn})
-        aqual=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,wids), 
-                           headers={'Real-User-DN':dn})
+        if groupedrequests:
+            wids = ','.join([i['uid'] for i in results])
+            acm =s.get("%s/workflow/%s/comments"%(API_PREFIX,wids),  headers={'Real-User-DN':dn})
+            aal =s.get("%s/workflow/%s/alias"%(API_PREFIX,wids),  headers={'Real-User-DN':dn})
+            aqual=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,wids), 
+                        headers={'Real-User-DN':dn})
 
 
         #get comments and quality factors for workflows
@@ -247,50 +259,52 @@ def index():
             thetime=results[index]['time'][:19]
             results[index]['time']=thetime
 
-            pid=i['uid']
+            if not groupedrequests:
+                pid=i['uid']
             #get comments for a workflow
-#            c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-#                    background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
-#            future_list.append(c)
+                c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                    background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+                future_list.append(c)
 
             #get alias' for workflow display
-#            cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-#                      background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
-#            future_list.append(cid)
+                cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                      background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
+                future_list.append(cid)
 
             #get workflow ontology terms: quality values
-#            qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), 
-#                           headers={'Real-User-DN':dn}, 
-#                           background_callback=lambda sess,resp,index=index: qual_cb(sess,resp,index) )
-#            future_list.append(qual_req)
+                qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), 
+                           headers={'Real-User-DN':dn}, 
+                           background_callback=lambda sess,resp,index=index: qual_cb(sess,resp,index) )
+                future_list.append(qual_req)
 
+    #process comments, alias'
 
     #JCW unroll callbacks here
     for future in future_list:
         future.result()
 
-    #process comments, alias'
-    allcomments=acm.result().json() #error checking
-    allalias=aal.result().json()
-    allqual=aqual.result().json()
+    if groupedrequests:
+        allcomments=acm.result().json() #error checking
+        allalias=aal.result().json()
+        allqual=aqual.result().json()
 
-    for index,i in enumerate(results):        #i is dict, loop through list of workflows
-        comments=allcomments[i['uid']]
-        for temp in comments: #get number of comments, truncate time string
-            if temp['time']:
-                thetime=temp['time'][:19]
-                temp['time']=thetime
+        for index,i in enumerate(results):        #i is dict, loop through list of workflows
+            comments=allcomments[i['uid']]
+            for temp in comments: #get number of comments, truncate time string
+                if temp['time']:
+                    thetime=temp['time'][:19]
+                    temp['time']=thetime
 
-        #comments=allcomments[results[index]['uid']]
-        i['num_comments']=len(comments)
-        i['comments']=comments
-        i['alias']=allalias[i['uid']]['alias']
-        print('web qual',allqual,i['uid'])
-        if allqual[i['uid']]:
-            i['quality']=allqual[i['uid']][0].get('value')
-        else:
-            i['quality']=''
-        #print('web qual comp',allqual.get(i['uid']), results[index]['quality'])
+            #comments=allcomments[results[index]['uid']]
+            i['num_comments']=len(comments)
+            i['comments']=comments
+            i['alias']=allalias[i['uid']]['alias']
+
+            if allqual[i['uid']]:
+                i['quality']=allqual[i['uid']][0].get('value')
+            else:
+                i['quality']=''
+
 
 
 
@@ -451,7 +465,10 @@ def connections(wid=""):
   ##timing begin
   time_begin = stime.time()
   ##timing end
-  everything = mc.get(cache_id)
+  if memcache_loaded:
+    everything = mc.get(cache_id)
+  else:
+    everything=False
 
   if everything:
     #cache hit 
@@ -462,7 +479,7 @@ def connections(wid=""):
     everything["page_created"] = "%s" %((str(begin_to_end))[:6])
     return render_template('conn.html', **everything)
   else:
-    #cache missed
+    #cache missed or memcache not loaded
     getsvg=getsvgxml(wid)
     svgdoc=getsvg[0]
     wf_objects=getsvg[1] #dict of workflow elements: name & type
@@ -536,7 +553,8 @@ def connections(wid=""):
     evserver=MPO_EVENT_SERVER
     everything = {"wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
 
-    mc.set(cache_id, everything, time=600)
+    if memcache_loaded:
+        mc.set(cache_id, everything, time=600)
 
     ##timing begin
     time_end = stime.time()
