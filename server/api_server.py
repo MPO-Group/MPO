@@ -476,7 +476,7 @@ def activity(id=None):
             if len(ids)==1: #return just single record if one uid
                 r=rs
         else:
-            r = rdb.getRecord('activity',request.args,dn)
+            r = json.loads(rdb.getRecord('activity',request.args,dn))
  	if len(r) == 0 :
             r = make_response(r, 404)
 
