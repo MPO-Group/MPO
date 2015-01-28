@@ -1,0 +1,39 @@
+#!/bin/sh
+#specify MPO server address. The API will read this value.
+#defaults are used if environment is not set
+if ! [ -n "${MPO_HOST:+x}" ]
+then
+  export MPO_HOST=https://localhost:8443
+fi
+
+
+if ! [ -n "${MPO_VERSION:+x}" ]
+then
+  export MPO_VERSION=v0
+fi
+
+
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+  echo MPO_HOME not defined, exitting
+  exit
+fi
+
+if ! [ -n "${MPO:+x}" ]
+then
+  export MPO="$MPO_HOME/client/python/mpo_arg.py --user=$USER"
+fi
+
+#use API methods to create a workflow
+oid1=`$MPO get 'ontology/term' --params='path=/Generic/Status'`
+if [ $oid1 = "[]" ]
+then
+    echo Ontology term /Generic/Status doesn\'t exist. Run $MPO_HOME/client/python/tests/ontology_terms_status.load first
+    exit
+fi
+oid3=`$MPO ontology_term 'state' --desc='Indicate state of progress on a object' -p $oid1 -t 'string' -s`
+oid4=`$MPO ontology_term 'In Progress' --desc='Workflow or specific activity has started but has not completed' -p $oid3 -t 'string'`
+oid4=`$MPO ontology_term 'Complete' --desc='Workflow or specific activity has completed' -p $oid3 -t 'string'`
+oid5=`$MPO ontology_term 'Non Standard Completion' --desc='Workflow or activity has failed or completed with errors' -p $oid3 -t 'string'`
+oid6=`$MPO ontology_term 'Ready for Review' --desc='Workflow or specific data object is ready for review' -p $oid3 -t 'string'`
+oid7=`$MPO ontology_term 'Review Complete' --desc='Workflow or specific data object review is complete' -p $oid3 -t 'string'`
