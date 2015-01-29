@@ -1,4 +1,4 @@
-Steps for configuraing the apache web server for MPO
+Steps for configuring the apache web server for MPO
 ----------------------------------------------------
 
 * Step 1. Install libapache2-mod-wsgi: 

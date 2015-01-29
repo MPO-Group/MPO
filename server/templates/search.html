@@ -135,6 +135,7 @@
                             {% endif %}
                             </div>
                             <div>
+                            {% if item != [] %}
                             {% for k,v in item.iteritems() %}
                                 {% if k == "user" %}
                                     {% if v %}                    	
@@ -146,6 +147,7 @@
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
+                            {% endif %}
                             </div>
                             {% if result_url %}
                             <div>

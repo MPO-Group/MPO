@@ -17,7 +17,7 @@ from gevent.queue import Queue
 MPO_API_VERSION = 'v0'
 
 app = Flask(__name__)
-app.debug=True
+app.debug=False
 apidebug=False
 
 routes={'collection':'collection','workflow':'workflow',
@@ -192,7 +192,7 @@ def handle_invalid_usage(error):
     resp = jsonify(error.to_dict())
     resp.status_code = error.status_code
     return resp
-#make_response(Response,status=error.status_code)
+
 
 
 @app.route("/subscribe")
@@ -293,9 +293,11 @@ def collectionElement(id=None, oid=None):
             r = rdb.getRecord('collection_elements',{'uid':oid})
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
- 	if len(r) == 0 :
-            r = make_response(r, 404)
 
+    # '[]'
+ 	if len(r) == 2 : 
+         r = make_response(r, 404)
+         #resp=Response(r, mimetype='application/json')
     return r
 
 
@@ -336,7 +338,6 @@ def workflow(id=None):
             payload={"url":request.url, "body":request.data, "hint":valid, "uid":-1}
             raise InvalidAPIUsage(message='Invalid workflow type specified',status_code=400,
                                     payload=payload)
-
 
     elif request.method == 'GET':
         if id:
@@ -402,11 +403,11 @@ def getWorkflowCompositeID(id):
     Method to retrieve a workflow composite id in the field 'alias'.
     """
     dn=get_user_dn(request)
+    r={}
     if request.method == 'GET':
         #Add logic to parse id if comma separated
         if id:
             ids=id.strip().split(',')
-            r={}
             for id in ids:
                 rs = json.loads(rdb.getWorkflowCompositeID(id,dn))
                 if rs:
@@ -424,6 +425,7 @@ def getWorkflowCompositeID(id):
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
 def dataobject(id=None):
     dn=get_user_dn(request)
+    istatus=200
     if request.method == 'POST':
         r = rdb.addRecord('dataobject',request.data,dn)
         rr = json.loads(r)
@@ -445,16 +447,18 @@ def dataobject(id=None):
                 r=rs
         else:
             r = json.loads(rdb.getRecord('dataobject',request.args,dn))
- 	if len(r) == 0 :
-            r = make_response(r, 404)
+            if len(r) == 0 :
+                istatus=404
+                #r = make_response(json.dumps(r), 404)
 
-    return Response(json.dumps(r), mimetype='application/json')
+    return Response(json.dumps(r), mimetype='application/json',status=istatus)
 
 
 
 @app.route(routes['activity']+'/<id>', methods=['GET'])
 @app.route(routes['activity'], methods=['GET', 'POST'])
 def activity(id=None):
+    istatus=200
     dn=get_user_dn(request)
     if request.method == 'POST':
         r = rdb.addRecord('activity',request.data,dn)
@@ -475,12 +479,17 @@ def activity(id=None):
 
             if len(ids)==1: #return just single record if one uid
                 r=rs
-        else:
-            r = json.loads(rdb.getRecord('activity',request.args,dn))
- 	if len(r) == 0 :
-            r = make_response(r, 404)
 
-    return Response(json.dumps(r), mimetype='application/json')
+            r=json.dumps(r)
+        else:
+            r = rdb.getRecord('activity',request.args,dn)
+
+
+    #if r='[]', later set metadata with number of records
+    if len(r) == 2 :
+        istatus=404
+
+    return Response(r, mimetype='application/json',status=istatus)
 
 
 
@@ -515,11 +524,14 @@ def comment(id=None):
                 else:
                     r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
             if len(ids)==1: #return just single record if one uid
-                r=rs
+                r=json.dumps(rs)
+            else:
+                r=json.dumps(r)
         else:
-            r = json.loads(rdb.getRecord('comment',request.args,dn))
+            r = rdb.getRecord('comment',request.args,dn)
 
-    return Response(json.dumps(r), mimetype='application/json')
+    return Response(r, mimetype='application/json')
+
 
 
 @app.route(routes['metadata']+'/<id>', methods=['GET'])
@@ -544,11 +556,13 @@ def metadata(id=None):
                 else:
                     r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
             if len(ids)==1: #return just single record if one uid
-                r=rs
+                r=json.dumps(rs)
+            else:
+                r=json.dumps(r)
         else:
-            r = json.loads(rdb.getRecord('metadata',request.args,dn))
+            r = rdb.getRecord('metadata',request.args,dn)
 
-    return Response(json.dumps(r), mimetype='application/json')
+    return Response(r, mimetype='application/json')
 
 
 @app.route(routes['ontology_class']+'/<id>', methods=['GET'])

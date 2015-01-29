@@ -44,7 +44,7 @@ else:
 
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
-webdebug = True
+webdebug = False
 app.debug = True
 print('WEBSERVER: timestamp app started',stime.time() )
 
@@ -93,13 +93,7 @@ def index():
         ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,), 
                            headers={'Real-User-DN':dn})
 
-        #worktreeroot_req=s.get("%s/ontology/term"%(API_PREFIX),params={'path':'Workflow/Type'},
-        #                   headers={'Real-User-DN':dn})
-        #define call back for fetching ontology tree
-        #def ont_tree_cb(sess, resp):
-
-
-       #get URL variables for this page
+        ##get URL variables for this page
         wid=request.args.get('wid')
 
         #pagination control variables
@@ -691,9 +685,9 @@ def search():
             if search_str !='':
                 for pkey,pvalue in query_map.iteritems():
                     obj_result=[]
-                    found=False
                     i=0
                     for ckey in pvalue:
+                        found=False
                         if(pkey != "metadata_short" and pkey != "dataobject_short" and pkey != "activity_short"): #these get requests do not work and break the loop
                             if(pkey=="mpousers"): #api route is /user and not /mpousers
                                 pkey="user"
@@ -707,14 +701,15 @@ def search():
                     if found:
                         results[pkey]=obj_result
 
-                if webdebug:
-                    print('WEBDEBUG: user query')
-                    pprint(form)
-                    #print('WEBDEBUG: search results')
-                    #pprint(results)
-
         except:
             pass
+
+
+        if webdebug:
+            print('WEBDEBUG: user query')
+            pprint(form)
+            #print('WEBDEBUG: search results')
+            #pprint(results)
 
         return render_template('search.html', query=form, results=results)
 

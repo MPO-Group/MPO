@@ -198,6 +198,7 @@ def getOntologyTermTree(id='0',dn=None):
     """
     Constructs a tree from the ontology terms and returns
     structure suitable for parsing into graph or menu.
+    Return is as a python dictionary (not JSON).
     """
     try:
         import treelib as t
