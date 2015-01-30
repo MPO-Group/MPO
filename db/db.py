@@ -108,6 +108,36 @@ def echo(table,queryargs={}, dn=None):
     queryargs['table']=table
     return json.dumps(queryargs,cls=MPOSetEncoder)
 
+def getRecordTable(id, dn=None):
+    '''
+    Give a record id return the table that record is in.
+    '''
+    if not id: return None
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+
+    q=''
+    for k,v in query_map.iteritems():
+        if v.has_key('uid'):
+            q+="select distinct '"+k+"' as table"
+            q+=' from '+k
+            #if id:
+            q+=' where '+v['uid']+'='+"'"+id+"'"
+            q+=' union '
+
+    q=q[:-7]
+    # execute our Query
+    cursor.execute(q)
+    # retrieve the records from the database
+    table = cursor.fetchone()
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+
+    return table
+
 
 def getRecord(table,queryargs={}, dn=None):
     '''
