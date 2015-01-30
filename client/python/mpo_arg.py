@@ -154,9 +154,7 @@ class mpo_methods(object):
         self.archive_user=archive_user
         self.archive_key=archive_key
         self.archive_prefix=archive_prefix
-        o=urlparse(api_url)
-         #makes a clean url ending in trailing slash
-        self.api_url=o.scheme+"://"+o.netloc+o.path+'/'+self.version+'/'
+        self.set_api_url(api_url)
         self.requestargs={'cert':self.cert,'verify':False}
 
         if self.debug:
@@ -167,6 +165,11 @@ class mpo_methods(object):
             pass
         return
 
+
+    def set_api_url(self,api_url):
+        o=urlparse(api_url)
+         #makes a clean url ending in trailing slash
+        self.api_url=o.scheme+"://"+o.netloc+o.path+'/'+self.version+'/'
 
 ### internal methods ###
 
@@ -718,6 +721,7 @@ class mpo_cli(object):
                             choices=['id','raw','text','json','pretty'], default='id') #case insensitive?
         parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
                             default=False)
+        parser.add_argument('--host',action='store',help='specify API root URI')
         parser.add_argument('--dryrun','-d',action='store_true',
                             help='Show the resulting POST without actually issuing the request',
                             default=False)
@@ -876,11 +880,15 @@ class mpo_cli(object):
             self.mpo.dryrun=kwargs.get('dryrun')
             kwargs['format']='raw'
 
-        # strip out 'func' method
+        if kwargs.get('host'):
+            self.mpo.set_api_url(kwargs['host'])
+        
+        #strip out 'func' method
         del(kwargs['func'])
         if self.debug:
             print('args',kwargs,args.func,file=sys.stderr)
 
+        #execute method
         try:
             r=args.func(**kwargs)
         except requests.exceptions.HTTPError as e:
@@ -889,6 +897,7 @@ class mpo_cli(object):
         except:
             return PrintException()
 
+        #prepare output and return
         if 'format' in kwargs:
             r=self.mpo.format(r,filter=kwargs['format'])
 
