@@ -580,6 +580,12 @@ FUNCTION mpo::start, name, description, type ;because IDL uses 'init' for class 
   return, res
 end
 
+;Alias for mpo::start
+FUNCTION mpo::start_workflow, name, description, type
+  return, self->start(name, description, type)
+end
+
+
 FUNCTION mpo::add , workflow_uid, parent_uid, name, description, uri
 
  parent_uid = [parent_uid]
@@ -591,6 +597,12 @@ FUNCTION mpo::add , workflow_uid, parent_uid, name, description, uri
  res = self->post(self.dataobject_rt, payload)
  return, res
 end
+
+;Alias for mpo::add
+FUNCTION mpo::add_data, workflow_uid, parent_uid, name, description, uri
+  return, self->add(workflow_uid, parent_uid, name, description, uri)
+end
+
 
 FUNCTION mpo::step , workflow_uid, parent_uid, name, description, uri, inputs=inputs
 
@@ -605,6 +617,15 @@ FUNCTION mpo::step , workflow_uid, parent_uid, name, description, uri, inputs=in
  res = self->post(self.activity_rt, payload)
  return, res
 end
+
+;Alias for mpo::step
+FUNCTION mpo::add_action, workflow_uid, parent_uid, name, description, uri, inputs=inputs
+  if keyword_set(inputs) ne 0 then r=self->step(workflow_uid, parent_uid, name, description, uri, inputs) else $
+     r=self->step(workflow_uid, parent_uid, name, description, uri)
+  return, r
+end
+
+
 
 FUNCTION mpo::comment, parent_uid, text
  payload =   get_payload($
@@ -621,6 +642,12 @@ FUNCTION mpo::meta , parent_uid, key, value
  res = self->post(self.metadata_rt, payload)
  return, res
 end
+
+;Alias for mpo::comment
+FUNCTION mpo::add_comment, parent_uid, text
+  return, self->comment(parent_uid, text)
+end
+
 
 
 FUNCTION mpo::error, key

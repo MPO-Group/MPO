@@ -348,10 +348,14 @@ def ont_children(uid=""):
         result = jsonify(children)
     return result
 
+
+
 @app.route('/graph', methods=['GET'])
 @app.route('/graph/<wid>', methods=['GET'])
 @app.route('/graph/<wid>/<format>', methods=['GET'])
 def graph(wid="", format="svg"):
+    time_begin = stime.time()
+
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
@@ -364,6 +368,7 @@ def graph(wid="", format="svg"):
     #add workflow node explicitly since in is not a child
     graph.add_node( pydot.Node(wid,label=nodes[wid]['name'],shape=
                                nodeshape[nodes[wid]['type']]))
+
     for item in r['connectivity']:
         pid=item['parent_uid']
         cid=item['child_uid']
@@ -400,6 +405,10 @@ def graph(wid="", format="svg"):
         response.headers['Content-Type'] = 'image/jpg'
     elif format == 'dot' :
         response.headers['Content-Type'] = 'text/plain'
+
+    time_end = stime.time()
+    if webdebug:
+        print('WEB_SERVER:: graph time',str(time_end-time_begin) )
     return response
 
 

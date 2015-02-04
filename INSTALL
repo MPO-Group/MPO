@@ -1,7 +1,7 @@
 CLIENT INSTALLATION
 -------------------
 For commandline and scripting tools, only the mpo_arg.py class
-is needed. The only non standar python dependencies of this are
+is needed. The only non standard python dependencies of this are
    requests.py and urllib3.py
 These dependencies are provided in a virtual environment. For installation, 
 the requirements are system installed python2.7 and the virtualenv package for python.
@@ -26,8 +26,9 @@ pushd $HOME/.mpo
 svn export https://www.psfc.mit.edu/mposvn/trunk/mpo.conf
 #add your certificate
 cp path_to_key/my_key.pem .
-#edit mpo.conf to specify your certificate and other preference
-vim mpo.conf
+#edit mpo.conf to specify your certificate and other preferences:
+
+   vim mpo.conf
 
 #retrieve client (svn or copy from existing checkout)
 #note, using export below does not create .svn and keep the pointer
@@ -45,7 +46,20 @@ alias mpo='/home/jwright/bin/mpo.py'
 vi mpo.py
 
 
+###Server Install
+Requires postgres 9.3rc1
+Install and add postgres bin directory to your path.
 
+ #make virtualenv
+ #load virtualenv
+ pip install -r pip_list.txt
+ if you get error from zipimport and setuptools, try fresh install of setuptools
+ pip install -U setuptools
+ or
+ wget https://bitbucket.org/pypa/setuptools/raw/0.8/ez_setup.py
+ python ez_setup.py
+
+ #enjoy
 
 svn co https://www.psfc.mit.edu/mposvn/trunk mpo
 export MPO_HOME=$PWD/mpo

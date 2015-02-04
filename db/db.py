@@ -4,18 +4,13 @@ import psycopg2 as psycopg
 import psycopg2.extras as psyext
 import sqlalchemy.pool as pool
 import sys
-import simplejson as json #plays nice with named tuples
+import simplejson as json #plays nice with named tuples from psycopg2
 import uuid
 import datetime
 import os
 import textwrap
 
 dbdebug=False
-try:
-    conn_string = os.environ['MPO_DB_CONNECTION']
-except Exception, e:
-    print('MPO_DB_CONNECTION not found: %s' % e)
-    conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
 
 
 #  list of valid query fields and their mapped name in the table, Use
@@ -62,13 +57,18 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
          }
 
 
+conn_string=""
+def set_conn_str(conn_str):
+    conn_string=conn_str
+    return
 
-def getconn():
+def get_conn():
     c = psycopg.connect(conn_string)
     return c
 
 
-mypool  = pool.QueuePool(getconn, max_overflow=10, pool_size=25)#,echo='debug')
+mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
+#Use this to remove pooling and revert to original behavior
 #mypool  = pool.NullPool(getconn)
 
 
@@ -553,6 +553,11 @@ def getWorkflowCompositeID(id, dn=None):
 
 
 def getWorkflowElements(id,queryargs={},dn=None):
+    """
+    Returns datastructure {connectivity: [{parent_uid:, parent_type:, child_uid:, child_type:}... ],
+    nodes: [{type:, name:, time:}... ] }
+    That describes the workflow as a complete DAG.
+    """
     from dateutil import parser
 
     # get a connection, if a connect cannot be made an exception will be raised here
@@ -572,7 +577,8 @@ def getWorkflowElements(id,queryargs={},dn=None):
     cursor.execute("select w_guid as uid, name, 'workflow' as type, creation_time from workflow a "+
                    "where w_guid=%s union select do_guid as uid, name, 'dataobject' as type, creation_time "+
                    "from dataobject b where w_guid=%s union select "+
-                   "a_guid as uid, name, 'activity' as type, creation_time from activity c where w_guid=%s order by creation_time desc",(id,id,id))
+                   "a_guid as uid, name, 'activity' as type, creation_time from activity c"+
+                   "where w_guid=%s order by creation_time desc",(id,id,id))
     r = cursor.fetchall()
     nodes={}
     for n in r:
@@ -580,7 +586,8 @@ def getWorkflowElements(id,queryargs={},dn=None):
     records['nodes']=nodes
     # fetch connectors from the database
     cursor.execute("select parent_guid as parent_uid, parent_type, child_guid as child_uid, "+
-                   "child_type from workflow_connectivity where w_guid=%s",(id,))
+                   "creation_time as time, child_type from workflow_connectivity "+
+                   "where w_guid=%s order by creation_time", (id,) )
     records['connectivity']=cursor.fetchall()
     # Close communication with the database
     cursor.close()
@@ -743,7 +750,6 @@ def addWorkflow(request,dn):
     w_guid = str(uuid.uuid4())
 
     #get the user id
-
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
     user_id = cursor.fetchone()
 
@@ -765,11 +771,13 @@ def addWorkflow(request,dn):
          "values (%s,%s,%s,%s,%s,%s)")
     v= (w_guid, request['name'], request['description'], user_id, datetime.datetime.now(),seq_no)
     cursor.execute(q,v)
+    
     # add the workflow type to the ontology_instance table
     q = ("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
          "values (%s,%s,%s,%s,%s,%s)")
     v=(str(uuid.uuid4()),w_guid,request['type_uid'],request['value'],datetime.datetime.now(),user_id)
     cursor.execute(q,v)
+    
     # Make the changes to the database persistent
     conn.commit()
     records = {} #JCW we are not returning the full record here.

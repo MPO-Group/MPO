@@ -13,8 +13,17 @@ from flask.ext.cors import cross_origin
 import gevent
 from gevent.queue import Queue
 
-
+#API version we are serving.
 MPO_API_VERSION = 'v0'
+
+#Set the database we are using
+try:
+    conn_string = os.environ['MPO_DB_CONNECTION']
+except Exception, e:
+    print('MPO_DB_CONNECTION not found: %s. Using default mpoDB at localhost.' % e)
+    conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
+
+rdb.set_conn_str(conn_string)
 
 app = Flask(__name__)
 app.debug=False
@@ -297,7 +306,7 @@ def collectionElement(id=None, oid=None):
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
 
     # '[]'
- 	if len(r) == 2 : 
+    if len(r) == 2 : 
          r = make_response(r, 404)
          #resp=Response(r, mimetype='application/json')
     return r
