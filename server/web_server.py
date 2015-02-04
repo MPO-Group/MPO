@@ -44,7 +44,7 @@ else:
 
 MPO_API_VERSION = 'v0'
 API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
-webdebug = False
+webdebug = True
 app.debug = True
 print('WEBSERVER: timestamp app started',stime.time() )
 

@@ -10,7 +10,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=False
+dbdebug=True
 
 
 #  list of valid query fields and their mapped name in the table, Use
@@ -58,18 +58,25 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
 
 
 conn_string=""
-def set_conn_str(conn_str):
+mypool=None
+
+def init(conn_str):
+    global conn_string,mypool
     conn_string=conn_str
-    return
+    print('DB in init',conn_string)
+    mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
+    
+
 
 def get_conn():
     c = psycopg.connect(conn_string)
+    print('DB ',conn_string)
     return c
 
 
-mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
+#mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
 #Use this to remove pooling and revert to original behavior
-#mypool  = pool.NullPool(getconn)
+#mypool  = pool.NullPool(get_conn)
 
 
 class MPOSetEncoder(json.JSONEncoder):
@@ -577,7 +584,7 @@ def getWorkflowElements(id,queryargs={},dn=None):
     cursor.execute("select w_guid as uid, name, 'workflow' as type, creation_time from workflow a "+
                    "where w_guid=%s union select do_guid as uid, name, 'dataobject' as type, creation_time "+
                    "from dataobject b where w_guid=%s union select "+
-                   "a_guid as uid, name, 'activity' as type, creation_time from activity c"+
+                   "a_guid as uid, name, 'activity' as type, creation_time from activity c "+
                    "where w_guid=%s order by creation_time desc",(id,id,id))
     r = cursor.fetchall()
     nodes={}

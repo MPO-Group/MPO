@@ -4,9 +4,11 @@ from flask import Flask, render_template, request, jsonify
 #from flask.ext.jsonpify import jsonify #uncomment to support JSONP CORS access
 from flask import redirect, Response, make_response
 import json
+print('api importing db')
 import db as rdb
+print('api done importing db')
 from authentication import get_user_dn
-import time
+import os, time
 from flask.ext.cors import cross_origin
 
 #Only needed for event prototype
@@ -23,11 +25,13 @@ except Exception, e:
     print('MPO_DB_CONNECTION not found: %s. Using default mpoDB at localhost.' % e)
     conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
 
-rdb.set_conn_str(conn_string)
+print('db test-1', rdb.conn_string, str(rdb.mypool) )
+rdb.init(conn_string)
+print('db test-2', rdb.conn_string, str(rdb.mypool) )
 
 app = Flask(__name__)
-app.debug=False
-apidebug=False
+app.debug=True
+apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
