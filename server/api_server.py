@@ -26,7 +26,7 @@ routes={'collection':'collection','workflow':'workflow',
         'ontology_class':'ontology/class',
         'ontology_term':'ontology/term',
         'ontology_instance':'ontology/instance',
-        'user':'user',
+        'user':'user', 'item':'item',
         'guid':'uid'}
 
 
@@ -142,6 +142,7 @@ def not_found(error=None):
 
     return resp
 
+
 @app.errorhandler(400)
 def syntax_error(error=None):
     message = {
@@ -154,6 +155,7 @@ def syntax_error(error=None):
     resp.status_code = 400
 
     return resp
+
 
 @app.errorhandler(401)
 def unathorized_error(error=None):
@@ -685,6 +687,19 @@ def user(id=None):
 
     return r
 
+
+@app.route(routes['item']+'/<id>', methods=['GET'])
+def item(id):
+    dn=get_user_dn(request)
+    if id:
+        r = rdb.getRecordTable( id, dn )
+    else:
+        payload={"url":request.url, "body":request.data, "hint":"Must provide an UID", "uid":-1}
+        raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,
+                              payload=payload)
+
+    return Response(json.dumps(r), mimetype='application/json')
+    
 
 if __name__ == '__main__':
     #adding debug option here, so we can see what is going on.

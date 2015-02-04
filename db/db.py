@@ -131,12 +131,12 @@ def getRecordTable(id, dn=None):
     # execute our Query
     cursor.execute(q)
     # retrieve the records from the database
-    table = cursor.fetchone()
+    table = cursor.fetchone()[0]
     # Close communication with the database
     cursor.close()
     conn.close()
 
-    return table
+    return {'table':table,'uid':id}
 
 
 def getRecord(table,queryargs={}, dn=None):
