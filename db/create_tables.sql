@@ -71,9 +71,10 @@ create table dataobject
   DO_GUID uuid primary key,
   name text,
   description text,
-  URI text
+  URI text,
+  parent_guid uuid,
   creation_time timestamp,
-  U_GUID  uuid references mpousers,
+  U_GUID  uuid references mpousers
 );
 
 alter table dataobject OWNER TO mpoadmin;
