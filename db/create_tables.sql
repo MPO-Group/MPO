@@ -82,7 +82,7 @@ drop table if exists dataobject_instance;
 create table dataobject_instance
 (
   DOI_GUID uuid primary key,
-  DO_GUID uuid,
+  DO_GUID uuid reference dataobject,
   W_GUID uuid references workflow,
   creation_time timestamp,
   U_GUID  uuid references mpousers,
