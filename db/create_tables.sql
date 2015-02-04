@@ -70,15 +70,25 @@ create table dataobject
 (
   DO_GUID uuid primary key,
   name text,
-  DOV_GUID uuid,
-  W_GUID uuid references workflow,
-  creation_time timestamp,
-  U_GUID  uuid references mpousers,
   description text,
   URI text
+  creation_time timestamp,
+  U_GUID  uuid references mpousers,
 );
 
 alter table dataobject OWNER TO mpoadmin;
+
+drop table if exists dataobject_instance;
+create table dataobject_instance
+(
+  DOI_GUID uuid primary key,
+  DO_GUID uuid,
+  W_GUID uuid references workflow,
+  creation_time timestamp,
+  U_GUID  uuid references mpousers,
+);
+
+alter table dataobject_instance OWNER TO mpoadmin;
 
 drop table if exists activity;
 create table activity
@@ -198,7 +208,7 @@ begin
   if parent_type = 'activity' then
     execute 'select w_guid from ' || parent_type || ' where a_guid=''' || parent_guid || '''' into wid;
   elsif parent_type = 'dataobject' then
-    execute 'select w_guid from ' || parent_type || ' where do_guid=''' || parent_guid || '''' into wid;
+    execute 'select w_guid from ' || parent_type || ' where doi_guid=''' || parent_guid || '''' into wid;
   elsif parent_type = 'workflow' then
     execute 'select w_guid from ' || parent_type || ' where w_guid=''' || parent_guid || '''' into wid;
   end if;
