@@ -72,7 +72,7 @@ create table dataobject
   name text,
   description text,
   URI text,
-  parent_guid uuid,
+  source_guid uuid,
   creation_time timestamp,
   U_GUID  uuid references mpousers
 );
