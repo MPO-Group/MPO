@@ -132,6 +132,7 @@ class mpo_methods(object):
     COLLECTION_RT='collection'
     COLLECTION_ELEMENT_RT='collection/{cid}/element'
     DATAOBJECT_RT='dataobject'
+    DATAOBJECT_INSTANCE_RT='dataobject_instance'
     ACTIVITY_RT=  'activity'
     ONTOLOGY_TERM_RT = 'ontology/term'
     ONTOLOGY_INSTANCE_RT = 'ontology/instance'
@@ -306,7 +307,7 @@ class mpo_methods(object):
 
         return r
 
-    
+
     def post(self,route="",workflow_ID=None,obj_ID=None,data=None,**kwargs):
         """POST a messsage to an MPO route.
         Used by all methods that create objects in an MPO workflow.
@@ -400,30 +401,25 @@ class mpo_methods(object):
         return r
 
 
-    def add(self, workflow_ID=None, parentobj_ID=None, **kwargs):
+    def add(self, workflow_ID=None, parentobj_ID=None, dataobj_ID=None, **kwargs):
         """
-        Add at dataobject to a workflow.
+        Add a dataobject_instance to a workflow.
 
         args are:
         workflow_ID --
         parentobj_ID --
-        name --
-        desc -- description
-        uri -- uri for the data object added
+        dataobj_ID --
         """
 
-        uri = kwargs.get('uri')
-        desc = kwargs.get('desc')
-        name = kwargs.get('name')
         if (self.debug):
-            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,kwargs, file=sys.stderr)
+            print('MPO.ADD', workflow_ID, parentobj_ID, dataobj_ID, kwargs, file=sys.stderr)
 
-        if not (workflow_ID and parentobj_ID):
-            print('Invalid workflow or parent to add method',workflow_ID, parentobj_ID, file=sys.stderr)
+        if not (workflow_ID and parentobj_ID and dataobj_ID):
+            print('Invalid workflow or parent or dataobject to add method',workflow_ID, parentobj_ID, file=sys.stderr)
             exit
 
-        payload={"name":name,"description":desc,"uri":uri}
-        return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],payload,**kwargs)
+        payload = {'do_uid':dataobj_ID}
+        return self.post(self.DATAOBJECT_INSTANCE_RT,workflow_ID,[parentobj_ID],data=payload,**kwargs)
 
     def add_do(self, **kwargs):
         """
@@ -437,18 +433,19 @@ class mpo_methods(object):
         name --
         desc -- description
         uri -- uri for the data object added
+        source -- source uid
 
         """
 
         uri = kwargs.get('uri')
         desc = kwargs.get('desc')
         name = kwargs.get('name')
+        source = kwargs.get('source')
         if (self.debug):
-            print('MPO.ADD_DO', name, desc,uri,kwargs, file=sys.stderr)
+            print('MPO.ADD_DO', name, desc,uri,source,kwargs, file=sys.stderr)
 
-        payload={"name":name,"description":desc,"uri":uri}
-        print ("about to post %s\n"%payload)
-        ans=self.post(self.DATAOBJECT_RT,data=payload,**kwargs)
+        payload={"name":name,"description":desc,"uri":uri,"source_uid":source}
+        ans=self.post(self.DATAOBJECT_RT,None,None,data=payload,**kwargs)
 
         return ans
 
@@ -584,7 +581,7 @@ class mpo_methods(object):
         elements -- list of UUID strings to initialize collection with (may be empty)
         collection -- UUID of existing collection. If present, name and desc are ignored.
         remove -- if set to True, remove rather than add the element to the collection. Requires
-                  collection and element list and no name or description. 
+                  collection and element list and no name or description.
         """
 
         #in the future, MPO may support updates of values such as name and desc. At that point,
@@ -594,7 +591,7 @@ class mpo_methods(object):
 
         #still need some input validation
         if collection: #add to existing collection
-            
+
             if remove:
                 if desc!="":
                     warnings.warn("InvalidArgs in collect. No description used when removing an element.")
@@ -602,15 +599,15 @@ class mpo_methods(object):
                     warnings.warn("InvalidArgs in collect. No name used when removing an element.")
                 assert len(elements)>0,"InvalidArgs in collect. Must specify an element to remove."
                 assert collection!=None,"InvalidArgs in collect. Must specify the collection from which to remove the element."
-                    
+
                 for element in elements:
                     r=self.delete(self.COLLECTION_ELEMENT_RT.format(cid=collection)+'/'+element)
-                               
+
             else:
                 payload={"name":name,"description":desc,"elements":elements}
                 r=self.post(self.COLLECTION_ELEMENT_RT.format(cid=collection), None,
                             collection, data=payload, **kwargs)
-                
+
         else:  #make new collection
             payload={"name":name,"description":desc,"elements":elements}
             r=self.post(self.COLLECTION_RT, None, None, data=payload, **kwargs)
@@ -756,14 +753,20 @@ class mpo_cli(object):
                                  required=True)
         init_parser.set_defaults(func=self.mpo.init)
 
+        #add_do
+        add_do_parser=subparsers.add_parser('add_do', aliases=( ('add_data',)),help='Add a standalone data object.')
+        add_do_parser.add_argument('--source', '-s', action='store', help='Pointer to the creator of the dataobject')
+        add_do_parser.add_argument('--name', '-n', action='store')
+        add_do_parser.add_argument('--desc', '-d', action='store', help='Describe the dataobject')
+        add_do_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        add_do_parser.set_defaults(func=self.mpo.add_do)
+
         #add
-        add_parser=subparsers.add_parser('add', aliases=( ('add_data',)),help='Add a data object to a workflow.')
+        add_parser=subparsers.add_parser('add', aliases=( ('add_data_instance',)),help='Add a data object instance to a workflow.')
 #        addio = add_parser.add_mutually_exclusive_group() #needed for child vs parent.
         add_parser.add_argument('workflow_ID', action='store',metavar='workflow')
         add_parser.add_argument('parentobj_ID', action='store',metavar='parent')
-        add_parser.add_argument('--name', '-n', action='store')
-        add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
-        add_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        add_parser.add_argument('dataobj_ID', action='store',metavar='data')
         add_parser.set_defaults(func=self.mpo.add)
 
         #step, nearly identical to add
@@ -882,7 +885,7 @@ class mpo_cli(object):
 
         if kwargs.get('host'):
             self.mpo.set_api_url(kwargs['host'])
-        
+
         #strip out 'func' method
         del(kwargs['func'])
         if self.debug:

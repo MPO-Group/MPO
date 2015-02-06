@@ -40,10 +40,11 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                            'start':'start_time','end':'end_time',
                            'status':'completion_status'},
              'activity_short' : {'w':'w_guid'},
-             'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid',
-                             'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid',
-                             'uri':'uri'},
-             'dataobject_short': {'w':'w_guid'},
+             'dataobject' : {'name':'name', 'description':'description','uri':'uri','uid':'do_guid',
+                             'source_uid':'source_guid','time':'creation_time', 'user_uid':'u_guid'},
+             'dataobject_instance' : {'dataobject_uid':'do_guid', 'uid':'doi_guid',
+                                      'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid'},
+             'dataobject_instance_short': {'w':'w_guid'},
              'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type',
                            'user_uid':'u_guid', 'time':'creation_time',
                            'parent_uid':'parent_guid', 'parent_type':'parent_type'},
@@ -582,8 +583,8 @@ def getWorkflowElements(id,queryargs={},dn=None):
     records = {}
     # fetch the nodes from the database
     cursor.execute("select w_guid as uid, name, 'workflow' as type, creation_time from workflow a "+
-                   "where w_guid=%s union select do_guid as uid, name, 'dataobject' as type, creation_time "+
-                   "from dataobject b where w_guid=%s union select "+
+                   "where w_guid=%s union select doi_guid as uid, name, 'dataobject_instance' as type, creation_time "+
+                   "from dataobject_instance b where w_guid=%s union select "+
                    "a_guid as uid, name, 'activity' as type, creation_time from activity c "+
                    "where w_guid=%s order by creation_time desc",(id,id,id))
     r = cursor.fetchall()
@@ -614,7 +615,7 @@ def getWorkflowComments(id,queryargs={},dn=None):
     q = q[:-1] + (" from comment as a where a.parent_guid in "+
                   "(select w_guid as uid from workflow where w_guid=%s "+
                   "union "+
-                  "select do_guid as uid from dataobject where w_guid=%s "+
+                  "select doi_guid as uid from dataobject_instance where w_guid=%s "+
                   "union " +
                   "select a_guid as uid from activity where w_guid=%s)" )
     cursor.execute(q,(id,id,id))
@@ -697,8 +698,8 @@ def addRecord(table,request,dn):
                 cursor.execute("select w_guid as uid, 'workflow' as type from "+
                                "workflow where w_guid=%s union select "+
                                "a_guid as uid, 'activity' as type from activity "+
-                               "where a_guid=%s union select do_guid as uid, 'dataobject' as type "+
-                               "from dataobject where do_guid=%s",(parent,parent,parent))
+                               "where a_guid=%s union select doi_guid as uid, 'dataobject_instance' as type "+
+                               "from dataobject_instance where doi_guid=%s",(parent,parent,parent))
                 records = cursor.fetchone()
                 parent_type = records.type
             wc_guid = str(uuid.uuid4())
@@ -706,7 +707,7 @@ def addRecord(table,request,dn):
                            "(wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) "+
                            "values (%s,%s,%s,%s,%s,%s,%s)",
                            (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'],
-                            'dataobject', datetime.datetime.now()))
+                            'dataobject_instance', datetime.datetime.now()))
     # Make the changes to the database persistent
     conn.commit()
 
@@ -810,7 +811,7 @@ def addComment(json_request,dn):
              SELECT w_guid  AS uid, 'workflow'   AS type FROM workflow   WHERE w_guid=%s UNION
              SELECT a_guid  AS uid, 'activity'   AS type FROM activity   WHERE a_guid=%s UNION
              SELECT cm_guid AS uid, 'comment'    AS type FROM comment    WHERE cm_guid=%s UNION
-             SELECT do_guid AS uid, 'dataobject' AS type FROM dataobject WHERE do_guid=%s
+             SELECT doi_guid AS uid, 'dataobject_instance' AS type FROM dataobject_instance WHERE doi_guid=%s
               """)
     pid=objs['parent_uid']
     v=(pid,pid,pid,pid)
@@ -846,7 +847,7 @@ def addMetadata(json_request,dn):
     q=textwrap.dedent("""\
              SELECT w_guid  AS uid, 'workflow'   AS type FROM workflow   WHERE w_guid=%s UNION
              SELECT a_guid  AS uid, 'activity'   AS type FROM activity   WHERE a_guid=%s UNION
-             SELECT do_guid AS uid, 'dataobject' AS type FROM dataobject WHERE do_guid=%s
+             SELECT doi_guid AS uid, 'dataobject_instance' AS type FROM dataobject_instance WHERE doi_guid=%s
               """)
     pid=objs['parent_uid']
     v=(pid,pid,pid)
@@ -865,6 +866,31 @@ def addMetadata(json_request,dn):
 
     records = {}
     records['uid'] = md_guid
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+    return json.dumps(records,cls=MPOSetEncoder)
+
+def addDataobject(json_request,dn):
+    objs = json.loads(json_request)
+    print objs
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    #get the user id
+    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    user_id = cursor.fetchone()
+
+    do_uid = str(uuid.uuid4())
+    q = ("insert into dataobject (do_guid, name, description, uri, source_guid, u_guid, creation_time) "+
+         "values (%s,%s,%s,%s,%s,%s,%s)")
+    v=(do_uid,objs['name'],objs['description'],objs['uri'],objs['source_uid'],user_id,datetime.datetime.now())
+    cursor.execute(q,v)
+    # Make the changes to the database persistent
+    conn.commit()
+
+    records = {}
+    records['uid'] = do_uid
     # Close communication with the database
     cursor.close()
     conn.close()

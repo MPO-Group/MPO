@@ -35,6 +35,7 @@ apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
+        'dataobject_instance':'dataobject_instance',
         'comment':'comment', 'metadata':'metadata',
         'ontology_class':'ontology/class',
         'ontology_term':'ontology/term',
@@ -255,6 +256,7 @@ else:
                 routes[k] = '/' + routes[k]
 
 
+
 @app.route(routes['collection']+'/<id>', methods=['GET'])
 @app.route(routes['collection'],  methods=['GET', 'POST'])
 def collection(id=None):
@@ -436,13 +438,14 @@ def getWorkflowCompositeID(id):
     return Response(json.dumps(r), mimetype='application/json')
 
 
+
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
 def dataobject(id=None):
     dn=get_user_dn(request)
     istatus=200
     if request.method == 'POST':
-        r = rdb.addRecord('dataobject',request.data,dn)
+        r = rdb.addDataobject(request.data,dn)
         rr = json.loads(r)
         id = rr['uid']
         morer = rdb.getRecord('dataobject',{'uid':id},dn)
@@ -466,7 +469,41 @@ def dataobject(id=None):
                 istatus=404
                 #r = make_response(json.dumps(r), 404)
 
-    return Response(json.dumps(r), mimetype='application/json',status=istatus)
+    return Response(r, mimetype='application/json',status=istatus)
+
+
+
+@app.route(routes['dataobject_instance']+'/<id>', methods=['GET'])
+@app.route(routes['dataobject_instance'], methods=['GET', 'POST'])
+def dataobject_instance(id=None):
+    dn=get_user_dn(request)
+    istatus=200
+    if request.method == 'POST':
+        r = rdb.addRecord('dataobject_instance',request.data,dn)
+        rr = json.loads(r)
+        id = rr['uid']
+        morer = rdb.getRecord('dataobject_instance',{'uid':id},dn)
+        publishEvent('mpo_dataobject_instance',onlyone(morer))
+    elif request.method == 'GET':
+        if id:
+            ids=id.strip().split(',')
+            r={}
+            for id in ids:
+                rs = json.loads(rdb.getRecord('dataobject_instance',{'uid':id},dn))
+                if rs:
+                    r[id]=rs
+                else:
+                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+
+            if len(ids)==1: #return just single record if one uid
+                r=rs
+        else:
+            r = json.loads(rdb.getRecord('dataobject_instance',request.args,dn))
+            if len(r) == 0 :
+                istatus=404
+                #r = make_response(json.dumps(r), 404)
+
+    return Response(r, mimetype='application/json',status=istatus)
 
 
 
