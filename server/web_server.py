@@ -921,49 +921,69 @@ def collections(uid=False):
             results[index]['num_comments']=len(comments)
             results[index]['comments']=comments
 
-
-        def workflow_cb(sess, resp, index):
-            wf_info=resp.json()
-            if len(wf_info)!=0:
-                thetime=wf_info[0]['time'][:19]
-                wf_info[0]['time']=thetime
+	def collection_item_cb(sess, resp, index):
+            info=resp.json()
+            if len(info)!=0:
+                thetime=info[0]['time'][:19]
+                info[0]['time']=thetime
             else:
-                wf_info={}
-            results[index]['workflow']=wf_info
+                info={}
+            results[index]['citem']=info
 
 
         #get needed info from prior requests before going through workflows
         #quality uid
         quality_info=quality_req.result().json()
+
         if len(quality_info)==1: 
             qterm_uid=quality_info[0]['uid']
         else:
             qterm_uid='0'
             print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
-
-        print("WEBDEBUG: collection results sent to index")
-        pprint(results)
+	if webdebug:
+	        print("WEBDEBUG: collection results sent to index")
+        	pprint(results)
 
         for index,i in enumerate(results):        #i is dict, loop through list of collection elements
             pid=i['uid']
             thetime=results[index]['time'][:19]
             results[index]['time']=thetime
 
-            #get workflow info
-            wf_req=s.get("%s/workflow/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                    background_callback=lambda sess,resp,index=index: workflow_cb(sess,resp,index) )
-            future_list.append(wf_req)
+	    #determine item type
+	    rtype=s.get("%s/item/%s"%(API_PREFIX,pid), headers={'Real-User-DN':dn})
+            rtype=rtype.result().json()
+            rtype=rtype['table']
+	    results[index]['type']=rtype
 
-            #get comments for each workflow in a collection
-            c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                    background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
-            future_list.append(c)
+	    #Process workflow items
+ 	    if rtype=="workflow":
+	    	#get workflow info
+            	wf_req=s.get("%s/workflow/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+            	        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+            	future_list.append(wf_req)
+	
+	    	#get comments for each workflow in a collection
+            	c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+            	        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+            	future_list.append(c)
 
-            #get workflow alias #JCW this needs to be extended to object names for general collections
-            cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                      background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
-            future_list.append(cid)
+            	#get workflow alias #JCW this needs to be extended to object names for general collections
+            	cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+            	          background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
+            	future_list.append(cid)
 
+	    #Process dataobject "collection_elements"
+            elif rtype=="collection_elements":
+                #get node info
+                wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+                future_list.append(wf_req)
+
+                #get comments for each workflow in a collection
+                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+                future_list.append(c)
+	
 
             #get workflow ontology terms: quality values
             qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), 
@@ -975,8 +995,6 @@ def collections(uid=False):
         if webdebug:
             print("WEBDEBUG: results sent to index")
             pprint(results)
-            #print("WEBDEBUG: ontology_results sent to index")
-            #pprint(ont_result)
 
     #JCW unroll callbacks here
     for future in future_list:
@@ -990,6 +1008,10 @@ def collections(uid=False):
 
     ont_result=ont_tree_req.result().json().get('root').get('children')
     wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
+
+    if webdebug:
+        print("WEBDEBUG: final results sent")
+        pprint(results)
 
     everything={"results":results, "ont_result":ont_result,
                 "rpp":rpp, "wf_type_list":wf_type_list,
