@@ -492,58 +492,16 @@ ul li input.user_time_wf {
 {% endblock %}
 {% block collect_active %} class="active" {% endblock %}
 {% block container %}
-    <div class="row-fluid">
-		<!-- left navigation menu span -->
-        <div class="span3">
-        	<br/>
-          <div class="well sidebar-nav">
-          	<!-- workflow nav menu -->
-              <ul class="nav nav-list">
-                  <li id="wf_attr_list" class="nav-header" >Collections</span>
-                      <ul>
-						{% if coll_list %}
-                        	{% for item in coll_list %}
-                            	<li><a href="{{ url_for("collections", uid=item.uid) }}">{{ item.name }}</a><br/ >{{ item.description }} </li>
-                            {% endfor %}
-                        {% endif %}
-                          <!-- <li><a href="#">Collections Title 1 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 2 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li> -->
-                      </ul>
-                  </li>              
-                  <!-- <li id="wf_attr_list" class="nav-header" style="cursor:pointer;">Popular Collections <span class="text-error">(Track click and/or comment count)</span>
-                      <ul>
-                          <li><a href="#">Collections Title 3 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 4 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 5 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 6 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                      </ul>
-                  </li>
-                  <li id="wf_attr_list" class="nav-header" style="cursor:pointer;">Last Modified <span class="text-error">(Most recent updated collections)</span>
-                      <ul>
-                          <li><a href="#">Collections Title 7 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 8 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 9 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 10 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                      </ul>
-                  </li>
-                  <li id="wf_attr_list" class="nav-header" style="cursor:pointer;">Newest Collections <span class="text-error">(Newly created)</span>
-                      <ul>
-                          <li><a href="#">Collections Title 11 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 12 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 13 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                          <li><a href="#">Collections Title 14 </a> - September 29, 2014<ul><li><small><em>Short description...</em></small></li></ul></li>
-                      </ul>
-                  </li> -->
-              </ul>
-          </div><!--/.well -->
-        </div><!--/span left navigation-->    
+    <div class="row-fluid">  
     	<!-- workflow table list span -->
-		<div class="span9">
+		<div class="span12">
 		{% if results %}
+        	<a href="/mpo/collections"><small>&lt;&lt; Back to list of collections</small></a>
+        	<h4>MPO Collection: {{ coll_name }} <small><strong>{{ coll_username }}</strong> - {{ coll_time }}</small></h4>
+            <b>Description:</b> {{ coll_desc }}
         	<div id="workflow_tbl">
             <!-- workflow list table -->
             <table class="main" id="workflow_table">
-            	<tr><th colspan="7" align="center">  {{ coll_name }} - {{ coll_desc }}</th></tr>
                 <tr>
                 <th width="2%">&nbsp;</th><th width="25%">Name</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th><th width="3%"></th>
               </tr>
@@ -552,18 +510,18 @@ ul li input.user_time_wf {
                 <tr>
                     <td><span class="muted"><em><small>{{ wf_number }}</small></em></span></td>
                     	{% if item.citem %}
-                  <td>{% for wf in item.citem %}
+                  <td>{% for each in item.citem %}
                     		{% if item.type == "workflow" %}
-                   	<a href="{{ url_for("connections", wid=item.uid) }}">{{ wf.username }} / {{ wf.type }} / {{ wf.composite_seq }}</a>
+                   	<a href="{{ url_for("connections", wid=item.uid) }}">{{ each.username }} / {{ each.type }} / {{ each.composite_seq }}</a>
 							{% else %}
-                    	{{ wf.name }} 
+                    	{{ each.name }}  <span class="muted"><br /><em><small>{{ each.uri }}</small></em></span><br />
                         	{% endif %}
-                        <br /><span class="muted"><em><small>{{ item.type }}</small></em></span>
                     </td>
                     	
-                  <td>{{ wf.description }}</a></td>
+                  <td>{{ each.description }}<br />
+                        <span class="muted"><em><small>{{ item.type }}</small></em></span></td>
                     	
-                    <td class="xsmall"> {{ wf.time }}</td>
+                    <td class="xsmall"> {{ each.time }}</td>
                     		{% endfor %}
                     	{% endif %}
                     <!-- <td>{{ item.username }}</td> -->

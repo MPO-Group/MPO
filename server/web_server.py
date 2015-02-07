@@ -868,6 +868,11 @@ def collections(uid=False):
         rc=s.get("%s/collection"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
         coll_list=rc.json()
 
+        for temp in coll_list:
+            if temp['time']:
+                thetime=temp['time'][:19]
+                temp['time']=thetime
+
         if uid:
             #get members of this collection
             r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
@@ -876,12 +881,24 @@ def collections(uid=False):
             this_coll = [ c for c in coll_list if c['uid']==uid ]
             coll_name=this_coll[0]['name']
             coll_desc=this_coll[0]['description']
+	    coll_username=this_coll[0]['username']
+	    coll_time=this_coll[0]['time'][:19]
         else: #get members of first collection
             r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,coll_list[0]['uid']), 
                          headers={'Real-User-DN':dn}).result()
             results=r_coll.json()
             coll_name=coll_list[0]['name']
             coll_desc=coll_list[0]['description']
+
+	    everything={"results":results, 
+                "rpp":rpp, 
+                "coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list }
+
+	    return render_template('collections_index.html',  **everything)
+
+
+
+
 
 
         #Callbacks for use in following loop
@@ -1015,7 +1032,8 @@ def collections(uid=False):
 
     everything={"results":results, "ont_result":ont_result,
                 "rpp":rpp, "wf_type_list":wf_type_list,
-                "coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list }
+                "coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list,
+		"coll_username":coll_username, "coll_time":coll_time  }
 
     return render_template('collections.html',  **everything)
 
