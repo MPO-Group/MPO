@@ -1,4 +1,12 @@
 #these are typically put in /etc/apache2/sites-enabled/default-ssl or equivalent
+#change user,group as appropriate
+
+#Three api routes and process groups to select different databases, use the same source
+        WSGIDaemonProcess test-api user=jas group=jas threads=5
+        WSGIScriptAlias /test-api /var/www/mposvn/api_server.wsgi process-group=mpoapi application-group=%{GLOBAL}
+
+        WSGIDaemonProcess demo-api user=jas group=jas threads=5
+        WSGIScriptAlias /demo-api /var/www/mposvn/api_server.wsgi process-group=mpoapi application-group=%{GLOBAL}
 
         WSGIDaemonProcess mpoapi user=jas group=jas threads=5
         WSGIScriptAlias /api /var/www/mposvn/api_server.wsgi process-group=mpoapi application-group=%{GLOBAL}

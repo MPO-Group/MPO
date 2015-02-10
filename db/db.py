@@ -10,7 +10,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=True
+dbdebug=False
 
 
 #  list of valid query fields and their mapped name in the table, Use
@@ -63,20 +63,15 @@ mypool=None
 def init(conn_str):
     global conn_string,mypool
     conn_string=conn_str
-    print('DB in init',conn_string)
+    print('DB in init connection made: ',conn_string)
     mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
-    
+    #Use this to remove pooling and revert to original behavior
+    #mypool  = pool.NullPool(get_conn)    
 
 
 def get_conn():
     c = psycopg.connect(conn_string)
-    print('DB ',conn_string)
     return c
-
-
-#mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
-#Use this to remove pooling and revert to original behavior
-#mypool  = pool.NullPool(get_conn)
 
 
 class MPOSetEncoder(json.JSONEncoder):
