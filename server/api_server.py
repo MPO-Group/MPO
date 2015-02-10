@@ -10,6 +10,7 @@ print('api done importing db')
 from authentication import get_user_dn
 import os, time
 from flask.ext.cors import cross_origin
+from urlparse import urlparse
 
 #Only needed for event prototype
 import gevent
@@ -264,9 +265,6 @@ def collection(id=None):
     /collection - GET a list of all (or filtered) collections
                 - POST a new collection
     /collection/<id> - GET collection information, including list of member UUIDs
-
-    /collection/<id>?detail=full[sparse] - GET collection information with full
-               details [or default sparse as /collection/<id>]
     """
     dn=get_user_dn(request)
     if request.method == 'POST':
@@ -278,6 +276,20 @@ def collection(id=None):
             r = rdb.getRecord('collection',{'uid':id})
         else:
             r = rdb.getRecord('collection',request.args)
+
+        #add discovery information
+        jr = json.loads(r)
+        for rd in jr:
+            links={}
+            o=urlparse(request.url)
+            baseurl=o.scheme+"://"+o.netloc
+        
+            links['link-related']=baseurl+routes['collection']+'/'+rd['uid']+'/element'
+            rd['links']=links
+
+        jr.append(  {'link-requested':request.url} ) 
+        r=json.dumps(jr)
+        
     return r
 
 
@@ -290,6 +302,8 @@ def collectionElement(id=None, oid=None):
                                    - POST to add to the collection
     /collection/<id>/element/<oid> - GET details of a single object in a collection.
                                     Should resolve oid to full record from relevant table.
+    /collection/<id>/element?detail=full[sparse] - GET collection information with full
+               details [or default sparse as /collection/<id>]
     """
     dn=get_user_dn(request)
     if request.method == 'POST':
@@ -309,6 +323,19 @@ def collectionElement(id=None, oid=None):
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
 
+        jr=json.loads(r)
+        for record in jr:
+            record['type']=rdb.getRecordTable( record['uid'], dn )['table'] #already dict
+            if record['type']=='workflow':
+                detail=json.loads(rdb.getWorkflow({'uid':record['uid']},dn))[0]
+            if record['type']=='dataobject':
+                detail=json.loads(rdb.getRecord('dataobject',{'uid':record['uid']},dn))[0]
+
+            record['name']=detail['name']
+            record['time']=detail['time']
+            record['description']=detail['description']
+            print('api',detail)
+        r=json.dumps(jr)
     # '[]'
     if len(r) == 2 : 
          r = make_response(r, 404)
@@ -439,6 +466,22 @@ def getWorkflowCompositeID(id):
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
 def dataobject(id=None):
+    """
+    Route to add data objects and connect their instances to workflows.
+
+    Route: GET  /dataobject/<id>?instances=True/False
+           Retrieves information on a specific dataobject.
+           In the case <id> is <id> of an instance, instance inherits properties of the original object.
+           In the case <id> is <id> of an dataobject, just the properties of the dataobject are returned.
+           NOT IMPLEMENTED: ?instances filter will optionally return instances of a specified dataobject.
+    Route: GET  /dataobject
+    Route: POST /dataobject
+           databody:
+               {'name':, 'description':,'work_uid':, 'uri':, 'parent_uid': }
+           If 'work_uid' is present, create an instance, connect it to the parent in the workflow 
+           and link instance to the dataobject as determined by the 'uri'.
+           If 'work_uid' is NOT present, 'parent_uid' must also not be present. A new dataobject is created. 
+    """
     dn=get_user_dn(request)
     istatus=200
     if request.method == 'POST':
@@ -596,11 +639,17 @@ def ontologyClass(id=None):
 @app.route(routes['ontology_term']+'/vocabulary', methods=['GET'])
 def ontologyTermVocabulary(id=None):
     '''
+    Resource: ontology vocabulary
+
+    Convenience route, equivalent to ontology/term?parent_uid=<id>
+    
+
     This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
     Vocabulary is defined as the next set of terms below it in the
     ontology term tree.
     It is a convenience route equivalent to GET ontology_term?parent_uid=uid
     '''
+
     dn=get_user_dn(request)
 
     if not id:
@@ -608,7 +657,19 @@ def ontologyTermVocabulary(id=None):
 
     r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
 
-    return r
+    #add discovery information
+    jr = json.loads(r)
+    for rd in jr:
+        links={}
+        o=urlparse(request.url)
+        baseurl=o.scheme+"://"+o.netloc
+        
+        links['link-related']=baseurl+routes['ontology_term']+'/'+rd['uid']+'/vocabulary'
+        rd['links']=links
+
+
+    jr.append(  {'link-requested':request.url} ) 
+    return json.dumps(jr)
 
 
 @app.route(routes['ontology_term']+'/<id>/tree', methods=['GET'])

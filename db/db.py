@@ -37,7 +37,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                            'phone':'phone','dn':'dn'},
              'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
                            'work_uid':'w_guid', 'time':'creation_time','user_uid':'u_guid',
-                           'start':'start_time','end':'end_time',
+                           'start':'start_time','end':'end_time', 
                            'status':'completion_status'},
              'activity_short' : {'w':'w_guid'},
              'dataobject' : {'name':'name', 'description':'description', 'uid':'do_guid',
@@ -117,7 +117,7 @@ def echo(table,queryargs={}, dn=None):
 
 def getRecordTable(id, dn=None):
     '''
-    Give a record id return the table that record is in.
+    Given a record id return the table that record is in.
     '''
     if not id: return None
     # get a connection, if a connect cannot be made an exception will be raised here
@@ -127,7 +127,8 @@ def getRecordTable(id, dn=None):
 
     q=''
     for k,v in query_map.iteritems():
-        if v.has_key('uid'):
+        if v.has_key('uid') and k!='collection_elements':
+                
             q+="select distinct '"+k+"' as table"
             q+=' from '+k
             #if id:
