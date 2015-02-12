@@ -139,6 +139,33 @@ def onlyone(recordstr): #error codes are made up for now
         return json.dumps(s)
 
 
+
+def get_api_version(url):
+    """
+    Get the API version used in the request.
+    """
+    import re
+    o=urlparse(url)
+    baseurl=o.scheme+"://"+o.netloc+o.path #url w/o query strings or parameters
+
+    #parse the path, stripping off leading '/' first
+    pathparts=o.path[1:].strip().split('/')
+
+    #find version of the for 'v#'
+    version=None
+    for o in pathparts:
+        match=re.match(r'v[0-9]',o)
+        if match:
+            version=match.group()
+
+    vidx=pathparts.index(version)
+    #root is the base name of the api server which is the last part
+    #of the url before the version, ie: host://some/other/paths/api-server/v0/route
+    root=pathparts[vidx-1]
+    #Throw an exception if no version string is found
+    return version,baseurl,root
+
+
 ###############ROUTE handling###############################
 @app.errorhandler(404)
 def not_found(error=None):
@@ -263,6 +290,8 @@ def collection(id=None):
     /collection/<id> - GET collection information, including list of member UUIDs
     """
     dn=get_user_dn(request)
+    api_version,baseurl,root=get_api_version(request.url)
+
     if request.method == 'POST':
         r = rdb.addCollection(request.data,dn)
         morer = rdb.getRecord('collection',{'uid':json.loads(r)['uid']},dn)
@@ -277,15 +306,20 @@ def collection(id=None):
         jr = json.loads(r)
         for rd in jr:
             links={}
-            o=urlparse(request.url)
-            baseurl=o.scheme+"://"+o.netloc
-        
-            links['link-related']=baseurl+routes['collection']+'/'+rd['uid']+'/element'
+            if id:
+                links['link-this']=baseurl
+                links['link-related']=baseurl+'/element'
+            else:
+                links['link-this']=baseurl+'/'+rd['uid']
+                links['link-related']=baseurl+'/'+rd['uid']+'/element'
             rd['links']=links
 
-        jr.append(  {'link-requested':request.url} ) 
+        #comment out for now until response body can be updated to have results and metadata fields
+        #jr.append(  {'link-requested':request.url} ) 
+        #jr.append(  {'api-version':} ) 
         r=json.dumps(jr)
-        
+        if apidebug:
+            print('APIDEBUG:: Collection route api version: ', api_version,root,baseurl)
     return r
 
 
