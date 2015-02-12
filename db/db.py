@@ -42,7 +42,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
              'activity_short' : {'w':'w_guid'},
              'dataobject' : {'name':'name', 'description':'description','uri':'uri','uid':'do_guid',
                              'source_uid':'source_guid','time':'creation_time', 'user_uid':'u_guid'},
-             'dataobject_instance' : {'dataobject_uid':'do_guid', 'uid':'doi_guid',
+             'dataobject_instance' : {'do_uid':'do_guid', 'uid':'doi_guid',
                                       'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid'},
              'dataobject_instance_short': {'w':'w_guid'},
              'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type',
