@@ -66,7 +66,7 @@ def init(conn_str):
     conn_string=conn_str
     print('DB in init',conn_string)
     mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
-    
+
 
 
 def get_conn():
@@ -583,8 +583,8 @@ def getWorkflowElements(id,queryargs={},dn=None):
     records = {}
     # fetch the nodes from the database
     cursor.execute("select w_guid as uid, name, 'workflow' as type, creation_time from workflow a "+
-                   "where w_guid=%s union select doi_guid as uid, name, 'dataobject_instance' as type, creation_time "+
-                   "from dataobject_instance b where w_guid=%s union select "+
+                   "where w_guid=%s union select doi_guid as uid, b2.name, 'dataobject_instance' as type, b1.creation_time "+
+                   "from dataobject_instance b1, dataobject b2 where w_guid=%s and b1.do_guid = b1.do_guid union select "+
                    "a_guid as uid, name, 'activity' as type, creation_time from activity c "+
                    "where w_guid=%s order by creation_time desc",(id,id,id))
     r = cursor.fetchall()
@@ -779,13 +779,13 @@ def addWorkflow(request,dn):
          "values (%s,%s,%s,%s,%s,%s)")
     v= (w_guid, request['name'], request['description'], user_id, datetime.datetime.now(),seq_no)
     cursor.execute(q,v)
-    
+
     # add the workflow type to the ontology_instance table
     q = ("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
          "values (%s,%s,%s,%s,%s,%s)")
     v=(str(uuid.uuid4()),w_guid,request['type_uid'],request['value'],datetime.datetime.now(),user_id)
     cursor.execute(q,v)
-    
+
     # Make the changes to the database persistent
     conn.commit()
     records = {} #JCW we are not returning the full record here.
