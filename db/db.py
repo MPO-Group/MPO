@@ -583,8 +583,8 @@ def getWorkflowElements(id,queryargs={},dn=None):
     records = {}
     # fetch the nodes from the database
     cursor.execute("select w_guid as uid, name, 'workflow' as type, creation_time from workflow a "+
-                   "where w_guid=%s union select doi_guid as uid, b2.name, 'dataobject_instance' as type, b1.creation_time "+
-                   "from dataobject_instance b1, dataobject b2 where w_guid=%s and b1.do_guid = b1.do_guid union select "+
+                   "where w_guid=%s union select doi_guid as uid, b2.name as name, 'dataobject_instance' as type, b1.creation_time "+
+                   "from dataobject_instance b1, dataobject b2 where w_guid=%s and b1.do_guid = b2.do_guid union select "+
                    "a_guid as uid, name, 'activity' as type, creation_time from activity c "+
                    "where w_guid=%s order by creation_time desc",(id,id,id))
     r = cursor.fetchall()
