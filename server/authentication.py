@@ -1,5 +1,6 @@
 def get_user_dn(request):
         import getpass
+
         try:
                 ans = request.environ['HTTPS_DN']
         except:
@@ -11,4 +12,5 @@ def get_user_dn(request):
 		ans = request.headers['Real-User-DN'] 
         if len(ans) == 0:
                 ans = getpass.getuser()
+        print('debug get user dn',ans,str(request.environ))
         return ans

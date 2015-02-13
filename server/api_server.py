@@ -4,12 +4,11 @@ from flask import Flask, render_template, request, jsonify
 #from flask.ext.jsonpify import jsonify #uncomment to support JSONP CORS access
 from flask import redirect, Response, make_response
 import json
-print('api importing db')
 import db as rdb
-print('api done importing db')
 from authentication import get_user_dn
 import os, time
 from flask.ext.cors import cross_origin
+from urlparse import urlparse
 
 #Only needed for event prototype
 import gevent
@@ -25,12 +24,10 @@ except Exception, e:
     print('MPO_DB_CONNECTION not found: %s. Using default mpoDB at localhost.' % e)
     conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
 
-print('db test-1', rdb.conn_string, str(rdb.mypool) )
 rdb.init(conn_string)
-print('db test-2', rdb.conn_string, str(rdb.mypool) )
 
 app = Flask(__name__)
-app.debug=True
+app.debug=False
 apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
@@ -140,6 +137,35 @@ def onlyone(recordstr): #error codes are made up for now
         s["recordtype"]=str(type(recordstr))
         s["record"]=str(recordstr)
         return json.dumps(s)
+
+
+
+def get_api_version(url):
+    """
+    Get the API version used in the request.
+    """
+    import re
+    o=urlparse(url)
+    baseurl=o.scheme+"://"+o.netloc+o.path #url w/o query strings or parameters
+
+    #parse the path, stripping off leading '/' first
+    pathparts=o.path[1:].strip().split('/')
+
+    #find version of the for 'v#'
+    version=None
+    for part in pathparts:
+        match=re.match(r'v[0-9]',part)
+        if match:
+            version=match.group()
+
+    vidx=pathparts.index(version)
+    #root is the base name of the api server which is the last part
+    #of the url before the version, ie: 'api-server' in host://some/other/paths/api-server/v0/route
+    root=pathparts[vidx-1]
+    root_url=o.scheme+"://"+o.netloc+o.path[:o.path.find(version)+len(version)] #url w/o query strings or parameters
+
+    #Throw an exception if no version string is found
+    return version,root_url,root
 
 
 ###############ROUTE handling###############################
@@ -264,11 +290,10 @@ def collection(id=None):
     /collection - GET a list of all (or filtered) collections
                 - POST a new collection
     /collection/<id> - GET collection information, including list of member UUIDs
-
-    /collection/<id>?detail=full[sparse] - GET collection information with full
-               details [or default sparse as /collection/<id>]
     """
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+
     if request.method == 'POST':
         r = rdb.addCollection(request.data,dn)
         morer = rdb.getRecord('collection',{'uid':json.loads(r)['uid']},dn)
@@ -278,6 +303,25 @@ def collection(id=None):
             r = rdb.getRecord('collection',{'uid':id})
         else:
             r = rdb.getRecord('collection',request.args)
+
+        #add discovery information
+        jr = json.loads(r)
+        for rd in jr:
+            links={}
+            if id:
+                links['link-this']=request.base_url
+                links['link-related']=request.base_url+'/element'
+            else:
+                links['link-this']=request.base_url+'/'+rd['uid']
+                links['link-related']=request.base_url+'/'+rd['uid']+'/element'
+            rd['links']=links
+
+        #comment out for now until response body can be updated to have results and metadata fields
+        #jr.append(  {'link-requested':request.url} ) 
+        #jr.append(  {'api-version':} ) 
+        r=json.dumps(jr)
+        if apidebug:
+            print('APIDEBUG:: Collection route api version: ', api_version,root_url,root,request.base_url)
     return r
 
 
@@ -290,8 +334,12 @@ def collectionElement(id=None, oid=None):
                                    - POST to add to the collection
     /collection/<id>/element/<oid> - GET details of a single object in a collection.
                                     Should resolve oid to full record from relevant table.
+    /collection/<id>/element?detail=full[sparse] - GET collection information with full
+               details [or default sparse as /collection/<id>]
     """
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+
     if request.method == 'POST':
         #make sure the element hasn't been added to the collection already
         payload = json.loads(request.data)
@@ -309,6 +357,28 @@ def collectionElement(id=None, oid=None):
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
 
+        jr=json.loads(r)
+        for record in jr:
+            r_uid=record['uid']
+            record['type']=rdb.getRecordTable( r_uid, dn )['table'] #already dict
+            if record['type']=='workflow':
+                detail=json.loads(rdb.getWorkflow({'uid':r_uid},dn))[0]
+                detail['related']=json.loads(rdb.getWorkflowCompositeID(r_uid,dn)).get('alias')
+                links={}
+                links['link1']=root_url+'/workflow/'+r_uid
+                links['link2']=root_url+'/workflow?alias='+detail['related']
+                detail['link-related']=links
+            if record['type']=='dataobject':
+                detail=json.loads(rdb.getRecord('dataobject',{'uid':r_uid},dn))[0]
+                detail['related']=detail.get('uri')
+                detail['link-related']=root_url+'/dataobject/'+r_uid
+
+            record['name']=detail['name']
+            record['description']=detail['description']
+            record['time']=detail['time']
+            record['related']=detail['related']
+            record['link-related']=detail['link-related']
+        r=json.dumps(jr)
     # '[]'
     if len(r) == 2 : 
          r = make_response(r, 404)
@@ -428,7 +498,7 @@ def getWorkflowCompositeID(id):
                 if rs:
                     r[id]=rs
                 else:
-                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+                    r[id]={'uid':'0','error':'invalid response','len':len(rs),'resp':rs}
 
             if len(ids)==1: #return just single record if one uid
                 r=rs
@@ -439,6 +509,22 @@ def getWorkflowCompositeID(id):
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
 def dataobject(id=None):
+    """
+    Route to add data objects and connect their instances to workflows.
+
+    Route: GET  /dataobject/<id>?instances=True/False
+           Retrieves information on a specific dataobject.
+           In the case <id> is <id> of an instance, instance inherits properties of the original object.
+           In the case <id> is <id> of an dataobject, just the properties of the dataobject are returned.
+           NOT IMPLEMENTED: ?instances filter will optionally return instances of a specified dataobject.
+    Route: GET  /dataobject
+    Route: POST /dataobject
+           databody:
+               {'name':, 'description':,'work_uid':, 'uri':, 'parent_uid': }
+           If 'work_uid' is present, create an instance, connect it to the parent in the workflow 
+           and link instance to the dataobject as determined by the 'uri'.
+           If 'work_uid' is NOT present, 'parent_uid' must also not be present. A new dataobject is created. 
+    """
     dn=get_user_dn(request)
     istatus=200
     if request.method == 'POST':
@@ -596,19 +682,35 @@ def ontologyClass(id=None):
 @app.route(routes['ontology_term']+'/vocabulary', methods=['GET'])
 def ontologyTermVocabulary(id=None):
     '''
+    Resource: ontology vocabulary
+
+    Convenience route, equivalent to ontology/term?parent_uid=<id>
+    
+
     This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
     Vocabulary is defined as the next set of terms below it in the
     ontology term tree.
     It is a convenience route equivalent to GET ontology_term?parent_uid=uid
     '''
+
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
 
     if not id:
         id='None'
 
     r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
 
-    return r
+    #add discovery information
+    jr = json.loads(r)
+    for rd in jr:
+        links={}
+        links['link-related']=root_url+'/ontology/term/'+rd['uid']+'/vocabulary'
+        rd['links']=links
+
+
+    jr.append(  {'link-requested':request.url} ) 
+    return json.dumps(jr)
 
 
 @app.route(routes['ontology_term']+'/<id>/tree', methods=['GET'])
@@ -641,8 +743,8 @@ def ontologyTerm(id=None):
     dn=get_user_dn(request)
     if not rdb.validUser(dn):
         if apidebug:
-            print ('APIDEBUG: Not a valid user'% dn)
-        return Response(None, status=401)
+            print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if request.method == 'POST':
         r = rdb.addOntologyTerm(request.data,dn)
