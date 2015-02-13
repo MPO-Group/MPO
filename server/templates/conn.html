@@ -78,6 +78,7 @@ function success_cb(event,data,userarg) {
 //handles the svg workflow plot functionality
 $(document).ready(function () {
 	var $window = $(window);
+	//Process SVG
 	$("#svg_loading").hide();
 	wf_desc="{{ wid_info[0].description }}";	
 	var jsondata = '{{ nodes|tojson }}';  //single quote issue
@@ -331,6 +332,57 @@ $(document).ready(function () {
 	e=mdsEvent('mpo_dataobject',1,success_cb,failure_cb,wid);
 	e=mdsEvent('mpo_activity',1,success_cb,failure_cb,wid);
 	
+		/**
+	*function handles comment submit event for each workflow in the list
+	*/
+	$('[id^=submit_comment]').submit(function(event) {
+	//$('id=submit_comment').submit(function(event) {
+		var fadeTime = 5000;
+		var formData = $(this).serialize();
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('submit_comment') }}', // the url where we want to POST
+			data 		: formData, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			console.log(data);	
+			/*HERE */
+			/*var appendHtml = '<li>';
+			appendHtml += data[0].content+' | <em>by '+data[0].username +' - ' + data[0].time.substring(0,16);
+			appendHtml += '</li>';
+			
+			var p_uid=data[0].parent_uid;
+			var c_uid=data[0].uid;
+			
+			alert("parent: "+p_uid); //4b177693-ea36-4b67-9efd-1cd4b2914733
+			alert("child+ "+c_uid); //47ca45ba-97ce-4f0a-a67d-59ec5c722f54
+			
+			$("#commentDrop"+p_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
+			
+			//drop comment section if it is not already dropped
+			if(!($('#commentDrop'+p_uid).hasClass('in'))) {
+				$('#commentDrop'+p_uid).addClass('in');
+				$('#commentDrop'+p_uid).css('height','auto');
+			}*/
+
+			$('#submit_results').show();
+			$('#submit_results').html('<div class="alert alert-success" role="alert">Comment submitted.</div>');
+			$('#submit_results').fadeOut(fadeTime, function() {
+					// Animation complete.
+					$('#submit_results').html("");
+				});
+		/*	$('#block_' + c_uid).css('background-color', '#ddffdd');
+			$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);*/
+			/*UNTIL HERE*/
+		});
+		// stop the form from submitting the normal way and refreshing the page
+		event.preventDefault();
+	});
+	// end of Submit comment
 	//convert linked Workflow UIDs to compID and description.  css class: linkedwf
 }); //end document.ready
 function hideToggleSubLists() {
@@ -581,17 +633,37 @@ function buildPageElements(wfID) {
 }
 </script>
 {% endblock %}
-
 {% block container %}
-   <div class="leaderboard">
-    <noscript>This page requires a javascript enabled browser.</noscript>
-	<div align="center">
-	  	<!-- <h3> Workflow: {{ wid }} </h3> -->
-        <h2> {{ wid_info[0].username }} / {{ wid_info[0].type }} / {{ wid_info[0].composite_seq }} </h2>
-        <div><span class="text-center">{{ wid_info[0].description }}</span></div>
-        <div><span class="text-center muted"><small>workflow ID: {{ wid }}</small></span></div>
-        <div><span class="text-center muted"><small>last update: <span id="last-updated"></span></small></span></div>
+    <div class="row-fluid">  
+    	<!-- workflow table list span -->
+		<div class="span12">
+        <h4> {{ wid_info[0].username }} / <font color="#004B82">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }} <small style="padding-left: 10px"> <font color="#87A6B9"><em>{{ wid }}</em></font> -  {{ wid_info[0].username }} - <span id="last-updated"></span></small> </h4>    
+        <strong>Description:</strong> {{ wid_info[0].description }}
+     
+        <div class="accordian-heading">
+                                <span style="float:right"><span class="icon-comment"></span><a href="#add_{{ wid }}" data-toggle="collapse"><small> Add Comment</small></a></span></div>
+                                <div class="accordion-body collapse" id="add_{{ wid }}">
+                                    <div class="accordion-inner no-border">
+                                    <span id="submit_results"></span>
+                                      <form id="submit_comment">
+                                      		<input type="hidden" value="{{ wid }}" name="wf_id">
+                                            <select name="parent_uid">
+                                            	<option value="">select a workflow object...</option>
+                                            {% for obj in nodes.iteritems() %}
+                                                {% for n in obj %}
+                                                	{% if n.name %}
+                                                    <option value="{{ n.uid }}">{{ n.name }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                             {% endfor %}
+                                             </select>
+                                        <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
+                                      </form>
+                                    </div>
+                                </div>
+                            </div>
 	</div>
+    
     <div class="row-fluid">
     	<div class="span12">
         	<div class="row-fluid">
@@ -614,32 +686,10 @@ function buildPageElements(wfID) {
 	                    </div>
                     </div>
 
-                    <div id="node_comments">
+        <!--       <div id="node_comments">
                         <div id="accordion2" class="accordion">
                         <div class="accordion-group">
-                            <div class="accordian-heading">
-                                <div style="padding-top:10px;padding-bottom:10px;">
-                                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne"><small> Logbook Entries {% if num_comment %}({{ num_comment }}) <i class="icon-chevron-down"></i></a>{% else %}(0){% endif %}</small> &nbsp;&nbsp;<a href="#add_{{ wid }}" class="text-success pull-right" data-toggle="collapse"></strong><small>[+] new comment</small></a></span>
-                                </div>
-                                <div class="accordion-body collapse" id="add_{{ wid }}">
-                                    <div class="accordion-inner no-border">
-                                      <form action="{{ url_for("submit_comment") }}" method="post">
-                                      		<input type="hidden" value="{{ wid }}" name="wf_id">
-                                            <select name="parent_uid">
-                                            	<option value="">select a workflow object...</option>
-                                            {% for obj in nodes.iteritems() %}
-                                                {% for n in obj %}
-                                                	{% if n.name %}
-                                                    <option value="{{ n.uid }}">{{ n.name }}</option>
-                                                    {% endif %}
-                                                {% endfor %}
-                                             {% endfor %}
-                                             </select>
-                                        <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
-                                      </form>
-                                    </div>
-                                </div>
-                            </div>
+                            
                             <div id="collapseOne">
                         {% for obj in nodes.iteritems() %}
                             {% for n in obj %}
@@ -696,39 +746,59 @@ function buildPageElements(wfID) {
                              {% endfor %}
                         {% endfor %}
                         	</div><!-- end collapseone -->
-                        </div>
+<!--                        </div>
                         </div> <!--end accordion parent --> 
-                    </div>           	                    
+<!--                    </div>   -->         	                    
                 </div> <!-- end span7 -->
                 {% if nodes %}
-                <div class="span4 offset1">
-                <h4>Workflow Nodes:</h4>
-                <button class="btn btn-mini btn-link expandcollapse"><i class="icon-plus-sign"></i> Expand All</button>
+                <div class="span4 offset1">                 
+                <h5>Workflow Details: <button class="btn btn-mini btn-link expandcollapse"><i class="icon-plus-sign"></i> Expand All</button></h5>
+                
                 	<div id="acc-container">
                 	<div id="accordion" class="accordion">
                     {% for obj in nodes.iteritems() %}
                         {% for n in obj %}
-                            {% if (n.name and n.type != "workflow") %}
-                                    <div>
-                                        <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a> <!-- <span class="muted"><em><small>({{ n.type }})</small></em></span>  -->
-                                                        {% if n.data %}
-                                                            {% for x in n.data %}
-                                                                 {% if x.time %}                                                	
-                                                                <span class="muted"><small><small><em>- {{ x.time }}</em></small></small></span>
-                                                                {% endif %}
-                                                            {% endfor %}
-                                                        {% endif %}                                     
+						<div>
+                        <!--  display icon -->
+                        {% if n.type == "dataobject" %}
+                        	{% if n.data[0].wf_link|length == 1 %} 
+                            <span class="icon-dataobject"></span>
+                            {% else %}
+                            <span class="icon-dataobject-blue"></span>
+                            {% endif %}
+                        <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a>
+                        {% elif n.type == "activity" %}
+	                    	<span class="icon-activity"></span>
+                        <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a>
+                        {% elif n.type == "workflow" %}
+                        	<span class="icon-workflow"></span> 
+                            <a href="#acc_{{ n.uid }}" data-toggle="collapse"><strong>{{ wid_info[0].username }} / <font color="#004B82">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }}</strong></a> 
+                        {% endif %}
+                        <!-- end display icon -->
+                        <!-- display name link and time -->
+                        {% if n.data %}
+                        	{% for x in n.data %}
+                            	{% if x.time %}                                                	
+                                	<span class="muted"><small><small><em>- {{ x.time }}</em></small></small></span>
+                            	{% endif %}
+                       		{% endfor %}
+                       	{% endif %}                                                
+                        <!-- end of display name link and time -->                                         
                                             <div class="accordion-body collapse" id="acc_{{ n.uid }}">
                                                 <div class="accordion-inner no-border">
                                                     <ul>
                                                         {% if n.data %}
                                                             {% for x in n.data %}
-                                                                <li><small>{{ x.description }}</small></li>
-                                                                {% if x.uri %}                                                	
-                                                                <li><small>uri: {{ x.uri }}</small>
-                                                                    {% if x.wf_link %}
-                                                                    <ul class="wf_links">
-                                                                      <li id="lw_{{ x.uid }}" ><small><em><a style="cursor:pointer;">[+] Linked Workflows</a></em></small><!-- <span id="{{ x.uid }}_loader"><img src="/static/img/ajax-loader-green-small.gif"></span> -->
+                                                                <li><small>{{ x.description }}</small>
+                                                                {% if x.uri %}    
+                                                                	<small><font color="#ED8454"><em>{{ x.uri }}</em></font></small>
+                                        <!-- display other workflows (if any) -->  
+                                                                </li>                                 
+                                                                <li><small>UID: <font color="#87A6B9">{{ x.uid }}</font></small></li>
+                                                                 {% if x.wf_link|length > 1 %} 
+                                                                  <ul class="wf_links"> 
+                                                                      <li id="lw_{{ x.uid }}"  style="margin-left: 0px"><small><em><a style="cursor:pointer;">[+] Linked Workflows</a></em></small>
+                                                                      <!-- <span id="{{ x.uid }}_loader"><img src="/static/img/ajax-loader-green-small.gif"></span> -->
                                                                     	<ul>
                                                                         {% for j in x.wf_link %}
                                                                         	{% if j.work_uid != wid %}
@@ -739,13 +809,10 @@ function buildPageElements(wfID) {
                                                                         </ul>
                                                                       </li>
                                                                      </ul>
-                                                                    {% endif %}
+                                                                    {% endif %}                             
+                                        <!-- end of display other workflows (if any) -->  
                                                                 </li>                                                               
-                                                                {% endif %}                                                                
-                                                                {% if x.time %}                                                	
-                                                                <li><small>time: {{ x.time }}</small></li>
-                                                                {% endif %}
-                                                                <li><small>uid: {{ x.uid }}</small></li>
+                                                                {% endif %}       
                                                             {% endfor %}
                                                         {% endif %}
                                                         {% if n.metadata %}
@@ -765,18 +832,16 @@ function buildPageElements(wfID) {
                                                         {% if n.comment %}
                                                         <li><small>Comments:</small>
                                                             <ul>
-                                                            {% for c in n.comment %}
-                                                                <li><small>{{ c.content }} | <em>by {{ c.user }} - {{ c.time }}</em></small> 
-                                                                </li>
+                                                 			{% for c in n.comment %}
+                                                                <li><small>{{ c.content }} | <em>by {{ c.user }} - {{ c.time }}</em></small> </li>
                                                             {% endfor %}
-                                                            </ul>
-                                                        </li>
-                                                        {% endif %}                                        
+                                                        	</li>
+                                                        {% endif %} 
+                                                        </ul></li>                                       
                                                     </ul>
                                                 </div>
                                             </div><!-- end accordion-body -->
                                      </div>
-                            {% endif %}
                          {% endfor %}
                     {% endfor %}
                     </div> <!--end accordion parent -->
@@ -791,7 +856,6 @@ function buildPageElements(wfID) {
         </div> <!-- end row-fluid -->
         </div> <!-- end span12 -->
     </div><!-- end row-fluid -->
+<span style="float: right"><em><small>Page created in: {{ page_created }} seconds.</small></em></span>
   </div> <!-- end leaderboard -->
-  <em> Page created in: {{ page_created }} seconds. </em>
-
 {% endblock %} 

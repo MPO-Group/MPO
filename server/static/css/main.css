@@ -151,3 +151,23 @@ height: auto;
 margin-bottom: 15px;
 padding: 7px 9px;
 }
+
+/* Icons */
+.icon-workflow {
+    background-image: url("https://mpo.gat.com/static/img/images/_icon_workflow.png");
+    background-position: center center;
+}
+
+.icon-activity {
+    background-image: url("https://mpo.gat.com/static/img/images/_icon_activity.png");
+    background-position: center center;
+}
+
+.icon-dataobject {
+    background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject.png");
+    background-position: center center;
+}
+.icon-dataobject-blue {
+    background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject_blue.png");
+    background-position: center center;
+}

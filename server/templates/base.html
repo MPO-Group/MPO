@@ -133,6 +133,68 @@ function qs(search_for) {
 		}
 		return "";
 	}
+/* $(function(){
+      $('#_db').bind('change', function () {
+		  var db=$('#_db').val();
+		  var formData = $(this).serialize();
+		  this.form.submit();
+		  //process the form
+		 /* $.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('submit_db') }}', // the url where we want to POST
+			data 		: formData, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		  })*/
+		  //callback
+  		 /* .done(function(data) {
+			console.log(data);	
+			var url = "https://mpo.gat.com/mpo/home"; // get selected value
+          if (url) { // require a URL
+              window.location = url; // redirect
+          }
+		  });*/
+		  // stop the form from submitting the normal way and refreshing the page
+		 // event.preventDefault();
+		 // this.form.submit();
+		/*  var url = "https://mpo.gat.com/mpo/home"; // get selected value
+          if (url) { // require a URL
+              window.location = url; // redirect
+          }
+          return false;*/
+		  
+		  
+		  
+		  ////
+ /* $('[id^=submit_comment]').submit(function(event) {
+		var fadeTime = 5000;
+		var formData = $(this).serialize();
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('submit_comment') }}', // the url where we want to POST
+			data 		: formData, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			console.log(data);	
+			$('#submit_results').show();
+			$('#submit_results').html('<div class="alert alert-success" role="alert">Comment submitted.</div>');
+			$('#submit_results').fadeOut(fadeTime, function() {
+					// Animation complete.
+					$('#submit_results').html("");
+				});
+		});
+		// stop the form from submitting the normal way and refreshing the page
+		event.preventDefault();
+	});
+		  /////
+		  */
+		  
+      });
+    });	
 </script>
     {% block hscripts %}{% endblock %}
   </head>
@@ -155,6 +217,23 @@ function qs(search_for) {
                 <li {% block search_active %}{% endblock %}><a href="{{ url_for("search") }}">Search</a></li>
                 <li {% block docs_active %}{% endblock %}><a href="/mpo/doc" target="_blank">Documentation</a></li>
             </ul>
+            <span style="float:right; padding-top: 10px"><small> </small>
+            <form class="form-inline" action="{{ url_for('submit_db') }}" method="post">
+            <div class="form-group">
+            <label for="db">Current DB:</label>
+            <select id="_db" name="db" onchange="this.form.submit()">
+            <option value="test" 
+            {% if db_server=="test" %}
+            	selected
+             {% endif %}
+            >Test Database</option>
+            <option value="prod"
+            {% if db_server=="prod" %}
+	            selected
+             {% endif %}
+            >Production Database</option></select>
+            </div>
+            </form></span>
             <!--<ul class="nav pull-right">
             	<li><a href="#"><i class="icon-user"></i> Username</a></li>
             </ul>-->            

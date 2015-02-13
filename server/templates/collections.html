@@ -497,7 +497,7 @@ ul li input.user_time_wf {
 		<div class="span12">
 		{% if results %}
         	<a href="/mpo/collections"><small>&lt;&lt; Back to list of collections</small></a>
-        	<h4>MPO Collection: {{ coll_name }} <small><strong>{{ coll_username }}</strong> - {{ coll_time }}</small></h4>
+        	<h4>MPO Collection: {{ coll_name }} <span class="glyphicon glyphicon-user"></span><small><strong>{{ coll_username }}</strong> - {{ coll_time }}</small></h4>
             <b>Description:</b> {{ coll_desc }}
         	<div id="workflow_tbl">
             <!-- workflow list table -->
@@ -512,7 +512,7 @@ ul li input.user_time_wf {
                     	{% if item.citem %}
                   <td>{% for each in item.citem %}
                     		{% if item.type == "workflow" %}
-                   	<a href="{{ url_for("connections", wid=item.uid) }}">{{ each.username }} / {{ each.type }} / {{ each.composite_seq }}</a>
+                   		<a href="{{ url_for("connections", wid=item.uid) }}">{{ each.name }}</a> <span class="muted"><br /><em><small>{{ each.username }} / {{ each.type }} / {{ each.composite_seq }}</em></span><br />
 							{% else %}
                     	{{ each.name }}  <span class="muted"><br /><em><small>{{ each.uri }}</small></em></span><br />
                         	{% endif %}

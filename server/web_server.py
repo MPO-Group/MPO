@@ -58,6 +58,9 @@ def index():
     #use grouped requests:
     groupedrequests=False
     print('WEBSERVER: timestamp start index',stime.time() )
+    db_server=request.cookies.get('db_server')
+    if webdebug:
+        print('WEBSERVER: **cookie set: ',request.cookies.get('db_server'))
     #Need to get the latest information from MPO database here
     #and pass it to index.html template
     dn = get_user_dn(request)
@@ -310,7 +313,7 @@ def index():
     begin_to_end = time_end - time_begin
     page_created = "%s" %((str(begin_to_end))[:6])
 
-    everything={"page_created":page_created, "results":results, "ont_result":ont_result,
+    everything={"db_server":db_server,"page_created":page_created, "results":results, "ont_result":ont_result,
                 "rpp":rpp, "current_page":current_page, "wf_type_list":wf_type_list,
                 "num_pages":num_pages, "num_wf":num_wf}
     return render_template('index.html', **everything)
@@ -549,8 +552,10 @@ def connections(wid=""):
             wf_objects[key]['comment']=cm
 
     if webdebug:
+	print("*************")
         print("WEBDEBUG: workflow objects")
         pprint(wf_objects)
+	print("*************")
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
@@ -778,6 +783,48 @@ def ontology(uid=False):
             return render_template('ontology.html', result=result)
 
     return render_template('ontology.html')
+
+@app.route('/submit_db', methods=['POST'])
+def submit_db():
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    newc=''
+    redirect_to_index = redirect(url_for('index'))
+    response = app.make_response(redirect_to_index )
+
+    try:
+        form = request.form.to_dict() #gets POSTed form fields as dict; fields: 'parent_uid','comment'
+        form['dn'] = dn
+        r = json.dumps(form) #convert to json
+        if webdebug:
+            print('WEBDEBUG: submit db')
+            pprint(r)
+   	    print(form['db'])
+    	response.set_cookie('db_server',value=form['db'])
+    	return redirect_to_index
+
+        #wid=form['wf_id']
+
+#        submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
+#        cid = submit.json()
+#        result = requests.get("%s/comment/%s"%(API_PREFIX,cid['uid']), **certargs)
+#        newc = result.text
+#        if webdebug:
+#            pprint(newc)
+
+    except:
+        pass
+
+    return redirect_to_index
+
+    #return redirect(url_for('index', wid=form['parent_uid'])) # redirects to a refreshed homepage
+    #                                                              # after comment submission,
+    #                                                              # passes workflow ID so that the
+    #                                                              # comments will show for that workflow
+    #return redirect(url_for('connections', wid=wid))
+
+
 
 @app.route('/submit_comment', methods=['POST'])
 def submit_comment():
