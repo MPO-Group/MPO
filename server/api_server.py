@@ -27,7 +27,7 @@ except Exception, e:
 rdb.init(conn_string)
 
 app = Flask(__name__)
-app.debug=True
+app.debug=False
 apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
@@ -153,17 +153,19 @@ def get_api_version(url):
 
     #find version of the for 'v#'
     version=None
-    for o in pathparts:
-        match=re.match(r'v[0-9]',o)
+    for part in pathparts:
+        match=re.match(r'v[0-9]',part)
         if match:
             version=match.group()
 
     vidx=pathparts.index(version)
     #root is the base name of the api server which is the last part
-    #of the url before the version, ie: host://some/other/paths/api-server/v0/route
+    #of the url before the version, ie: 'api-server' in host://some/other/paths/api-server/v0/route
     root=pathparts[vidx-1]
+    root_url=o.scheme+"://"+o.netloc+o.path[:o.path.find(version)+len(version)] #url w/o query strings or parameters
+
     #Throw an exception if no version string is found
-    return version,baseurl,root
+    return version,root_url,root
 
 
 ###############ROUTE handling###############################
@@ -290,7 +292,7 @@ def collection(id=None):
     /collection/<id> - GET collection information, including list of member UUIDs
     """
     dn=get_user_dn(request)
-    api_version,baseurl,root=get_api_version(request.url)
+    api_version,root_url,root=get_api_version(request.url)
 
     if request.method == 'POST':
         r = rdb.addCollection(request.data,dn)
@@ -307,11 +309,11 @@ def collection(id=None):
         for rd in jr:
             links={}
             if id:
-                links['link-this']=baseurl
-                links['link-related']=baseurl+'/element'
+                links['link-this']=request.base_url
+                links['link-related']=request.base_url+'/element'
             else:
-                links['link-this']=baseurl+'/'+rd['uid']
-                links['link-related']=baseurl+'/'+rd['uid']+'/element'
+                links['link-this']=request.base_url+'/'+rd['uid']
+                links['link-related']=request.base_url+'/'+rd['uid']+'/element'
             rd['links']=links
 
         #comment out for now until response body can be updated to have results and metadata fields
@@ -319,7 +321,7 @@ def collection(id=None):
         #jr.append(  {'api-version':} ) 
         r=json.dumps(jr)
         if apidebug:
-            print('APIDEBUG:: Collection route api version: ', api_version,root,baseurl)
+            print('APIDEBUG:: Collection route api version: ', api_version,root_url,root,request.base_url)
     return r
 
 
@@ -336,6 +338,8 @@ def collectionElement(id=None, oid=None):
                details [or default sparse as /collection/<id>]
     """
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+
     if request.method == 'POST':
         #make sure the element hasn't been added to the collection already
         payload = json.loads(request.data)
@@ -355,15 +359,25 @@ def collectionElement(id=None, oid=None):
 
         jr=json.loads(r)
         for record in jr:
-            record['type']=rdb.getRecordTable( record['uid'], dn )['table'] #already dict
+            r_uid=record['uid']
+            record['type']=rdb.getRecordTable( r_uid, dn )['table'] #already dict
             if record['type']=='workflow':
-                detail=json.loads(rdb.getWorkflow({'uid':record['uid']},dn))[0]
+                detail=json.loads(rdb.getWorkflow({'uid':r_uid},dn))[0]
+                detail['related']=json.loads(rdb.getWorkflowCompositeID(r_uid,dn)).get('alias')
+                links={}
+                links['link1']=root_url+'/workflow/'+r_uid
+                links['link2']=root_url+'/workflow?alias='+detail['related']
+                detail['link-related']=links
             if record['type']=='dataobject':
-                detail=json.loads(rdb.getRecord('dataobject',{'uid':record['uid']},dn))[0]
+                detail=json.loads(rdb.getRecord('dataobject',{'uid':r_uid},dn))[0]
+                detail['related']=detail.get('uri')
+                detail['link-related']=root_url+'/dataobject/'+r_uid
 
             record['name']=detail['name']
-            record['time']=detail['time']
             record['description']=detail['description']
+            record['time']=detail['time']
+            record['related']=detail['related']
+            record['link-related']=detail['link-related']
         r=json.dumps(jr)
     # '[]'
     if len(r) == 2 : 
@@ -484,7 +498,7 @@ def getWorkflowCompositeID(id):
                 if rs:
                     r[id]=rs
                 else:
-                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+                    r[id]={'uid':'0','error':'invalid response','len':len(rs),'resp':rs}
 
             if len(ids)==1: #return just single record if one uid
                 r=rs
@@ -680,6 +694,7 @@ def ontologyTermVocabulary(id=None):
     '''
 
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
 
     if not id:
         id='None'
@@ -690,10 +705,7 @@ def ontologyTermVocabulary(id=None):
     jr = json.loads(r)
     for rd in jr:
         links={}
-        o=urlparse(request.url)
-        baseurl=o.scheme+"://"+o.netloc
-        
-        links['link-related']=baseurl+routes['ontology_term']+'/'+rd['uid']+'/vocabulary'
+        links['link-related']=root_url+'/ontology/term/'+rd['uid']+'/vocabulary'
         rd['links']=links
 
 
@@ -731,8 +743,8 @@ def ontologyTerm(id=None):
     dn=get_user_dn(request)
     if not rdb.validUser(dn):
         if apidebug:
-            print ('APIDEBUG: Not a valid user'% dn)
-        return Response(None, status=401)
+            print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if request.method == 'POST':
         r = rdb.addOntologyTerm(request.data,dn)

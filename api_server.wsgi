@@ -3,7 +3,8 @@ import sys
 import os
 
 process_group = mod_wsgi.process_group
-print('api_server.wsgi running under process group: ',process_group,str(dir(mod_wsgi)))
+print('api_server.wsgi in test-api running under process group: ',process_group,str(dir(mod_wsgi)))
+print('api_server.wsgi INFO: Make sure to add each source directory to the Directory directive in apache config.')
 
 if process_group=='test-mpoapi':
    os.environ['MPO_DB_CONNECTION'] = "host='localhost' dbname='mpo_test' user='mpoadmin' password='mpo2013'"
@@ -23,6 +24,12 @@ else:
 
 os.environ['UDP_EVENTS']='yes'
 print('wsgi path ',str(sys.path))
-from api_server import app as application
+
+#make sure load path is right
 import api_server
-print os.path.abspath(api_server.__file__) 
+print ("wsgi os path: ", os.path.abspath(api_server.__file__) )
+
+
+from api_server import app as application
+
+
