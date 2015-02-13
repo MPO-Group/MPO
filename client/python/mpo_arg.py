@@ -132,7 +132,6 @@ class mpo_methods(object):
     COLLECTION_RT='collection'
     COLLECTION_ELEMENT_RT='collection/{cid}/element'
     DATAOBJECT_RT='dataobject'
-    DATAOBJECT_INSTANCE_RT='dataobject_instance'
     ACTIVITY_RT=  'activity'
     ONTOLOGY_TERM_RT = 'ontology/term'
     ONTOLOGY_INSTANCE_RT = 'ontology/instance'
@@ -401,53 +400,33 @@ class mpo_methods(object):
         return r
 
 
-    def add(self, workflow_ID=None, parentobj_ID=None, dataobj_ID=None, **kwargs):
+    def add(self, workflow_ID=None, parentobj_ID=None, **kwargs):
         """
-        Add a dataobject_instance to a workflow.
+        Add dataobject_instance to a workflow. If the uri doesn't exist in
+        the db create the appropriate dataobject. If the workflow_ID and
+        parentobj_ID are not present create just the dataobject.
 
         args are:
         workflow_ID --
         parentobj_ID --
-        dataobj_ID --
-        """
-
-        if (self.debug):
-            print('MPO.ADD', workflow_ID, parentobj_ID, dataobj_ID, kwargs, file=sys.stderr)
-
-        if not (workflow_ID and parentobj_ID and dataobj_ID):
-            print('Invalid workflow or parent or dataobject to add method',workflow_ID, parentobj_ID, file=sys.stderr)
-            exit
-
-        payload = {'do_uid':dataobj_ID}
-        return self.post(self.DATAOBJECT_INSTANCE_RT,workflow_ID,[parentobj_ID],data=payload,**kwargs)
-
-    def add_do(self, **kwargs):
-        """
-        Add a dataobject with no workflow or partentobj_id.
-        This data object can then be connected to one or more
-        workflows.
-
-        if a data object with this workflow already exists, then return it.
-
-        args are:
         name --
         desc -- description
         uri -- uri for the data object added
-        source -- source uid
-
+        source -- source uid for dataobject
         """
 
         uri = kwargs.get('uri')
         desc = kwargs.get('desc')
         name = kwargs.get('name')
         source = kwargs.get('source')
+
         if (self.debug):
-            print('MPO.ADD_DO', name, desc,uri,source,kwargs, file=sys.stderr)
+            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,source,kwargs, file=sys.stderr)
 
-        payload={"name":name,"description":desc,"uri":uri,"source_uid":source}
-        ans=self.post(self.DATAOBJECT_RT,None,None,data=payload,**kwargs)
 
-        return ans
+        payload={"name":name,"description":desc,"uri":uri,"source":source}
+
+        return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],data=payload,**kwargs)
 
 
     def step(self,workflow_ID=None,parentobj_ID=None,input_objs=None,**kwargs):
@@ -753,20 +732,15 @@ class mpo_cli(object):
                                  required=True)
         init_parser.set_defaults(func=self.mpo.init)
 
-        #add_do
-        add_do_parser=subparsers.add_parser('add_do', aliases=( ('add_data',)),help='Add a standalone data object.')
-        add_do_parser.add_argument('--source', '-s', action='store', help='Pointer to the creator of the dataobject')
-        add_do_parser.add_argument('--name', '-n', action='store')
-        add_do_parser.add_argument('--desc', '-d', action='store', help='Describe the dataobject')
-        add_do_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
-        add_do_parser.set_defaults(func=self.mpo.add_do)
-
         #add
-        add_parser=subparsers.add_parser('add', aliases=( ('add_data_instance',)),help='Add a data object instance to a workflow.')
+        add_parser=subparsers.add_parser('add', aliases=( ('add_data',)),help='Add a data object to a workflow.')
 #        addio = add_parser.add_mutually_exclusive_group() #needed for child vs parent.
         add_parser.add_argument('workflow_ID', action='store',metavar='workflow')
         add_parser.add_argument('parentobj_ID', action='store',metavar='parent')
-        add_parser.add_argument('dataobj_ID', action='store',metavar='data')
+        add_parser.add_argument('--name', '-n', action='store')
+        add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
+        add_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        add_parser.add_argument('--source', '-s', action='store', help='Pointer to the creator of the dataobject')
         add_parser.set_defaults(func=self.mpo.add)
 
         #step, nearly identical to add
