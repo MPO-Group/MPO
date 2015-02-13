@@ -35,7 +35,6 @@ apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
-        'dataobject_instance':'dataobject_instance',
         'comment':'comment', 'metadata':'metadata',
         'ontology_class':'ontology/class',
         'ontology_term':'ontology/term',
@@ -312,7 +311,7 @@ def collectionElement(id=None, oid=None):
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
 
     # '[]'
-    if len(r) == 2 : 
+    if len(r) == 2 :
          r = make_response(r, 404)
          #resp=Response(r, mimetype='application/json')
     return r
@@ -445,10 +444,26 @@ def dataobject(id=None):
     dn=get_user_dn(request)
     istatus=200
     if request.method == 'POST':
-        r = rdb.addDataobject(request.data,dn)
+        req = json.loads(request.data)
+        #find the dataobject with the specified uri (assumed to be unique)
+        print req
+        if not req['uri']: return Response({}, mimetype='application/json',status=istatus)
+        do = json.loads(rdb.getRecord('dataobject',{'uri':req['uri']},dn))
+
+        if do:
+            if not (req['work_uid'] and req['parent_uid']):
+                return Response({}, mimetype='application/json',status=istatus)
+            else:
+                req['do_uid']=do[0]['uid']
+        else:
+            r = json.loads(rdb.addRecord('dataobject',request.data,dn))
+            if not r: return Response({}, mimetype='application/json',status=istatus)
+            req['do_uid']=r['uid']
+
+        r = rdb.addRecord('dataobject_instance',json.dumps(req),dn)
         rr = json.loads(r)
         id = rr['uid']
-        morer = rdb.getRecord('dataobject',{'uid':id},dn)
+        morer = rdb.getRecord('dataobject_instance',{'uid':id},dn)
         publishEvent('mpo_dataobject',onlyone(morer))
     elif request.method == 'GET':
         if id:
@@ -465,42 +480,8 @@ def dataobject(id=None):
                 r=rs
         else:
             r = json.loads(rdb.getRecord('dataobject',request.args,dn))
-            if len(r) == 0 :
-                istatus=404
-                #r = make_response(json.dumps(r), 404)
-
-    return Response(r, mimetype='application/json',status=istatus)
-
-
-
-@app.route(routes['dataobject_instance']+'/<id>', methods=['GET'])
-@app.route(routes['dataobject_instance'], methods=['GET', 'POST'])
-def dataobject_instance(id=None):
-    dn=get_user_dn(request)
-    istatus=200
-    if request.method == 'POST':
-        r = rdb.addRecord('dataobject_instance',request.data,dn)
-        rr = json.loads(r)
-        id = rr['uid']
-        morer = rdb.getRecord('dataobject_instance',{'uid':id},dn)
-        publishEvent('mpo_dataobject_instance',onlyone(morer))
-    elif request.method == 'GET':
-        if id:
-            ids=id.strip().split(',')
-            r={}
-            for id in ids:
-                rs = json.loads(rdb.getRecord('dataobject_instance',{'uid':id},dn))
-                if rs:
-                    r[id]=rs
-                else:
-                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
-
-            if len(ids)==1: #return just single record if one uid
-                r=rs
-        else:
-            r = json.loads(rdb.getRecord('dataobject_instance',request.args,dn))
-            if len(r) == 0 :
-                istatus=404
+            #if len(r) == 0 :
+            #    istatus=404
                 #r = make_response(json.dumps(r), 404)
 
     return Response(r, mimetype='application/json',status=istatus)
@@ -749,7 +730,7 @@ def item(id):
                               payload=payload)
 
     return Response(json.dumps(r), mimetype='application/json')
-    
+
 
 if __name__ == '__main__':
     #adding debug option here, so we can see what is going on.
