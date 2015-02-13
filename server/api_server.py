@@ -10,6 +10,7 @@ print('api done importing db')
 from authentication import get_user_dn
 import os, time
 from flask.ext.cors import cross_origin
+from distutils.util import strtobool
 
 #Only needed for event prototype
 import gevent
@@ -446,7 +447,6 @@ def dataobject(id=None):
     if request.method == 'POST':
         req = json.loads(request.data)
         #find the dataobject with the specified uri (assumed to be unique)
-        print req
         if not req['uri']: return Response({}, mimetype='application/json',status=istatus)
         do = json.loads(rdb.getRecord('dataobject',{'uri':req['uri']},dn))
 
@@ -466,11 +466,19 @@ def dataobject(id=None):
         morer = rdb.getRecord('dataobject_instance',{'uid':id},dn)
         publishEvent('mpo_dataobject',onlyone(morer))
     elif request.method == 'GET':
+        #optional argument instances. defaults to true
+        instance=1
+        if request.args.has_key('instance'): instance=strtobool(request.args.get('instance'))
+        if instance:
+            route = 'dataobject_instance'
+        else:
+            route = 'dataobject'
+
         if id:
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = json.loads(rdb.getRecord('dataobject',{'uid':id},dn))
+                rs = json.loads(rdb.getRecord(route,{'uid':id},dn))
                 if rs:
                     r[id]=rs
                 else:
@@ -479,7 +487,8 @@ def dataobject(id=None):
             if len(ids)==1: #return just single record if one uid
                 r=rs
         else:
-            r = json.loads(rdb.getRecord('dataobject',request.args,dn))
+            r = rdb.getRecord(route,request.args,dn)
+
             #if len(r) == 0 :
             #    istatus=404
                 #r = make_response(json.dumps(r), 404)
