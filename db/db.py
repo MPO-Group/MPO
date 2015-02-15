@@ -707,7 +707,7 @@ def addRecord(table,request,dn):
                            "(wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) "+
                            "values (%s,%s,%s,%s,%s,%s,%s)",
                            (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'],
-                            'dataobject_instance', datetime.datetime.now()))
+                            table, datetime.datetime.now()))
     # Make the changes to the database persistent
     conn.commit()
 
