@@ -181,11 +181,11 @@ class mpo_methods(object):
 
         #check that result is a request object.
         # if isinstance(result,requests.models.Response):
+        if not isinstance(result,requests.models.Response):
+            return str(output)
 
         if self.debug:
-            text=''
-            if isinstance(result,requests.models.Response):
-                text=result.text
+            text=result.text
             print("format",result,str(type(result)),text,file=sys.stderr)
         if filter=='id':
             output=[]
@@ -208,14 +208,14 @@ class mpo_methods(object):
             output=json.dumps(result.json(),separators=(',', ':'),indent=4)
         elif filter=='raw':
             output=result
-            if isinstance(result,requests.models.Response):
-                print('raw header',output.headers,file=sys.stderr)
-                print('raw type',str(type(output)),file=sys.stderr)
-                print('raw content',output.text,file=sys.stderr)
+            print('raw header',output.headers,file=sys.stderr)
+            print('raw type',str(type(output)),file=sys.stderr)
+            print('raw content',output.text,file=sys.stderr)
+            output=str(result)
         elif filter=='text':
-            output=result.text
-        else:
-            output=result.json()
+            output=str(result.text)
+        else: #default is string representation
+            output=str(result)
 
         return output
 
