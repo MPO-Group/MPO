@@ -871,31 +871,6 @@ def addMetadata(json_request,dn):
     conn.close()
     return json.dumps(records,cls=MPOSetEncoder)
 
-def addDataobject(json_request,dn):
-    objs = json.loads(json_request)
-    print objs
-    # get a connection, if a connect cannot be made an exception will be raised here
-    conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
-    #get the user id
-    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-    user_id = cursor.fetchone()
-
-    do_uid = str(uuid.uuid4())
-    q = ("insert into dataobject (do_guid, name, description, uri, source_guid, u_guid, creation_time) "+
-         "values (%s,%s,%s,%s,%s,%s,%s)")
-    v=(do_uid,objs['name'],objs['description'],objs['uri'],objs['source_uid'],user_id,datetime.datetime.now())
-    cursor.execute(q,v)
-    # Make the changes to the database persistent
-    conn.commit()
-
-    records = {}
-    records['uid'] = do_uid
-    # Close communication with the database
-    cursor.close()
-    conn.close()
-    return json.dumps(records,cls=MPOSetEncoder)
-
 
 def addOntologyClass(json_request,dn):
     objs = json.loads(json_request)
