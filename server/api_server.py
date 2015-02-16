@@ -674,8 +674,17 @@ def ontologyTerm(id=None):
         return Response(None, status=401)
 
     if request.method == 'POST':
-        r = rdb.addOntologyTerm(request.data,dn)
-                #r = rdb.addRecord('ontology_terms',request.data,dn)
+        objs = json.loads(request.data)
+        #allow for ontology terms with null parents
+        if not objs.has_key('parent_uid'): objs['parent_uid']=None
+
+        # make sure the term doesn't exist already
+        vocab = json.loads(rdb.getRecord('ontology_terms', {'parent_uid':objs['parent_uid']}, dn ))
+        for x in vocab:
+            if objs['name'] == x['name']:
+                return Response(json.dumps({'uid':x['uid']}),mimetype='application/json')
+
+        r = rdb.addRecord('ontology_terms',json.dumps(objs),dn)
     else:
         if id:
             r = rdb.getRecord('ontology_terms', {'uid':id}, dn )

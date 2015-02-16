@@ -845,41 +845,6 @@ def addOntologyClass(json_request,dn):
     return json.dumps(records,cls=MPOSetEncoder)
 
 
-def addOntologyTerm(json_request,dn):
-    objs = json.loads(json_request)
-    # get a connection, if a connect cannot be made an exception will be raised here
-    conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
-    #get the user id
-    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-    user_id = cursor.fetchone()
-
-    # make sure the term doesn't exist already
-    if not objs.has_key('parent_uid'): objs['parent_uid']=None
-    #vocab = json.loads(getRecord('ontology_terms', {'parent_uid':objs['parent_uid'] if objs['parent_uid'] else 'None'}, dn ))
-    vocab = json.loads(getRecord('ontology_terms', {'parent_uid':objs['parent_uid']}, dn ))
-    for x in vocab:
-        if objs['term'] == x['name']:
-            return json.dumps(x,cls=MPOSetEncoder)
-
-    ot_guid = str(uuid.uuid4())
-    q = ("insert into ontology_terms "+
-         "(ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) "+
-         "values(%s,%s,%s,%s,%s,%s,%s,%s)")
-    v = (ot_guid,objs['term'],objs['description'],objs['parent_uid'],objs['value_type'],
-         objs['specified'],user_id,datetime.datetime.now())
-    cursor.execute(q,v)
-    # Make the changes to the database persistent
-    conn.commit()
-
-    records = {}
-    records['uid'] = ot_guid
-    # Close communication with the database
-    cursor.close()
-    conn.close()
-    return json.dumps(records,cls=MPOSetEncoder)
-
-
 def addOntologyInstance(json_request,dn):
     objs = json.loads(json_request)
     # get a connection, if a connect cannot be made an exception will be raised here
