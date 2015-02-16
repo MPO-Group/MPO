@@ -541,7 +541,9 @@ def activity(id=None):
 def comment(id=None):
     dn=get_user_dn(request)
     if request.method == 'POST':
-        r = rdb.addComment(request.data,dn)
+        req = json.loads(request.data)
+        req['ptype']=rdb.getRecordTable(req['parent_uid'])
+        r = rdb.addRecord('comment',json.dumps(req),dn)
         rr = json.loads(r)
         id = rr['uid']
         try:  #JCW just being careful here on first implementation

@@ -782,43 +782,6 @@ def addWorkflow(request,dn):
     return json.dumps(records,cls=MPOSetEncoder)
 
 
-def addComment(json_request,dn):
-    objs = json.loads(json_request)
-    # get a connection, if a connect cannot be made an exception will be raised here
-    conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
-    #get the user id
-    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-    user_id = cursor.fetchone()
-
-    #get parent object type
-    q=textwrap.dedent("""\
-             SELECT w_guid  AS uid, 'workflow'   AS type FROM workflow   WHERE w_guid=%s UNION
-             SELECT a_guid  AS uid, 'activity'   AS type FROM activity   WHERE a_guid=%s UNION
-             SELECT cm_guid AS uid, 'comment'    AS type FROM comment    WHERE cm_guid=%s UNION
-             SELECT doi_guid AS uid, 'dataobject_instance' AS type FROM dataobject_instance WHERE doi_guid=%s
-              """)
-    pid=objs['parent_uid']
-    v=(pid,pid,pid,pid)
-    cursor.execute(q,v)
-    records = cursor.fetchone()
-
-    q=("insert into comment (cm_guid,content,parent_guid,parent_type,u_guid,creation_time) "+
-       "values (%s,%s,%s,%s,%s,%s)")
-    cm_guid = str(uuid.uuid4())
-    v= (cm_guid, objs['content'], records.uid, records.type,user_id, datetime.datetime.now())
-    cursor.execute(q,v)
-    # Make the changes to the database persistent
-    conn.commit()
-
-    records = {}
-    records['uid'] = cm_guid
-    # Close communication with the database
-    cursor.close()
-    conn.close()
-    return json.dumps(records,cls=MPOSetEncoder)
-
-
 def addMetadata(json_request,dn):
     objs = json.loads(json_request)
     # get a connection, if a connect cannot be made an exception will be raised here
