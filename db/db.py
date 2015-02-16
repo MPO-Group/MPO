@@ -682,7 +682,9 @@ def addRecord(table,request,dn):
         print(q,v)
 
     cursor.execute(q,v)
-    if objs.has_key('parent_uid') and objs.has_key('work_uid'):
+    #it turns out every object has a parent_uid. i know my fault.
+    #if objs.has_key('parent_uid') and objs.has_key('work_uid'):
+    if table == 'workflow' or table=='dataobject_instance' or table=='activity':
     #connectivity table
         for parent in objs['parent_uid']:
             wc_guid = str(uuid.uuid4())
