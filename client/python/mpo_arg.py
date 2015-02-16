@@ -340,8 +340,8 @@ class mpo_methods(object):
 
         url=self.api_url+route
 
-        #if obj_ID: #commented out to permit null for ontology entries
-        datadict[self.PARENTID]=obj_ID
+        if obj_ID:
+            datadict[self.PARENTID]=obj_ID
 
         if workflow_ID:
             datadict[self.WORKID]=workflow_ID
