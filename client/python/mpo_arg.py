@@ -182,7 +182,7 @@ class mpo_methods(object):
         #check that result is a request object.
         # if isinstance(result,requests.models.Response):
         if not isinstance(result,requests.models.Response):
-            return str(output)
+            return str(result)
 
         if self.debug:
             text=result.text
