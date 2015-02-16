@@ -670,12 +670,6 @@ def addRecord(table,request,dn):
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
     user_id = cursor.fetchone()
 
-    #uri has to be unique per workflow
-    #if (temp = json.loads(getRecord('dataobject', {'uri':objs['uri'],'work_uid':objs['parent_uid']}))):
-    #    records = {}
-    #    records['uid']=temp['uid']
-    #    return json.dumps(records,cls=MPOSetEncoder)
-
     objs['user_uid'] = user_id.uuid
     objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
 
