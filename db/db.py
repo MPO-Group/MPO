@@ -127,24 +127,23 @@ def getRecordTable(id, dn=None):
     cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
 
     q=''
-    for k,v in query_map.iteritems():
-        if v.has_key('uid'):
-            q+="select distinct '"+k+"' as table"
-            q+=' from '+k
-            #if id:
-            q+=' where '+v['uid']+'='+"'"+id+"'"
+    v=()
+    for k,l in query_map.iteritems():
+        if l.has_key('uid'):
+            q+="select distinct %s as table from "+k+" where "+l['uid']+"=%s"
+            v+=k,id
             q+=' union '
 
     q=q[:-7]
     # execute our Query
-    cursor.execute(q)
+    cursor.execute(q,v)
     # retrieve the records from the database
-    table = cursor.fetchone()[0]
+    table = cursor.fetchone().table
     # Close communication with the database
     cursor.close()
     conn.close()
 
-    return {'table':table,'uid':id}
+    return table
 
 
 def getRecord(table,queryargs={}, dn=None):
@@ -689,24 +688,14 @@ def addRecord(table,request,dn):
         print(q,v)
 
     cursor.execute(q,v)
-    if objs.has_key('parent_uid'):
+    if objs.has_key('parent_uid') and objs.has_key('work_uid'):
     #connectivity table
         for parent in objs['parent_uid']:
-            if objs['parent_uid'] == objs['work_uid']:
-                parent_type = 'workflow'
-            else:
-                cursor.execute("select w_guid as uid, 'workflow' as type from "+
-                               "workflow where w_guid=%s union select "+
-                               "a_guid as uid, 'activity' as type from activity "+
-                               "where a_guid=%s union select doi_guid as uid, 'dataobject_instance' as type "+
-                               "from dataobject_instance where doi_guid=%s",(parent,parent,parent))
-                records = cursor.fetchone()
-                parent_type = records.type
             wc_guid = str(uuid.uuid4())
             cursor.execute("insert into workflow_connectivity "+
                            "(wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) "+
                            "values (%s,%s,%s,%s,%s,%s,%s)",
-                           (wc_guid, objs['work_uid'], parent, parent_type , objs['uid'],
+                           (wc_guid, objs['work_uid'], parent, getRecordTable(parent), objs['uid'],
                             table, datetime.datetime.now()))
     # Make the changes to the database persistent
     conn.commit()

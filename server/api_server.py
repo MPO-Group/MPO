@@ -738,7 +738,7 @@ def item(id):
         raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,
                               payload=payload)
 
-    return Response(json.dumps(r), mimetype='application/json')
+    return Response(json.dumps({'table':r,'uid':id}), mimetype='application/json')
 
 
 if __name__ == '__main__':
