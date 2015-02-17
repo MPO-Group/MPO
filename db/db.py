@@ -646,18 +646,6 @@ def getWorkflowComments(id,queryargs={},dn=None):
     return json.dumps(records,cls=MPOSetEncoder)
 
 
-def getWorkflowType(id,queryargs={},dn=None):
-    # get a connection, if a connect cannot be made an exception will be raised here
-    conn = mypool.connect()
-    # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
-    #get term_id
-    term_id=json.loads(getRecord('ontology_terms',{'path':'/Workflow/Type'}))[0]
-    cursor.execute("select value from ontology_instances where term_guid=%s and target_guid=%s", (term_id['uid'],id))
-    records = cursor.fetchone()
-    return json.dumps(records.value,cls=MPOSetEncoder)
-
-
 def addRecord(table,request,dn):
     objs = json.loads(request)
     objs['uid']=str(uuid.uuid4())
