@@ -230,6 +230,19 @@ def getRecord(table,queryargs={}, dn=None):
 
     return json.dumps(records,cls=MPOSetEncoder)
 
+def getWorkflowType(id,queryargs={},dn=None):
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+
+    cursor.execute("select value from ontology_instances where target_guid=%s and term_guid=getTermUidByPath('/Workflow/Type')",(id,))
+    records = cursor.fetchone()
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+
+    return records.value
 
 def getOntologyTermTree(id='0',dn=None):
     """

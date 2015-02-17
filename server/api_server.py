@@ -408,11 +408,7 @@ def getWorkflowComments(id):
 
 @app.route(routes['workflow']+'/<id>/type', methods=['GET'])
 def getWorkflowType(id):
-    dn=get_user_dn(request)
-    term_id=json.loads(rdb.getRecord('ontology_terms',{'path':'/Workflow/Type'},dn))[0]['uid']
-    value=json.loads(rdb.getRecord('ontology_instances',{'term_uid':term_id,'parent_uid':id},dn))[0]['value']
-
-    return Response(json.dumps(value),mimetype='application/json')
+    return Response(json.dumps(rdb.getWorkflowType(id)),mimetype='application/json')
 
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
