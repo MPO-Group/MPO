@@ -360,7 +360,13 @@ def collectionElement(id=None, oid=None):
         jr=json.loads(r)
         for record in jr:
             r_uid=record['uid']
-            record['type']=rdb.getRecordTable( r_uid, dn )['table'] #already dict
+            #getRecordTable returns a python dict
+            record['type']=rdb.getRecordTable( r_uid, dn )['table']
+
+            #set default field values
+            detail={'related':'not sure','link-related':root_url,'related':'cousins',
+                    'name':'what is this?','description':'empty','time':'nowhen'}
+            #Translation for specific types
             if record['type']=='workflow':
                 detail=json.loads(rdb.getWorkflow({'uid':r_uid},dn))[0]
                 detail['related']=json.loads(rdb.getWorkflowCompositeID(r_uid,dn)).get('alias')
@@ -368,10 +374,17 @@ def collectionElement(id=None, oid=None):
                 links['link1']=root_url+'/workflow/'+r_uid
                 links['link2']=root_url+'/workflow?alias='+detail['related']
                 detail['link-related']=links
-            if record['type']=='dataobject':
+            elif record['type']=='dataobject':
                 detail=json.loads(rdb.getRecord('dataobject',{'uid':r_uid},dn))[0]
                 detail['related']=detail.get('uri')
                 detail['link-related']=root_url+'/dataobject/'+r_uid
+            elif record['type']=='collection':
+                thisdetail=json.loads(rdb.getRecord('collection',{'uid':r_uid},dn))[0]
+                detail['related']=thisdetail.get('uri')
+                detail['link-related']=thisdetail.get('links').get('link-related')
+                detail['description']=thisdetail.get('description')
+                detail['name']=thisdetail.get('name')
+                detail['time']=thisdetail.get('time')
 
             record['name']=detail['name']
             record['description']=detail['description']
