@@ -42,7 +42,7 @@ drop table if exists collection_elements;
 create table collection_elements
 (
   c_guid uuid references collection,
-  e_guid uuid primary key,
+  e_guid uuid,
   u_guid uuid references mpousers,
   creation_time timestamp
 );
