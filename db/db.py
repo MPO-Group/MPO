@@ -532,10 +532,8 @@ def getWorkflow(queryargs={},dn=None):
 
     # retrieve the records from the database and rearrange
     records = cursor.fetchall()
-    #regroup user fields, first convert records from namedtuple to dict
-    jr=json.loads(json.dumps(records,cls=MPOSetEncoder))
 
-    for r in jr:
+    for r in records:
         r['user']={'firstname':r['firstname'], 'lastname':r['lastname'],
                'userid':r['userid'],'username':r['username']}
         r.pop('firstname')
@@ -546,17 +544,11 @@ def getWorkflow(queryargs={},dn=None):
         r['type'] = r['w_type']
         r.pop('w_type')
 
-
-    #add total records count
-    #cursor.execute('select count ('+q+'))
-    #       records = cursor.fetchone()
-    #       r['total_count'] = records
-    #count=cursor.rowcount
     # Close communication with the database
     cursor.close()
     conn.close()
 
-    return json.dumps(jr,cls=MPOSetEncoder)
+    return json.dumps(records,cls=MPOSetEncoder)
 
 
 def getWorkflowCompositeID(id, dn=None):
