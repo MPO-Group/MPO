@@ -124,7 +124,7 @@ def getRecordTable(id, dn=None):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
     q=''
     v=()
@@ -138,7 +138,7 @@ def getRecordTable(id, dn=None):
     # execute our Query
     cursor.execute(q,v)
     # retrieve the records from the database
-    table = cursor.fetchone().table
+    table = cursor.fetchone()['table']
     # Close communication with the database
     cursor.close()
     conn.close()
@@ -161,7 +161,7 @@ def getRecord(table,queryargs={}, dn=None):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
     q = 'SELECT'
     qm = query_map[table]
@@ -204,7 +204,7 @@ def getRecord(table,queryargs={}, dn=None):
     # execute our Query
     cursor.execute(q)
     # retrieve the records from the database
-    records = [x for x in cursor.fetchall() if x.uri == queryargs['uri']] if queryargs.has_key('uri') else cursor.fetchall()
+    records = [x for x in cursor.fetchall() if x['uri'] == queryargs['uri']] if queryargs.has_key('uri') else cursor.fetchall()
     # Close communication with the database
     cursor.close()
     conn.close()
@@ -234,7 +234,7 @@ def getWorkflowType(id,queryargs={},dn=None):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
     cursor.execute("select value from ontology_instances where target_guid=%s and term_guid=getTermUidByPath('/Workflow/Type')",(id,))
     records = cursor.fetchone()
@@ -242,7 +242,7 @@ def getWorkflowType(id,queryargs={},dn=None):
     cursor.close()
     conn.close()
 
-    return records.value
+    return records['value']
 
 def getOntologyTermTree(id='0',dn=None):
     """
@@ -340,7 +340,7 @@ def getUser(queryargs={},dn=None):
     conn = mypool.connect()
 
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
     #    q = "select username,uuid,firstname,lastname,email,organization,phone,dn from mpousers"
     #    q = "select * from mpousers"
@@ -392,7 +392,7 @@ def addUser(json_request,dn):
 
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
     # if the dn is already in the db we shouldn't even be here. make sure the
     #  username doesn't exist already
@@ -446,7 +446,7 @@ def validUser(dn):
     conn = mypool.connect()
 
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
     cursor.execute("select username from mpousers where dn=%s",(dn,))
     records = cursor.fetchone()
@@ -475,7 +475,7 @@ def getWorkflow(queryargs={},dn=None):
     conn = mypool.connect()
 
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
     #build our Query, base query is a join between the workflow and user tables to get the username
     q = textwrap.dedent("""\
@@ -583,7 +583,7 @@ def getWorkflowElements(id,queryargs={},dn=None):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
     if dbdebug:
         print('DDBEBUG workflowelements query ',queryargs)
@@ -602,7 +602,7 @@ def getWorkflowElements(id,queryargs={},dn=None):
     r = cursor.fetchall()
     nodes={}
     for n in r:
-        nodes[n.uid]={'type':n.type,'name':n.name,'time':n.creation_time}
+        nodes[n['uid']]={'type':n['type'],'name':n['name'],'time':n['creation_time']}
     records['nodes']=nodes
     # fetch connectors from the database
     cursor.execute("select parent_guid as parent_uid, parent_type, child_guid as child_uid, "+
@@ -619,7 +619,7 @@ def getWorkflowComments(id,queryargs={},dn=None):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     q = "select "
     qm = query_map['comment']
     for key in qm:
@@ -635,7 +635,7 @@ def getWorkflowComments(id,queryargs={},dn=None):
     # get all the comments recursively
     parents = []
     for x in records:
-        parents.append(x.uid)
+        parents.append(x['uid'])
     #recursively get comments on comments
     while len(parents):
         q = "select "
@@ -652,7 +652,7 @@ def getWorkflowComments(id,queryargs={},dn=None):
         parents = []
         for x in children:
             records.append(x)
-            parents.append(x.uid)
+            parents.append(x['uid'])
 
     cursor.close()
     conn.close()
@@ -666,12 +666,12 @@ def addRecord(table,request,dn):
 
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
     user_id = cursor.fetchone()
 
-    objs['user_uid'] = user_id.uuid
+    objs['user_uid'] = user_id['uuid']
     objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
 
     q = ( "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) +
@@ -708,7 +708,7 @@ def addRecord(table,request,dn):
 def addCollection(request,dn):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     c_guid = str(uuid.uuid4())
 
     #get the user id
@@ -719,7 +719,7 @@ def addCollection(request,dn):
     p = json.loads(request)
     q = ("insert into collection (c_guid, name, description, u_guid, creation_time) " +
          "values (%s,%s,%s,%s,%s)")
-    v= (c_guid, p['name'], p['description'], user_id.uuid, datetime.datetime.now())
+    v= (c_guid, p['name'], p['description'], user_id['uuid'], datetime.datetime.now())
     if dbdebug:
         print ('DBDEBUG:: addcollection: ',q, v)
     cursor.execute(q,v)
@@ -727,7 +727,7 @@ def addCollection(request,dn):
     for e in p['elements']:
         q = ("insert into collection_elements (c_guid, e_guid, u_guid, creation_time) " +
              "values (%s,%s,%s,%s)")
-        v= (c_guid, e, user_id.uuid, datetime.datetime.now())
+        v= (c_guid, e, user_id['uuid'], datetime.datetime.now())
         cursor.execute(q,v)
 
     # Make the changes to the database persistent
@@ -741,24 +741,25 @@ def addCollection(request,dn):
 def addWorkflow(request,dn):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     w_guid = str(uuid.uuid4())
 
     #get the user id
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-    user_id = cursor.fetchone()
+    user_id = cursor.fetchone()['uuid']
 
     #determine max composite sequence for incrementing.
     #  find all workflows of this type that the users already has and increament the largest composite seq number
     cursor.execute("select MAX(comp_seq) from workflow a, ontology_instances c WHERE c.value=%s and a.U_GUID=%s and c.target_guid=a.w_guid",
                (request['value'], user_id ) )
     count=cursor.fetchone()
+    print count
 
     if dbdebug:
-        print ("#############count is",str(count),str(count.max))
+        print ("#############count is",str(count),str(count['max']))
 
-    if count.max:
-        seq_no=count.max+1
+    if count['max']:
+        seq_no=count['max']+1
     else:
         seq_no=1
 
@@ -788,7 +789,7 @@ def addMetadata(json_request,dn):
     objs = json.loads(json_request)
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
     user_id = cursor.fetchone()
@@ -808,7 +809,7 @@ def addMetadata(json_request,dn):
     md_guid = str(uuid.uuid4())
     q = ("insert into metadata (md_guid,name,value,type,parent_guid,parent_type,creation_time,u_guid) "+
          "values (%s,%s,%s,%s,%s,%s,%s,%s)")
-    v= (md_guid, objs['key'], objs['value'], 'text', records.uid, records.type,
+    v= (md_guid, objs['key'], objs['value'], 'text', records['uid'], records['type'],
         datetime.datetime.now(), user_id)
     cursor.execute(q,v)
     # Make the changes to the database persistent
@@ -826,7 +827,7 @@ def addOntologyClass(json_request,dn):
     objs = json.loads(json_request)
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
     user_id = cursor.fetchone()
@@ -851,10 +852,10 @@ def addOntologyInstance(json_request,dn):
     objs = json.loads(json_request)
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
-    cursor = conn.cursor(cursor_factory=psyext.NamedTupleCursor)
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-    user_id = cursor.fetchone().uuid
+    user_id = cursor.fetchone()['uuid']
 
     oi_guid = str(uuid.uuid4())
     # get the ontology term
