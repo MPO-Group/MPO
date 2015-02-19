@@ -483,6 +483,8 @@ def dataobject(id=None):
 
             if len(ids)==1: #return just single record if one uid
                 r=rs
+            #this insanity has to go away
+            r = json.dumps(r)
         else:
             r = rdb.getRecord(route,request.args,dn)
 
