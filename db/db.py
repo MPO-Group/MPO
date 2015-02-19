@@ -720,10 +720,11 @@ def addCollection(request,dn):
     q = ("insert into collection (c_guid, name, description, u_guid, creation_time) " +
          "values (%s,%s,%s,%s,%s)")
     v= (c_guid, p['name'], p['description'], user_id.uuid, datetime.datetime.now())
-    print q, v
+    if dbdebug:
+        print ('DBDEBUG:: addcollection: ',q, v)
     cursor.execute(q,v)
 
-    for e in  p['elements']:
+    for e in p['elements']:
         q = ("insert into collection_elements (c_guid, e_guid, u_guid, creation_time) " +
              "values (%s,%s,%s,%s)")
         v= (c_guid, e, user_id.uuid, datetime.datetime.now())

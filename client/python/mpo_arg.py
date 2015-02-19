@@ -31,6 +31,8 @@ import copy
 import argparse
 import linecache
 import traceback
+import logging
+logging.captureWarnings(True)
 
 def PrintException():
     exc_type, exc_obj, tb = sys.exc_info()
@@ -138,7 +140,7 @@ class mpo_methods(object):
 
 
     def __init__(self,api_url='https://localhost:8080',version='v0',
-                 user='noone',password='pass',cert='cert',
+                 user='noone',password='pass',cert='no cert',
                  archive_host='psfcstor1.psfc.mit.edu',
                  archive_user='psfcmpo', archive_key=None,
                  archive_prefix=None, debug=False,filter=False,dryrun=False):
@@ -158,8 +160,7 @@ class mpo_methods(object):
         self.requestargs={'cert':self.cert,'verify':False}
 
         if self.debug:
-            print('cert',cert,file=sys.stderr)
-            print('cert',cert,file=sys.stderr)
+            print('certificate in mpo_arg.mpo_methods is:',cert,file=sys.stderr)
 #            print('#MPO user',self.get_user())
 #            print('#MPO server',self.get_server())
             pass
@@ -266,10 +267,11 @@ class mpo_methods(object):
         if self.debug or verbose:
             print('MPO.GET response',r.url,r.status_code,file=sys.stderr)
 
+        #catch any response codes
         r.raise_for_status()
 
-#        if self.filter:
-#            r=self.format(r,self.filter)
+        #        if self.filter:
+        #    r=self.format(r,self.filter)
 
         return r
 
@@ -364,10 +366,11 @@ class mpo_methods(object):
             r = requests.post(url, json.dumps(datadict),
                               headers=self.POSTheaders, **self.requestargs)
         except requests.exceptions.ConnectionError as err:
-            print("ERROR: Could not connect to server, "+url,file=sys.stderr)
+            errmsg="ERROR: Could not connect to server, "+url
+            print(errmsg,file=sys.stderr)
             sys.stderr.write('MPO ERROR: %s\n' % str(err))
             print(" ",file=sys.stderr)
-            return 1
+            return {'errmsg':errmsg,'uid':-1}
 
         if self.debug:
             ('MPO.POST return type', str(type(r)), r.status_code)
@@ -535,8 +538,8 @@ class mpo_methods(object):
         return r
 
 
-    def search(self,route,params,**kwargs):
-        """Find objects by query. An supermethod of GET.
+    def search(self,route,params={},**kwargs):
+        """Find objects by query. A supermethod of GET.
         Presently, identical to 'get' but can be generalized.
 
         Keyword arguments:
@@ -547,18 +550,21 @@ class mpo_methods(object):
         #eventually, some specialized target route for searching would be used.
 
         r=self.get(route,params) # ,params=ast.literal_eval(params))
+        if self.filter:
+            r=self.format(r,self.filter)
+
         return r
 
 
     def collection(self, name="", desc="", collection=None, remove=False,
-                   elements=[], **kwargs):
+                   elements=None, **kwargs):
         """
         Create a new collection of objects from a list of UUIDS.
 
         args are:
         name -- name
         desc -- description
-        elements -- list of UUID strings to initialize collection with (may be empty)
+        elements -- *list* of UUID strings to initialize collection with (may be empty)
         collection -- UUID of existing collection. If present, name and desc are ignored.
         remove -- if set to True, remove rather than add the element to the collection. Requires
                   collection and element list and no name or description.
@@ -569,7 +575,12 @@ class mpo_methods(object):
         #from a collection too.
         #remove option could apply to the entire collection in future api extensions
 
-        #still need some input validation
+        ##validation of input
+        #elements must be a list if present
+        if elements:
+            if not isinstance(elements,list):
+                elements=[elements]
+        
         if collection: #add to existing collection
 
             if remove:
@@ -577,7 +588,7 @@ class mpo_methods(object):
                     warnings.warn("InvalidArgs in collect. No description used when removing an element.")
                 if name!="":
                     warnings.warn("InvalidArgs in collect. No name used when removing an element.")
-                assert len(elements)>0,"InvalidArgs in collect. Must specify an element to remove."
+                assert elements,"InvalidArgs in collect. Must specify an element to remove."
                 assert collection!=None,"InvalidArgs in collect. Must specify the collection from which to remove the element."
 
                 for element in elements:
@@ -839,7 +850,7 @@ class mpo_cli(object):
         #search
         search_parser=subparsers.add_parser('search',help='SEARCH the MPO store')
            #add positional argument which will be passed to func 'route' in 'Namespace' named tuple
-        search_parser.add_argument('-r','--route',action='store',help='Route of resource to query')
+        search_parser.add_argument('route',action='store',help='Route of resource to query')
            #add keyword argument passed to func as 'params'
         search_parser.add_argument('-p','--params',action='store',help='Query arguments as {key:value,key2:value2}')
         search_parser.set_defaults(func=self.mpo.search)
