@@ -701,7 +701,7 @@ def addCollection(request,dn):
     p = json.loads(request)
     q = ("insert into collection (c_guid, name, description, u_guid, creation_time) " +
          "values (%s,%s,%s,%s,%s)")
-    v= (c_guid, p['name'], p['description'], user_id['uuid'], datetime.datetime.now())
+    v= (c_guid, p['name'], p['description'], user_id, datetime.datetime.now())
     if dbdebug:
         print ('DBDEBUG:: addcollection: ',q, v)
     cursor.execute(q,v)
