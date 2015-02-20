@@ -80,17 +80,6 @@ def get_conn():
 #mypool  = pool.NullPool(get_conn)
 
 
-class MPOSetEncoder(json.JSONEncoder):
-    """
-    This class autoconverts datetime.datetime class types returned from postgres.
-    Add any new types not handled by json.dumps() by default.
-    """
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
-
-
 def processArgument(a):
     """
     Handle arguments in GET queries. If in double quotes, strip quotes and pass as literal search.
@@ -228,7 +217,7 @@ def getRecord(table,queryargs={}, dn=None):
 
         records = parent
 
-    return json.dumps(records,cls=MPOSetEncoder)
+    return records
 
 def getWorkflowType(id,queryargs={},dn=None):
     # get a connection, if a connect cannot be made an exception will be raised here
@@ -306,7 +295,7 @@ def getOntologyTermTree(id='0',dn=None):
             print('query error in Getontologytermtree, no records returned')
             r={"status"    : "error",
                "error_mesg": "query error in Getontologytermtree, no records returned"}
-            return json.dumps(r, cls=MPOSetEncoder)
+            return r
 
     ###Create tree structure for each head of the ontology
     #may be multiple trees, they have parent as None
@@ -547,12 +536,12 @@ def getWorkflow(queryargs={},dn=None):
     cursor.close()
     conn.close()
 
-    return json.dumps(records,cls=MPOSetEncoder)
+    return records
 
 
 def getWorkflowCompositeID(id, dn=None):
     "Returns composite id of the form user/workflow_name/composite_seq"
-    wf=json.loads(getWorkflow({'uid':id}))
+    wf=getWorkflow({'uid':id})
     compid=''
     #catch exception here if thrown by getWorkflow?
     if len(wf) == 1: #record found
@@ -560,7 +549,7 @@ def getWorkflowCompositeID(id, dn=None):
         compid = {'alias':wf['user']['username']+'/'+wf['type']+'/'+str(wf['composite_seq']),'uid':id}
     if dbdebug:
         print('DBDEBUG: compid ',wf,compid)
-    return json.dumps(compid,cls=MPOSetEncoder)
+    return compid
 
 
 def getWorkflowElements(id,queryargs={},dn=None):
@@ -603,7 +592,8 @@ def getWorkflowElements(id,queryargs={},dn=None):
     # Close communication with the database
     cursor.close()
     conn.close()
-    return json.dumps(records,cls=MPOSetEncoder)
+
+    return records
 
 
 def getWorkflowComments(id,queryargs={},dn=None):
@@ -647,7 +637,8 @@ def getWorkflowComments(id,queryargs={},dn=None):
 
     cursor.close()
     conn.close()
-    return json.dumps(records,cls=MPOSetEncoder)
+
+    return records
 
 
 def addRecord(table,request,dn):
@@ -693,7 +684,8 @@ def addRecord(table,request,dn):
     # Close communication with the database
     cursor.close()
     conn.close()
-    return json.dumps(records,cls=MPOSetEncoder)
+
+    return records
 
 
 def addCollection(request,dn):
@@ -726,7 +718,7 @@ def addCollection(request,dn):
     records = {} #JCW we are not returning the full record here.
     records['uid'] = c_guid
 
-    return json.dumps(records,cls=MPOSetEncoder)
+    return records
 
 
 def addWorkflow(request,dn):
@@ -744,7 +736,6 @@ def addWorkflow(request,dn):
     cursor.execute("select MAX(comp_seq) from workflow a, ontology_instances c WHERE c.value=%s and a.U_GUID=%s and c.target_guid=a.w_guid",
                (request['value'], user_id ) )
     count=cursor.fetchone()
-    print count
 
     if dbdebug:
         print ("#############count is",str(count),str(count['max']))
@@ -773,7 +764,8 @@ def addWorkflow(request,dn):
     # Close communication with the database
     cursor.close()
     conn.close()
-    return json.dumps(records,cls=MPOSetEncoder)
+
+    return records
 
 
 def addMetadata(json_request,dn):
@@ -811,7 +803,7 @@ def addMetadata(json_request,dn):
     # Close communication with the database
     cursor.close()
     conn.close()
-    return json.dumps(records,cls=MPOSetEncoder)
+    return records
 
 
 def addOntologyClass(json_request,dn):
@@ -836,7 +828,7 @@ def addOntologyClass(json_request,dn):
     # Close communication with the database
     cursor.close()
     conn.close()
-    return json.dumps(records,cls=MPOSetEncoder)
+    return records
 
 
 def addOntologyInstance(json_request,dn):
@@ -850,19 +842,19 @@ def addOntologyInstance(json_request,dn):
 
     oi_guid = str(uuid.uuid4())
     # get the ontology term
-    term = json.loads(getRecord('ontology_terms', {'path':processArgument(objs['path'])}, dn ))[0]
+    term = getRecord('ontology_terms', {'path':processArgument(objs['path'])}, dn )[0]
     if term['specified']:
-        vocab = json.loads(getRecord('ontology_terms', {'parent_uid':term['uid']}, dn ))
+        vocab = getRecord('ontology_terms', {'parent_uid':term['uid']}, dn )
         #added term has to exist in the controlled vocabulary.
         valid= tuple(x['name'] for x in vocab)
         if objs['value'] not in valid:
-            return json.dumps({},cls=MPOSetEncoder)
+            return None
 
     # make sure the instance doesn't already exist.
     cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
                    "target_guid=%s",(term['uid'],objs['parent_uid']))
     if cursor.fetchone():
-        return json.dumps({},cls=MPOSetEncoder)
+        return None
 
     q=("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
        "values(%s,%s,%s,%s,%s,%s)")
@@ -876,4 +868,4 @@ def addOntologyInstance(json_request,dn):
     cursor.close()
     conn.close()
 
-    return json.dumps(records,cls=MPOSetEncoder)
+    return records
