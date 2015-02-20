@@ -651,9 +651,8 @@ def addRecord(table,request,dn):
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-    user_id = cursor.fetchone()
 
-    objs['user_uid'] = user_id['uuid']
+    objs['user_uid'] = cursor.fetchone()['uuid']
     objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
 
     q = ( "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) +
@@ -697,7 +696,7 @@ def addCollection(request,dn):
     #get the user id
 
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-    user_id = cursor.fetchone()
+    user_id = cursor.fetchone()['uuid']
 
     p = json.loads(request)
     q = ("insert into collection (c_guid, name, description, u_guid, creation_time) " +
@@ -710,7 +709,7 @@ def addCollection(request,dn):
     for e in p['elements']:
         q = ("insert into collection_elements (c_guid, e_guid, u_guid, creation_time) " +
              "values (%s,%s,%s,%s)")
-        v= (c_guid, e, user_id['uuid'], datetime.datetime.now())
+        v= (c_guid, e, user_id, datetime.datetime.now())
         cursor.execute(q,v)
 
     # Make the changes to the database persistent
@@ -775,7 +774,7 @@ def addMetadata(json_request,dn):
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-    user_id = cursor.fetchone()
+    user_id = cursor.fetchone()['uuid']
 
     #get parent object type
     q=textwrap.dedent("""\
@@ -813,7 +812,7 @@ def addOntologyClass(json_request,dn):
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
-    user_id = cursor.fetchone()
+    user_id = cursor.fetchone()['uuid']
 
     oc_uid = str(uuid.uuid4())
     q = ("insert into ontology_classes (oc_uid, name, description, parent_guid, added_by, date_added) "+
