@@ -145,7 +145,7 @@ def onlyone(record): #error codes are made up for now
                "returned record is not a valid type, must be a json string."}
         s["recordtype"]=str(type(recordstr))
         s["record"]=str(recordstr)
-        return json.dumps(s)
+        return json.dumps(s,cls=MPOSetEncoder)
 
 
 ###############ROUTE handling###############################
@@ -286,7 +286,7 @@ def collection(id=None):
         else:
             r = rdb.getRecord('collection',request.args)
 
-    return Response(json.dumps(r),mimetype='application/json',status=200)
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 
@@ -322,7 +322,7 @@ def collectionElement(id=None, oid=None):
          r = make_response(r, 404)
          #resp=Response(r, mimetype='application/json')
 
-    return Response(json.dumps(r),mimetype='application/json',status=200)
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 
@@ -413,7 +413,7 @@ def getWorkflowComments(id):
 
 @app.route(routes['workflow']+'/<id>/type', methods=['GET'])
 def getWorkflowType(id):
-    return Response(json.dumps(rdb.getWorkflowType(id)),mimetype='application/json',status=200)
+    return Response(json.dumps(rdb.getWorkflowType(id),cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
