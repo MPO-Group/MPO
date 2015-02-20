@@ -3,7 +3,7 @@ from nose.tools import *
 import unittest
 
 import mpo_setup
-class CollectionTests(unittest.TestCase):
+class CollectionTest(unittest.TestCase):
     """
     Test the collection route.
     """
@@ -22,14 +22,20 @@ class CollectionTests(unittest.TestCase):
         print (__name__,": tearing down.\n")
 
 
-    def test_setup(self):
-        print('\n')
-        print (__name__,": running test_setup.\n")
-        pass
+    def test_collection0(self):
+        "Create an empty collection"
+        print('\n empty collection test\n')
+        c=self.m.collection(name="Nose_collection-empty",desc="Creating a collection in unit tests in "+
+                            __name__)
+        assert c.get('uid') != "-1"
+        print('collection created, now retrieving.', c)
+        ce=self.m.search(route='collection/'+c.get('uid'))
+        print('collection details',ce,'\n')
+        assert ce.get('uid')==c.get('uid')
 
 
     def test_collection1(self):
-        "Create a collection"
+        "Create a collection with an element"
         print('\n')
         #note use of search route which is formatted, get always returns raw response
         oid=self.m.search(route='dataobject')[0].get('uid')
