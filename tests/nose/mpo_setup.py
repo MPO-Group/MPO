@@ -14,8 +14,8 @@ if cmd_subfolder not in sys.path:
 def setup():
     #default preferences. overridden by environment
     mpo_version    = os.getenv('MPO_VERSION','v0')
-    mpo_api_url    = os.getenv('MPO_HOST', 'https://localhost/api') #API_URL
-    mpo_cert       = os.getenv('MPO_AUTH', '~/.mpo/mpo_cert')
+    mpo_api_url    = os.getenv('MPO_HOST', 'https://localhost:8443') #API_URL
+    mpo_cert       = os.getenv('MPO_AUTH', '../../MPO Demo User.pem')
     archive_host   = os.getenv('MPO_ARCHIVE_HOST', 'psfcstor1.psfc.mit.edu')
     archive_user   = os.getenv('MPO_ARCHIVE_USER', 'psfcmpo')
     archive_key    = os.getenv('MPO_ARCHIVE_KEY', '~/.mpo/rsync_id_rsa')
@@ -32,6 +32,7 @@ def setup():
         mpo_cert = userconfdir+parser.get('api','MPO_AUTH')
 
     ### Establish a session to mpo
+    print('mpo_setup env',mpo_cert,mpo_api_url)
     from mpo_arg import mpo_methods as mpo
     m=mpo(api_url=mpo_api_url,cert=mpo_cert,debug=False,filter='json')
     return m

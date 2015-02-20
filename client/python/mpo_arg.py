@@ -580,6 +580,8 @@ class mpo_methods(object):
         if elements:
             if not isinstance(elements,list):
                 elements=[elements]
+        else:
+            elements=[]
         
         if collection: #add to existing collection
 

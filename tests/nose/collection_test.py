@@ -25,11 +25,12 @@ class CollectionTest(unittest.TestCase):
     def test_collection0(self):
         "Create an empty collection"
         print('\n empty collection test\n')
-        c=self.m.collection(name="Nose_collection-empty",desc="Creating a collection in unit tests in "+
-                            __name__)
+        c=self.m.collection(name="Nose_collection-empty",
+                            desc="Creating a collection in unit tests in "+ __name__)
+        print('Made collection',c)
         assert c.get('uid') != "-1"
         print('collection created, now retrieving.', c)
-        ce=self.m.search(route='collection/'+c.get('uid'))
+        ce=self.m.search(route='collection/'+c.get('uid'))[0]
         print('collection details',ce,'\n')
         assert ce.get('uid')==c.get('uid')
 
