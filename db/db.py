@@ -373,7 +373,7 @@ def getUser(queryargs={},dn=None):
     cursor.close()
     conn.close()
 
-    return json.dumps(records,cls=MPOSetEncoder)
+    return records
 
 
 def addUser(json_request,dn):
@@ -422,7 +422,6 @@ def addUser(json_request,dn):
     #JCW for some strange reason, this only works with a unicode string
     records = getUser( {'uid':unicode(objs['uid'])} )
     #get methods always return a list, but we 'know' this should be one item
-    records = json.loads(records)
     if isinstance(records,list):
         if len(records)==1:
             records = records[0]
@@ -431,14 +430,14 @@ def addUser(json_request,dn):
             msg ={"status":"error","error_mesg":"record retrieval failed",
                   "username":username,"uid":objs['uid']}
             print(msg)
-            return json.dumps(msg,cls=MPOSetEncoder)
+            return None
 
     if dbdebug:
         print('query is ',q,str(v))
         print('uid is ', objs['uid'])
         print('adduser records',records)
 
-    return json.dumps(records,cls=MPOSetEncoder)
+    return records
 
 
 def validUser(dn):

@@ -727,15 +727,17 @@ def ontologyInstance(id=None):
 @app.route(routes['user'], methods=['GET', 'POST'])
 def user(id=None):
     dn=get_user_dn(request)
+    istatus=200
     if request.method == 'POST':
         r = rdb.addUser( request.data, dn )
+        if not r: istatus=404
     elif request.method == 'GET':
         if id:
             r = rdb.getUser( {'uid':id}, dn )
         else:
             r = rdb.getUser( request.args, dn )
 
-    return r
+    return Response(json.dumps(r), mimetype='application/json',status=istatus)
 
 
 @app.route(routes['item']+'/<id>', methods=['GET'])
