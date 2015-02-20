@@ -203,7 +203,7 @@ def getRecord(table,queryargs={}, dn=None):
         #terms = []  #JCW the following returns a [None] list. harmless but should be fixed.
         #[terms.append(x) for x in records if not x.parent_uid]
         if len(terms) != 1:
-            return json.dumps({},cls=MPOSetEncoder)
+            return None
 
         parent = terms[0]
 
@@ -212,7 +212,7 @@ def getRecord(table,queryargs={}, dn=None):
             #terms = []
             #[terms.append(x) for x in records if x.name == o and x.parent_uid == parent.uid]
             if len(terms) != 1:
-                return json.dumps({},cls=MPOSetEncoder)
+                return None
             parent = terms[0]
 
         records = parent
