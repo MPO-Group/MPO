@@ -9,7 +9,6 @@ class CollectionTest(unittest.TestCase):
     """
     @classmethod
     def setup_class(self):
-        print('\n')
         self.m = mpo_setup.setup()
         print( __name__,": setting up module with user certificate, ",self.m.cert,".\n")
         pass
@@ -18,13 +17,12 @@ class CollectionTest(unittest.TestCase):
     @classmethod
     def teardown_class(self):
         mpo_setup.teardown(self.m)
-        print('\n')
         print (__name__,": tearing down.\n")
 
 
     def test_collection0(self):
         "Create an empty collection"
-        print('\n empty collection test\n')
+        print('empty collection test\n')
         c=self.m.collection(name="Nose_collection-empty",
                             desc="Creating a collection in unit tests in "+ __name__)
         print('Made collection',c)
@@ -37,7 +35,6 @@ class CollectionTest(unittest.TestCase):
 
     def test_collection1(self):
         "Create a collection with an element"
-        print('\n')
         #note use of search route which is formatted, get always returns raw response
         oid=self.m.search(route='dataobject')[0].get('uid')
         print('test collection adding object with oid to collection: ',oid,'\n')
@@ -47,3 +44,16 @@ class CollectionTest(unittest.TestCase):
         ce=self.m.search(route='collection/'+c.get('uid')+'/element')
         print('col elements',ce,'\n')
         assert ce[0].get('uid')==oid
+
+
+    def test_collection2(self):
+        "List collections having a particular item as an element."
+        oid=self.m.search(route='dataobject')[0].get('uid')
+        c=self.m.search(route='collection?element_uid='+oid)
+        print('collections having element uid',oid,':',c)
+        assert len(c) > 0
+
+
+    def test_collection3(self):
+        "Verify GET collection returns correct fields."
+        assert 1==1

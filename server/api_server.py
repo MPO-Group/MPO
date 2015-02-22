@@ -215,6 +215,14 @@ def handle_invalid_usage(error):
     return resp
 
 
+@app.errorhandler(rdb.dbError)
+#trap db exceptions and return an error
+def dbexception(error):
+    print('DB error',str(err.to_dict))
+    resp = jsonify(error.to_dict())
+    resp.status_code = 500
+    return resp
+
 
 @app.route("/subscribe")
 @cross_origin()
@@ -277,6 +285,7 @@ def collection(id=None):
     """
     dn=get_user_dn(request)
     if request.method == 'POST':
+        print('api post collection',request.data)
         r = rdb.addCollection(request.data,dn)
         morer = rdb.getRecord('collection',{'uid':r['uid']},dn)
         publishEvent('mpo_collection',onlyone(morer))
@@ -284,7 +293,13 @@ def collection(id=None):
         if id:
             r = rdb.getRecord('collection',{'uid':id})
         else:
-            r = rdb.getRecord('collection',request.args)
+            #particular cases
+            #?element_uid
+            if 'element_uid' in request.args:
+                r = rdb.getRecord('collection_elements',{'uid':request.args['element_uid']})
+            #general searches
+            else:
+                r = rdb.getRecord('collection',request.args)
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
@@ -301,13 +316,22 @@ def collectionElement(id=None, oid=None):
     """
     dn=get_user_dn(request)
     if request.method == 'POST':
-        #make sure the element hasn't been added to the collection already
+
         payload = json.loads(request.data)
-        elems = payload['elements']
+
+        #make sure the element hasn't been added to the collection already
+        #elems must be a list of uids that are not already in this collection, if it exists.
+        elems = payload.get('elements')
+        if elems:
+            if not isinstance(elements,list):
+                elements=[elements]
+        else:
+            elements=[]
         for e in elems[:]:
             r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
             if r['uid']: elems.remove(e)
         payload['elements'] = elems
+
         r = rdb.addRecord('collection_elements',json.dumps(payload),dn)
         morer = rdb.getRecord('collection_elements',{'uid':r['uid']},dn)
         publishEvent('mpo_collection_elements',onlyone(morer))
