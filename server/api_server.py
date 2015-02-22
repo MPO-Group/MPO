@@ -302,6 +302,12 @@ def collection(id=None):
         if id:
             r = rdb.getRecord('collection',{'uid':id})
         else:
+            #particular cases
+            #?element_uid
+            if 'element_uid' in request.args:
+                r = rdb.getRecord('collection_elements',{'uid':request.args['element_uid']})
+            #general searches
+            else:
             r = rdb.getRecord('collection',request.args)
 
         #add discovery information

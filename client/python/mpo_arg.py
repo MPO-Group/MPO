@@ -158,8 +158,7 @@ class mpo_methods(object):
         self.requestargs={'cert':self.cert,'verify':False}
 
         if self.debug:
-            print('cert',cert,file=sys.stderr)
-            print('cert',cert,file=sys.stderr)
+            print('cert in mpo_arg is ',cert,file=sys.stderr)
 #            print('#MPO user',self.get_user())
 #            print('#MPO server',self.get_server())
             pass
