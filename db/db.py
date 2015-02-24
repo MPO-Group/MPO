@@ -686,9 +686,9 @@ def addRecord(table,request,dn):
         print(q,v)
 
     cursor.execute(q,v)
-    if objs.has_key('parent_uid'):
+    if objs.has_key('parent_uid') and objs.get('work_uid'):  #some records aren't in workflows
     #connectivity table
-        for parent in objs['parent_uid'] and objs.get('work_uid'): #some records aren't in workflows
+        for parent in objs['parent_uid']:
             if objs['parent_uid'] == objs['work_uid']:
                 parent_type = 'workflow'
             else:

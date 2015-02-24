@@ -42,7 +42,7 @@ drop table if exists collection_elements;
 create table collection_elements
 (
   c_guid uuid references collection,
-  e_guid uuid primary key,
+  e_guid uuid ,
   u_guid uuid references mpousers,
   creation_time timestamp
 );
@@ -70,26 +70,15 @@ create table dataobject
 (
   DO_GUID uuid primary key,
   name text,
-  description text,
-  URI text,
-  parent_guid uuid,
-  creation_time timestamp,
-  U_GUID  uuid references mpousers
-);
-
-alter table dataobject OWNER TO mpoadmin;
-
-drop table if exists dataobject_instance;
-create table dataobject_instance
-(
-  DOI_GUID uuid primary key,
-  DO_GUID uuid reference dataobject,
+  DOV_GUID uuid,
   W_GUID uuid references workflow,
   creation_time timestamp,
   U_GUID  uuid references mpousers,
+  description text,
+  URI text
 );
 
-alter table dataobject_instance OWNER TO mpoadmin;
+alter table dataobject OWNER TO mpoadmin;
 
 drop table if exists activity;
 create table activity
@@ -209,7 +198,7 @@ begin
   if parent_type = 'activity' then
     execute 'select w_guid from ' || parent_type || ' where a_guid=''' || parent_guid || '''' into wid;
   elsif parent_type = 'dataobject' then
-    execute 'select w_guid from ' || parent_type || ' where doi_guid=''' || parent_guid || '''' into wid;
+    execute 'select w_guid from ' || parent_type || ' where do_guid=''' || parent_guid || '''' into wid;
   elsif parent_type = 'workflow' then
     execute 'select w_guid from ' || parent_type || ' where w_guid=''' || parent_guid || '''' into wid;
   end if;

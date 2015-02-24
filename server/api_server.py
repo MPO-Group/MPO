@@ -308,7 +308,7 @@ def collection(id=None):
                 r = rdb.getRecord('collection_elements',{'uid':request.args['element_uid']})
             #general searches
             else:
-            r = rdb.getRecord('collection',request.args)
+                r = rdb.getRecord('collection',request.args)
 
         #add discovery information
         jr = json.loads(r)
@@ -386,8 +386,8 @@ def collectionElement(id=None, oid=None):
                 detail['link-related']=root_url+'/dataobject/'+r_uid
             elif record['type']=='collection':
                 thisdetail=json.loads(rdb.getRecord('collection',{'uid':r_uid},dn))[0]
-                detail['related']=thisdetail.get('uri')
-                detail['link-related']=thisdetail.get('links').get('link-related')
+                detail['related']=None
+                detail['link-related']=root_url+'/collection/'+r_uid+'/element'
                 detail['description']=thisdetail.get('description')
                 detail['name']=thisdetail.get('name')
                 detail['time']=thisdetail.get('time')
@@ -550,6 +550,7 @@ def dataobject(id=None):
         r = rdb.addRecord('dataobject',request.data,dn)
         rr = json.loads(r)
         id = rr['uid']
+        r=rr
         morer = rdb.getRecord('dataobject',{'uid':id},dn)
         publishEvent('mpo_dataobject',onlyone(morer))
     elif request.method == 'GET':
