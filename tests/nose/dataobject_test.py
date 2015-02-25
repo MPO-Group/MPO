@@ -3,9 +3,9 @@ from nose.tools import *
 import unittest
 
 import mpo_setup
-class TemplateTest(unittest.TestCase):
+class DataobjectTest(unittest.TestCase):
     """
-    Template class to be copied for new tests. New tests should be based on test_example.
+    Dataobject api route testing class.
     """
     @classmethod
     def setup_class(self):
@@ -20,8 +20,10 @@ class TemplateTest(unittest.TestCase):
         print (__name__,": tearing down.\n")
 
 
-    def test_example(self):
-        print (__name__,": running test_setup.\n")
+    def create_object(self):
+        "Add a dataobject to the MPO."
+        self.m.add(name="ImportantFile",desc="Adding a dataobject in nose test",
+                   uri="ftp://some.server.com/somefile")
         pass
 
 
