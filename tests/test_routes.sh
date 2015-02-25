@@ -76,6 +76,8 @@ $MPO_HOME/client/python/tests/ontology_terms_gyro.load
 $MPO_HOME/client/python/tests/ontology_terms_swim.load
 $MPO_HOME/client/python/tests/ontology_terms_efit.load
 $MPO_HOME/client/python/tests/ontology_terms_quality.load
+$MPO_HOME/client/python/tests/ontology_terms_status.load
+
 
 echo %TESTING retrieving ontology tree
 $MPO_HOME/client/python/tests/make_ont_tree.py

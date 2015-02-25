@@ -27,7 +27,7 @@ except Exception, e:
 rdb.init(conn_string)
 
 app = Flask(__name__)
-app.debug=False
+app.debug=True
 apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
@@ -169,6 +169,11 @@ def get_api_version(url):
 
 
 ###############ROUTE handling###############################
+def response_valid(r):
+    "Function to check database replies. Presently a NOOP."
+    return True
+
+
 @app.errorhandler(404)
 def not_found(error=None):
     message = {
@@ -306,6 +311,15 @@ def collection(id=None):
             #?element_uid
             if 'element_uid' in request.args:
                 r = rdb.getRecord('collection_elements',{'uid':request.args['element_uid']})
+                #'r' is a list of element records. The same element but with different
+                #parent_uids for the different collections.
+                assert response_valid(r)==True
+                rr=[]
+                for jr in json.loads(r):
+                    print('api debug',jr)
+                    rcol = rdb.getRecord('collection',{'uid':jr.get('parent_uid')})
+                    rr.append(json.loads(onlyone(rcol)))
+                r = json.dumps(rr)
             #general searches
             else:
                 r = rdb.getRecord('collection',request.args)
@@ -352,7 +366,14 @@ def collectionElement(id=None, oid=None):
         elems = payload['elements']
         for e in elems[:]:
             r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
-            if json.loads(r)['uid']: elems.remove(e)
+            print('collection add', json.loads(r))
+            jr=json.loads(r)
+            if isinstance(jr,list): #shouldn't need to do this
+               if len(jr)==0:
+                  jr={} 
+               else:
+                  jr=jr[0]
+            if jr.get('uid'): elems.remove(e)
         payload['elements'] = elems
         r = rdb.addRecord('collection_elements',json.dumps(payload),dn)
         morer = rdb.getRecord('collection_elements',{'uid':json.loads(r)['uid']},dn)
@@ -569,7 +590,7 @@ def dataobject(id=None):
         else:
             r = json.loads(rdb.getRecord('dataobject',request.args,dn))
             if len(r) == 0 :
-                istatus=404
+                r={'istatus':404,'message':'no records found','query':request.url}
                 #r = make_response(json.dumps(r), 404)
 
     return Response(json.dumps(r), mimetype='application/json',status=istatus)
