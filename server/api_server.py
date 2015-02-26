@@ -215,15 +215,6 @@ def handle_invalid_usage(error):
     return resp
 
 
-@app.errorhandler(rdb.dbError)
-#trap db exceptions and return an error
-def dbexception(error):
-    print('DB error',str(err.to_dict))
-    resp = jsonify(error.to_dict())
-    resp.status_code = 500
-    return resp
-
-
 @app.route("/subscribe")
 @cross_origin()
 def subscribe(): #subscribe returns the gen() function. gen() returns an iterator
