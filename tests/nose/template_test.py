@@ -22,6 +22,7 @@ class TemplateTest(unittest.TestCase):
 
     def test_example(self):
         print (__name__,": running test_setup.\n")
+        assert True
         pass
 
 
