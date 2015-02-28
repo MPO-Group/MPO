@@ -9,8 +9,26 @@ var ontTreeMenu = "";
 var ont_selections = [];
 var subTree="";
 
-$(document).ready(function () {
 
+$(document).ready(function () {
+	
+$.contextMenu({
+        selector: '.context-menu-one', 
+        trigger: 'left',
+        callback: function(key, options) {
+           /* var m = "clicked: " + key;
+            window.console && console.log(m) || alert(m); */
+			/*switch(key){
+				case "copy": alert("UID !");
+			}*/
+        },
+        items: {
+            "copy": {name: "Copy UID"},
+            /*"sep1": "---------",
+            "quit": {name: "Quit"}*/
+        }
+    });
+	
 	$("input.user_entry:text").val("");
 	$("input.user_entry_wf:text").val("");
 	
@@ -554,88 +572,103 @@ ul li input.user_time_wf {
 		<div class="span9">       
 		{% if results %}
             <!-- workflow list table -->
-            <table class="main">
-              <tr>
-                <th width="2%">&nbsp;</th><th width="25%">CompositeID</th><th width="42%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th>
-              </tr>
+            <table class="main table table-hover" id="mpoTable">
+	            <thead>
+      	        	<tr>
+                		<th width="2%">&nbsp;</th><th width="25%">CompositeID</th><th width="42%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th>
+	              	</tr>
+				</thead>
+                <tbody>
     		{% for item in results %}
                 <div id="accordion2" class="accordion">
-                <tr>
-                    {% set wf_number=loop.index+(current_page-1)*rpp %}
-                    <td><span class="muted"><em><small>{{ wf_number }}</small></em></td>
-                    <td><a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.type }} / {{ item.composite_seq }}</a></td>
-                    <td>{{ item.description }}</a></td>
-                    <td class="xsmall">{{ item.time }}</td>
-                    <!-- <td>{{ item.username }}</td> -->
-                    <td>
-                <div class="accordion-group">
-                  <div class="accordion-heading">
-                <a href="#commentDrop{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
-                  {% if item.num_comments %}
-                    {{ item.num_comments }}
-                  {% else %}
-                    0
-                  {% endif %}
-                </a>
-                &nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
-                  </div>
-                </div>
-                </td>
-                <td>
-                {% if item.quality %}
-                <!-- <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> -->
-                	{% if item.quality == "1" %}
-                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
-                    {% elif item.quality == "2" %}
-                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
-                    {% elif item.quality == "3" %}
-                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
-                    {% elif item.quality == "4" %}
-                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star.png">
-                    {% endif %}
-                {% else %}
-                	<span id="{{ item.uid }}_quality" class="set_quality">
-                    	<img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                        <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                        <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                        <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
-                    </span>
-                {% endif %}
-                </td>
-              </tr>
-              <tr>
-            <td colspan="8" class="comments"> 
-              <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
-                <div class="accordion-inner no-border bot-border">
-                  <form id="submit_comment_{{ item.uid }}">
-                    <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
-                    <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button>&nbsp;&nbsp;<span id="submit_results_{{ item.uid }}"></span></div>
-                  </form>
-                </div>
-              </div>
-            </td>
-              </tr>	      
-              <!-- Comment Drop -->
-              <tr>
-                  <td colspan="8" class="comments"> 
-                <div class="accordion-body collapse {{ item.show_comments }}" id="commentDrop{{ item.uid }}">
-                  <div class="accordion-inner no-border bot-border">
-                  {% for i in item.comments %}
-                <blockquote>
-                  <p style="font-size: 12px">{{ i.content }}</p>
-                  <small>by <cite title="Source Title">{{i.username}} {% if i.time %} - {{i.time}} {% endif %}</cite></small>
-                </blockquote>
-                <hr>
-                  {% endfor %}
-                  </div>
-                </div>
-              </td>
-              </tr>
+                	<tr>
+                        {% set wf_number=loop.index+(current_page-1)*rpp %}
+                        <td><span class="muted"><em><small>{{ wf_number }}</small></em></td>
+                        <td><span class="icon-wrench context-menu-one box menu-1"></span>
+                        <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.type }} / {{ item.composite_seq }}</a>
+                        <br /><small><strong>UID: </strong><input size="2" type="text" value="{{ item.uid }}" class="small copy" readonly /></small>
+                        </td>
+                        <td>{{ item.description }}</a></td>
+                        <td class="xsmall">{{ item.time }}</td>
+                        <!-- <td>{{ item.username }}</td> -->
+                        <td>
+                            <div class="accordion-group">
+                              <div class="accordion-heading">
+                            <a href="#commentDrop{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
+                              {% if item.num_comments %}
+                                {{ item.num_comments }}
+                              {% else %}
+                                0
+                              {% endif %}
+                            </a>
+                        &nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
+                          </div>
+                        </div>
+                   	 	</td>
+                        <td>
+                        {% if item.quality %}
+                        <!-- <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> -->
+                            {% if item.quality == "1" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
+                            {% elif item.quality == "2" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
+                            {% elif item.quality == "3" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
+                            {% elif item.quality == "4" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star.png">
+                            {% endif %}
+                        {% else %}
+                            <span id="{{ item.uid }}_quality" class="set_quality">
+                                <img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            </span>
+                        {% endif %}
+                        </td>
+              		</tr>
+              		<tr>
+                        <td colspan="8" class="comments"> 
+                          <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
+                            <div class="accordion-inner no-border bot-border">
+                              <form id="submit_comment_{{ item.uid }}">
+                                <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
+                                <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button>&nbsp;&nbsp;<span id="submit_results_{{ item.uid }}"></span></div>
+                              </form>
+                            </div>
+                          </div>
+                        </td>
+              		</tr>	      
+              		<!-- Comment Drop -->
+              		<tr>
+                          <td colspan="8" class="comments"> 
+                        <div class="accordion-body collapse {{ item.show_comments }}" id="commentDrop{{ item.uid }}">
+                          <div class="accordion-inner no-border bot-border">
+                          {% for i in item.comments %}
+                        <blockquote>
+                          <p style="font-size: 12px">{{ i.content }}</p>
+                          <small>by <cite title="Source Title">{{i.username}} {% if i.time %} - {{i.time}} {% endif %}</cite></small>
+                        </blockquote>
+                        <hr>
+                          {% endfor %}
+                          </div>
+                        </div>
+                      </td>
+              		</tr>
               <!-- END Comment Drop -->
             </div> <!-- end accordian -->
+			</tbody>
      	{% endfor %}
 		</table>
 	{% endif %}
+<ul id="contextMenu" class="dropdown-menu" role="menu" style="display:none" >
+    <li><a tabindex="-1" href="#">View details in new tab</a></li>
+    <li><a tabindex="-1" href="#">Copy UID</a></li>
+    <!-- <li class="divider"></li>
+    <li><a tabindex="-1" href="#">Separated link</a></li> -->
+</ul>
+
+
             <div style="padding-top:3px;"> <!-- sort menu -->
                 <span class="muted"><small>show:</small>
                 </span>

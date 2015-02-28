@@ -1,7 +1,15 @@
 {% extends "base.html" %}
-{% block title %}MPO Collections{% endblock %}
+{% block title %}MPO Data Objects{% endblock %}
 {% block hscripts %}
 
+<script type="text/javascript" language="javascript" class="init">
+$(document).ready(function() {
+	$('#workflow_table').dataTable( {
+        "order": [[ 3, "desc" ]],
+		
+    } );
+} );
+</script>
 <style>
 #nav_split, #ont_search_header, #wf_search_header, #wf_attrib, #wf_hide {
 	display: none;
@@ -117,29 +125,35 @@ ul li input.user_time_wf {
 
 </style>
 {% endblock %}
-{% block collect_active %} class="active" {% endblock %}
+{% block dataobject_active %} class="active" {% endblock %}
 {% block container %}
      <div class="row-fluid">
 		<!-- left navigation menu span -->
         <div class="span12">
-        <h4>MPO Collections</h4>
+        <h4>MPO Data Objects</h4>
 		{% if coll_list %}
         	<div id="workflow_tbl">
             <!-- workflow list table -->
             <table class="main table table-hover table-striped" id="workflow_table">
-            	<tr>
-                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th>
-              	</tr>
+            	<thead>
+					<tr>
+                    	<th>Name</th>
+                        <th>Description</th>
+                        <th>Username</th>
+                        <th>Creation Time</th>
+					</tr>
+				</thead>
+                <tbody>
             	{% for item in coll_list %}
                 	<tr>
-                	<td><a href="{{ url_for("collections", uid=item.uid) }}">{{ item.name }}</a><br /><small><b>UID:</b> </small><input size="2" type="text" value="{{ item.uid }}" class="small copy" readonly />
-                    </td>
-                    <td>{{ item.description }} </td>
-                    <td>{{ item.username }} </td>
-                    <td>{{ item.time }} </td>
+                        <td><a href="{{ url_for("dataobject", uid=item.uid) }}">{{ item.name }}</a></td>
+                        <td>{{ item.description }} </td>
+                        <td>{{ item.username }} </td>
+                        <td>{{ item.time }} </td>
                     </tr>
                 {% endfor %}
-               </table>
+                </tbody>
+           </table>
            {% endif %}   
 
             </div>

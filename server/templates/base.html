@@ -11,6 +11,8 @@
     <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
     <link href="/static/css/main.css" rel="stylesheet">
     <link href="/static/css/jquery-ui.min.css" rel="stylesheet">
+    <link href="/static/css/jquery.contextMenu.css" rel="stylesheet" type="text/css" /> 
+	<link href="/static/css/jquery.dataTables.css" rel="stylesheet" type="text/css" >   
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -33,7 +35,20 @@
     <script src="/static/bootstrap/js/bootstrap-typeahead.js"></script>
     <script src="/static/bootstrap/js/bootstrap-paginator.min.js"></script>
     <script src="/static/bootstrap/js/holder.js"></script>
+    
+    <script src="/static/js/jquery.ui.position.js" type="text/javascript"></script>
+    <script src="/static/js/jquery.contextMenu.js" type="text/javascript"></script> 
+	<script src="/static/js/jquery.dataTables.js" type="text/javascript"></script>   
 <script>
+
+
+$(document).ready(function() {
+	$("input.copy:text").focus(function() { $(this).select();  } );
+	$("input.copy:text").css( 'cursor', 'pointer' );
+});
+
+
+
 xmlToJson = function(xml) {
     var obj = {};
     if (xml.nodeType == 1) {                
@@ -78,51 +93,51 @@ function getQueryVariable(variable) {
   }
 }
 
-function mdsEvent(event,repeat,success_cb,error_cb,userarg) {
-  var req = new XMLHttpRequest();
-  req.open('GET','{{evserver}}/'+event,true);
-  req.responseType = '';
-  req.scb=success_cb;
-  req.fcb=error_cb;
-  req.event=event;
-  req.userarg=userarg;
-  req.repeat=repeat;
-  req.onreadystatechange = function() {
-    if (this.readyState == 4) {
-       if (this.status == 200) {
-          console.log("ready");
-          console.log(this.responseXML);
-          console.log(this.responseText);
-	  var parser = new DOMParser(); //this is a workaround to know errors in some browsers with responseXML
+	function mdsEvent(event,repeat,success_cb,error_cb,userarg) {
+	  var req = new XMLHttpRequest();
+	  req.open('GET','{{evserver}}/'+event,true);
+	  req.responseType = '';
+	  req.scb=success_cb;
+	  req.fcb=error_cb;
+	  req.event=event;
+	  req.userarg=userarg;
+	  req.repeat=repeat;
+	  req.onreadystatechange = function() {
+		if (this.readyState == 4) {
+		   if (this.status == 200) {
+			  console.log("ready");
+			  console.log(this.responseXML);
+			  console.log(this.responseText);
+		  var parser = new DOMParser(); //this is a workaround to know errors in some browsers with responseXML
+	
+			  var xmlDoc = parser.parseFromString(this.responseText, "application/xml");
+			  data = xmlToJson(xmlDoc);
+			  console.log(xmlDoc);
+			  console.log(data);
+	//          data = this.responseText;
+			  this.scb(this.event,data,this.userarg);
+			  if (this.repeat != 0) {
+				 this.open('GET','{{evserver}}/'+event,true);
+				 this.send();
+				 return;
+			  }
+		   }
+		   else if (req.status == 204) {
+			  this.open('GET','{{evserver}}/'+event,true);
+			  this.send();
+			  return;
+		   } else if (req.status != 0) {
+			  this.fcb(this.event,req.response,this.userarg);
+		   }
+		   this.onreadystatechange = function() {}
+		}
+	  };
+	  req.send();
+	  return req;
+	}
 
-          var xmlDoc = parser.parseFromString(this.responseText, "application/xml");
-          data = xmlToJson(xmlDoc);
-          console.log(xmlDoc);
-          console.log(data);
-//          data = this.responseText;
-       	  this.scb(this.event,data,this.userarg);
-          if (this.repeat != 0) {
-             this.open('GET','{{evserver}}/'+event,true);
-             this.send();
-             return;
-          }
-       }
-       else if (req.status == 204) {
-          this.open('GET','{{evserver}}/'+event,true);
-          this.send();
-          return;
-       } else if (req.status != 0) {
-          this.fcb(this.event,req.response,this.userarg);
-       }
-       this.onreadystatechange = function() {}
-    }
-  };
-  req.send();
-  return req;
-}
 
-
-function qs(search_for) {
+	function qs(search_for) {
 		var query = window.location.search.substring(1);
 		var parms = query.split('&');
 		for (var i=0; i<parms.length; i++) {
@@ -192,10 +207,16 @@ function qs(search_for) {
 	});
 		  /////
 		  */
-		  
-      });
-    });	
+
 </script>
+
+<style>
+input.small{
+	font-size: 9px;
+	height: 10px;
+	margin-top: 3px;
+}
+</style>
     {% block hscripts %}{% endblock %}
   </head>
 
@@ -212,15 +233,16 @@ function qs(search_for) {
           <a class="brand">&nbsp;&nbsp;</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
-                <li {% block index_active %}{% endblock %}><a href="{{ url_for("index") }}">Home</a></li>
-                <li {% block collect_active %}{% endblock %}><a href="{{ url_for("collections") }}">Collections</a></li>
-                <li {% block search_active %}{% endblock %}><a href="{{ url_for("search") }}">Search</a></li>
-                <li {% block docs_active %}{% endblock %}><a href="/mpo/doc" target="_blank">Documentation</a></li>
+                <li {% block index_active %}{% endblock %}><a href="{{ url_for("index") }}"><span class="icon-home"></span> Home</a></li>
+                <li {% block collect_active %}{% endblock %}><a href="{{ url_for("collections") }}"><span class="icon-list-alt"></span> Collections</a></li>
+                <li {% block dataobject_active %}{% endblock %}><a href="{{ url_for("dataobject") }}"><img src="/static/img/images/_icon_dataobject.png"> Data Objects</a></li>
+                <li {% block search_active %}{% endblock %}><a href="{{ url_for("search") }}"><span class="icon-search"></span> Search</a></li>
+                <li {% block docs_active %}{% endblock %}><a href="/mpo/doc" target="_blank"><span class="icon-book"></span> Documentation</a></li>
             </ul>
-            <span style="float:right; padding-top: 10px"><small> </small>
+            <span style="float:right; padding-top: 10px"> 
             <form class="form-inline" action="{{ url_for('submit_db') }}" method="post">
             <div class="form-group">
-            <label for="db">Current DB:</label>
+            <label for="db"><span class="icon-link"></span> Current DB:</label>
             <select id="_db" name="db" onchange="this.form.submit()">
             <option value="test" 
             {% if db_server=="test" %}
@@ -250,7 +272,7 @@ function qs(search_for) {
       <hr>
 
       <footer>
-        <div><span class="pull-left muted"><a class="muted" href="{{ url_for("about") }}">&copy; MPO Team 2014</a></span><span class="pull-right muted"><a class="muted" href="{{ url_for("index") }}">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("search") }}">Search</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("about") }}">About Us</a> </span></div>    
+        <div><span class="pull-left muted"><a class="muted" href="{{ url_for("about") }}">&copy; MPO Team 2014</a></span><span class="pull-right muted"><a class="muted" href="{{ url_for("index") }}">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("search") }}">Search</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("about") }}">About Us</a> <font color=white>*** {{ db_server }} ***</font></span></div>    
       </footer>
 
     </div> <!-- /container-fluid -->
