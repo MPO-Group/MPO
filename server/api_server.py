@@ -27,7 +27,7 @@ except Exception, e:
 rdb.init(conn_string)
 
 app = Flask(__name__)
-app.debug=False
+app.debug=True
 apidebug=True
 
 routes={'collection':'collection','workflow':'workflow',
@@ -169,6 +169,11 @@ def get_api_version(url):
 
 
 ###############ROUTE handling###############################
+def response_valid(r):
+    "Function to check database replies. Presently a NOOP."
+    return True
+
+
 @app.errorhandler(404)
 def not_found(error=None):
     message = {
@@ -302,7 +307,22 @@ def collection(id=None):
         if id:
             r = rdb.getRecord('collection',{'uid':id})
         else:
-            r = rdb.getRecord('collection',request.args)
+            #particular cases
+            #?element_uid
+            if 'element_uid' in request.args:
+                r = rdb.getRecord('collection_elements',{'uid':request.args['element_uid']})
+                #'r' is a list of element records. The same element but with different
+                #parent_uids for the different collections.
+                assert response_valid(r)==True
+                rr=[]
+                for jr in json.loads(r):
+                    print('api debug',jr)
+                    rcol = rdb.getRecord('collection',{'uid':jr.get('parent_uid')})
+                    rr.append(json.loads(onlyone(rcol)))
+                r = json.dumps(rr)
+            #general searches
+            else:
+                r = rdb.getRecord('collection',request.args)
 
         #add discovery information
         jr = json.loads(r)
@@ -346,7 +366,14 @@ def collectionElement(id=None, oid=None):
         elems = payload['elements']
         for e in elems[:]:
             r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
-            if json.loads(r)['uid']: elems.remove(e)
+            print('collection add', json.loads(r))
+            jr=json.loads(r)
+            if isinstance(jr,list): #shouldn't need to do this
+               if len(jr)==0:
+                  jr={} 
+               else:
+                  jr=jr[0]
+            if jr.get('uid'): elems.remove(e)
         payload['elements'] = elems
         r = rdb.addRecord('collection_elements',json.dumps(payload),dn)
         morer = rdb.getRecord('collection_elements',{'uid':json.loads(r)['uid']},dn)
@@ -360,7 +387,13 @@ def collectionElement(id=None, oid=None):
         jr=json.loads(r)
         for record in jr:
             r_uid=record['uid']
-            record['type']=rdb.getRecordTable( r_uid, dn )['table'] #already dict
+            #getRecordTable returns a python dict
+            record['type']=rdb.getRecordTable( r_uid, dn )['table']
+
+            #set default field values
+            detail={'related':'not sure','link-related':root_url,'related':'cousins',
+                    'name':'what is this?','description':'empty','time':'nowhen'}
+            #Translation for specific types
             if record['type']=='workflow':
                 detail=json.loads(rdb.getWorkflow({'uid':r_uid},dn))[0]
                 detail['related']=json.loads(rdb.getWorkflowCompositeID(r_uid,dn)).get('alias')
@@ -368,10 +401,17 @@ def collectionElement(id=None, oid=None):
                 links['link1']=root_url+'/workflow/'+r_uid
                 links['link2']=root_url+'/workflow?alias='+detail['related']
                 detail['link-related']=links
-            if record['type']=='dataobject':
+            elif record['type']=='dataobject':
                 detail=json.loads(rdb.getRecord('dataobject',{'uid':r_uid},dn))[0]
                 detail['related']=detail.get('uri')
                 detail['link-related']=root_url+'/dataobject/'+r_uid
+            elif record['type']=='collection':
+                thisdetail=json.loads(rdb.getRecord('collection',{'uid':r_uid},dn))[0]
+                detail['related']=None
+                detail['link-related']=root_url+'/collection/'+r_uid+'/element'
+                detail['description']=thisdetail.get('description')
+                detail['name']=thisdetail.get('name')
+                detail['time']=thisdetail.get('time')
 
             record['name']=detail['name']
             record['description']=detail['description']
@@ -531,6 +571,7 @@ def dataobject(id=None):
         r = rdb.addRecord('dataobject',request.data,dn)
         rr = json.loads(r)
         id = rr['uid']
+        r=rr
         morer = rdb.getRecord('dataobject',{'uid':id},dn)
         publishEvent('mpo_dataobject',onlyone(morer))
     elif request.method == 'GET':
@@ -549,7 +590,7 @@ def dataobject(id=None):
         else:
             r = json.loads(rdb.getRecord('dataobject',request.args,dn))
             if len(r) == 0 :
-                istatus=404
+                r={'istatus':404,'message':'no records found','query':request.url}
                 #r = make_response(json.dumps(r), 404)
 
     return Response(json.dumps(r), mimetype='application/json',status=istatus)

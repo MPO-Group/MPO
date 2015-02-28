@@ -31,6 +31,8 @@ import copy
 import argparse
 import linecache
 import traceback
+import logging
+logging.captureWarnings(True)
 
 def PrintException():
     exc_type, exc_obj, tb = sys.exc_info()
@@ -138,7 +140,7 @@ class mpo_methods(object):
 
 
     def __init__(self,api_url='https://localhost:8080',version='v0',
-                 user='noone',password='pass',cert='cert',
+                 user='noone',password='pass',cert='no cert',
                  archive_host='psfcstor1.psfc.mit.edu',
                  archive_user='psfcmpo', archive_key=None,
                  archive_prefix=None, debug=False,filter=False,dryrun=False):
@@ -158,8 +160,7 @@ class mpo_methods(object):
         self.requestargs={'cert':self.cert,'verify':False}
 
         if self.debug:
-            print('cert',cert,file=sys.stderr)
-            print('cert',cert,file=sys.stderr)
+            print('certificate in mpo_arg.mpo_methods is:',cert,file=sys.stderr)
 #            print('#MPO user',self.get_user())
 #            print('#MPO server',self.get_server())
             pass
@@ -181,11 +182,11 @@ class mpo_methods(object):
 
         #check that result is a request object.
         # if isinstance(result,requests.models.Response):
+        if not isinstance(result,requests.models.Response):
+            return str(result)
 
         if self.debug:
-            text=''
-            if isinstance(result,requests.models.Response):
-                text=result.text
+            text=result.text
             print("format",result,str(type(result)),text,file=sys.stderr)
         if filter=='id':
             output=[]
@@ -211,10 +212,11 @@ class mpo_methods(object):
             print('raw header',output.headers,file=sys.stderr)
             print('raw type',str(type(output)),file=sys.stderr)
             print('raw content',output.text,file=sys.stderr)
+            output=str(result)
         elif filter=='text':
-            output=result.text
-        else:
-            output=result.json()
+            output=str(result.text)
+        else: #default is string representation
+            output=str(result)
 
         return output
 
@@ -265,10 +267,11 @@ class mpo_methods(object):
         if self.debug or verbose:
             print('MPO.GET response',r.url,r.status_code,file=sys.stderr)
 
+        #catch any response codes
         r.raise_for_status()
 
-#        if self.filter:
-#            r=self.format(r,self.filter)
+        #        if self.filter:
+        #    r=self.format(r,self.filter)
 
         return r
 
@@ -306,7 +309,7 @@ class mpo_methods(object):
 
         return r
 
-    
+
     def post(self,route="",workflow_ID=None,obj_ID=None,data=None,**kwargs):
         """POST a messsage to an MPO route.
         Used by all methods that create objects in an MPO workflow.
@@ -363,10 +366,11 @@ class mpo_methods(object):
             r = requests.post(url, json.dumps(datadict),
                               headers=self.POSTheaders, **self.requestargs)
         except requests.exceptions.ConnectionError as err:
-            print("ERROR: Could not connect to server, "+url,file=sys.stderr)
+            errmsg="ERROR: Could not connect to server, "+url
+            print(errmsg,file=sys.stderr)
             sys.stderr.write('MPO ERROR: %s\n' % str(err))
             print(" ",file=sys.stderr)
-            return 1
+            return {'errmsg':errmsg,'uid':-1}
 
         if self.debug:
             ('MPO.POST return type', str(type(r)), r.status_code)
@@ -402,7 +406,9 @@ class mpo_methods(object):
 
     def add(self, workflow_ID=None, parentobj_ID=None, **kwargs):
         """
-        Add at dataobject to a workflow.
+        Add dataobject_instance to a workflow. If the uri doesn't exist in
+        the db create the appropriate dataobject. If the workflow_ID and
+        parentobj_ID are not present create just the dataobject.
 
         args are:
         workflow_ID --
@@ -558,8 +564,8 @@ class mpo_methods(object):
         return r
 
 
-    def search(self,route,params,**kwargs):
-        """Find objects by query. An supermethod of GET.
+    def search(self,route,params={},**kwargs):
+        """Find objects by query. A supermethod of GET.
         Presently, identical to 'get' but can be generalized.
 
         Keyword arguments:
@@ -570,6 +576,9 @@ class mpo_methods(object):
         #eventually, some specialized target route for searching would be used.
 
         r=self.get(route,params) # ,params=ast.literal_eval(params))
+        if self.filter:
+            r=self.format(r,self.filter)
+
         return r
 
 
@@ -861,7 +870,7 @@ class mpo_cli(object):
         #search
         search_parser=subparsers.add_parser('search',help='SEARCH the MPO store')
            #add positional argument which will be passed to func 'route' in 'Namespace' named tuple
-        search_parser.add_argument('-r','--route',action='store',help='Route of resource to query')
+        search_parser.add_argument('route',action='store',help='Route of resource to query')
            #add keyword argument passed to func as 'params'
         search_parser.add_argument('-p','--params',action='store',help='Query arguments as {key:value,key2:value2}')
         search_parser.set_defaults(func=self.mpo.search)
@@ -882,7 +891,7 @@ class mpo_cli(object):
 
         if kwargs.get('host'):
             self.mpo.set_api_url(kwargs['host'])
-        
+
         #strip out 'func' method
         del(kwargs['func'])
         if self.debug:

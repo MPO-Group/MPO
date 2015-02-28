@@ -26,15 +26,19 @@ fi
 
 if ! [ -n "${MPO_AUTH:+x}" ]
 then
-  export MPO_AUTH=$MPO_HOME/MPODemoUser.pem
+  export MPO_AUTH="$MPO_HOME/MPO Demo User.pem"
 fi
 
 shot=550335
 #use API methods to create a workflow
 wid=`$MPO init --name=EFIT --desc="A first EFIT workflow" --type=EFIT`
+echo wid is $wid
 oid1=`$MPO add  $wid $wid --name=shot --desc="Plasma shot number" --uri=$shot`
+echo oid1 is $oid1
 oid2=`$MPO add  $wid $wid --name="Snap file" --desc="EFIT input file" --uri="$($MPO -f raw archive -p mdsplus -s $shot -t efit02 -p'\efit02:namelist')"`
+echo oid2 is $oid2
 oid3=`$MPO add  $wid $wid --name="Green's Table" --desc="Green's table files" --uri="$($MPO -f raw archive -p filesys -f/link/efit/rpf[01-12].d3d)"`
+echo oid3 is $oid3
 aid1=`$MPO step $wid $oid1 --input=$oid2 --input=$oid3 --name="Read Input Files" --desc="Read shot number, snap file etc..."`
 cid=`$MPO comment $aid1 "This program is the only one in this workflow"`
 oid4=`$MPO add  $wid $wid --name="Plasma Current" --desc="Plasma current in MA" --uri="$($MPO -f raw archive -p mdsplus -s $shot -t magnetics -p'\magnetics::ip')"`
@@ -47,3 +51,5 @@ aid6=`$MPO step $wid $aid5  --name="Write EFIT Outputs" --desc="Write the EFIT o
 oid6=`$MPO add  $wid $aid6 --name="A File" --desc="A EQDSK File" --uri="$($MPO -f raw archive -p mdsplus -s $shot -t efit01 -p'\efit01::results:aeqdsk')"`
 oid7=`$MPO add  $wid $aid6 --name="G File" --desc="G EQDSK File" --uri="$($MPO -f raw archive -p mdsplus -s $shot -t efit01 -p'\efit01::results:geqdsk')"`
 #aid7=`$MPO step $wid $oid6  --name="EFIT Complete" --desc="Should this be different than step?" --uri=EFIT6`
+
+echo Josh test uids: $cid $aid4

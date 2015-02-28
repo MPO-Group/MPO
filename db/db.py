@@ -134,7 +134,9 @@ def getRecordTable(id, dn=None):
     # execute our Query
     cursor.execute(q)
     # retrieve the records from the database
-    table = cursor.fetchone()[0]
+    table = cursor.fetchone()
+    if table:
+        table=table[0]
     # Close communication with the database
     cursor.close()
     conn.close()
@@ -684,7 +686,7 @@ def addRecord(table,request,dn):
         print(q,v)
 
     cursor.execute(q,v)
-    if objs.has_key('parent_uid'):
+    if objs.has_key('parent_uid') and objs.get('work_uid'):  #some records aren't in workflows
     #connectivity table
         for parent in objs['parent_uid']:
             if objs['parent_uid'] == objs['work_uid']:

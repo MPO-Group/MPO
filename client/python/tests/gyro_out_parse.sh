@@ -40,9 +40,13 @@ for name in "${vars[@]}"; do metav[$name]=`gyro_kv_bash $gyrofile $name`; done
 #defaults are used if environment is not set
 if ! [ -n "${MPO_HOST:+x}" ]
 then
-  export MPO_HOST=http://localhost:3001
+  export MPO_HOST=https://localhost:8443
 fi
 
+if ! [ -n "${MPO_AUTH:+x}" ]
+then
+  export MPO_AUTH="$MPO_HOME/MPO Demo User.pem"
+fi
 
 if ! [ -n "${MPO_VERSION:+x}" ]
 then
@@ -51,7 +55,7 @@ fi
 
 if ! [ -n "${MPO:+x}" ]
 then
-  export MPO="$MPO_HOME/client/python/mpo_testing.py"
+  export MPO="$MPO_HOME/client/python/mpo_arg.py"
 fi
 
 swift_root=http://localhost:8080/v1/AUTH_0d63fa5f677f4042b7c359598c2e25bb
@@ -72,25 +76,29 @@ wid=`$MPO --user=$mpo_user init --name=Archive-GYRO --desc="Import of gyro simul
 echo Workflow ID is $wid.
 
 #Comment on the workflow
-$MPO --user=$mpo_user comment    $wid "$run_comment"
+no_id=`$MPO --user=$mpo_user comment    $wid "$run_comment"`
 
 #Get alias for the workflow
 compid=`$MPO  get workflow/$wid/alias`
+echo 'compid in gyro is ' $compid
 
 #Add an action to the workflow
 aid=`$MPO --user=$mpo_user step       $wid $wid --name="Archive" --desc="Store run and extract meta data."`
+echo 'aid in gyro is ' $aid
 
 #Add an output of this action to the workflow
 #uri points to resource location, in this case the swift object store
 #created
 oid=`$MPO --user=$mpo_user add        $wid $aid --name="Archive Store" --desc="Location of archived files." --uri=swift:$swift_root/$mpo_user/$rundir`
+echo $MPO --user=$mpo_user add        $wid $aid --name="Archive Store" --desc="Location of archived files." --uri=swift:$swift_root/$mpo_user/$rundir
+echo 'oid in gyro is ' $oid
 
 #Store files in archive
 #comp_id alias is prepended to upload path for uniqueness
 ##$SWIFT --os-auth-url http://localhost:5000/v2.0 -U mpo:$mpo_user -K try-mpo-swift  upload -c mpo/$compid/ $rundir
 
 #Record location in metadata of the archive object
-$MPO --user=$mpo_user meta $oid archive swift:$swift_root/$mpo_user/$oid/$rundir
+$MPO -v --user=$mpo_user meta $oid archive swift:$swift_root/$mpo_user/$oid/$rundir
 
 #attach key/value pairs to the workflow as searchable metadata
 for i in "${!metav[@]}"
