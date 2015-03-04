@@ -22,6 +22,7 @@ MPO_API_VERSION = 'v0'
 #Set the database we are using
 try:
     conn_string = os.environ['MPO_DB_CONNECTION']
+    print('MPO_DB_CONNECTION connecting to db: %s.' % conn_string)
 except Exception, e:
     print('MPO_DB_CONNECTION not found: %s. Using default mpoDB at localhost.' % e)
     conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
