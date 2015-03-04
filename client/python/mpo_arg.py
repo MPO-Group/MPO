@@ -17,6 +17,10 @@ record/meta
 help
 
 """
+
+# AVOID tabs, use spaces.
+# Non-standard dependencies: requests.py, argparse.py
+
 from __future__ import print_function
 import requests
 import ast, textwrap
@@ -34,6 +38,12 @@ import traceback
 import logging
 logging.captureWarnings(True)
 
+import logging #hide urllib3 CA warnings
+logging.captureWarnings(True)
+
+
+
+###Some utilities functions
 def PrintException():
     exc_type, exc_obj, tb = sys.exc_info()
     f = tb.tb_frame
@@ -96,10 +106,11 @@ class shell_exception(Exception):
         self.return_status=status
 #        Exception.__init__(self, *args, **kwargs)
 
+
+### MPO class
 #Developers note:
-# All print statements except those in mpo_cli.storeresult should go to sys.stderr
-# AVOID tabs, use spaces.
-#Non-standard dependencies: requests.py, argparse.py
+# All print statements in mpo_methods should go to sys.stderr
+
 class mpo_methods(object):
     """
     Class of RESTful primitives. I/O is through stdin/stdout.
@@ -123,8 +134,6 @@ class mpo_methods(object):
     ID='uid'
     WORKID='work_uid'
     PARENTID='parent_uid' #field for object id to which comments and metadata are attached
-    MPO_PORT='8080' #not used yet
-    WORKID_QRY='workid' #query argument for connection table
 
     MPO_VERSION='v0'
     WORKFLOW_RT = 'workflow'
@@ -159,6 +168,14 @@ class mpo_methods(object):
         self.set_api_url(api_url)
         self.requestargs={'cert':self.cert,'verify':False}
 
+        self.session=requests.session()
+        a = requests.adapters.HTTPAdapter(max_retries=4)
+        self.session.mount('https://', a)
+        self.session.cert=self.cert
+        self.session.verify=False
+        #self.session.headers.update({})
+
+        
         if self.debug:
             print('certificate in mpo_arg.mpo_methods is:',cert,file=sys.stderr)
 #            print('#MPO user',self.get_user())
@@ -178,6 +195,8 @@ class mpo_methods(object):
         """
         Routine to handle reformatting of responses from submethods. It is aware of the
         internal format returned.
+        filter: defaults to the UID return but acceptable values are id, json, pretty, raw, text
+        result: is the full Response object.
         """
 
         #check that result is a request object.
@@ -203,7 +222,7 @@ class mpo_methods(object):
             else:
                 if self.ID in result.json():
                     output=result.json()[self.ID]
-        elif filter=='json':
+        elif filter=='json' or filter=='dict':
             output=result.json()
         elif filter=='pretty':
             output=json.dumps(result.json(),separators=(',', ':'),indent=4)
@@ -220,9 +239,9 @@ class mpo_methods(object):
 
         return output
 
-# define api methods here. All methods must be declared as method(**kwargs).
-# explict arguments are allowed but must be keyword=value, this is required
-# for compatibility with the commandline parser invokacion
+### Define api methods here. All methods must be declared as method(**kwargs).
+### explict arguments are allowed but must be keyword=value, this is required
+### for compatibility with the commandline parser invocation
 
     def test(self,route='default',*a,**kw):
         "NOP routine. Useful for new subcommand development"
@@ -230,7 +249,8 @@ class mpo_methods(object):
         print('with route', route)
         return
 
-
+### GET, POST, DELETE low level routines
+### All high level methods reduce to one of these three
     def get(self,route="",params={},verbose=False,**kwargs):
         import re
         """GET a resource from the MPO API server.
@@ -262,8 +282,9 @@ class mpo_methods(object):
             print('MPO.GET from {u} with headers of {h}, request options, {ra}, and arguments of {a}'.format(
                   u=url,h=self.GETheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
 
-        r = requests.get(url,params=datadict,
-                             headers=self.GETheaders,**self.requestargs)
+#        r = requests.get(url,params=datadict,
+#                             headers=self.GETheaders,**self.requestargs)
+        r = self.session.get(url,params=datadict,headers=self.GETheaders)
         if self.debug or verbose:
             print('MPO.GET response',r.url,r.status_code,file=sys.stderr)
 
@@ -300,14 +321,17 @@ class mpo_methods(object):
                   u=url,h=self.DELETEheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
             return
 
-        r = requests.delete(url,params=datadict,
-                             headers=self.DELETEheaders,**self.requestargs)
+        r = self.session.delete(url,params=datadict,headers=self.DELETEheaders)
         if self.debug or verbose:
             print('MPO.DELETE response',r.url,r.status_code,file=sys.stderr)
 
         r.raise_for_status()
 
+        if self.filter:
+            r=self.format(r,self.filter)
+
         return r
+        
 
 
     def post(self,route="",workflow_ID=None,obj_ID=None,data=None,**kwargs):
@@ -345,9 +369,16 @@ class mpo_methods(object):
         if obj_ID:
             datadict[self.PARENTID]=obj_ID
 
-        if workflow_ID:
+        if workflow_ID: #if dict, extract UID
+            if isinstance(workflow_ID,dict):
+                wid=workflow_ID.get('uid')
+                workflow_ID = wid
+
+            if not isinstance(workflow_ID,str):
+                print('invalid workflow_ID in post',file=sys.stderr)  #throw exception
             datadict[self.WORKID]=workflow_ID
 
+            
         if self.debug:
             print('MPO.POST to {u} with workflow:{wid}, parent:{pid} and payload of {p}'.format(
                   u=url,wid=workflow_ID,pid=obj_ID,p=json.dumps(datadict) ),file=sys.stderr)
@@ -363,8 +394,7 @@ class mpo_methods(object):
         #    in the header it is JSON
         # requests will actually send the dict directly if headers doesn't declare body type
         try:
-            r = requests.post(url, json.dumps(datadict),
-                              headers=self.POSTheaders, **self.requestargs)
+            r = self.session.post(url, json.dumps(datadict),headers=self.POSTheaders)
         except requests.exceptions.ConnectionError as err:
             errmsg="ERROR: Could not connect to server, "+url
             print(errmsg,file=sys.stderr)
@@ -375,15 +405,14 @@ class mpo_methods(object):
         if self.debug:
             ('MPO.POST return type', str(type(r)), r.status_code)
 
-        if r.status_code!=200:
-            return r  # do something else here, r.status_code, r.text
-        else:
-            if self.filter:
-                r=self.format(r,self.filter)
+        r.raise_for_status()
+        if self.filter:
+            r=self.format(r,self.filter)
 
-            return r
+        return r
 
-
+        
+### Main mpo methods
     def init(self,name=None, desc="", wtype='None', **kwargs):
         """
         The INIT method starts a workflow.
@@ -658,6 +687,7 @@ class mpo_methods(object):
         return archiver.ls(protocol[1])
 
 
+### MPO commandline client
 class mpo_cli(object):
     """
     mpo command line interface to restful primitives.
@@ -708,7 +738,7 @@ class mpo_cli(object):
         parser.add_argument('--pass','-p',action='store',help='''Specify password.''',
                             default=self.password)
         parser.add_argument('--format','-f',action='store',help='Set the format of the response.',
-                            choices=['id','raw','text','json','pretty'], default='id') #case insensitive?
+                            choices=['id','raw','text','json','dict','pretty'], default='id') #case insensitive?
         parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
                             default=False)
         parser.add_argument('--host',action='store',help='specify API root URI')
@@ -895,7 +925,7 @@ class mpo_cli(object):
         return r
 
 
-####main routine
+####Application main routine. Instance of commandline application class using mpo methods class
 if __name__ == '__main__':
     import os
 

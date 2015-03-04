@@ -153,3 +153,29 @@ behavior is to return the bare UUID value or an error code.
 
      The ontology/instance route instead groups along the parent_uid query argument so that one may get a group 
      of ontology instances attached to different objects.
+
+
+
+Some examples for language specific interfaces.
+
+* python interface
+
+  ```python
+  #Setup mpo instance
+  cert='/Users/jwright/Codes/mposvn/trunk/MPO Demo User.pem'
+  api='https://mpo.psfc.mit.edu/api'
+  m=mpo_arg.mpo_methods(api_url=api,cert=cert,debug=True)
+  m.debug=False
+  #Use mpo methods with return object being a python dictionary
+  #Omitting the filter will return Response object,r. Then dict is
+  #gotten with r.json()
+  wf=m.init(name="JCW Test Run",desc="example of using python interface to API.", wtype='EFIT',filter='json')
+  ```
+
+* matlab interface
+
+* idl interface
+
+* c/c++ interface
+
+* fortran interface
