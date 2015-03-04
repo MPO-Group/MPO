@@ -37,7 +37,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                            'phone':'phone','dn':'dn'},
              'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
                            'work_uid':'w_guid', 'time':'creation_time','user_uid':'u_guid',
-                           'start':'start_time','end':'end_time',
+                           'start':'start_time','end':'end_time', 
                            'status':'completion_status'},
              'activity_short' : {'w':'w_guid'},
              'dataobject' : {'name':'name', 'description':'description','uri':'uri','uid':'do_guid',
@@ -64,20 +64,14 @@ mypool=None
 def init(conn_str):
     global conn_string,mypool
     conn_string=conn_str
-    print('DB in init',conn_string)
+    print('DB in init connection made: ',conn_string)
     mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
 
 
 
 def get_conn():
     c = psycopg.connect(conn_string)
-    print('DB ',conn_string)
     return c
-
-
-#mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
-#Use this to remove pooling and revert to original behavior
-#mypool  = pool.NullPool(get_conn)
 
 
 def processArgument(a):
@@ -107,7 +101,7 @@ def echo(table,queryargs={}, dn=None):
 
 def getRecordTable(id, dn=None):
     '''
-    Give a record id return the table that record is in.
+    Given a record id return the table that record is in.
     '''
     if not id: return None
     # get a connection, if a connect cannot be made an exception will be raised here

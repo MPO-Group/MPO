@@ -839,7 +839,7 @@ def collections(uid=False):
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
-    results=False
+    results=[]
     if True:
 #        s = requests.Session()
         s = FuturesSession(max_workers=45) #can use Pooling as well
@@ -869,20 +869,24 @@ def collections(uid=False):
         rc=s.get("%s/collection"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
         coll_list=rc.json()
 
+        coll_name="None"
+        coll_desc="No collections found"
         if uid:
             #get members of this collection
             r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
             results=r_coll.result().json()
             #get name and desc of this specific collection
             this_coll = [ c for c in coll_list if c['uid']==uid ]
-            coll_name=this_coll[0]['name']
-            coll_desc=this_coll[0]['description']
+            if len(this_coll)>0:
+                coll_name=this_coll[0]['name']
+                coll_desc=this_coll[0]['description']
         else: #get members of first collection
-            r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,coll_list[0]['uid']),
-                         headers={'Real-User-DN':dn}).result()
-            results=r_coll.json()
-            coll_name=coll_list[0]['name']
-            coll_desc=coll_list[0]['description']
+            if len(coll_list)>0:
+                r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,coll_list[0]['uid']),
+                             headers={'Real-User-DN':dn}).result()
+                results=r_coll.json()
+                coll_name=coll_list[0]['name']
+                coll_desc=coll_list[0]['description']
 
 
         #Callbacks for use in following loop
@@ -942,10 +946,9 @@ def collections(uid=False):
             qterm_uid='0'
             print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
 
-        print("WEBDEBUG: collection results sent to index")
-        pprint(results)
 
         for index,i in enumerate(results):        #i is dict, loop through list of collection elements
+            print('web server collections',i)
             pid=i['uid']
             thetime=results[index]['time'][:19]
             results[index]['time']=thetime
@@ -973,15 +976,15 @@ def collections(uid=False):
             future_list.append(qual_req)
 
 
-        if webdebug:
-            print("WEBDEBUG: results sent to index")
-            pprint(results)
-            #print("WEBDEBUG: ontology_results sent to index")
-            #pprint(ont_result)
-
     #JCW unroll callbacks here
     for future in future_list:
         future.result()
+
+    if webdebug:
+        print("WEBDEBUG: collection results sent to index")
+        pprint(results)
+            #print("WEBDEBUG: ontology_results sent to index")
+            #pprint(ont_result)
 
     #retrieve workflow type UID from prior request
     worktreeroot = wf_type_req.result().json()

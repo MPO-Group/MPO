@@ -4,12 +4,11 @@ from flask import Flask, render_template, request, jsonify
 #from flask.ext.jsonpify import jsonify #uncomment to support JSONP CORS access
 from flask import redirect, Response, make_response
 import json
-print('api importing db')
 import db as rdb
-print('api done importing db')
 from authentication import get_user_dn
 import os, time
 from flask.ext.cors import cross_origin
+from urlparse import urlparse
 from distutils.util import strtobool
 import datetime
 
@@ -28,9 +27,7 @@ except Exception, e:
     print('MPO_DB_CONNECTION not found: %s. Using default mpoDB at localhost.' % e)
     conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
 
-print('db test-1', rdb.conn_string, str(rdb.mypool) )
 rdb.init(conn_string)
-print('db test-2', rdb.conn_string, str(rdb.mypool) )
 
 app = Flask(__name__)
 app.debug=True
@@ -149,7 +146,41 @@ def onlyone(record): #error codes are made up for now
         return json.dumps(s,cls=MPOSetEncoder)
 
 
+
+def get_api_version(url):
+    """
+    Get the API version used in the request.
+    """
+    import re
+    o=urlparse(url)
+    baseurl=o.scheme+"://"+o.netloc+o.path #url w/o query strings or parameters
+
+    #parse the path, stripping off leading '/' first
+    pathparts=o.path[1:].strip().split('/')
+
+    #find version of the for 'v#'
+    version=None
+    for part in pathparts:
+        match=re.match(r'v[0-9]',part)
+        if match:
+            version=match.group()
+
+    vidx=pathparts.index(version)
+    #root is the base name of the api server which is the last part
+    #of the url before the version, ie: 'api-server' in host://some/other/paths/api-server/v0/route
+    root=pathparts[vidx-1]
+    root_url=o.scheme+"://"+o.netloc+o.path[:o.path.find(version)+len(version)] #url w/o query strings or parameters
+
+    #Throw an exception if no version string is found
+    return version,root_url,root
+
+
 ###############ROUTE handling###############################
+def response_valid(r):
+    "Function to check database replies. Presently a NOOP."
+    return True
+
+
 @app.errorhandler(404)
 def not_found(error=None):
     message = {
@@ -271,11 +302,10 @@ def collection(id=None):
     /collection - GET a list of all (or filtered) collections
                 - POST a new collection
     /collection/<id> - GET collection information, including list of member UUIDs
-
-    /collection/<id>?detail=full[sparse] - GET collection information with full
-               details [or default sparse as /collection/<id>]
     """
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+
     if request.method == 'POST':
         print('api post collection',request.data)
         r = rdb.addCollection(request.data,dn)
@@ -305,8 +335,12 @@ def collectionElement(id=None, oid=None):
                                    - POST to add to the collection
     /collection/<id>/element/<oid> - GET details of a single object in a collection.
                                     Should resolve oid to full record from relevant table.
+    /collection/<id>/element?detail=full[sparse] - GET collection information with full
+               details [or default sparse as /collection/<id>]
     """
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+
     if request.method == 'POST':
 
         payload = json.loads(request.data)
@@ -332,13 +366,49 @@ def collectionElement(id=None, oid=None):
             r = rdb.getRecord('collection_elements',{'uid':oid})
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
+            
+        print ('cee',r)
+        for record in r:
+            print ('collection element r',record)
+            r_uid=record['uid']
+            #getRecordTable returns a python dict
+            record['type']=rdb.getRecordTable( r_uid, dn )
 
-    # '[]'
-    if len(r) == 2 :
-         r = make_response(r, 404)
-         #resp=Response(r, mimetype='application/json')
+            #set default field values
+            detail={'related':'not sure','link-related':root_url,'related':'cousins',
+                    'name':'what is this?','description':'empty','time':'nowhen'}
+            #Translation for specific types
+            if record['type']=='workflow':
+                detail=json.loads(rdb.getWorkflow({'uid':r_uid},dn))[0]
+                detail['related']=json.loads(rdb.getWorkflowCompositeID(r_uid,dn)).get('alias')
+                links={}
+                links['link1']=root_url+'/workflow/'+r_uid
+                links['link2']=root_url+'/workflow?alias='+detail['related']
+                detail['link-related']=links
+            elif record['type']=='dataobject':
+                detail=json.loads(rdb.getRecord('dataobject',{'uid':r_uid},dn))[0]
+                detail['related']=detail.get('uri')
+                detail['link-related']=root_url+'/dataobject/'+r_uid
+            elif record['type']=='collection':
+                thisdetail=json.loads(rdb.getRecord('collection',{'uid':r_uid},dn))[0]
+                detail['related']=None
+                detail['link-related']=root_url+'/collection/'+r_uid+'/element'
+                detail['description']=thisdetail.get('description')
+                detail['name']=thisdetail.get('name')
+                detail['time']=thisdetail.get('time')
 
-    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
+            record['name']=detail['name']
+            record['description']=detail['description']
+            record['time']=detail['time']
+            record['related']=detail['related']
+            record['link-related']=detail['link-related']
+
+    istatus=200
+    #    if len(r) == 0:
+    #    #istatus = 404
+    #    r=[{'mesg':'No records found', 'number_of_records':0, 'status':404}]
+
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=istatus)
 
 
 
@@ -448,7 +518,7 @@ def getWorkflowCompositeID(id):
                 if rs:
                     r[id]=rs
                 else:
-                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+                    r[id]={'uid':'0','error':'invalid response','len':len(rs),'resp':rs}
 
             if len(ids)==1: #return just single record if one uid
                 r=rs
@@ -460,6 +530,22 @@ def getWorkflowCompositeID(id):
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
 def dataobject(id=None):
+    """
+    Route to add data objects and connect their instances to workflows.
+
+    Route: GET  /dataobject/<id>?instances=True/False
+           Retrieves information on a specific dataobject.
+           In the case <id> is <id> of an instance, instance inherits properties of the original object.
+           In the case <id> is <id> of an dataobject, just the properties of the dataobject are returned.
+           NOT IMPLEMENTED: ?instances filter will optionally return instances of a specified dataobject.
+    Route: GET  /dataobject
+    Route: POST /dataobject
+           databody:
+               {'name':, 'description':,'work_uid':, 'uri':, 'parent_uid': }
+           If 'work_uid' is present, create an instance, connect it to the parent in the workflow 
+           and link instance to the dataobject as determined by the 'uri'.
+           If 'work_uid' is NOT present, 'parent_uid' must also not be present. A new dataobject is created. 
+    """
     dn=get_user_dn(request)
     istatus=200
     if request.method == 'POST':
@@ -468,6 +554,7 @@ def dataobject(id=None):
         if not req['uri']: return Response({}, mimetype='application/json',status=istatus)
         do = rdb.getRecord('dataobject',{'uri':req['uri']},dn)
 
+        #If the D.O. exists, point to it, if not, make it and point to it
         if do:
             if not (req['work_uid'] and req['parent_uid']):
                 return Response({}, mimetype='application/json',status=istatus)
@@ -500,11 +587,18 @@ def dataobject(id=None):
                     r[id]=rs
                 else:
                     r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+                if instance:
+                    do_info=rdb.getRecord('dataobject',{'uid':r.get('do_uid')},dn)
+                    r['do_info']=do_info[0]
 
             if len(ids)==1: #return just single record if one uid
                 r=rs
         else:
             r = rdb.getRecord(route,request.args,dn)
+            if instance:
+                for rr in r:
+                    do_info=rdb.getRecord('dataobject',{'uid':rr.get('do_uid')},dn)
+                    rr['do_info']=do_info[0]
 
             #if len(r) == 0 :
             #    istatus=404
@@ -638,19 +732,28 @@ def ontologyClass(id=None):
 @app.route(routes['ontology_term']+'/vocabulary', methods=['GET'])
 def ontologyTermVocabulary(id=None):
     '''
+    Resource: ontology vocabulary
+
+    Convenience route, equivalent to ontology/term?parent_uid=<id>
+    
+
     This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
     Vocabulary is defined as the next set of terms below it in the
     ontology term tree.
     It is a convenience route equivalent to GET ontology_term?parent_uid=uid
     '''
+
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
 
     if not id:
         id='None'
 
     r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
-
+    r.append(  {'link-requested':request.url} )
+    
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
+
 
 
 @app.route(routes['ontology_term']+'/<id>/tree', methods=['GET'])
@@ -683,8 +786,8 @@ def ontologyTerm(id=None):
     dn=get_user_dn(request)
     if not rdb.validUser(dn):
         if apidebug:
-            print ('APIDEBUG: Not a valid user'% dn)
-        return Response(None, status=401)
+            print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if request.method == 'POST':
         objs = json.loads(request.data)
