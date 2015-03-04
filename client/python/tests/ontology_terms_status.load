@@ -31,7 +31,7 @@ then
     echo Ontology term /Generic/Status doesn\'t exist. Run $MPO_HOME/client/python/tests/ontology_terms_status.load first
     exit
 fi
-oid3=`$MPO ontology_term 'state' --desc='Indicate state of progress on a object' -p $oid1 -t 'string' -s`
+oid3=`$MPO ontology_term 'State' --desc='Indicate state of progress on a object' -p $oid1 -t 'string' -s`
 oid4=`$MPO ontology_term 'In Progress' --desc='Workflow or specific activity has started but has not completed' -p $oid3 -t 'string'`
 oid4=`$MPO ontology_term 'Complete' --desc='Workflow or specific activity has completed' -p $oid3 -t 'string'`
 oid5=`$MPO ontology_term 'Non Standard Completion' --desc='Workflow or activity has failed or completed with errors' -p $oid3 -t 'string'`

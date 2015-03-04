@@ -342,8 +342,8 @@ class mpo_methods(object):
 
         url=self.api_url+route
 
-        #if obj_ID: #commented out to permit null for ontology entries
-        datadict[self.PARENTID]=obj_ID
+        if obj_ID:
+            datadict[self.PARENTID]=obj_ID
 
         if workflow_ID:
             datadict[self.WORKID]=workflow_ID
@@ -416,47 +416,21 @@ class mpo_methods(object):
         name --
         desc -- description
         uri -- uri for the data object added
+        source -- source uid for dataobject
         """
 
         uri = kwargs.get('uri')
         desc = kwargs.get('desc')
         name = kwargs.get('name')
+        source = kwargs.get('source')
+
         if (self.debug):
-            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,kwargs, file=sys.stderr)
+            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,source,kwargs, file=sys.stderr)
 
-        if not (workflow_ID and parentobj_ID):
-            print('Invalid workflow or parent to add method',workflow_ID, parentobj_ID, file=sys.stderr)
-            exit
 
-        payload={"name":name,"description":desc,"uri":uri}
-        return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],payload,**kwargs)
+        payload={"name":name,"description":desc,"uri":uri,"source":source}
 
-    def add_do(self, **kwargs):
-        """
-        Add a dataobject with no workflow or partentobj_id.
-        This data object can then be connected to one or more
-        workflows.
-
-        if a data object with this workflow already exists, then return it.
-
-        args are:
-        name --
-        desc -- description
-        uri -- uri for the data object added
-
-        """
-
-        uri = kwargs.get('uri')
-        desc = kwargs.get('desc')
-        name = kwargs.get('name')
-        if (self.debug):
-            print('MPO.ADD_DO', name, desc,uri,kwargs, file=sys.stderr)
-
-        payload={"name":name,"description":desc,"uri":uri}
-        print ("about to post %s\n"%payload)
-        ans=self.post(self.DATAOBJECT_RT,data=payload,**kwargs)
-
-        return ans
+        return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],data=payload,**kwargs)
 
 
     def step(self,workflow_ID=None,parentobj_ID=None,input_objs=None,**kwargs):
@@ -504,7 +478,7 @@ class mpo_methods(object):
         if specified:
             specified=str2bool(specified)
 
-        payload={"term":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
+        payload={"name":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
         r=self.post(self.ONTOLOGY_TERM_RT,None,parent_ID,payload,**kwargs)
         return r
 
@@ -583,17 +557,17 @@ class mpo_methods(object):
 
 
     def collection(self, name="", desc="", collection=None, remove=False,
-                   elements=[], **kwargs):
+                   elements=None, **kwargs):
         """
         Create a new collection of objects from a list of UUIDS.
 
         args are:
         name -- name
         desc -- description
-        elements -- list of UUID strings to initialize collection with (may be empty)
+        elements -- *list* of UUID strings to initialize collection with (may be empty)
         collection -- UUID of existing collection. If present, name and desc are ignored.
         remove -- if set to True, remove rather than add the element to the collection. Requires
-                  collection and element list and no name or description. 
+                  collection and element list and no name or description.
         """
 
         #in the future, MPO may support updates of values such as name and desc. At that point,
@@ -601,25 +575,32 @@ class mpo_methods(object):
         #from a collection too.
         #remove option could apply to the entire collection in future api extensions
 
-        #still need some input validation
+        ##validation of input
+        #elements must be a list if present
+        if elements:
+            if not isinstance(elements,list):
+                elements=[elements]
+        else:
+            elements=[]
+        
         if collection: #add to existing collection
-            
+
             if remove:
                 if desc!="":
                     warnings.warn("InvalidArgs in collect. No description used when removing an element.")
                 if name!="":
                     warnings.warn("InvalidArgs in collect. No name used when removing an element.")
-                assert len(elements)>0,"InvalidArgs in collect. Must specify an element to remove."
+                assert elements,"InvalidArgs in collect. Must specify an element to remove."
                 assert collection!=None,"InvalidArgs in collect. Must specify the collection from which to remove the element."
-                    
+
                 for element in elements:
                     r=self.delete(self.COLLECTION_ELEMENT_RT.format(cid=collection)+'/'+element)
-                               
+
             else:
                 payload={"name":name,"description":desc,"elements":elements}
                 r=self.post(self.COLLECTION_ELEMENT_RT.format(cid=collection), None,
                             collection, data=payload, **kwargs)
-                
+
         else:  #make new collection
             payload={"name":name,"description":desc,"elements":elements}
             r=self.post(self.COLLECTION_RT, None, None, data=payload, **kwargs)
@@ -773,6 +754,7 @@ class mpo_cli(object):
         add_parser.add_argument('--name', '-n', action='store')
         add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
         add_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        add_parser.add_argument('--source', '-s', action='store', help='Pointer to the creator of the dataobject')
         add_parser.set_defaults(func=self.mpo.add)
 
         #step, nearly identical to add

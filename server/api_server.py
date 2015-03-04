@@ -9,6 +9,8 @@ from authentication import get_user_dn
 import os, time
 from flask.ext.cors import cross_origin
 from urlparse import urlparse
+from distutils.util import strtobool
+import datetime
 
 #Only needed for event prototype
 import gevent
@@ -38,6 +40,17 @@ routes={'collection':'collection','workflow':'workflow',
         'ontology_instance':'ontology/instance',
         'user':'user', 'item':'item',
         'guid':'uid'}
+
+
+class MPOSetEncoder(json.JSONEncoder):
+    """
+    This class autoconverts datetime.datetime class types returned from postgres.
+    Add any new types not handled by json.dumps() by default.
+    """
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return str(obj)
+        return json.JSONEncoder.default(self, obj)
 
 
 #MDSplus Events support
@@ -109,34 +122,27 @@ def publishgevent(msg = str(time.time())):
         gevent.spawn(notify)
 
 
-def onlyone(recordstr): #error codes are made up for now
-    if not isinstance(recordstr,str):
-        s={"errorcode":1,"errormsg":"returned record is not a string"}
-        s["record"]=str(recordstr)
-        s["recordtype"]=str(type(recordstr))
-        return json.dumps(s)
-    else:
-        j=json.loads(recordstr)
-        if isinstance(j,list) and len(j)==1:  #strip off list
-            return json.dumps(j[0])
-        if isinstance(j,list) and len(j)>1:  #strip off list
-            s=j[0]
+def onlyone(record): #error codes are made up for now
+        if isinstance(record,list) and len(record)==1:  #strip off list
+            return json.dumps(record[0],cls=MPOSetEncoder)
+        if isinstance(record,list) and len(record)>1:  #strip off list
+            s=record[0]
             s["errorcode"]=3
             s["errormsg"]="returned record has more than one record"
-            s["recordlen"]=len(j)
-            return json.dumps(s)
+            s["recordlen"]=len(record)
+            return json.dumps(s,cls=MPOSetEncoder)
         if isinstance(j,dict):  #strip off list
-            s=j
+            s=record
             s["errorcode"]=0
             s["errormsg"]="warning, received json encoded dict and not a list of dict"
-            return json.dumps(s)
+            return json.dumps(s,cls=MPOSetEncoder)
 
         #default error
         s = {"errorcode":2,"errormsg":
                "returned record is not a valid type, must be a json string."}
         s["recordtype"]=str(type(recordstr))
         s["record"]=str(recordstr)
-        return json.dumps(s)
+        return json.dumps(s,cls=MPOSetEncoder)
 
 
 
@@ -240,7 +246,6 @@ def handle_invalid_usage(error):
     return resp
 
 
-
 @app.route("/subscribe")
 @cross_origin()
 def subscribe(): #subscribe returns the gen() function. gen() returns an iterator
@@ -286,6 +291,7 @@ else:
                 routes[k] = '/' + routes[k]
 
 
+
 @app.route(routes['collection']+'/<id>', methods=['GET'])
 @app.route(routes['collection'],  methods=['GET', 'POST'])
 def collection(id=None):
@@ -300,8 +306,9 @@ def collection(id=None):
     api_version,root_url,root=get_api_version(request.url)
 
     if request.method == 'POST':
+        print('api post collection',request.data)
         r = rdb.addCollection(request.data,dn)
-        morer = rdb.getRecord('collection',{'uid':json.loads(r)['uid']},dn)
+        morer = rdb.getRecord('collection',{'uid':r['uid']},dn)
         publishEvent('mpo_collection',onlyone(morer))
     elif request.method == 'GET':
         if id:
@@ -311,38 +318,11 @@ def collection(id=None):
             #?element_uid
             if 'element_uid' in request.args:
                 r = rdb.getRecord('collection_elements',{'uid':request.args['element_uid']})
-                #'r' is a list of element records. The same element but with different
-                #parent_uids for the different collections.
-                assert response_valid(r)==True
-                rr=[]
-                for jr in json.loads(r):
-                    print('api debug',jr)
-                    rcol = rdb.getRecord('collection',{'uid':jr.get('parent_uid')})
-                    rr.append(json.loads(onlyone(rcol)))
-                r = json.dumps(rr)
             #general searches
             else:
                 r = rdb.getRecord('collection',request.args)
 
-        #add discovery information
-        jr = json.loads(r)
-        for rd in jr:
-            links={}
-            if id:
-                links['link-this']=request.base_url
-                links['link-related']=request.base_url+'/element'
-            else:
-                links['link-this']=request.base_url+'/'+rd['uid']
-                links['link-related']=request.base_url+'/'+rd['uid']+'/element'
-            rd['links']=links
-
-        #comment out for now until response body can be updated to have results and metadata fields
-        #jr.append(  {'link-requested':request.url} ) 
-        #jr.append(  {'api-version':} ) 
-        r=json.dumps(jr)
-        if apidebug:
-            print('APIDEBUG:: Collection route api version: ', api_version,root_url,root,request.base_url)
-    return r
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 
@@ -361,34 +341,37 @@ def collectionElement(id=None, oid=None):
     api_version,root_url,root=get_api_version(request.url)
 
     if request.method == 'POST':
-        #make sure the element hasn't been added to the collection already
+
         payload = json.loads(request.data)
-        elems = payload['elements']
+
+        #make sure the element hasn't been added to the collection already
+        #elems must be a list of uids that are not already in this collection, if it exists.
+        elems = payload.get('elements')
+        if elems:
+            if not isinstance(elements,list):
+                elements=[elements]
+        else:
+            elements=[]
         for e in elems[:]:
             r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
-            print('collection add', json.loads(r))
-            jr=json.loads(r)
-            if isinstance(jr,list): #shouldn't need to do this
-               if len(jr)==0:
-                  jr={} 
-               else:
-                  jr=jr[0]
-            if jr.get('uid'): elems.remove(e)
+            if r['uid']: elems.remove(e)
         payload['elements'] = elems
+
         r = rdb.addRecord('collection_elements',json.dumps(payload),dn)
-        morer = rdb.getRecord('collection_elements',{'uid':json.loads(r)['uid']},dn)
+        morer = rdb.getRecord('collection_elements',{'uid':r['uid']},dn)
         publishEvent('mpo_collection_elements',onlyone(morer))
     elif request.method == 'GET':
         if oid:
             r = rdb.getRecord('collection_elements',{'uid':oid})
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
-
-        jr=json.loads(r)
-        for record in jr:
+            
+        print ('cee',r)
+        for record in r:
+            print ('collection element r',record)
             r_uid=record['uid']
             #getRecordTable returns a python dict
-            record['type']=rdb.getRecordTable( r_uid, dn )['table']
+            record['type']=rdb.getRecordTable( r_uid, dn )
 
             #set default field values
             detail={'related':'not sure','link-related':root_url,'related':'cousins',
@@ -418,12 +401,13 @@ def collectionElement(id=None, oid=None):
             record['time']=detail['time']
             record['related']=detail['related']
             record['link-related']=detail['link-related']
-        r=json.dumps(jr)
-    # '[]'
-    if len(r) == 2 : 
-         r = make_response(r, 404)
-         #resp=Response(r, mimetype='application/json')
-    return r
+
+    istatus=200
+    #    if len(r) == 0:
+    #    #istatus = 404
+    #    r=[{'mesg':'No records found', 'number_of_records':0, 'status':404}]
+
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=istatus)
 
 
 
@@ -449,8 +433,8 @@ def workflow(id=None):
     if request.method == 'POST':
         #check for valid workflow type
         wtype = json.loads(request.data).get('type')
-        ont_entry = json.loads(rdb.getRecord('ontology_terms', {'path':'/Workflow/Type'}, dn ))[0]
-        vocab=json.loads( rdb.getRecord('ontology_terms', {'parent_uid':ont_entry['uid']}, dn ) )
+        ont_entry = rdb.getRecord('ontology_terms', {'path':'/Workflow/Type'}, dn )[0]
+        vocab=rdb.getRecord('ontology_terms', {'parent_uid':ont_entry['uid']}, dn )
         valid= tuple(x['name'] for x in vocab)
         if (wtype in valid):
             ##Add logic to check for fields or exceptions from query
@@ -476,13 +460,11 @@ def workflow(id=None):
 
         if apidebug:
             print ('APIDEBUG: workflow returning "%s" len %d'% (r,len(r),))
-        if len(r) == 2:
-            r = make_response(r,404)
 
     if apidebug:
         print ('APIDEBUG: workflow %s'% (r,) )
 
-    return r
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 
@@ -491,7 +473,7 @@ def getWorkflowGraph(id):
     dn=get_user_dn(request)
     if request.method == 'GET':
         r = rdb.getWorkflowElements(id,request.args,dn)
-        return r
+        return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 
@@ -502,7 +484,7 @@ def getWorkflowComments(id):
     ids=id.strip().split(',')
     r={} #[]
     for id in ids:
-        rs = json.loads(rdb.getWorkflowComments(id,request.args,dn))
+        rs = rdb.getWorkflowComments(id,request.args,dn)
         if len(rs)!=0:        #append a dict query_id:result. strip off [].
             r[id]=rs
         else:
@@ -511,15 +493,12 @@ def getWorkflowComments(id):
 
     if len(r)==1:
         r=rs
-    return Response(json.dumps(r), mimetype='application/json')
+    return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
 
 @app.route(routes['workflow']+'/<id>/type', methods=['GET'])
 def getWorkflowType(id):
-    dn=get_user_dn(request)
-    r = rdb.getWorkflowType(id,request.args,dn)
-    return r
-
+    return Response(json.dumps(rdb.getWorkflowType(id),cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
@@ -534,7 +513,7 @@ def getWorkflowCompositeID(id):
         if id:
             ids=id.strip().split(',')
             for id in ids:
-                rs = json.loads(rdb.getWorkflowCompositeID(id,dn))
+                rs = rdb.getWorkflowCompositeID(id,dn)
                 if rs:
                     r[id]=rs
                 else:
@@ -543,7 +522,8 @@ def getWorkflowCompositeID(id):
             if len(ids)==1: #return just single record if one uid
                 r=rs
 
-    return Response(json.dumps(r), mimetype='application/json')
+    return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
+
 
 
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
@@ -568,18 +548,40 @@ def dataobject(id=None):
     dn=get_user_dn(request)
     istatus=200
     if request.method == 'POST':
-        r = rdb.addRecord('dataobject',request.data,dn)
-        rr = json.loads(r)
-        id = rr['uid']
-        r=rr
-        morer = rdb.getRecord('dataobject',{'uid':id},dn)
+        req = json.loads(request.data)
+        #find the dataobject with the specified uri (assumed to be unique)
+        if not req['uri']: return Response({}, mimetype='application/json',status=istatus)
+        do = rdb.getRecord('dataobject',{'uri':req['uri']},dn)
+
+        #If the D.O. exists, point to it, if not, make it and point to it
+        if do:
+            if not (req['work_uid'] and req['parent_uid']):
+                return Response({}, mimetype='application/json',status=istatus)
+            else:
+                req['do_uid']=do[0]['uid']
+        else:
+            r = rdb.addRecord('dataobject',request.data,dn)
+            if not r: return Response({}, mimetype='application/json',status=istatus)
+            req['do_uid']=r['uid']
+
+        r = rdb.addRecord('dataobject_instance',json.dumps(req),dn)
+        id = r['uid']
+        morer = rdb.getRecord('dataobject_instance',{'uid':id},dn)
         publishEvent('mpo_dataobject',onlyone(morer))
     elif request.method == 'GET':
+        #optional argument instances. defaults to true
+        instance=1
+        if request.args.has_key('instance'): instance=strtobool(request.args.get('instance'))
+        if instance:
+            route = 'dataobject_instance'
+        else:
+            route = 'dataobject'
+
         if id:
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = json.loads(rdb.getRecord('dataobject',{'uid':id},dn))
+                rs = rdb.getRecord(route,{'uid':id},dn)
                 if rs:
                     r[id]=rs
                 else:
@@ -588,12 +590,13 @@ def dataobject(id=None):
             if len(ids)==1: #return just single record if one uid
                 r=rs
         else:
-            r = json.loads(rdb.getRecord('dataobject',request.args,dn))
-            if len(r) == 0 :
-                r={'istatus':404,'message':'no records found','query':request.url}
+            r = rdb.getRecord(route,request.args,dn)
+
+            #if len(r) == 0 :
+            #    istatus=404
                 #r = make_response(json.dumps(r), 404)
 
-    return Response(json.dumps(r), mimetype='application/json',status=istatus)
+    return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
 
 
 
@@ -604,8 +607,7 @@ def activity(id=None):
     dn=get_user_dn(request)
     if request.method == 'POST':
         r = rdb.addRecord('activity',request.data,dn)
-        rr = json.loads(r)
-        id = rr['uid']
+        id = r['uid']
         morer = rdb.getRecord('activity',{'uid':id},dn)
         publishEvent('mpo_activity',onlyone(morer))
     elif request.method == 'GET':
@@ -613,7 +615,7 @@ def activity(id=None):
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = json.loads(rdb.getRecord('activity',{'uid':id},dn))
+                rs = rdb.getRecord('activity',{'uid':id},dn)
                 if rs:
                     r[id]=rs
                 else:
@@ -622,7 +624,6 @@ def activity(id=None):
             if len(ids)==1: #return just single record if one uid
                 r=rs
 
-            r=json.dumps(r)
         else:
             r = rdb.getRecord('activity',request.args,dn)
 
@@ -631,7 +632,7 @@ def activity(id=None):
     if len(r) == 2 :
         istatus=404
 
-    return Response(r, mimetype='application/json',status=istatus)
+    return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
 
 
 
@@ -641,9 +642,10 @@ def activity(id=None):
 def comment(id=None):
     dn=get_user_dn(request)
     if request.method == 'POST':
-        r = rdb.addComment(request.data,dn)
-        rr = json.loads(r)
-        id = rr['uid']
+        req = json.loads(request.data)
+        req['ptype']=rdb.getRecordTable(req['parent_uid'])
+        r = rdb.addRecord('comment',json.dumps(req),dn)
+        id = r['uid']
         try:  #JCW just being careful here on first implementation
             morer = rdb.getRecord('comment',{'uid':id},dn)
         except Exception as e:
@@ -660,19 +662,19 @@ def comment(id=None):
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = json.loads(rdb.getRecord('comment',{'uid':id},dn))
+                rs = rdb.getRecord('comment',{'uid':id},dn)
                 if len(rs)==1:
                     r[id]=rs[0] #unpack single element list
                 else:
                     r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
             if len(ids)==1: #return just single record if one uid
-                r=json.dumps(rs)
+                r=rs
             else:
-                r=json.dumps(r)
+                r=r
         else:
             r = rdb.getRecord('comment',request.args,dn)
 
-    return Response(r, mimetype='application/json')
+    return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
 
 
@@ -682,8 +684,7 @@ def metadata(id=None):
     dn=get_user_dn(request)
     if request.method == 'POST':
         r = rdb.addMetadata( request.data, dn)
-        rr = json.loads(r)
-        id = rr['uid']
+        id = r['uid']
         morer = rdb.getRecord('metadata',{'uid':id},dn)
         publishEvent('mpo_metadata',onlyone(morer))
     elif request.method == 'GET':
@@ -692,19 +693,19 @@ def metadata(id=None):
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = json.loads(rdb.getRecord('metadata',{'uid':id},dn))
+                rs = rdb.getRecord('metadata',{'uid':id},dn)
                 if len(rs)==1:
                     r[id]=rs[0] #unpack single element list
                 else:
                     r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
             if len(ids)==1: #return just single record if one uid
-                r=json.dumps(rs)
+                r=rs
             else:
-                r=json.dumps(r)
+                r=r
         else:
             r = rdb.getRecord('metadata',request.args,dn)
 
-    return Response(r, mimetype='application/json')
+    return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
 
 @app.route(routes['ontology_class']+'/<id>', methods=['GET'])
@@ -741,17 +742,10 @@ def ontologyTermVocabulary(id=None):
         id='None'
 
     r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
+    r.append(  {'link-requested':request.url} )
+    
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
-    #add discovery information
-    jr = json.loads(r)
-    for rd in jr:
-        links={}
-        links['link-related']=root_url+'/ontology/term/'+rd['uid']+'/vocabulary'
-        rd['links']=links
-
-
-    jr.append(  {'link-requested':request.url} ) 
-    return json.dumps(jr)
 
 
 @app.route(routes['ontology_term']+'/<id>/tree', methods=['GET'])
@@ -788,14 +782,24 @@ def ontologyTerm(id=None):
         return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if request.method == 'POST':
-        r = rdb.addOntologyTerm(request.data,dn)
-                #r = rdb.addRecord('ontology_terms',request.data,dn)
+        objs = json.loads(request.data)
+        #allow for ontology terms with null parents
+        if not objs.has_key('parent_uid'): objs['parent_uid']=None
+
+        # make sure the term doesn't exist already
+        vocab = rdb.getRecord('ontology_terms', {'parent_uid':objs['parent_uid']}, dn )
+        for x in vocab:
+            if objs['name'] == x['name']:
+                return Response(json.dumps({'uid':x['uid']}),mimetype='application/json')
+
+        r = rdb.addRecord('ontology_terms',json.dumps(objs),dn)
     else:
         if id:
             r = rdb.getRecord('ontology_terms', {'uid':id}, dn )
         else:
             r = rdb.getRecord('ontology_terms', request.args, dn )
-    return r
+
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 @app.route(routes['ontology_instance']+'/<id>', methods=['GET'])
@@ -816,16 +820,16 @@ def ontologyInstance(id=None):
                 rargs=request.args.to_dict() #multidict conversion to dict
                 for pid in p_uids:
                     rargs['parent_uid']=pid
-                    rs = json.loads(rdb.getRecord('ontology_instances', rargs, dn ))
+                    rs = rdb.getRecord('ontology_instances', rargs, dn )
                     print('ont inst',pid,str(rargs),str(type(rargs)))
                     r[pid]=rs #element list, can have multiple instances
 
                 if len(p_uids)==1: #return just single record if one uid
                     r=rs
             else:
-                r = json.loads(rdb.getRecord('ontology_instances', request.args, dn ))
+                r = rdb.getRecord('ontology_instances', request.args, dn )
 
-    return Response(json.dumps(r), mimetype='application/json')
+    return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
 
 
@@ -833,15 +837,17 @@ def ontologyInstance(id=None):
 @app.route(routes['user'], methods=['GET', 'POST'])
 def user(id=None):
     dn=get_user_dn(request)
+    istatus=200
     if request.method == 'POST':
         r = rdb.addUser( request.data, dn )
+        if not r: istatus=404
     elif request.method == 'GET':
         if id:
             r = rdb.getUser( {'uid':id}, dn )
         else:
             r = rdb.getUser( request.args, dn )
 
-    return r
+    return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
 
 
 @app.route(routes['item']+'/<id>', methods=['GET'])
@@ -854,8 +860,8 @@ def item(id):
         raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,
                               payload=payload)
 
-    return Response(json.dumps(r), mimetype='application/json')
-    
+    return Response(json.dumps({'table':r,'uid':id}), mimetype='application/json')
+
 
 if __name__ == '__main__':
     #adding debug option here, so we can see what is going on.
