@@ -587,11 +587,18 @@ def dataobject(id=None):
                     r[id]=rs
                 else:
                     r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
+                if instance:
+                    do_info=rdb.getRecord('dataobject',{'uid':r.get('do_uid')},dn)
+                    r['do_info']=do_info[0]
 
             if len(ids)==1: #return just single record if one uid
                 r=rs
         else:
             r = rdb.getRecord(route,request.args,dn)
+            if instance:
+                for rr in r:
+                    do_info=rdb.getRecord('dataobject',{'uid':rr.get('do_uid')},dn)
+                    rr['do_info']=do_info[0]
 
             #if len(r) == 0 :
             #    istatus=404

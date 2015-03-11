@@ -374,7 +374,7 @@ class mpo_methods(object):
                 wid=workflow_ID.get('uid')
                 workflow_ID = wid
 
-            if not isinstance(workflow_ID,str):
+            if not (isinstance(workflow_ID,str) or isinstance(workflow_ID,unicode) ):
                 print('invalid workflow_ID in post',file=sys.stderr)  #throw exception
             datadict[self.WORKID]=workflow_ID
 
