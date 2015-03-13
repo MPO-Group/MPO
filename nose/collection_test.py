@@ -1,6 +1,5 @@
 from __future__ import print_function
 from nose.tools import *
-from nose.plugins.attrib import attr
 import unittest
 
 import mpo_setup
@@ -34,7 +33,6 @@ class CollectionTest(unittest.TestCase):
         assert ce.get('uid')==c.get('uid')
 
 
-    @attr(only='this')
     def test_collection1(self):
         "Create a collection with an element"
         #note use of search route which is formatted, get always returns raw response
@@ -42,7 +40,7 @@ class CollectionTest(unittest.TestCase):
         print('test collection adding object with oid to collection: ',oid,'\n')
         c=self.m.collection(name="Nose_collection",desc="Creating a collection in unit tests from "+
                             __name__, elements=[oid] )
-        print('collection created with element', c,str(type(c)))
+        print('collection created', c)
         ce=self.m.search(route='collection/'+c.get('uid')+'/element')
         print('col elements',ce,'\n')
         assert ce[0].get('uid')==oid
@@ -56,40 +54,6 @@ class CollectionTest(unittest.TestCase):
         assert len(c) > 0
 
 
-    @nottest
     def test_collection3(self):
         "Verify GET collection returns correct fields."
         assert 1==1
-
-        
-    def test_collection4(self):
-        "Collection of workflows. Also tests adding elements to existing collection."
-        c1=self.m.collection(name="Nose_collection-workflows",
-                             desc="Creating a collection of workflows in unit tests in "+ __name__)
-
-        #add a workflow
-        wid=self.m.search(route='workflow')[0].get('uid')
-        eid=self.m.collection(collection=c1['uid'],elements=[wid]) #[0].get('uid')
-        print ('eid is ', eid)
-        ce=self.m.search(route='collection/'+c1.get('uid')+'/element')
-        print('col element',ce,'should match',wid,' in ',c1.get('uid'),'\n')
-        assert ce[0].get('uid')==wid
-
-        
-    def test_collection5(self):
-        "Collection of collections"
-        c1=self.m.collection(name="Nose_collection-member1",
-                             desc="Creating a collection in unit tests in "+ __name__)
-        c2=self.m.collection(name="Nose_collection-member2",
-                             desc="Creating a collection in unit tests in "+ __name__)
-        cgroup=self.m.collection(name="Nose_collection_of_collections",
-                                 desc="Creating a collection of collections in unit tests in "+ __name__,
-                                 elements=[c1.get('uid'),c2.get('uid')])
-        print('collection of collections created', cgroup)
-        ce=self.m.search(route='collection/'+cgroup.get('uid')+'/element')
-        print('col elements',ce,c1,c2,'\n')
-        assert ce[0].get('uid')==c1.get('uid')
-        assert ce[1].get('uid')==c2.get('uid')
-
-
-        

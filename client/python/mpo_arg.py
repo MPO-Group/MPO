@@ -17,6 +17,10 @@ record/meta
 help
 
 """
+
+# AVOID tabs, use spaces.
+# Non-standard dependencies: requests.py, argparse.py
+
 from __future__ import print_function
 import requests
 import ast, textwrap
@@ -34,6 +38,12 @@ import traceback
 import logging
 logging.captureWarnings(True)
 
+import logging #hide urllib3 CA warnings
+logging.captureWarnings(True)
+
+
+
+###Some utilities functions
 def PrintException():
     exc_type, exc_obj, tb = sys.exc_info()
     f = tb.tb_frame
@@ -96,10 +106,11 @@ class shell_exception(Exception):
         self.return_status=status
 #        Exception.__init__(self, *args, **kwargs)
 
+
+### MPO class
 #Developers note:
-# All print statements except those in mpo_cli.storeresult should go to sys.stderr
-# AVOID tabs, use spaces.
-#Non-standard dependencies: requests.py, argparse.py
+# All print statements in mpo_methods should go to sys.stderr
+
 class mpo_methods(object):
     """
     Class of RESTful primitives. I/O is through stdin/stdout.
@@ -123,8 +134,6 @@ class mpo_methods(object):
     ID='uid'
     WORKID='work_uid'
     PARENTID='parent_uid' #field for object id to which comments and metadata are attached
-    MPO_PORT='8080' #not used yet
-    WORKID_QRY='workid' #query argument for connection table
 
     MPO_VERSION='v0'
     WORKFLOW_RT = 'workflow'
@@ -145,6 +154,7 @@ class mpo_methods(object):
                  archive_user='psfcmpo', archive_key=None,
                  archive_prefix=None, debug=False,filter=False,dryrun=False):
 
+
         self.debug=debug
         self.dryrun=dryrun
         self.filter=filter
@@ -158,6 +168,14 @@ class mpo_methods(object):
         self.archive_prefix=archive_prefix
         self.set_api_url(api_url)
         self.requestargs={'cert':self.cert,'verify':False}
+
+        self.session=requests.session()
+        a = requests.adapters.HTTPAdapter(max_retries=4)
+        self.session.mount('https://', a)
+        self.session.cert=self.cert
+        self.session.verify=False
+        #self.session.headers.update({})
+
 
         if self.debug:
             print('certificate in mpo_arg.mpo_methods is:',cert,file=sys.stderr)
@@ -178,6 +196,8 @@ class mpo_methods(object):
         """
         Routine to handle reformatting of responses from submethods. It is aware of the
         internal format returned.
+        filter: defaults to the UID return but acceptable values are id, json, pretty, raw, text
+        result: is the full Response object.
         """
 
         #check that result is a request object.
@@ -203,7 +223,7 @@ class mpo_methods(object):
             else:
                 if self.ID in result.json():
                     output=result.json()[self.ID]
-        elif filter=='json':
+        elif filter=='json' or filter=='dict':
             output=result.json()
         elif filter=='pretty':
             output=json.dumps(result.json(),separators=(',', ':'),indent=4)
@@ -220,9 +240,9 @@ class mpo_methods(object):
 
         return output
 
-# define api methods here. All methods must be declared as method(**kwargs).
-# explict arguments are allowed but must be keyword=value, this is required
-# for compatibility with the commandline parser invokacion
+### Define api methods here. All methods must be declared as method(**kwargs).
+### explict arguments are allowed but must be keyword=value, this is required
+### for compatibility with the commandline parser invocation
 
     def test(self,route='default',*a,**kw):
         "NOP routine. Useful for new subcommand development"
@@ -230,7 +250,8 @@ class mpo_methods(object):
         print('with route', route)
         return
 
-
+### GET, POST, DELETE low level routines
+### All high level methods reduce to one of these three
     def get(self,route="",params={},verbose=False,**kwargs):
         import re
         """GET a resource from the MPO API server.
@@ -262,8 +283,10 @@ class mpo_methods(object):
             print('MPO.GET from {u} with headers of {h}, request options, {ra}, and arguments of {a}'.format(
                   u=url,h=self.GETheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
 
-        r = requests.get(url,params=datadict,
-                             headers=self.GETheaders,**self.requestargs)
+#        r = requests.get(url,params=datadict,
+#                             headers=self.GETheaders,**self.requestargs)
+        r = self.session.get(url,params=datadict,headers=self.GETheaders)
+
         if self.debug or verbose:
             print('MPO.GET response',r.url,r.status_code,file=sys.stderr)
 
@@ -300,14 +323,17 @@ class mpo_methods(object):
                   u=url,h=self.DELETEheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
             return
 
-        r = requests.delete(url,params=datadict,
-                             headers=self.DELETEheaders,**self.requestargs)
+        r = self.session.delete(url,params=datadict,headers=self.DELETEheaders)
         if self.debug or verbose:
             print('MPO.DELETE response',r.url,r.status_code,file=sys.stderr)
 
         r.raise_for_status()
 
+        if self.filter:
+            r=self.format(r,self.filter)
+
         return r
+        
 
 
     def post(self,route="",workflow_ID=None,obj_ID=None,data=None,**kwargs):
@@ -342,12 +368,19 @@ class mpo_methods(object):
 
         url=self.api_url+route
 
-        #if obj_ID: #commented out to permit null for ontology entries
-        datadict[self.PARENTID]=obj_ID
+        if obj_ID:
+            datadict[self.PARENTID]=obj_ID
 
-        if workflow_ID:
+        if workflow_ID: #if dict, extract UID
+            if isinstance(workflow_ID,dict):
+                wid=workflow_ID.get('uid')
+                workflow_ID = wid
+
+            if not (isinstance(workflow_ID,str) or isinstance(workflow_ID,unicode) ):
+                print('invalid workflow_ID in post',file=sys.stderr)  #throw exception
             datadict[self.WORKID]=workflow_ID
 
+            
         if self.debug:
             print('MPO.POST to {u} with workflow:{wid}, parent:{pid} and payload of {p}'.format(
                   u=url,wid=workflow_ID,pid=obj_ID,p=json.dumps(datadict) ),file=sys.stderr)
@@ -363,8 +396,7 @@ class mpo_methods(object):
         #    in the header it is JSON
         # requests will actually send the dict directly if headers doesn't declare body type
         try:
-            r = requests.post(url, json.dumps(datadict),
-                              headers=self.POSTheaders, **self.requestargs)
+            r = self.session.post(url, json.dumps(datadict),headers=self.POSTheaders)
         except requests.exceptions.ConnectionError as err:
             errmsg="ERROR: Could not connect to server, "+url
             print(errmsg,file=sys.stderr)
@@ -375,15 +407,14 @@ class mpo_methods(object):
         if self.debug:
             ('MPO.POST return type', str(type(r)), r.status_code)
 
-        if r.status_code!=200:
-            return r  # do something else here, r.status_code, r.text
-        else:
-            if self.filter:
-                r=self.format(r,self.filter)
+        r.raise_for_status()
+        if self.filter:
+            r=self.format(r,self.filter)
 
-            return r
+        return r
 
-
+        
+### Main mpo methods
     def init(self,name=None, desc="", wtype='None', **kwargs):
         """
         The INIT method starts a workflow.
@@ -416,47 +447,21 @@ class mpo_methods(object):
         name --
         desc -- description
         uri -- uri for the data object added
+        source -- source uid for dataobject
         """
 
         uri = kwargs.get('uri')
         desc = kwargs.get('desc')
         name = kwargs.get('name')
+        source = kwargs.get('source')
+
         if (self.debug):
-            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,kwargs, file=sys.stderr)
+            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,source,kwargs, file=sys.stderr)
 
-        if not (workflow_ID and parentobj_ID):
-            print('Invalid workflow or parent to add method',workflow_ID, parentobj_ID, file=sys.stderr)
-            exit
 
-        payload={"name":name,"description":desc,"uri":uri}
-        return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],payload,**kwargs)
+        payload={"name":name,"description":desc,"uri":uri,"source":source}
 
-    def add_do(self, **kwargs):
-        """
-        Add a dataobject with no workflow or partentobj_id.
-        This data object can then be connected to one or more
-        workflows.
-
-        if a data object with this workflow already exists, then return it.
-
-        args are:
-        name --
-        desc -- description
-        uri -- uri for the data object added
-
-        """
-
-        uri = kwargs.get('uri')
-        desc = kwargs.get('desc')
-        name = kwargs.get('name')
-        if (self.debug):
-            print('MPO.ADD_DO', name, desc,uri,kwargs, file=sys.stderr)
-
-        payload={"name":name,"description":desc,"uri":uri}
-        print ("about to post %s\n"%payload)
-        ans=self.post(self.DATAOBJECT_RT,data=payload,**kwargs)
-
-        return ans
+        return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],data=payload,**kwargs)
 
 
     def step(self,workflow_ID=None,parentobj_ID=None,input_objs=None,**kwargs):
@@ -504,7 +509,7 @@ class mpo_methods(object):
         if specified:
             specified=str2bool(specified)
 
-        payload={"term":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
+        payload={"name":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
         r=self.post(self.ONTOLOGY_TERM_RT,None,parent_ID,payload,**kwargs)
         return r
 
@@ -583,17 +588,17 @@ class mpo_methods(object):
 
 
     def collection(self, name="", desc="", collection=None, remove=False,
-                   elements=[], **kwargs):
+                   elements=None, **kwargs):
         """
-        Create a new collection of objects from a list of UUIDS.
+        Create a new collection of objects from a list of UUIDS, or add to an existing collection.
 
         args are:
         name -- name
         desc -- description
-        elements -- list of UUID strings to initialize collection with (may be empty)
+        elements -- *list* of UUID strings to initialize collection with (may be empty)
         collection -- UUID of existing collection. If present, name and desc are ignored.
         remove -- if set to True, remove rather than add the element to the collection. Requires
-                  collection and element list and no name or description. 
+                  collection and element list and no name or description.
         """
 
         #in the future, MPO may support updates of values such as name and desc. At that point,
@@ -601,25 +606,32 @@ class mpo_methods(object):
         #from a collection too.
         #remove option could apply to the entire collection in future api extensions
 
-        #still need some input validation
+        ##validation of input
+        #elements must be a list if present
+        if elements:
+            if not isinstance(elements,list):
+                elements=[elements]
+        else:
+            elements=[]
+        
         if collection: #add to existing collection
-            
+
             if remove:
                 if desc!="":
-                    warnings.warn("InvalidArgs in collect. No description used when removing an element.")
+                    warnings.warn("InvalidArgs in collect/collection. No description used when removing an element.")
                 if name!="":
-                    warnings.warn("InvalidArgs in collect. No name used when removing an element.")
-                assert len(elements)>0,"InvalidArgs in collect. Must specify an element to remove."
-                assert collection!=None,"InvalidArgs in collect. Must specify the collection from which to remove the element."
-                    
+                    warnings.warn("InvalidArgs in collect/collection. No name used when removing an element.")
+                assert elements,"InvalidArgs in collect/collection. Must specify an element to remove."
+                assert collection!=None,"InvalidArgs in collect/collection. Must specify the collection from which to remove the element."
+
                 for element in elements:
                     r=self.delete(self.COLLECTION_ELEMENT_RT.format(cid=collection)+'/'+element)
-                               
+
             else:
-                payload={"name":name,"description":desc,"elements":elements}
+                payload={"elements":elements}
                 r=self.post(self.COLLECTION_ELEMENT_RT.format(cid=collection), None,
                             collection, data=payload, **kwargs)
-                
+
         else:  #make new collection
             payload={"name":name,"description":desc,"elements":elements}
             r=self.post(self.COLLECTION_RT, None, None, data=payload, **kwargs)
@@ -677,6 +689,7 @@ class mpo_methods(object):
         return archiver.ls(protocol[1])
 
 
+### MPO commandline client
 class mpo_cli(object):
     """
     mpo command line interface to restful primitives.
@@ -727,7 +740,7 @@ class mpo_cli(object):
         parser.add_argument('--pass','-p',action='store',help='''Specify password.''',
                             default=self.password)
         parser.add_argument('--format','-f',action='store',help='Set the format of the response.',
-                            choices=['id','raw','text','json','pretty'], default='id') #case insensitive?
+                            choices=['id','raw','text','json','dict','pretty'], default='id') #case insensitive?
         parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
                             default=False)
         parser.add_argument('--host',action='store',help='specify API root URI')
@@ -773,6 +786,7 @@ class mpo_cli(object):
         add_parser.add_argument('--name', '-n', action='store')
         add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
         add_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        add_parser.add_argument('--source', '-s', action='store', help='Pointer to the creator of the dataobject')
         add_parser.set_defaults(func=self.mpo.add)
 
         #step, nearly identical to add
@@ -913,7 +927,7 @@ class mpo_cli(object):
         return r
 
 
-####main routine
+####Application main routine. Instance of commandline application class using mpo methods class
 if __name__ == '__main__':
     import os
 

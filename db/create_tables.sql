@@ -22,12 +22,12 @@ create table mpousers
 /*  creation_time timestamp */
 );
 /*insert into mpousers values ('romosan','bc789de3-7484-49dc-a498-3b5a3aad3c80', 'Alexander', 'Romosan', 'romosan@opteron05@lbl.gov','LBL','555-555-1234','xxx' );*/
-insert into mpousers values ('mdsadmin', 'a8bc7b5a-b4f5-49ec-87fb-20e5bddfa1af');
+/*insert into mpousers values ('mdsadmin', 'a8bc7b5a-b4f5-49ec-87fb-20e5bddfa1af'); */
 insert into mpousers values ('mpoadmin', 'ddc315a1-6310-41e7-a84d-886bc904f3b2');
 insert into mpousers values ('mpodemo', 'f223db41-d1c5-41db-b8af-fde6c0a16f76', 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', '', '/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu');
 alter table mpousers OWNER TO mpoadmin;
 
-drop table if exists collection;
+drop table if exists collection cascade;
 create table collection
 (
   c_guid uuid primary key,
@@ -42,7 +42,7 @@ drop table if exists collection_elements;
 create table collection_elements
 (
   c_guid uuid references collection,
-  e_guid uuid ,
+  e_guid uuid,
   u_guid uuid references mpousers,
   creation_time timestamp
 );
@@ -65,20 +65,31 @@ create table workflow
 );
 alter table workflow OWNER TO mpoadmin;
 
-drop table if exists dataobject;
+drop table if exists dataobject cascade;
 create table dataobject
 (
   DO_GUID uuid primary key,
   name text,
-  DOV_GUID uuid,
-  W_GUID uuid references workflow,
-  creation_time timestamp,
-  U_GUID  uuid references mpousers,
   description text,
-  URI text
+  URI text,
+  source_guid uuid,
+  creation_time timestamp,
+  U_GUID  uuid references mpousers
 );
 
 alter table dataobject OWNER TO mpoadmin;
+
+drop table if exists dataobject_instance cascade;
+create table dataobject_instance
+(
+  DOI_GUID uuid primary key,
+  DO_GUID uuid references dataobject,
+  W_GUID uuid references workflow,
+  creation_time timestamp,
+  U_GUID  uuid references mpousers
+);
+
+alter table dataobject_instance OWNER TO mpoadmin;
 
 drop table if exists activity;
 create table activity
@@ -197,8 +208,8 @@ begin
   end loop;
   if parent_type = 'activity' then
     execute 'select w_guid from ' || parent_type || ' where a_guid=''' || parent_guid || '''' into wid;
-  elsif parent_type = 'dataobject' then
-    execute 'select w_guid from ' || parent_type || ' where do_guid=''' || parent_guid || '''' into wid;
+  elsif parent_type = 'dataobject_instance' then
+    execute 'select w_guid from ' || parent_type || ' where doi_guid=''' || parent_guid || '''' into wid;
   elsif parent_type = 'workflow' then
     execute 'select w_guid from ' || parent_type || ' where w_guid=''' || parent_guid || '''' into wid;
   end if;

@@ -43,11 +43,26 @@
 
 
 $(document).ready(function() {
-	$("input.copy:text").focus(function() { $(this).select();  } );
+	$("input.copy:text").click(function() { $(this).select();  } );
 	$("input.copy:text").css( 'cursor', 'pointer' );
+		
+	$(".anchorLink").click(function(e) {
+		e.preventDefault();
+	 	anchorScroll( $(this), $($(this).attr("href")), 100 );		
+	}); 
 });
 
-
+function anchorScroll(this_obj, that_obj, base_speed) {
+var this_offset = this_obj.offset();
+var that_offset = that_obj.offset();
+var offset_diff = Math.abs(that_offset.top - this_offset.top);
+ 
+var speed = (offset_diff * base_speed) / 1000;
+ 
+$("html,body").animate({
+	scrollTop: that_offset.top - 50 /* -50 to factor in top navigation  */
+	}, speed);
+} 
 
 xmlToJson = function(xml) {
     var obj = {};
@@ -216,14 +231,27 @@ input.small{
 	height: 10px;
 	margin-top: 3px;
 }
+.big {
+	font-size: 30px;
+	font-family: Cambria, "Hoefler Text", "Liberation Serif", Times, "Times New Roman", serif;	
+	padding-top: 0px;
+	padding-bottom: 0px;
+	padding-right: 10px;
+	margin: 0px 0px;
+	color: #F60;
+}
+span.glyphicon-landing {
+	font-size: 40px;
+}
+input.copy{
+	width:150px;
+}
 </style>
     {% block hscripts %}{% endblock %}
   </head>
 
   <body>
- {% if request.path != "/" and request.path != "/register" %}
    	{% include 'navigation.html' %}
- {% endif %}
     
     <div class="container-fluid">
     {% block container %}
@@ -231,7 +259,8 @@ input.small{
       <hr>
       
       <footer>
-        <div><span class="pull-left muted"><a class="muted" href="{{ url_for("about") }}">&copy; MPO Team 2014</a></span><span class="pull-right muted"><a class="muted" href="{{ url_for("index") }}">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("search") }}">Search</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("about") }}">About Us</a> <font color=white>*** {{ db_server }} ***</font></span></div>    
+        <!-- <div><span class="pull-left muted"><a class="muted" href="{{ url_for("about") }}">&copy; MPO Team 2014</a></span><span class="pull-right muted"><a class="muted" href="{{ url_for("index") }}">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("search") }}">Search</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="muted" href="{{ url_for("about") }}">About Us</a> <font color=white>*** {{ db_server }} ***</font></span></div> -->
+        <div><span class="pull-left muted"><a class="muted" href="{{ url_for("about") }}">&copy; MPO Team 2015</a></span><span class="pull-right muted"><a class="muted" href="#">About MPO</a> | <a href="{{ url_for("index") }}">Registered Users</a></font></span></div> 
       </footer>
 
     </div> <!-- /container-fluid -->

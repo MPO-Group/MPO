@@ -81,7 +81,16 @@ export MPO_WEB_CLIENT_KEY
 #uncomment this opt (or set in launching env) to test gevent framework
 #export GEVENT_OPT="--gevent 100 --master --pidfile /tmp/web_master.pid"
 export THREAD_OPT=--enable-threads
-uwsgi $GEVENT_OPT $THREAD_OPT --https  "0.0.0.0:$MPO_WEB_SERVER_PORT,$MPO_WEB_SERVER_CERT,$MPO_WEB_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/web_server.py  --callable app
+
+echo uwsgi used from `which uwsgi`
+#define virtualenv path if used
+VIRTPATH=""
+if [ -n "$VIRTUAL_ENV" ]
+then
+VIRTPATH="-H $VIRTUAL_ENV"
+fi
+
+uwsgi $GEVENT_OPT $THREAD_OPT $VIRTPATH --https  "0.0.0.0:$MPO_WEB_SERVER_PORT,$MPO_WEB_SERVER_CERT,$MPO_WEB_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/web_server.py  --callable app
 
 #with --master option, can restart after changes to server with
 # uwsgi --reload /tmp/web-master.pid

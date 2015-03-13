@@ -759,88 +759,106 @@ function buildPageElements(wfID) {
                     {% for obj in nodes.iteritems() %}
                         {% for n in obj %}
 						<div>
-                        <!--  display icon -->
-                        {% if n.type == "dataobject" %}
+                        <!--  display icon, name link and time -->
+                        {% if n.type == "dataobject_instance" %}
                         	{% if n.data[0].wf_link|length == 1 %} 
                             <span class="icon-dataobject"></span>
                             {% else %}
                             <span class="icon-dataobject-blue"></span>
                             {% endif %}
-                        <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a>
-                        {% elif n.type == "activity" %}
-	                    	<span class="icon-activity"></span>
-                        <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a>
-                        {% elif n.type == "workflow" %}
-                        	<span class="icon-workflow"></span> 
-                            <a href="#acc_{{ n.uid }}" data-toggle="collapse"><strong>{{ wid_info[0].username }} / <font color="#004B82">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }}</strong></a> 
+                        	{% if n.data %}
+                        	<a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.data[0].do_info.name }}</a>
+                        	<span class="muted"><small><small><em>- {{ n.data[0].time }}</em></small></small></span>
+                            {% endif %}
+                        {% else %}
+                            {% if n.type == "activity" %}
+                                <span class="icon-activity"></span>
+                            <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a>
+                            
+                            {% elif n.type == "workflow" %}
+                                <span class="icon-workflow"></span> 
+                                <a href="#acc_{{ n.uid }}" data-toggle="collapse"><strong>{{ wid_info[0].username }} / <font color="#004B82">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }}</strong></a> 
+                       		{% endif %}   
+                            
+                        	{% if n.data %}                                      	
+                             <span class="muted"><small><small><em>- {{ n.time }}</em></small></small></span>
+                            {% endif %}
+                             
                         {% endif %}
-                        <!-- end display icon -->
-                        <!-- display name link and time -->
-                        {% if n.data %}
-                        	{% for x in n.data %}
-                            	{% if x.time %}                                                	
-                                	<span class="muted"><small><small><em>- {{ x.time }}</em></small></small></span>
-                            	{% endif %}
-                       		{% endfor %}
-                       	{% endif %}                                                
-                        <!-- end of display name link and time -->                                         
-                                            <div class="accordion-body collapse" id="acc_{{ n.uid }}">
-                                                <div class="accordion-inner no-border">
-                                                    <ul>
-                                                        {% if n.data %}
-                                                            {% for x in n.data %}
-                                                                <li><small>{{ x.description }}</small>
-                                                                {% if x.uri %}    
-                                                                	<small><font color="#ED8454"><em>{{ x.uri }}</em></font></small>
-                                        <!-- display other workflows (if any) -->  
-                                                                </li>                                 
-                                                                <li><small>UID: <font color="#87A6B9">{{ x.uid }}</font></small></li>
-                                                                 {% if x.wf_link|length > 1 %} 
-                                                                  <ul class="wf_links"> 
-                                                                      <li id="lw_{{ x.uid }}"  style="margin-left: 0px"><small><em><a style="cursor:pointer;">[+] Linked Workflows</a></em></small>
-                                                                      <!-- <span id="{{ x.uid }}_loader"><img src="/static/img/ajax-loader-green-small.gif"></span> -->
-                                                                    	<ul>
-                                                                        {% for j in x.wf_link %}
-                                                                        	{% if j.work_uid != wid %}
-                                                                            <li><small><a href="{{ url_for("connections", wid=j.work_uid) }}" class="linkedwf">{{ j.work_uid }}</a></small>
-                                                                            </li>
-                                                                            {% endif %}
-                                                                        {% endfor %}
-                                                                        </ul>
-                                                                      </li>
-                                                                     </ul>
-                                                                    {% endif %}                             
-                                        <!-- end of display other workflows (if any) -->  
-                                                                </li>                                                               
-                                                                {% endif %}       
-                                                            {% endfor %}
-                                                        {% endif %}
-                                                        {% if n.metadata %}
-                                                            <li><small>Metadata:</small>
-                                                            <ul>
-                                                            {% for md in n.metadata %}
-                                                                <li>
-                                                                    <small>{{ md.key }}: {{ md.value }}</small>
-                                                                    {% if md.time %}                                                	
-                                                                    <ul><li><small>time: {{ md.time }}</small></li></ul>
-                                                                    {% endif %}
-                                                                </li>
-                                                            {% endfor %}
-                                                            </ul>
-                                                            </li>
-                                                        {% endif %}
-                                                        {% if n.comment %}
-                                                        <li><small>Comments:</small>
-                                                            <ul>
-                                                 			{% for c in n.comment %}
-                                                                <li><small>{{ c.content }} | <em>by {{ c.user }} - {{ c.time }}</em></small> </li>
-                                                            {% endfor %}
-                                                        	</li>
-                                                        {% endif %} 
-                                                        </ul></li>                                       
-                                                    </ul>
-                                                </div>
-                                            </div><!-- end accordion-body -->
+                        <!-- end display icon, name link and time -->
+                        
+                                                        
+                          <div class="accordion-body collapse" id="acc_{{ n.uid }}">
+                              <div class="accordion-inner no-border">
+                                  <ul>
+                                      {% if n.data %}
+                                        {% for x in n.data %}
+                                        	
+                                            <!-- description -->
+                 	       					{% if n.type == "dataobject_instance" %}
+                                            <li><small>{{ n.data[0].do_info.description }}</small>
+                                            {% else %}
+                                            <li><small>{{ x.description }}</small>
+                                            {% endif %}
+                                            <!-- end of description -->
+                                            <!-- description -->
+                                                                                        
+                 	       					{% if n.type == "dataobject_instance" %} 
+                                            <small>{{ n.data[0].do_info.uri }}</small>
+                                            {% else %} 
+                                            <small><font color="#ED8454"><em>{{ x.uri }}</em></font></small>
+                                            {% endif %}
+                                            <!-- end of description -->
+                                            
+                      <!-- display other workflows (if any) -->  
+                                              </li>                                 
+                                              <li><small>UID: <input type="text" value="{{ x.uid }}" class="small copy" readonly /></font></small></li>
+                                               {% if x.wf_link|length > 1 %} 
+                                                <ul class="wf_links"> 
+                                                    <li id="lw_{{ x.uid }}"  style="margin-left: 0px"><small><em><a style="cursor:pointer;">[+] Linked Workflows</a></em></small>
+                                                    <!-- <span id="{{ x.uid }}_loader"><img src="/static/img/ajax-loader-green-small.gif"></span> -->
+                                                      <ul>
+                                                      {% for j in x.wf_link %}
+                                                          {% if j.work_uid != wid %}
+                                                          <li><small><a href="{{ url_for("connections", wid=j.work_uid) }}" class="linkedwf">{{ j.work_uid }}</a></small>
+                                                          </li>
+                                                          {% endif %}
+                                                      {% endfor %}
+                                                      </ul>
+                                                    </li>
+                                                   </ul>
+                                                  {% endif %}                             
+                      <!-- end of display other workflows (if any) -->  
+                                              </li>                                                               
+                                                     
+                                          {% endfor %}
+                                      {% endif %}
+                                      {% if n.metadata %}
+                                          <li><small>Metadata:</small>
+                                          <ul>
+                                          {% for md in n.metadata %}
+                                              <li>
+                                                  <small>{{ md.key }}: {{ md.value }}</small>
+                                                  {% if md.time %}                                                	
+                                                  <ul><li><small>time: {{ md.time }}</small></li></ul>
+                                                  {% endif %}
+                                              </li>
+                                          {% endfor %}
+                                          </ul>
+                                          </li>
+                                      {% endif %}
+                                      {% if n.comment %}
+                                      <li><small>Comments:</small>
+                                          <ul>
+                                          {% for c in n.comment %}
+                                              <li><small>{{ c.content }} | <em>by {{ c.user }} - {{ c.time }}</em></small> </li>
+                                          {% endfor %}
+                                          </li>
+                                      {% endif %} 
+                                      </ul></li>                                       
+                                  </ul>
+                              </div>
+                          </div><!-- end accordion-body -->
                                      </div>
                          {% endfor %}
                     {% endfor %}

@@ -119,11 +119,10 @@ ul li input.user_time_wf {
 {% endblock %}
 {% block collect_active %} class="active" {% endblock %}
 {% block container %}
-     <div class="row-fluid">
-		<!-- left navigation menu span -->
-        <div class="span12">
+     <div class="row-fluid"><br/>    
         <h4>MPO Collections</h4>
-		{% if coll_list %}
+<!-- If data exists in DB -->
+{% if coll_list %}    
         	<div id="workflow_tbl">
             <!-- workflow list table -->
             <table class="main table table-hover table-striped" id="workflow_table">
@@ -139,8 +138,10 @@ ul li input.user_time_wf {
                     <td>{{ item.time }} </td>
                     </tr>
                 {% endfor %}
-               </table>
-           {% endif %}   
+               </table> 
+{% else %}
+<p>No results found.</p>
+{% endif %}  
 
             </div>
         

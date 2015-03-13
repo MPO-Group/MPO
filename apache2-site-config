@@ -3,10 +3,10 @@
 
 #Three api routes and process groups to select different databases, use the same source
         WSGIDaemonProcess test-api user=jas group=jas threads=5
-        WSGIScriptAlias /test-api /var/www/mposvn/api_server.wsgi process-group=mpoapi application-group=%{GLOBAL}
+        WSGIScriptAlias /test-api /var/www/mposvn/api_server.wsgi process-group=test-api application-group=%{GLOBAL}
 
         WSGIDaemonProcess demo-api user=jas group=jas threads=5
-        WSGIScriptAlias /demo-api /var/www/mposvn/api_server.wsgi process-group=mpoapi application-group=%{GLOBAL}
+        WSGIScriptAlias /demo-api /var/www/mposvn/api_server.wsgi process-group=demo-api application-group=%{GLOBAL}
 
         WSGIDaemonProcess mpoapi user=jas group=jas threads=5
         WSGIScriptAlias /api /var/www/mposvn/api_server.wsgi process-group=mpoapi application-group=%{GLOBAL}
