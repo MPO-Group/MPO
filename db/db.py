@@ -514,7 +514,8 @@ def getWorkflow(queryargs={},dn=None):
 
     # retrieve the records from the database and rearrange
     records = cursor.fetchall()
-
+    if dbdebug:
+        print('get workflow records',records)
     for r in records:
         r['user']={'firstname':r['firstname'], 'lastname':r['lastname'],
                'userid':r['userid'],'username':r['username']}
@@ -648,6 +649,7 @@ def addRecord(table,request,dn):
 
     objs['user_uid'] = cursor.fetchone()['uuid']
     objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
+    print('addrecord', objs,objkeys)
 
     q = ( "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) +
           ") values ("+",".join(["%s" for x in objkeys])+")" )
@@ -710,6 +712,61 @@ def addCollection(request,dn):
     conn.commit()
     records = {} #JCW we are not returning the full record here.
     records['uid'] = c_guid
+
+    return records
+
+
+def addCollectionElement(collection=None,element=None,dn=None):
+    """
+    Special method to add elements to existing collections. Collection
+    elements do not have unique UUIDs, rather the uid field is the value of
+    the uid of the item being added.
+
+    collection : collection uid
+    elements : uid to add
+    dn : user credentials
+    """
+    if not (element and collection):
+        return {'status':'error','message':
+                'missing arguments. Both element and collection must be specified'}
+
+    thetime=datetime.datetime.now()
+
+
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    #get the user id
+    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    user_uid = cursor.fetchone()['uuid']
+
+    keys = query_map['collection_elements'].keys()    
+    obj = {'parent_uid':collection,'uid':element,
+            'user_uid':user_uid, 'time':thetime}
+    objkeys = obj.keys()
+    fields = [query_map['collection_elements'].get(x) for x in objkeys]
+
+    q = ( "insert into collection_elements (" + ",".join(fields) +
+          ") values ("+",".join(["%s" for x in fields])+")" )
+    v = tuple(obj[x] for x in objkeys)
+    #v = tuple([collection, element, user_uid, thetime])
+    if dbdebug:
+        print('DDBEBUG addRecord to collection_elements')
+        print(q,v)
+
+    cursor.execute(q,v)
+    # Make the changes to the database persistent
+    conn.commit()
+
+    #perhaps better to retrieve created record?
+    records = {}
+    records['uid'] = element
+    records['parent_uid'] = collection
+    records['user_uid'] = user_uid
+    records['time'] = thetime
+     # Close communication with the database
+    cursor.close()
+    conn.close()
 
     return records
 

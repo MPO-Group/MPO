@@ -24,6 +24,7 @@ class DataobjectTest(unittest.TestCase):
         "Add a dataobject to a workflow in the MPO."
         workflow = self.m.search(route='workflow')[0]
         wid = workflow.get('uid')
+        print( "Adding databobject to workflow ",wid)
         dataobject=self.m.add(name="ImportantFile",desc="Adding a dataobject in nose test",
                    uri="ftp://some.server.com/somefile", workflow_ID=wid, parentobj_ID=wid)
         doi=dataobject.get('uid')

@@ -42,6 +42,7 @@ mydir=`dirname $myfp`
 . $mydir/functions.sh
 
 PYTHONPATH=$mydir/db:$mydir/server
+echo PYTHONPATH = $PYTHONPATH
 #this ignores any environmental variable, so you have to give it on the commandline
 MPO_DB_CONNECTION=${2:-host=\'localhost\' dbname=\'mpoDB\' user=\'mpoadmin\' password=\'mpo2013\'}
 MPO_API_SERVER_PORT=${1:-8443}
@@ -58,7 +59,15 @@ export PYTHONPATH
 #export GEVENT_OPT="--gevent 100 --master --pidfile /tmp/web_master.pid"
 export THREAD_OPT=--enable-threads
 
-uwsgi $GEVENT_OPT $THREAD_OPT --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/api_server.py  --callable app
+echo uwsgi used from `which uwsgi`
+#define virtualenv path if used
+VIRTPATH=""
+if [ -n "$VIRTUAL_ENV" ]
+then
+VIRTPATH="-H $VIRTUAL_ENV"
+fi
+
+uwsgi $GEVENT_OPT $THREAD_OPT $VIRTPATH --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/api_server.py  --callable app 
 
 #add this above to redirect logging
 #--logto /tmp/mylog.log
