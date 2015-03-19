@@ -304,6 +304,7 @@ def collection(id=None):
     /collection - GET a list of all (or filtered) collections
                 - POST a new collection
     /collection/<id> - GET collection information, including list of member UUIDs
+    /collection/?element_uid=:uid - GET collections having element member giving by :uid
     """
     dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
@@ -434,6 +435,7 @@ def workflow(id=None):
     """
     Implementation of the /workflow route
     Enforces ontological constraints on workflows types retrieved from ontology_terms.
+    /workflow?do_uri=:uri - GET workflows having dataobject member giving by :uid
     """
 
     #Desperately need to add field error checking. Note, we have access to db.query_map
@@ -472,8 +474,23 @@ def workflow(id=None):
                 print('APIDEBUG: darg is %s' %darg)
             r = rdb.getWorkflow({'uid':id},dn)
         else:
-            r = rdb.getWorkflow(request.args,dn)
-            #add workflow type here in return. Use complete path?
+            if 'do_uri' in request.args:
+                #find data object by uri
+                r = rdb.getRecord('dataobject',{'uri':request.args['do_uri']})
+                if len(r)==1:
+                    do_uid=r[0].get('uid')
+                    #find dataobject instances based on do_uid
+                    doi_list = rdb.getRecord('dataobject_instance',{'do_uid':do_uid} )
+                    result=[]
+                    for doi in doi_list:
+                        result.append(rdb.getWorkflow({'uid':doi['work_uid']},dn)[0])
+                    r={'result':result,'count':len(result),'link-requested':request.url, 'status':'ok'}
+                else:
+                    r={'uid':'0','msg':'not found'}
+            #general searches
+            else:
+                r = rdb.getWorkflow(request.args,dn)
+                #add workflow type here in return. Use complete path?
 
         if apidebug:
             print ('APIDEBUG: workflow returning "%s" len %d'% (r,len(r),))
@@ -483,6 +500,20 @@ def workflow(id=None):
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
+
+@app.route(routes['workflow']+'/<id>/dataobject', methods=['GET'])
+def getWorkflowElement(id):
+    """
+     /workflow/:uid/dataobject - GET dataobjects in workflow specified by :uid
+    """
+    records = rdb.getRecord('dataobject_instance',{'work_uid':id} )
+    for rr in records:
+        do_uid=rr['do_uid']
+        rr['do_info']=rdb.getRecord('dataobject_instance',{'do_uid':do_uid} )[0]
+        
+    r={'result':records,'count':len(records),'link-requested':request.url, 'status':'ok'}
+    
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 @app.route(routes['workflow']+'/<id>/graph', methods=['GET'])
@@ -586,36 +617,36 @@ def dataobject(id=None):
         morer = rdb.getRecord('dataobject_instance',{'uid':id},dn)
         publishEvent('mpo_dataobject',onlyone(morer))
     elif request.method == 'GET':
-        #optional argument instances. defaults to true
-        instance=1
-        if request.args.has_key('instance'): instance=strtobool(request.args.get('instance'))
-        if instance:
-            route = 'dataobject_instance'
-        else:
-            route = 'dataobject'
 
+        #handling for comma separated UIDs
         if id:
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = rdb.getRecord(route,{'uid':id},dn)
-                if rs:
+                rs = rdb.getRecord('dataobject',{'uid':id},dn)
+                if len(rs)==1:
+                    rs=rs[0]
+                    rs['link-related']='link to get workflows using dataobject'
                     r[id]=rs
-                else:
-                    r[id]=[]#{'uid':'0','msg':'invalid response','len':len(rs),'resp':rs}
-                if instance:
-                    do_info=rdb.getRecord('dataobject',{'uid':r.get('do_uid')},dn)
-                    r['do_info']=do_info[0]
+                else: #record was not found, check other route
+                    rs = rdb.getRecord('dataobject_instance',{'uid':id},dn)
+                    if len(rs)==1:
+                        rs=rs[0]
+                        #add dataobject fields
+                        do_info=rdb.getRecord('dataobject',{'uid':rs.get('do_uid')},dn)
+                        rs['do_info']=do_info[0]
+                        r[id]=rs
+                    else:
+                        rs={'uid':'0','msg':'not found'}
+                        r[id]=rs
+
 
             if len(ids)==1: #return just single record if one uid
                 r=rs
-        else:
-            r = rdb.getRecord(route,request.args,dn)
-            if instance:
-                for rr in r:
-                    do_info=rdb.getRecord('dataobject',{'uid':rr.get('do_uid')},dn)
-                    rr['do_info']=do_info[0]
 
+        #Get all records, possibly with filters
+        else: 
+            r = rdb.getRecord('dataobject',request.args,dn)
             #if len(r) == 0 :
             #    istatus=404
                 #r = make_response(json.dumps(r), 404)
@@ -777,7 +808,7 @@ def ontologyTermVocabulary(id=None):
 @cross_origin()
 def ontologyTermTree(id=None):
     '''
-    This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
+    This function returns the vocabulary of an ontology term specified by its <id>=parent_id. 
     Vocabulary is defined as the next set of terms below it in the ontology term tree.
     '''
     dn=get_user_dn(request)

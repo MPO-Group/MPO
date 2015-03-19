@@ -112,7 +112,7 @@ def getRecordTable(id, dn=None):
     q=''
     v=()
     for k,l in query_map.iteritems():
-        if l.has_key('uid'):
+        if l.has_key('uid') and k!='collection_elements':
             q+="select distinct %s as table from "+k+" where "+l['uid']+"=%s"
             v+=k,id
             q+=' union '
@@ -187,7 +187,10 @@ def getRecord(table,queryargs={}, dn=None):
     # execute our Query
     cursor.execute(q)
     # retrieve the records from the database
-    records = [x for x in cursor.fetchall() if x['uri'] == queryargs['uri']] if queryargs.has_key('uri') else cursor.fetchall()
+    if queryargs.has_key('uri'):
+        records = [x for x in cursor.fetchall() if x.get('uri') == queryargs.get('uri')]
+    else:
+        records = cursor.fetchall()
     # Close communication with the database
     cursor.close()
     conn.close()
