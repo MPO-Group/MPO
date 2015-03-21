@@ -638,7 +638,7 @@ def getWorkflowComments(id,queryargs={},dn=None):
 
 def addRecord(table,request,dn):
     objs = json.loads(request)
-    if not objs['uid']: objs['uid']=str(uuid.uuid4())
+    if not objs.has_key('uid'): objs['uid']=str(uuid.uuid4())
     objs['time']=datetime.datetime.now()
 
     # get a connection, if a connect cannot be made an exception will be raised here
