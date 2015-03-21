@@ -358,8 +358,8 @@ def collectionElement(id=None, oid=None):
         else:
             elements=[]
 
-        #remove elements already in the collection                
-        for e in elements:
+        #remove elements already in the collection
+        for e in elements[:]:
             r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
             if len(r)!=0: elements.remove(e) #maybe add to response message this was done
         payload['elements'] = elements
@@ -376,7 +376,7 @@ def collectionElement(id=None, oid=None):
             r = rdb.getRecord('collection_elements',{'uid':oid})
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
-            
+
         #Find original item and add it to record.
         for record in r:
             print ('collection element r',record)
@@ -558,9 +558,9 @@ def dataobject(id=None):
     Route: POST /dataobject
            databody:
                {'name':, 'description':,'work_uid':, 'uri':, 'parent_uid': }
-           If 'work_uid' is present, create an instance, connect it to the parent in the workflow 
+           If 'work_uid' is present, create an instance, connect it to the parent in the workflow
            and link instance to the dataobject as determined by the 'uri'.
-           If 'work_uid' is NOT present, 'parent_uid' must also not be present. A new dataobject is created. 
+           If 'work_uid' is NOT present, 'parent_uid' must also not be present. A new dataobject is created.
     """
     dn=get_user_dn(request)
     istatus=200
@@ -751,7 +751,7 @@ def ontologyTermVocabulary(id=None):
     Resource: ontology vocabulary
 
     Convenience route, equivalent to ontology/term?parent_uid=<id>
-    
+
 
     This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
     Vocabulary is defined as the next set of terms below it in the
@@ -767,7 +767,7 @@ def ontologyTermVocabulary(id=None):
 
     r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
     r.append(  {'link-requested':request.url} )
-    
+
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
