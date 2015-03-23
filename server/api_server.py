@@ -368,7 +368,7 @@ def collectionElement(id=None, oid=None):
         #add elements one and a time and create list of returned records
         r=[]
         for e in elements:
-            rr=rdb.addRecord('collection_elements',{'uid':e,'parent_uid':id},dn)
+            rr=rdb.addRecord('collection_elements',json.dumps({'uid':e,'parent_uid':id}),dn)
             r.append(rr)
             morer = rdb.getRecord('collection_elements',{'uid':rr['uid']},dn)
             publishEvent('mpo_collection_elements',onlyone(morer))
