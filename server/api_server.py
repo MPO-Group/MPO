@@ -359,8 +359,8 @@ def collectionElement(id=None, oid=None):
         else:
             elements=[]
 
-        #remove elements already in the collection                
-        for e in elements:
+        #remove elements already in the collection
+        for e in elements[:]:
             r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
             if len(r)!=0: elements.remove(e) #maybe add to response message this was done
         payload['elements'] = elements
@@ -368,7 +368,7 @@ def collectionElement(id=None, oid=None):
         #add elements one and a time and create list of returned records
         r=[]
         for e in elements:
-            rr=rdb.addCollectionElement(id,e,dn)
+            rr=rdb.addRecord('collection_elements',{'uid':e,'parent_uid':id},dn)
             r.append(rr)
             morer = rdb.getRecord('collection_elements',{'uid':rr['uid']},dn)
             publishEvent('mpo_collection_elements',onlyone(morer))
@@ -377,7 +377,7 @@ def collectionElement(id=None, oid=None):
             r = rdb.getRecord('collection_elements',{'uid':oid})
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
-            
+
         #Find original item and add it to record.
         for record in r:
             print ('collection element r',record)
@@ -509,7 +509,7 @@ def getWorkflowElement(id):
     records = rdb.getRecord('dataobject_instance',{'work_uid':id} )
     for rr in records:
         do_uid=rr['do_uid']
-        rr['do_info']=rdb.getRecord('dataobject_instance',{'do_uid':do_uid} )[0]
+        rr['do_info']=rdb.getRecord('dataobject',{'uid':do_uid} )[0]
         
     r={'result':records,'count':len(records),'link-requested':request.url, 'status':'ok'}
     
@@ -580,18 +580,19 @@ def dataobject(id=None):
     """
     Route to add data objects and connect their instances to workflows.
 
-    Route: GET  /dataobject/<id>?instances=True/False
+    Route: GET  /dataobject/<id>
            Retrieves information on a specific dataobject.
            In the case <id> is <id> of an instance, instance inherits properties of the original object.
            In the case <id> is <id> of an dataobject, just the properties of the dataobject are returned.
-           NOT IMPLEMENTED: ?instances filter will optionally return instances of a specified dataobject.
-    Route: GET  /dataobject
+           NOT IMPLEMENTED: ?instance filter will optionally return instances of a specified dataobject.
+    Route: GET  /dataobject returns all dataobjects
+           GET  /dataobject?instance returns all dataobject instances
     Route: POST /dataobject
            databody:
                {'name':, 'description':,'work_uid':, 'uri':, 'parent_uid': }
-           If 'work_uid' is present, create an instance, connect it to the parent in the workflow 
+           If 'work_uid' is present, create an instance, connect it to the parent in the workflow
            and link instance to the dataobject as determined by the 'uri'.
-           If 'work_uid' is NOT present, 'parent_uid' must also not be present. A new dataobject is created. 
+           If 'work_uid' is NOT present, 'parent_uid' must also not be present. A new dataobject is created.
     """
     dn=get_user_dn(request)
     istatus=200
@@ -642,14 +643,18 @@ def dataobject(id=None):
 
 
             if len(ids)==1: #return just single record if one uid
-                r=rs
+                r=[rs] #following convention that a list is always returned
 
-        #Get all records, possibly with filters
-        else: 
-            r = rdb.getRecord('dataobject',request.args,dn)
-            #if len(r) == 0 :
-            #    istatus=404
-                #r = make_response(json.dumps(r), 404)
+        #Get all records, possibly with filters, support 'instance' flag
+        else:
+            if request.args.has_key('instance'):
+                records = rdb.getRecord('dataobject_instance',request.args,dn)
+                for rr in records:
+                        do_uid=rr['do_uid']
+                        rr['do_info']=rdb.getRecord('dataobject',{'uid':do_uid} )[0]
+                r=records
+            else:
+                r = rdb.getRecord('dataobject',request.args,dn)
 
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
 
@@ -782,7 +787,7 @@ def ontologyTermVocabulary(id=None):
     Resource: ontology vocabulary
 
     Convenience route, equivalent to ontology/term?parent_uid=<id>
-    
+
 
     This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
     Vocabulary is defined as the next set of terms below it in the
@@ -798,7 +803,7 @@ def ontologyTermVocabulary(id=None):
 
     r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
     r.append(  {'link-requested':request.url} )
-    
+
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 

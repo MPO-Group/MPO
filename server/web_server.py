@@ -69,8 +69,10 @@ def before_request():
     else:
        CONN_TYPE='demo-api'
 
-    API_PREFIX=MPO_API_SERVER+""+CONN_TYPE+"/"+MPO_API_VERSION
-
+    CONN_TYPE=''
+    API_PREFIX=MPO_API_SERVER+"/"+CONN_TYPE+"/"+MPO_API_VERSION
+    if webdebug:
+        print ("WEBSERVER: API_PREFIX:",API_PREFIX)
 
 @app.route('/')
 def index():
