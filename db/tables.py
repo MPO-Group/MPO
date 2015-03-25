@@ -1,7 +1,7 @@
 from sqlalchemy import *
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 
 
 Base = declarative_base()
@@ -38,6 +38,10 @@ class CollectionEllement(Base):
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     creation_time = Column(DateTime, default=func.now())
     user = relationship(MPOUser)
+    collection = relationship(Collection,
+                              backref=backref('collection_elements_test',
+                                              uselist=True,
+                                              cascade='delete,all'))
 
 
 class Workflow(Base):
