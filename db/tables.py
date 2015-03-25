@@ -26,7 +26,7 @@ class Collection(Base):
     name = Column(Text)
     description = Column(Text)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
     user = relationship(MPOUser)
 
 
@@ -36,7 +36,7 @@ class CollectionEllement(Base):
     c_guid = Column(UUID,ForeignKey('collection_test.c_guid'),primary_key=True)
     e_guid = Column(UUID)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
     user = relationship(MPOUser)
 
 
@@ -48,7 +48,7 @@ class Workflow(Base):
     ws_guid = Column(UUID)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     comp_seq = Column(Integer)
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
     start_time = Column(DateTime)
     end_time = Column(DateTime)
     completion_status = Column(Text)
@@ -64,7 +64,7 @@ class DataObject(Base):
     description = Column(Text)
     uri = Column(Text)
     source_guid = Column(UUID)
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     user = relationship(MPOUser)
 
@@ -75,7 +75,7 @@ class DataObjectInstance(Base):
     doi_guid = Column(UUID,primary_key=True)
     do_guid = Column(UUID,ForeignKey('dataobject_test.do_guid'))
     w_guid = Column(UUID,ForeignKey('workflow_test.w_guid'))
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     user = relationship(MPOUser)
 
@@ -89,7 +89,7 @@ class Activity(Base):
     w_guid = Column(UUID,ForeignKey('workflow_test.w_guid'))
     description = Column(Text)
     uri = Column(Text)
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     start_time = Column(DateTime)
     end_time = Column(DateTime)
@@ -104,7 +104,7 @@ class Comment(Base):
     cm_guid = Column(UUID,primary_key=True)
     content = Column(Text)
     uri = Column(Text)
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     comment_type = Column(Text)
     parent_guid = Column(UUID)
@@ -121,7 +121,7 @@ class WorkflowConnectivity(Base):
     parent_type = Column(Text)
     child_guid = Column(UUID)
     child_type = Column('child_type',Text)
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
 
 
 class Metadata(Base):
@@ -134,7 +134,7 @@ class Metadata(Base):
     uri = Column(Text)
     parent_guid = Column(UUID)
     parent_type = Column(Text)
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     user = relationship(MPOUser)
 
@@ -147,7 +147,7 @@ class OntologyClass(Base):
     description = Column(Text)
     parent_guid = Column(UUID)
     added_by = Column(UUID)
-    date_added = Column(DateTime)
+    date_added = Column(DateTime, default=func.now())
     reviewed_by = Column(UUID)
     date_reviewed = Column(DateTime)
 
@@ -164,7 +164,7 @@ class OntologyTerm(Base):
     units = Column(Text)
     specified = Column(Boolean)
     added_by = Column(UUID,ForeignKey('mpousers_test.uuid'))
-    date_added = Column(DateTime)
+    date_added = Column(DateTime, default=func.now())
     reviewed_by = Column('reviewed_by',UUID)
     date_reviewed = Column(DateTime)
     user = relationship(MPOUser)
@@ -177,7 +177,7 @@ class OntologyInstance(Base):
     target_guid = Column(UUID)
     term_guid = Column(UUID,ForeignKey('ontology_terms_test.ot_guid'))
     value = Column(Text)
-    creation_time = Column(DateTime)
+    creation_time = Column(DateTime, default=func.now())
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     user = relationship(MPOUser)
 
