@@ -1,8 +1,8 @@
 from sqlalchemy import *
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
-
+from sqlalchemy.orm import relationship, backref, sessionmaker
+import uuid
 
 Base = declarative_base()
 
@@ -10,7 +10,7 @@ class MPOUser(Base):
     __tablename__ = 'mpousers_test'
 
     username = Column(Text,unique=True,nullable=False)
-    uuid = Column(UUID,primary_key=True)
+    uuid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     firstname = Column(Text)
     lastname = Column(Text)
     email = Column(Text)
@@ -189,4 +189,15 @@ class OntologyInstance(Base):
 def tables():
     engine = create_engine('postgresql://mpoadmin:mpo213@localhost/mpoDB')
 
+    session = sessionmaker()
+    session.configure(bind=engine)
     Base.metadata.create_all(engine)
+
+    s = session()
+    mpoadmin = MPOUser(username='mpoadmin')
+    mpodemo = MPOUser(username='mpodemo', firstname='MPO', lastname='Demo User',
+                      email='jas@psfc.mit.edu',organization='MIT',
+                      dn='/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu')
+    s.add(mpoadmin)
+    s.add(mpodemo)
+    s.commit()
