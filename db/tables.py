@@ -22,7 +22,7 @@ class MPOUser(Base):
 class Collection(Base):
     __tablename__ = 'collection_test'
 
-    c_guid = Column(UUID,primary_key=True)
+    c_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     name = Column(Text)
     description = Column(Text)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
@@ -47,7 +47,7 @@ class CollectionEllement(Base):
 class Workflow(Base):
     __tablename__ = 'workflow_test'
 
-    w_guid = Column(UUID,primary_key=True)
+    w_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     name = Column(Text)
     ws_guid = Column(UUID)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
@@ -63,7 +63,7 @@ class Workflow(Base):
 class DataObject(Base):
     __tablename__ = 'dataobject_test'
 
-    do_guid = Column(UUID,primary_key=True)
+    do_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     name = Column(Text)
     description = Column(Text)
     uri = Column(Text)
@@ -76,7 +76,7 @@ class DataObject(Base):
 class DataObjectInstance(Base):
     __tablename__ = 'dataobject_instance_test'
 
-    doi_guid = Column(UUID,primary_key=True)
+    doi_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     do_guid = Column(UUID,ForeignKey('dataobject_test.do_guid'))
     w_guid = Column(UUID,ForeignKey('workflow_test.w_guid'))
     creation_time = Column(DateTime, default=func.now())
@@ -87,7 +87,7 @@ class DataObjectInstance(Base):
 class Activity(Base):
     __tablename__ = 'activity_test'
 
-    a_guid = Column(UUID,primary_key=True)
+    a_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     name = Column(Text)
     av_guid = Column(UUID)
     w_guid = Column(UUID,ForeignKey('workflow_test.w_guid'))
@@ -105,7 +105,7 @@ class Activity(Base):
 class Comment(Base):
     __tablename__ = 'comment_test'
 
-    cm_guid = Column(UUID,primary_key=True)
+    cm_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     content = Column(Text)
     uri = Column(Text)
     creation_time = Column(DateTime, default=func.now())
@@ -119,7 +119,7 @@ class Comment(Base):
 class WorkflowConnectivity(Base):
     __tablename__ = 'workflow_connectivity_test'
 
-    wc_guid = Column(UUID,primary_key=True)
+    wc_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     w_guid = Column(UUID,ForeignKey('workflow_test.w_guid'))
     parent_guid = Column(UUID)
     parent_type = Column(Text)
@@ -131,7 +131,7 @@ class WorkflowConnectivity(Base):
 class Metadata(Base):
     __tablename__ = 'metadata_test'
 
-    md_guid = Column(UUID,primary_key=True)
+    md_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     name = Column(Text)
     value = Column(Text)
     type = Column(Text)
@@ -146,7 +146,7 @@ class Metadata(Base):
 class OntologyClass(Base):
     __tablename__ = 'ontology_classes_test'
 
-    oc_guid = Column(UUID,primary_key=True)
+    oc_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     name = Column(Text)
     description = Column(Text)
     parent_guid = Column(UUID)
@@ -159,7 +159,7 @@ class OntologyClass(Base):
 class OntologyTerm(Base):
     __tablename__ = 'ontology_terms_test'
 
-    ot_guid = Column(UUID,primary_key=True)
+    ot_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     oc_guid = Column(UUID,ForeignKey('ontology_classes_test.oc_guid'))
     name = Column(Text)
     description = Column(Text)
@@ -177,7 +177,7 @@ class OntologyTerm(Base):
 class OntologyInstance(Base):
     __tablename__ = 'ontology_instances_test'
 
-    oi_guid = Column(UUID,primary_key=True)
+    oi_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     target_guid = Column(UUID)
     term_guid = Column(UUID,ForeignKey('ontology_terms_test.ot_guid'))
     value = Column(Text)
