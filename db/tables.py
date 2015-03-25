@@ -203,7 +203,7 @@ def tables():
     s.add(mpoadmin)
     s.add(mpodemo)
     #add ontology terms
-    workflow = OntologyTerm(name='Worflow',description='Ontology terms for workflow entries')
+    workflow = OntologyTerm(name='Worflow',description='Ontology terms for workflow entries',user=mpoadmin)
     activity = OntologyTerm(name='Activity',description='Ontology terms for activity entries')
     generic = OntologyTerm(name='Generic',description='Ontology terms for generic entries')
     s.add(workflow)
