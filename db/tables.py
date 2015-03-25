@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker
 import uuid
+import datetime
 
 Base = declarative_base()
 
@@ -26,7 +27,7 @@ class Collection(Base):
     name = Column(Text)
     description = Column(Text)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
     user = relationship(MPOUser)
 
 
@@ -36,7 +37,7 @@ class CollectionEllement(Base):
     c_guid = Column(UUID,ForeignKey('collection_test.c_guid'),primary_key=True)
     e_guid = Column(UUID)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
     user = relationship(MPOUser)
     collection = relationship(Collection,
                               backref=backref('collection_elements_test',
@@ -52,7 +53,7 @@ class Workflow(Base):
     ws_guid = Column(UUID)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     comp_seq = Column(Integer)
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
     start_time = Column(DateTime)
     end_time = Column(DateTime)
     completion_status = Column(Text)
@@ -68,7 +69,7 @@ class DataObject(Base):
     description = Column(Text)
     uri = Column(Text)
     source_guid = Column(UUID)
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     user = relationship(MPOUser)
 
@@ -79,7 +80,7 @@ class DataObjectInstance(Base):
     doi_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     do_guid = Column(UUID,ForeignKey('dataobject_test.do_guid'))
     w_guid = Column(UUID,ForeignKey('workflow_test.w_guid'))
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     user = relationship(MPOUser)
 
@@ -93,7 +94,7 @@ class Activity(Base):
     w_guid = Column(UUID,ForeignKey('workflow_test.w_guid'))
     description = Column(Text)
     uri = Column(Text)
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     start_time = Column(DateTime)
     end_time = Column(DateTime)
@@ -108,7 +109,7 @@ class Comment(Base):
     cm_guid = Column(UUID,primary_key=True,default=lambda: str(uuid.uuid4()))
     content = Column(Text)
     uri = Column(Text)
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     comment_type = Column(Text)
     parent_guid = Column(UUID)
@@ -125,7 +126,7 @@ class WorkflowConnectivity(Base):
     parent_type = Column(Text)
     child_guid = Column(UUID)
     child_type = Column('child_type',Text)
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
 
 
 class Metadata(Base):
@@ -138,7 +139,7 @@ class Metadata(Base):
     uri = Column(Text)
     parent_guid = Column(UUID)
     parent_type = Column(Text)
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     user = relationship(MPOUser)
 
@@ -151,7 +152,7 @@ class OntologyClass(Base):
     description = Column(Text)
     parent_guid = Column(UUID)
     added_by = Column(UUID)
-    date_added = Column(DateTime, default=func.now())
+    date_added = Column(DateTime, default=datetime.datetime.now)
     reviewed_by = Column(UUID)
     date_reviewed = Column(DateTime)
 
@@ -168,7 +169,7 @@ class OntologyTerm(Base):
     units = Column(Text)
     specified = Column(Boolean)
     added_by = Column(UUID,ForeignKey('mpousers_test.uuid'))
-    date_added = Column(DateTime, default=func.now())
+    date_added = Column(DateTime, default=datetime.datetime.now)
     reviewed_by = Column('reviewed_by',UUID)
     date_reviewed = Column(DateTime)
     user = relationship(MPOUser)
@@ -181,7 +182,7 @@ class OntologyInstance(Base):
     target_guid = Column(UUID)
     term_guid = Column(UUID,ForeignKey('ontology_terms_test.ot_guid'))
     value = Column(Text)
-    creation_time = Column(DateTime, default=func.now())
+    creation_time = Column(DateTime, default=datetime.datetime.now)
     u_guid = Column(UUID,ForeignKey('mpousers_test.uuid'))
     user = relationship(MPOUser)
 
@@ -194,10 +195,18 @@ def tables():
     Base.metadata.create_all(engine)
 
     s = session()
+    #create default users
     mpoadmin = MPOUser(username='mpoadmin')
     mpodemo = MPOUser(username='mpodemo', firstname='MPO', lastname='Demo User',
                       email='jas@psfc.mit.edu',organization='MIT',
                       dn='/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu')
     s.add(mpoadmin)
     s.add(mpodemo)
+    #add ontology terms
+    workflow = OntologyTerm(name='Worflow',description='Ontology terms for workflow entries')
+    activity = OntologyTerm(name='Activity',description='Ontology terms for activity entries')
+    generic = OntologyTerm(name='Generic',description='Ontology terms for generic entries')
+    s.add(workflow)
+    s.add(activity)
+    s.add(generic)
     s.commit()
