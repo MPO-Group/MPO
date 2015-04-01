@@ -90,6 +90,55 @@ $(document).ready(function () {
 	$("#ont_listing").append(ontTreeMenu);
 	//$("#wf_attr_list").find('>ul').show();
 	//$("#ont_tree").find('>ul').show();
+	
+		/**
+	*function handles comment submit event for each workflow in the list
+	*/
+	$('[id^=submit_comment_]').submit(function(event) {
+		var fadeTime = 5000;
+		var formData = $(this).serialize();
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('submit_comment') }}', // the url where we want to POST
+			data 		: formData, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			console.log(data);	
+			var prependHtml = '<blockquote id="block_' + data[0].uid  + '" >';
+			prependHtml += '<p style="font-size: 12px">' + data[0].content + '</p>';
+			prependHtml += '<small>by <cite title="Source Title"> '+ data[0].username +' - ' + data[0].time.substring(0,16) + ' </cite></small>';
+			prependHtml += '</blockquote><hr>';
+			
+			var p_uid=data[0].parent_uid;
+			var c_uid=data[0].uid;
+			
+			$("a#commentCtr"+p_uid).text(parseInt($("a#commentCtr"+p_uid).text())+1);
+			
+			$("#commentDrop"+p_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
+			
+			//drop comment section if it is not already dropped
+			if(!($('#commentDrop'+p_uid).hasClass('in'))) {
+				$('#commentDrop'+p_uid).addClass('in');
+				$('#commentDrop'+p_uid).css('height','auto');
+			}
+
+			$('#submit_results_'+p_uid).show();
+			$('#submit_results_'+p_uid).html("Comment submitted.");
+			$('#submit_results_'+p_uid).fadeOut(fadeTime, function() {
+					// Animation complete.
+					$('#submit_results_'+data[0].parent_uid).html("");
+				});
+			$('#block_' + c_uid).css('background-color', '#ddffdd');
+			$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);
+		});
+		// stop the form from submitting the normal way and refreshing the page
+		event.preventDefault();
+	});
+
 });
 
 function addOntPath(parent,subparent,child) {
@@ -504,39 +553,59 @@ ul li input.user_time_wf {
             <!-- workflow list table -->
             <table class="main table table-hover table-striped" id="workflow_table">
                 <tr>
-                <th width="2%">&nbsp;</th><th width="25%">Name</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th><th width="3%"></th>
+                <th width="2%">&nbsp;</th><th width="25%">Name</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th width="3%"></th>
               </tr>
     		{% for item in results %}
-            
                 <div id="accordion2" class="accordion">
                 <tr>
-                    <td>{{ item }}<span class="muted"><em><small>{{ wf_number }}</small></em></span></td>
-                    	{% if item.citem %}
-                  <td>{% for each in item.citem %}
-                    		{% if item.type == "workflow" %}
+                    <td><span class="muted"><em><small>{{ wf_number }}</small></em></span></td>
+                        
+                  <td>{% if item.type == "workflow" %}
                         <img src="/static/img/images/_icon_workflow.png"/>  
-                   		<a href="{{ url_for("connections", wid=item.uid) }}">{{ each.name }}</a> <span class="muted"><br /><em><small>{{ each.username }} / {{ each.type }} / {{ each.composite_seq }}</em></span><br />
+                   		<a href="{{ url_for("connections", wid=item.uid) }}">{{ item.citem[0].name }}</a> <span class="muted"><br /><em><small>{{ item.citem[0].username }} / {{ item.citem[0].type }} / {{ item.citem[0].composite_seq }}</em></span><br />
 							{% elif item.type == "collection" %}
                         <span class="icon-list-alt"></span>
-                        <a href="{{ url_for("collections", wid=item.uid) }}">{{ each.name }}</a> <span class="muted"><br /><em><small>{{ each.username }}</em></span><br />
+                        <a href="{{ url_for("collections", wid=item.uid) }}">{{ item.citem[0].name }}</a> <span class="muted"><br /><em><small>{{ item.citem[0].username }}</em></span><br />
                         	{% elif item.type == "dataobject" %}
                         <img src="/static/img/images/_icon_dataobject.png"/>  
-                    	<a href="{{ url_for("dataobject") }}/{{ item.uid }}">{{ each.name }}</a>  <span class="muted"><br /><em><small>{{ each.uri }}</small></em></span><br />
-                        	{% endif %}
-                           
+                    	<a href="{{ url_for("dataobject") }}/{{ item.uid }}">{{ item.citem[0].name }}</a>  <span class="muted"><br /><em><small>{{ item.citem[0].uri }}</small></em></span><br />
+                        	{% elif item.type == "dataobject_instance" %}
+                        <img src="/static/img/images/_icon_dataobject.png"/>  
+                    	<a href="{{ url_for("dataobject") }}/{{ item.citem[0].uid }}">{{ item.name }}</a>
+                        <span class="muted"><br /><em><small>{{ item.related }}</small></em></span>
+                       
+                      		{% endif %}
+                    </td>
                     </td>
                     	
-                  <td>{{ each.description }}<br />
-                   <small><strong>UID: </strong></small><input size="2" type="text" value="{{ item.uid }}" class="small copy" readonly /></td>
+                  <td>
+	                  {% if item.type == "dataobject_instance" %}
+                      <small>from  
+                        <img src="/static/img/images/_icon_workflow.png"/> 
+                        <a href="{{ url_for("connections") }}/{{ item.citem[0].work_uid }}" > {{ item.wf_cid }}</a></small><br />
+                  		{{ item.description }} <br />
+                        <small><strong>UID: </strong></small><input size="2" type="text" value="{{ item.uid }}" class="small copy" readonly />
+                      {% else %}
+                  		{{ item.citem[0].description }} <br />
+                        <small><strong>UID: </strong></small><input size="2" type="text" value="{{ item.citem[0].uid }}" class="small copy" readonly />
+                      {% endif %} <br />
+                      
+                      
+                  </td>
                     	
-                    <td class="xsmall"> {{ each.time }}</td>
-                    		{% endfor %}
-                    	{% endif %}
+                  <td class="xsmall">
+                  {% if item.type == "dataobject_instance" %}
+                   	{{ item.time }} 
+                  {% else %}
+                   	{{ item.citem[0].time }} 
+                  {% endif %}              
+                  </td>
+                    	
                     <!-- <td>{{ item.username }}</td> -->
                     <td>
                 <div class="accordion-group">
                   <div class="accordion-heading">
-                <a href="#commentDrop{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
+                <a href="#commentDrop{{ item.uid }}" id="commentCtr{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
                   {% if item.num_comments %}
                     {{ item.num_comments }}
                   {% else %}
@@ -546,28 +615,7 @@ ul li input.user_time_wf {
                 &nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
                   </div>
                 </div>
-                </td>
-                <td>
-                {% if item.quality %}
-                <!-- <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> -->
-                	{% if item.quality == "1" %}
-                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
-                    {% elif item.quality == "2" %}
-                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star_empty.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
-                    {% elif item.quality == "3" %}
-                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star_empty.png">
-                    {% elif item.quality == "4" %}
-                    	<img id="{{item.uid}}_img1" src="/static/img/star.png"> <img id="{{item.uid}}_img2" src="/static/img/star.png"> <img id="{{item.uid}}_img3" src="/static/img/star.png"> <img id="{{item.uid}}_img4" src="/static/img/star.png">
-                    {% endif %}
-                {% else %}
-                	<span id="{{ item.uid }}_quality" class="set_quality">
-                    	<img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                        <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                        <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                        <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
-                    </span>
-                {% endif %}
-                </td>
+                </td>               
                 <td>
                 	<a href="#"title="remove workflow from collection">[-]</a>
                 </td>
@@ -575,8 +623,8 @@ ul li input.user_time_wf {
               <tr>
             <td colspan="8" class="comments"> 
               <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
-                <div class="accordion-inner no-border bot-border">
-                  <form action="{{ url_for("submit_comment") }}" method="post">
+                <div class="accordion-inner no-border bot-border">                
+                  <form id="submit_comment_{{ item.uid }}">
                 <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
                 <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
                   </form>

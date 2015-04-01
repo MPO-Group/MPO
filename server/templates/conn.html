@@ -1,10 +1,8 @@
 {% extends "base.html" %}
-
 {% block title %}MPO Workflow Detail{% endblock %}
-
 {% block hscripts %}
+
 <script type="text/javascript" src="/static/js/svg-pan-zoom.js"></script> 
-<!-- <script type="text/javascript" src="/static/js/jquery-ui.js"></script> -->
 <script type="text/javascript" src="/static/js/jquery.slimscroll.min.js"></script>
 <style>
 #svg_loading {
@@ -12,19 +10,62 @@
 	height:60px;
 }
 #svg {
-	background-color:#fff;
+	background-color:#FFFFFF;
 	overflow: hidden;
+	border: dotted 2px #E1E1E1;
 }
-
-.logbook_row {
-	background-color:#fff;
+tr.node td:first-child {
+	/*background-color: #FDCD66;*/
+	color: #08C;
+	padding-left: 10px;
+	font-weight: bold;	
 }
-
-.comment_table {
-	border: 1px solid #ddd;
-	background-color: #fff;
+tr.node td{
+	background-color: #fefefe;
 }
-
+tr.node ul {
+    padding: 0px;
+    margin: 0px;
+	font-size: 13px;
+}
+tr.node ul li {	
+	padding: 0px;
+	margin: 0px;
+}
+.bold {
+	font-weight: bold;
+	color:#0D1C25;
+	color:#004B82;
+}
+.main td.detail {
+   /* line-height: 0px;*/
+    padding: 2px 0px 0px 0px;
+    border: 0px none;
+	/*background-color: #F6FDFA;*/
+	background-color: #FFF7B1;
+	color: #272727;
+	font-size: 11px;
+}
+td.detail ul{	
+	padding: 4px 4px;
+	margin: 0px;
+	list-style: none;
+}
+.main th {
+    color: #3D3E49;
+}
+.main td {
+	background-color: #FFF;
+}
+.table-container {
+	overflow: auto;
+}
+table#comment-form td {
+    border-top: none;
+}
+table#comment-form {
+	width: 100%;
+}
 </style>
 <script>
 var nodeUIDs = new Array(); //store node UIDs for comparison with new node UIDs added after page load
@@ -75,12 +116,24 @@ function success_cb(event,data,userarg) {
 		buildPageElements(wfID);
 }
 
+$(document).on('click','.select-change',function() {		
+	$('#parent_uid').val($(this).data('val')).trigger('change');
+	wid='{{ wid }}';
+	
+	$('div#comment_container').find( ".collapse:not(.in)" ).each(function(){
+		$(this).collapse("toggle");
+	});
+});
 //handles the svg workflow plot functionality
 $(document).ready(function () {
+	// set node details div height same as svg
+	$('.table-container').css('height', $('#svg').height()+'px');
+
 	var $window = $(window);
 	//Process SVG
 	$("#svg_loading").hide();
-	wf_desc="{{ wid_info[0].description }}";	
+	var wid_info = '{{ wid_info|tojson }}';  //single quote issue
+	wf_desc= '{{ wid_info[0].description }}' ;	 
 	var jsondata = '{{ nodes|tojson }}';  //single quote issue
 	var tmp_str=jsondata.replace(/&#34;/g,'"');
 	tmp_str=tmp_str.replace(/(\r\n|\n|\r)/g,'<br/>');
@@ -96,17 +149,23 @@ $(document).ready(function () {
 	var nodeCount=0;
 	var dataElements = {}; //for name - desc in popover
 	
-	for (var key in dataObjs) {
+	for (var key in dataObjs) 
+	{
 	  if (dataObjs.hasOwnProperty(key)) {
 		var tmp = dataObjs[key];
+		console.logtmp
 		nodeUIDs[nodeCount]=tmp['uid'];
 		for(var j in tmp) {
 			if(j=="data") {
 				var tmp2=tmp[j];
-				var tmp3=tmp2[0];
+				var tmp3=tmp2[0]; 
+				
+				
 				dataElements[tmp['name']]="";
 				if(tmp3['description'])
 					dataElements[tmp['name']]+=tmp3['description'];
+				else if(tmp3['do_info']['description'])
+					dataElements[tmp['name']]+=tmp3['do_info']['description'];
 				if(tmp3['time']) {
 					dataElements[tmp['name']]+= "<div><small>"+tmp3['time']+"</small></div>";
 					//store latest workflow update time
@@ -114,9 +173,35 @@ $(document).ready(function () {
 					if(tmpDateTime > lastUpdate)
 						lastUpdate=tmpDateTime
 				}
+				else if(tmp3['do_info']['time']) {
+					dataElements[tmp['name']]+= "<div><small>"+tmp3['do_info']['time']+"</small></div>";
+					//store latest workflow update time
+					tmpDateTime=new Date(tmp3['do_info']['time'].replace(" ","T"));
+					if(tmpDateTime > lastUpdate)
+						lastUpdate=tmpDateTime
+				}
 				if(tmp3['uri']) {
 					var fill=false;
 					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['uri']+"</small>";
+					if(tmp3['wf_link']) {
+						//dataElements[tmp['name']]+="<ul class=\"wf_links\"><li><small><em>Linked Workflows:</em></small>"; 
+						//dataElements[tmp['name']]+="<ul>";
+						for (var cnt in tmp3['wf_link']) {
+							if (tmp3['wf_link'][cnt]['work_uid'] != "{{ wid }}") {
+								fill=true;
+								//dataElements[tmp['name']]+="<li><small><a href=\"/connections/"+tmp3['wf_link'][cnt]['work_uid']+"\">"+tmp3['wf_link'][cnt]['work_uid']+"</a></small></li>";
+							}
+						}
+						//dataElements[tmp['name']]+="</ul></li></ul>"; 
+						if(fill)
+							fillSVGElement(tmp['uid']);
+					}
+					dataElements[tmp['name']]+="</li>";
+					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
+				}
+				else if('do_info' in tmp3 && tmp3['do_info']['uri']) {
+					var fill=false;
+					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['do_info']['uri']+"</small>";
 					if(tmp3['wf_link']) {
 						//dataElements[tmp['name']]+="<ul class=\"wf_links\"><li><small><em>Linked Workflows:</em></small>"; 
 						//dataElements[tmp['name']]+="<ul>";
@@ -155,11 +240,12 @@ $(document).ready(function () {
 	}
 	
 	$("#last-updated").html(lastUpdate.toLocaleString());
+	$("#td-last-updated").html(lastUpdate.toLocaleString());
+	
 		
 	var lastPopover='';
 	var currentPopover='';
 
-	//$("#test").popover({title: "this is a popover", html: true, container: 'body', content: '<ul><li><a href="#">metadata 1</a></li><li>metadata 2</li><li>metadata 3</li><li>add comment</li></ul>', trigger: 'hover'});
 	//checks and adjusts svg width/height if needed
 	var workflowWidth=$("#svg").width();
 
@@ -197,17 +283,14 @@ $(document).ready(function () {
 		document.getElementById("graph1").transform.baseVal.getItem(0).setScale(hratio.toString(),vratio.toString()); //size ratio of workflow on load compared to original size
 	}
 	//end svg size adjust
-
 	/*$( window ).resize(function() {
-
 	});*/
 
-	initZoomPan();
-        
+	initZoomPan();        
 	
 	//get list of nodes for svg xml tag "g" w/ class "node"
 	var nodelist = document.querySelectorAll("g.node");
-			
+	
 	//parse nodelist object and add click event function to each node (w/ respective data)
 	for (var key in nodelist) {
 	  if (nodelist.hasOwnProperty(key)) {
@@ -218,7 +301,8 @@ $(document).ready(function () {
 		var popcontent="";
 		//get id of "g" element of class=nodes
 		if(key==0) {
-			id="node1";
+			//id="node1";
+			id=node.childNodes[0].textContent;
 			wid=node.childNodes[0].textContent;
 			sub_content=wf_desc;
 		}
@@ -230,17 +314,20 @@ $(document).ready(function () {
 			node.childNodes[2].setAttribute("fill","white"); //shapes fill color
 			node.childNodes[4].setAttribute("style",'fill:rgb(0,76,153);cursor:pointer;'); //text styles
 			node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
+			nodeTitle=node.childNodes[4].textContent;
 			//node.childNodes[4].id = "text_" + id;
 			if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
 				sub_content = dataElements[node.childNodes[4].textContent];
-				popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;	
+				popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ nodeTitle +'</strong><br/><small><em>' + sub_content; 
 			}
 		}
-
-		if(id=="node1")
-			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">view/add comments</a></small></div>';
+		if(key==0)
+		//if(id=="node1")
+			//popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">Add comments</a></small></div>';
+			popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a data-val="'+wid+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 		else
-			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
+		//popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
+			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a data-val="'+id+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 		
 		$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
 		//on click 'text' event for each element -- toggle popover menu
@@ -253,13 +340,15 @@ $(document).ready(function () {
 					lastPopover=currentPopover;
 					currentPopover=e.target.id;
 				}
-				if(lastPopover == currentPopover) { //close same popover on 2nd click
+				//close same popover on 2nd click
+				if(lastPopover == currentPopover) { 
 					closepop(lastPopover);
 					$("#acc_"+lastPopover.substring(5)).collapse('hide');
 					currentPopover='';
 					lastPopover='';
 				}
-				else {  // close other popover and open new one
+				// close other popover and open new one
+				else {  
 					closepop(lastPopover);
 					$(this).popover('show');
 					$("#acc_"+lastPopover.substring(5)).collapse('hide');
@@ -269,31 +358,20 @@ $(document).ready(function () {
 			});
 	  }
 	}
-
-	$('.expandcollapse').click(function () {
-        if ($(this).html() == "<i class=\"icon-plus-sign\"></i> Expand All") {
-            $('#acc-container .collapse:not(.in)').each(function () {
+	
+	$('.expandcollapse').click(function() {
+		if ($(this).html() == "<i class=\"icon-plus-sign\"></i> Expand All") {
+			$('#coltab2 tr').find( ".collapse:not(.in)" ).each(function(){
                 $(this).collapse("toggle");
-            });
-            $(this).html("<i class=\"icon-minus-sign\"></i> Collapse All (scroll)");
+			});
+            $(this).html("<i class=\"icon-minus-sign\"></i> Collapse All");
         }
-        else {
-            $('#acc-container .collapse.in').each(function () {
+		else {
+            $('#coltab2 tr').find( ".collapse.in" ).each(function () {
                 $(this).collapse("toggle");
             });
             $(this).html("<i class=\"icon-plus-sign\"></i> Expand All");
         };
-    });
-	
-	$('#acc-container').slimScroll({
-		//height: 'auto',
-		height: '700px',
-		position: 'right',
-		alwaysVisible: true,
-		railOpacity: 0.1,
-		distance: '0px',
-		color: '#ccc',
-		wheelStep: 5
 	});
 
 	hideToggleSubLists();
@@ -302,12 +380,12 @@ $(document).ready(function () {
 	//when [+]linked workflows is clicked, convert Workflow IDs to composite names / descriptions
 	$('.wf_links li').click(function () {
 		var thisID=$(this).attr("id");
-		
 		if(clickedLinkedWorkflows.indexOf(thisID) == -1) {
 			clickedLinkedWorkflows.push(thisID);
 			var wfID_list = $(this).find('li');
+			
 			//var numWfLinks=wfID_list.length;
-			//$("#"+thisID.substring(3)+"_loader").show();
+			//$("#"+thisID.substring(3)+"_loader").show();w_
 
 			wfID_list.each(function(index) {
 				var current=$(this);
@@ -315,7 +393,7 @@ $(document).ready(function () {
 				var url="{{ url_for("workflow") }}/"+wfID;
 				var jqxhr = $.getJSON( url, function( data ) {
 					var text=data[0]["username"]+"/"+data[0]["name"]+"/"+data[0]["composite_seq"]+" - "+data[0]["description"];
-					var linked_text="<a href=\"{{ url_for("connections") }}/"+data[0]["uid"]+"\"><small><em>"+text+"</em></small></a>"
+					var linked_text="<a href=\"{{ url_for("connections") }}/"+data[0]["uid"]+"\"><span class='icon-workflow'></span> <em>"+text+"</em></a>"
 					current.html(linked_text);
 				})
 				/*if((index+1)==numWfLinks)
@@ -351,30 +429,53 @@ $(document).ready(function () {
 		.done(function(data) {
 			console.log(data);	
 			/*HERE */
-			/*var appendHtml = '<li>';
-			appendHtml += data[0].content+' | <em>by '+data[0].username +' - ' + data[0].time.substring(0,16);
+			var appendHtml = '<li>';
+			appendHtml += '<span class="icon-comment lighter"></span> ' + data[0].content+' <em>by '+data[0].username +'  <small>' + data[0].time.substring(0,16)+'</small>';		
 			appendHtml += '</li>';
-			
+
 			var p_uid=data[0].parent_uid;
 			var c_uid=data[0].uid;
+			//if first comment, add comment header list
+			if($("#acc_"+p_uid+" ul li ul.comments").length==0) {
+				commentHtml='<li><font class="bold">Comments:</font>';
+				commentHtml+='<ul class="comments"></ul>';
+				commentHtml+='</li>';
+				$("#acc_"+p_uid+" ul.details-list").append(commentHtml)
+			}
+			$("#acc_"+p_uid+" ul li ul").append(appendHtml)
 			
-			alert("parent: "+p_uid); //4b177693-ea36-4b67-9efd-1cd4b2914733
-			alert("child+ "+c_uid); //47ca45ba-97ce-4f0a-a67d-59ec5c722f54
-			
-			$("#commentDrop"+p_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
-			
-			//drop comment section if it is not already dropped
-			if(!($('#commentDrop'+p_uid).hasClass('in'))) {
-				$('#commentDrop'+p_uid).addClass('in');
-				$('#commentDrop'+p_uid).css('height','auto');
-			}*/
-
+			$("tr#detail_"+p_uid).find( ".collapse:not(.in)" ).each(function(){
+                $(this).collapse("toggle");
+			});
 			$('#submit_results').show();
 			$('#submit_results').html('<div class="alert alert-success" role="alert">Comment submitted.</div>');
 			$('#submit_results').fadeOut(fadeTime, function() {
 					// Animation complete.
+					$('#comment-content').val("");
 					$('#submit_results').html("");
-				});
+					$('div#comment_container').find( ".collapse.in" ).each(function(){
+						$(this).collapse("toggle");
+					});
+			});
+			
+			
+         /*   $(this).html("<i class=\"icon-minus-sign\"></i> Collapse All");
+       
+		
+		
+			$('#parent_uid').val($(this).data('val')).trigger('change');
+			wid='{{ wid }}';
+			
+			$('div#comment_container').find( ".collapse:not(.in)" ).each(function(){
+				$(this).collapse("toggle");
+			});*/
+						
+				
+	
+	
+	
+	
+		
 		/*	$('#block_' + c_uid).css('background-color', '#ddffdd');
 			$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);*/
 			/*UNTIL HERE*/
@@ -461,7 +562,7 @@ function buildPageElements(wfID) {
 					newElement+='<div id="div_"' + obj_uid +'"><a id="aid_' + obj_uid + '" href="#acc_' + obj_uid + '" data-toggle="collapse">' + obj_name + '</a><span class="muted"><small><em> - ' + obj_time + '</em></small></span>';
 					newElement+='<div class="accordion-body collapse" id="acc_' + obj_uid + '">';
 					newElement+='<div class="accordian-inner no-border">';
-					newElement+='<ul>';
+					newElement+='<ul class="details-list">';
 					newElement+='<li>'+obj_name+'</li>';
 					newElement+='<li>time: '+obj_time+'</li>';
 					newElement+='<li>uri: '+obj_uri+'</li>';
@@ -571,7 +672,8 @@ function buildPageElements(wfID) {
 				var popcontent="";
 				//get id of "g" element of class=nodes
 				if(key==0) {
-					id="node1";
+				//	id="node1";
+					id=node.childNodes[0].textContent;
 					wid=node.childNodes[0].textContent;
 					sub_content=wf_desc;
 				}
@@ -589,10 +691,11 @@ function buildPageElements(wfID) {
 						popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;
 					}
 				}
-				if(id=="node1")
-					popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">view/add comments</a></small></div>';
+				if(key==0)
+				/*if(id=="node1")*/
+					popcontent=popcontent + '</em></small></span></div><hr/><div><small><a data-val="'+id+'"class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 				else
-					popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
+					popcontent=popcontent + '</em></small></span></div><hr/><div><small><a data-val="'+id+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 				
 				$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
 				//on click 'text' event for each element -- toggle popover menu
@@ -634,58 +737,36 @@ function buildPageElements(wfID) {
 </script>
 {% endblock %}
 {% block container %}
+	<!-- Begin header (title, desc and comment) -->
     <div class="row-fluid">  
-    	<!-- workflow table list span -->
-		<div class="span12">
-        <h4> {{ wid_info[0].username }} / <font color="#004B82">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }} <small style="padding-left: 10px"> <font color="#87A6B9"><em>{{ wid }}</em></font> -  {{ wid_info[0].username }} - <span id="last-updated"></span></small> </h4>    
-        <strong>Description:</strong> {{ wid_info[0].description }}
-     
-        <div class="accordian-heading">
-                                <span style="float:right"><span class="icon-comment"></span><a href="#add_{{ wid }}" data-toggle="collapse"><small> Add Comment</small></a></span></div>
-                                <div class="accordion-body collapse" id="add_{{ wid }}">
-                                    <div class="accordion-inner no-border">
-                                    <span id="submit_results"></span>
-                                      <form id="submit_comment">
-                                      		<input type="hidden" value="{{ wid }}" name="wf_id">
-                                            <select name="parent_uid">
-                                            	<option value="">select a workflow object...</option>
-                                            {% for obj in nodes.iteritems() %}
-                                                {% for n in obj %}
-                                                	{% if n.name %}
-                                                    <option value="{{ n.uid }}">{{ n.name }}</option>
-                                                    {% endif %}
-                                                {% endfor %}
-                                             {% endfor %}
-                                             </select>
-                                        <div><textarea rows="2" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
-                                      </form>
-                                    </div>
-                                </div>
-                            </div>
-	</div>
+		<div class="span12">  
+        	<!-- Begin title and desc -->      
+            <h4><span class="icon-workflow"></span>  <font color="#004B82">{{ wid_info[0].username }} / <font color="#00A33B">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }} </font>
+                <small style="padding-left: 10px"> <font color="#87A6B9"><em>{{ wid_info[0].username }} </em></font><span id="last-updated"></span></small> 
+            </h4>
+            <strong>Description:</strong> {{ wid_info[0].description }} <br /><strong>UID: </strong><input type="text" value="{{ wid }}" class="small copy" readonly /> 
+            <!-- End title and desc -->
+        </div><!-- end of span12 -->
+	</div><!-- end of row-fluid-->
+    <!-- End header -->
     
     <div class="row-fluid">
     	<div class="span12">
         	<div class="row-fluid">
-                <div id="left-container" class="span7">
-                    <div>
-                    	<small><a href="{{ url_for("graph", wid=wid) }}/jpg"><span id="img" class="label label-info">jpg</span></a></small>
-                    </div>
+            	<!-- begin graph -->
+                <div class="span7" id="left-container" >
                     <div class="row-fluid">
 					<div id="svg_loading">&nbsp;</div>
 	                    <div id="svg">
-	                    <!-- svg start -->
-	                    {{ svg|safe }}
-	                    <!-- svg end -->
-					    <script>
-					      // initialize zooming and panning on svg element
-					      function initZoomPan() {
-					      	svgPanZoom.init({'selector': 'svg', });
-					      	}
-					    </script>                    
-	                    </div>
+                            {{ svg|safe }}
+                            <script>
+                              function initZoomPan() {	svgPanZoom.init({'selector': 'svg', });	}
+                            </script>                    
+	                    </div> <!-- end of svg_loading -->
                     </div>
-
+                    <div class="pull-right">
+                    	<small><a href="{{ url_for("graph", wid=wid) }}/jpg"><span id="img" class="label label-info">jpg</span></a></small>
+                    </div>
         <!--       <div id="node_comments">
                         <div id="accordion2" class="accordion">
                         <div class="accordion-group">
@@ -750,128 +831,195 @@ function buildPageElements(wfID) {
                         </div> <!--end accordion parent --> 
 <!--                    </div>   -->         	                    
                 </div> <!-- end span7 -->
-                {% if nodes %}
-                <div class="span4 offset1">                 
-                <h5>Workflow Details: <button class="btn btn-mini btn-link expandcollapse"><i class="icon-plus-sign"></i> Expand All</button></h5>
+                <!-- end graph -->
                 
-                	<div id="acc-container">
-                	<div id="accordion" class="accordion">
+                <!-- begin workflow details text -->
+                {% if nodes %}
+                <div class="span5"> 
+                
+				 <!-- Begin comment -->
+              
+           <div id="comment_container">
+            <div class="accordion-body collapse" id="add_{{ wid }}">
+                <div class="accordion-inner no-border">
+                    <span id="submit_results"></span>                    
+                    <form id="submit_comment">
+                    <table id="comment-form">
+                    <tr>
+                    	<td>Workflow object:</td>
+                    	<td>
+                        <input type="hidden" value="{{ wid }}" name="wf_id">
+                        <select name="parent_uid" id="parent_uid">
+                        {% for obj in nodes.iteritems() %}
+                            {% for n in obj %}
+                                {% if n.name %}
+                                <option value="{{ n.uid }}">{{ n.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                         {% endfor %}
+                         </select>
+                    	</td>
+                    </tr>
+                    <tr>
+                    	<td>Comment: </td>
+                    	<td><textarea rows="2" id="comment-content" class="span11" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></td><br>
+                    </tr>
+                    </table>
+                    </form>
+                </div> <!-- end of accordion-inner -->
+            </div><!-- accordion-body -->
+            </div>
+            <!-- End comment -->
+
+                <div class="table-container">             
+                <table class="main table" id="coltab2">
+                	<thead>
+                        <tr>
+                            <th colspan=2>Workflow Details: 
+                           <span class="pull-right">
+                <span class="accordian-heading">
+                    <a href="#add_{{ wid }}" data-toggle="collapse" class="btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a>
+                </span>
+           
+            
+                            <span class="pull-right"><button class="btn btn-mini btn-success expandcollapse"><i class="icon-plus-sign"></i> Expand All</button></span></th>
+                            
+                        </tr>
+                    </thead>
+                
+                <tbody>
+               
                     {% for obj in nodes.iteritems() %}
+                    
                         {% for n in obj %}
-						<div>
-                        <!--  display icon, name link and time -->
-                        {% if n.type == "dataobject_instance" %}
-                        	{% if n.data[0].wf_link|length == 1 %} 
-                            <span class="icon-dataobject"></span>
-                            {% else %}
-                            <span class="icon-dataobject-blue"></span>
+                        
+                        {% if n.type == "dataobject_instance" %} 
+                        	{% if n.data[0].wf_link.count == 1 %} 
+                            <tr data-toggle="collapse" data-target="#acc_{{ n.uid }}" class="clickable node">
+                                <td><span class="icon-dataobject"></span> 
+                            {% else %}                            
+                            <tr data-toggle="collapse" data-target="#acc_{{ n.uid }}" class="clickable node">
+                                <td><span class="icon-dataobject-blue"></span> 
                             {% endif %}
-                        	{% if n.data %}
-                        	<a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.data[0].do_info.name }}</a>
-                        	<span class="muted"><small><small><em>- {{ n.data[0].time }}</em></small></small></span>
+                        	{% if n.data[0] %}
+                        		{{ n.data[0].do_info.name }}</td><td>
+                        		{{ n.data[0].time }}
                             {% endif %}
                         {% else %}
                             {% if n.type == "activity" %}
-                                <span class="icon-activity"></span>
-                            <a href="#acc_{{ n.uid }}" data-toggle="collapse">{{ n.name }}</a>
-                            
+                     			<tr data-toggle="collapse" data-target="#acc_{{ n.uid }}" class="clickable node">
+                                <td><span class="icon-activity"></span> {{ n.name }}</td>                            
                             {% elif n.type == "workflow" %}
-                                <span class="icon-workflow"></span> 
-                                <a href="#acc_{{ n.uid }}" data-toggle="collapse"><strong>{{ wid_info[0].username }} / <font color="#004B82">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }}</strong></a> 
+                     			<tr data-toggle="collapse" data-target="#acc_{{ n.uid }}" class="clickable node">
+                                <td><span class="icon-workflow"></span> 
+                                <font color="#004B82">{{ wid_info[0].username }} / <font color="#00A33B">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }} </font>
+                                </td><td><span id="td-last-updated"></span></td>
                        		{% endif %}   
                             
                         	{% if n.data %}                                      	
-                             <span class="muted"><small><small><em>- {{ n.time }}</em></small></small></span>
-                            {% endif %}
-                             
+                             <td>{{ n.time }}
+                            {% endif %}                             
                         {% endif %}
-                        <!-- end display icon, name link and time -->
-                        
-                                                        
-                          <div class="accordion-body collapse" id="acc_{{ n.uid }}">
-                              <div class="accordion-inner no-border">
-                                  <ul>
-                                      {% if n.data %}
-                                        {% for x in n.data %}
-                                        	
-                                            <!-- description -->
-                 	       					{% if n.type == "dataobject_instance" %}
-                                            <li><small>{{ n.data[0].do_info.description }}</small>
-                                            {% else %}
-                                            <li><small>{{ x.description }}</small>
-                                            {% endif %}
-                                            <!-- end of description -->
-                                            <!-- description -->
-                                                                                        
-                 	       					{% if n.type == "dataobject_instance" %} 
-                                            <small>{{ n.data[0].do_info.uri }}</small>
-                                            {% else %} 
-                                            <small><font color="#ED8454"><em>{{ x.uri }}</em></font></small>
-                                            {% endif %}
-                                            <!-- end of description -->
-                                            
-                      <!-- display other workflows (if any) -->  
-                                              </li>                                 
-                                              <li><small>UID: <input type="text" value="{{ x.uid }}" class="small copy" readonly /></font></small></li>
-                                               {% if x.wf_link|length > 1 %} 
-                                                <ul class="wf_links"> 
-                                                    <li id="lw_{{ x.uid }}"  style="margin-left: 0px"><small><em><a style="cursor:pointer;">[+] Linked Workflows</a></em></small>
-                                                    <!-- <span id="{{ x.uid }}_loader"><img src="/static/img/ajax-loader-green-small.gif"></span> -->
-                                                      <ul>
-                                                      {% for j in x.wf_link %}
-                                                          {% if j.work_uid != wid %}
-                                                          <li><small><a href="{{ url_for("connections", wid=j.work_uid) }}" class="linkedwf">{{ j.work_uid }}</a></small>
-                                                          </li>
-                                                          {% endif %}
-                                                      {% endfor %}
-                                                      </ul>
-                                                    </li>
-                                                   </ul>
-                                                  {% endif %}                             
-                      <!-- end of display other workflows (if any) -->  
-                                              </li>                                                               
-                                                     
-                                          {% endfor %}
-                                      {% endif %}
-                                      {% if n.metadata %}
-                                          <li><small>Metadata:</small>
-                                          <ul>
-                                          {% for md in n.metadata %}
-                                              <li>
-                                                  <small>{{ md.key }}: {{ md.value }}</small>
-                                                  {% if md.time %}                                                	
-                                                  <ul><li><small>time: {{ md.time }}</small></li></ul>
-                                                  {% endif %}
-                                              </li>
-                                          {% endfor %}
-                                          </ul>
-                                          </li>
-                                      {% endif %}
-                                      {% if n.comment %}
-                                      <li><small>Comments:</small>
-                                          <ul>
-                                          {% for c in n.comment %}
-                                              <li><small>{{ c.content }} | <em>by {{ c.user }} - {{ c.time }}</em></small> </li>
-                                          {% endfor %}
-                                          </li>
-                                      {% endif %} 
-                                      </ul></li>                                       
-                                  </ul>
-                              </div>
-                          </div><!-- end accordion-body -->
-                                     </div>
-                         {% endfor %}
-                    {% endfor %}
-                    </div> <!--end accordion parent -->
-                    </div> <!-- end acc-container -->
-                </div> <!-- end span3 offset1 -->
+                        </td>
+                        </tr> 
+                        {% if n.type == "workflow" %} 
+                        <tr id="detail_{{ n.uid }}">
+                            <td colspan=2 class="detail">   
+                                <div id="acc_{{ n.uid }}" class="collapse">
+                                    <ul class="details-list"> 
+                                    {% if n.comment %}
+                                        <li><font class="bold">Comments:</font>
+                                            <ul class="comments">
+                                            {% for c in n.comment %}
+                                                <li><span class="icon-comment lighter"></span> {{ c.content }} <em>by {{ c.user }} <small>{{ c.time }}</small></em></li>
+                                            {% endfor %}
+                                            </ul>
+                                        </li>
+                                     {% endif %} 
+                                    <!-- end of if n.comment -->
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                                     {% endif %} 
+                        <!-- end of n.type is "dataojbect_instance" -->
+                        <!-- end display icon, name link and time -->                        
+                        {% if n.data %}   
+                        <tr id="detail_{{ n.uid }}">
+                            <td colspan=2 class="detail">   
+                                <div id="acc_{{ n.uid }}" class="collapse">
+                                    <ul class="details-list"> 
+                                    
+                                    <!-- description -->
+                                    {% if n.type == "dataobject_instance" %}
+                                    <li><font class="bold">Description:</font> {{ n.data[0].do_info.description }}
+                                    {{ n.data[0].do_info.uri }} </li>
+                                    <li><strong></strong><font class="bold">UID:</font> <input type="text" value="{{ n.data[0].uid }}" class="small copy" readonly /></li>
+                                    {% else %}
+                                    <li><font class="bold">Description:</font> {{ n.data[0].description }}
+                                    <font color="#ED8454"><em>{{ n.data[0].uri }}</em></font> </li>
+                                    <li><strong></strong><font class="bold"> UID:</font> <input type="text" value="{{ n.data[0].uid }}" class="small copy" readonly /></li>
+                                    {% endif %}
+                                    <!-- end of description -->
+                                   
+                                    <!-- end of if n.data --> 
+                                    {% if n.metadata %}
+                                        <li><font class="bold">Metadata:</font>
+                                            <ul>
+                                            {% for md in n.metadata %}
+                                                <li>
+                                                	<span class="icon-plus lighter"></span> 
+                                                    {{ md.key }}: {{ md.value }}
+                                                    {% if md.time %}                                                	
+                                                        <em>{{ md.username }} <small>{{ md.time }}</small></em>
+                                                    {% endif %}
+                                                </li>
+                                            {% endfor %}
+                                            </ul>
+                                         </li>
+                                     {% endif %}
+                                    <!-- end of if n.metadata -->
+                                    {% if n.comment %}
+                                        <li><font class="bold">Comments:</font>
+                                            <ul class="comments">
+                                            {% for c in n.comment %}
+                                                <li><span class="icon-comment lighter"></span> {{ c.content }} <em>{{ c.user }} <small>{{ c.time }}</small></em></li>
+                                            {% endfor %}
+                                            </ul>
+                                        </li>
+                                     {% endif %} 
+                                    <!-- end of if n.comment -->
+                                    
+                                    <!-- display other workflows (if any) -->                                              
+                                    {% if n.data[0].wf_link and n.data[0].wf_link.count > 1 %} 
+                                    <ul class="wf_links" style="padding: 0px 0px"> 
+                                        <li id="lw_{{ n.data.uid }}"  style="margin-left: 0px"><em><a style="cursor:pointer;"><strong>&darr; View linked Workflows</strong></a></em>
+                                           <ul>                                         
+                                            {% for j in n.data[0].wf_link.result %}
+                                                {% if j.work_uid != wid %}                                                        
+                                                <li><a href="{{ url_for("connections", wid=j.uid) }}" class="linkedwf">{{ j.uid }}</a></li>
+                                                {% endif %}
+                                            {% endfor %}
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                    {% endif %} 
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        <!-- end of if n.data -->
+                	 	{% endfor %}
+                        <!-- end of for n in obj -->
+                    {% endfor %}   
+                    <!-- end of for obj in nodes.iteritmes() -->              
+                	</tbody>
+                </table>
+                </div> <!-- end table-container -->
+    		    </div> <!-- end span5 -->
                 {% endif %}
              </div> <!-- end row-fluid -->
-		<div class="row-fluid">
-        	<div class="span7">
-
-            </div><!-- end span7 -->
-        </div> <!-- end row-fluid -->
         </div> <!-- end span12 -->
     </div><!-- end row-fluid -->
 <span style="float: right"><em><small>Page created in: {{ page_created }} seconds.</small></em></span>

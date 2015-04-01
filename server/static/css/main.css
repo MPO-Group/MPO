@@ -171,3 +171,6 @@ padding: 7px 9px;
     background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject_blue.png");
     background-position: center center;
 }
+.lighter{
+	opacity: 0.5;
+}

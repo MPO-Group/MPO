@@ -5,35 +5,36 @@
 <script type="text/javascript" language="javascript" class="init">
 
 $(document).ready(function() {
-	// Setup - add a text input to each footer cell
-    $('#data_table tfoot th').each( function () {
-        var title = $('#data_table thead th').eq( $(this).index() ).text();
-        $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
-    } );
-	
+
 	// Init table 
 	var table = $('#data_table').DataTable( {
 		"processing": true,
         "serverSide": true,
+		"bFilter": false,
         "ajax": "{{ url_for("get_server_data") }}",
         "columns": [
-            { "data": "name" },
+            { 
+				"data": "uid",
+			    "visible": false,
+			},
+            { 
+			  "data": "name", 
+			  "render": function ( data, type, row ) {
+                    r='<a href={{ url_for("dataobject") }}/'+row.uid+'><strong>'+data+'</strong></a>';
+					return r;
+			   },
+			},
             { "data": "description" },
             { "data": "uri" },
+			{ "data": "source_uid", 
+			  "render": function ( data, type, row ) {
+                    if(data==null) return 'Outside of MPO';
+              },
+			},
             { "data": "username" },
             { "data": "time" }
         ]
-    });
-	
-    // Apply the search
-  	table.columns().eq( 0 ).each( function ( colIdx ) {
-        $( 'input', table.column( colIdx ).footer() ).on( 'keyup change', function () {
-            table
-                .column( colIdx )
-                .search( this.value )
-                .draw();
-        } );
-    } );		
+    });	
 } );
 </script>
 <style>
@@ -163,20 +164,24 @@ ul li input.user_time_wf {
             <table class="main table table-hover table-striped" id="data_table">
             	<thead>
 					<tr>
+                        <th>UID</th>                                
                         <th>Name</th>
                     	<th>Description</th>
                         <th>URI</th>
+                        <th>Source</th>
                         <th>Username</th>
                         <th>Time </th>
 					</tr>
 				</thead>
                 <tfoot>
            			<tr>
+                        <th>UID</th>
                         <th>Name</th>
                     	<th>Description</th>
-                        <th>Time </th>
-                        <th>Username</th>  
-                        <th>URI</th>          
+                        <th>URI</th>
+                        <th>Source</th>
+                        <th>Username</th>
+                        <th>Time </th>   
                 	</tr>
         		</tfoot>
            </table>

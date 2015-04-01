@@ -69,10 +69,8 @@ def before_request():
     else:
        CONN_TYPE='demo-api'
 
-    CONN_TYPE=''
-    API_PREFIX=MPO_API_SERVER+"/"+CONN_TYPE+"/"+MPO_API_VERSION
-    if webdebug:
-        print ("WEBSERVER: API_PREFIX:",API_PREFIX)
+    API_PREFIX=MPO_API_SERVER+""+CONN_TYPE+"/"+MPO_API_VERSION
+
 
 @app.route('/')
 def index():
@@ -397,7 +395,7 @@ def graph(wid="", format="svg"):
 
     r=requests.get("%s/workflow/%s/graph"%(API_PREFIX,wid,), **certargs)
     r = r.json()
-    nodeshape={'activity':'rectangle','dataobject':'ellipse','workflow':'diamond'}
+    nodeshape={'activity':'rectangle','dataobject_instance':'ellipse','workflow':'diamond'}
     graph=pydot.Dot(graph_type='digraph')
     nodes = r['nodes']
     #add workflow node explicitly since in is not a child
@@ -471,7 +469,6 @@ def getsvgxml(wid):
         cid=item['child_uid']
         name=nodes[cid]['name']
         if prev_name != name:
-            #print(str(count) + " " + name)
             object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'], 'time':nodes[cid]['time'] }
             prev_name=name
             count+=1
@@ -545,20 +542,20 @@ def connections(wid=""):
             wf_objects[key]['data']=data
         elif value['type'] == "dataobject_instance":
             #get data on each workflow element
-            req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+            req=requests.get("%s/dataobject/%s"%(API_PREFIX,value['uid'],), **certargs)
             data=req.json()
-            print(data)
+ 
             if data[0]['time']:
                 obj_time=data[0]['time']
                 data[0]['time']=obj_time[:19]
 
             #get linked workflows using uri
             if data[0]['do_info']['uri'] and len(data[0]['do_info']['uri']) > 1:
-                wf_links_req=requests.get("%s/dataobject?uri=%s"%(API_PREFIX,urllib.quote((data[0]['do_info']['uri'])),), **certargs)
-                #if wf_links_req.text != "[]":
+		wf_links_req=requests.get("%s/workflow?do_uri=%s"%(API_PREFIX,urllib.quote((data[0]['do_info']['uri'])),), **certargs)
 	        if (wf_links_req):
                     wf_links=wf_links_req.json()
                     data[0]['wf_link']=wf_links
+
             wf_objects[key]['data']=data
 
         meta_req=requests.get("%s/metadata?parent_uid=%s"%
@@ -717,9 +714,9 @@ def search():
                          'activity_short' : {'w':'w_guid'},
                          'dataobject' : {'name':'name', 'description':'description','uri':'uri','uid':'do_guid',
                                          'source_uid':'source_guid','time':'creation_time', 'user_uid':'u_guid'},
-                         'dataobject_instance' : {'do_uid':'do_guid', 'uid':'doi_guid',
-                                                  'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid'},
-                         'dataobject_instance_short': {'w':'w_guid'},
+                         #'dataobject_instance' : {'do_uid':'do_guid', 'uid':'doi_guid',
+                         #                         'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid'},
+                         #'dataobject_instance_short': {'w':'w_guid'},
                          'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type',
                                        'user_uid':'u_guid', 'time':'creation_time',
                                        'parent_uid':'parent_guid',
@@ -733,17 +730,18 @@ def search():
                 for pkey,pvalue in query_map.iteritems():
                     obj_result=[]
                     i=0
+                    found=False
                     for ckey in pvalue:
-                        found=False
                         if(pkey != "metadata_short" and pkey != "dataobject_short" and pkey != "activity_short"): #these get requests do not work and break the loop
                             if(pkey=="mpousers"): #api route is /user and not /mpousers
                                 pkey="user"
                             req=requests.get("%s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,), **certargs)
+
                             if req.text != "[]":
                                 obj_result.extend(req.json())
                                 found=True
                                 if webdebug:
-                                    print('searching route:')
+                                    print('Searching route:')
                                     print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
                     if found:
                         results[pkey]=obj_result
@@ -1018,6 +1016,9 @@ def collections(uid=False):
 
 	def collection_item_cb(sess, resp, index):
             info=resp.json()
+      
+	    if((len(info))>1):
+  	    	info[0]=info
             if len(info)!=0:
                 thetime=info[0]['time'][:19]
                 info[0]['time']=thetime
@@ -1059,7 +1060,7 @@ def collections(uid=False):
             	          background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
             	future_list.append(cid)
 
-	    #Process dataobject "collection_elements"
+	    #Process dataobject
             elif results[index]['type']=="dataobject":
                 #get node info
                 wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
@@ -1069,6 +1070,21 @@ def collections(uid=False):
                 c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
                         background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
                 future_list.append(c)
+	
+	    #Process dataobject
+            elif results[index]['type']=="dataobject_instance":
+               #get node info
+                wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+                future_list.append(wf_req)
+                #get comments for each workflow in a collection
+                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+                future_list.append(c)
+                wf_id=wf_req.result().json()[0]['work_uid']
+	        doi_wf=s.get("%s/workflow/%s"%(API_PREFIX,wf_id), headers={'Real-User-DN':dn}).result()
+                doi_wf_cid=str(doi_wf.json()[0]['username'])+" / "+str(doi_wf.json()[0]['name'])+" / "+str(doi_wf.json()[0]['composite_seq'])
+ 		results[index]['wf_cid']=doi_wf_cid
 
 	    elif results[index]['type']=="collection":
                 #get node info
@@ -1151,21 +1167,72 @@ def dataobject(uid=False):
         ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,),
                            headers={'Real-User-DN':dn})
 
+        quality_info=quality_req.result().json()
+        if len(quality_info)==1:
+            qterm_uid=quality_info[0]['uid']
+        else:
+            qterm_uid='0'
+            print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
+
         if uid:
             #Grab specified dataobject
             r=s.get("%s/dataobject/%s"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
-            results=r.result().json()
-            #get name and desc of this specific collection
-            #this = [ c for c in dataobj_list if c['uid']==uid ]
-            username=results[0]['username']
-            uri=results[0]['uri']
-            name=results[0]['name']
-            time=results[0]['time'][:19]
-            desc=results[0]['description']
+            if(r):
+               results=r.result().json()
+               if "do_info" in results[0]:
+                   username=results[0]['username']
+                   uri=results[0]['do_info']['uri']
+                   name=results[0]['do_info']['name']
+                   time=results[0]['do_info']['time'][:19]
+                   desc=results[0]['do_info']['description']
+               else:
+                   username=results[0]['username']
+                   uri=results[0]['uri']
+                   name=results[0]['name']
+                   time=results[0]['time'][:19]
+                   desc=results[0]['description']
+ 
+               wf_links_req=requests.get("%s/workflow?do_uri=%s"%(API_PREFIX,urllib.quote(uri)), **certargs)
+               if (wf_links_req):
+                   wf_links=wf_links_req.json()
+                   workflows=wf_links
+                   for item in workflows['result']: 
+                      #filter milliseconds out (note, could be more robustly done with datetime functions)
+                      thetime=item['time'][:19]
+                      item['time']=thetime
+                      pid=item['uid']
+                      #get comments for a workflow
+                      comment=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid), **certargs).result().json()
+                      item['comments']=comment
+                      item['num_comments']=len(comment)
+       
+                      #get quality info for a workflow
+                      qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), **certargs )
 
-            #Grab a list of collections
+                      qual_data = qual_req.result().json()
+                      if qual_data:
+                         if qual_data[0]['value']:
+                             item['quality']=qual_data[0]['value']
+                      else:
+                         item['quality']=''
+   
+            #Grab a list of collections - first, get parent id
             r=s.get("%s/collection?element_uid=%s"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
-            collections=r.result().json()
+            if(r):
+              # grab all collections for now
+              rc=s.get("%s/collection"%(API_PREFIX), headers={'Real-User-DN':dn})
+              if(rc):
+                  coll_list=rc.result().json()
+              # loop through parents
+              collections=r.result().json()
+              for item in collections:
+                 coll_uid=item['parent_uid']
+                 for citem in coll_list:
+                    if(citem['uid']==coll_uid):
+                       item['name']=citem['name']
+                       item['description']=citem['description']
+                       item['collection_uid']=citem['uid']
+                       break
         else:
             #Grab a list of all dataobjects
 	    dataobj_list=""
@@ -1193,8 +1260,6 @@ def dataobject(uid=False):
     ont_result=ont_tree_req.result().json().get('root').get('children')
     wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
 
-    workflows=""
-
     everything={"db_server":DB_SERVER, "workflows":workflows, "ont_result":ont_result,
                 "rpp":rpp, "wf_type_list":wf_type_list, "coll_list":collections,
                 "name":name, "desc":desc,
@@ -1217,15 +1282,18 @@ def get_server_data(uid=False):
     s.headers={'Real-User-DN':dn}
 
     #Get request values - this should match up with the order of columns in HTML
-    columns=["name", "description", "uri", "username", "time"]
+    columns=["uid", "name", "description", "uri", "source_uid", "username", "time"]
     start=int(request.args.get('start'))
     length=int(request.args.get('length')) 
     end=start+length
     draw=int(request.args.get('draw'))
     order_by=int(request.args.get('order[0][column]'))
     order_dir=request.args.get('order[0][dir]')
+    #overall serach value
     search_str=request.args.get('search[value]')
     i=0;
+
+    #search per column - columnsx4][search][value]
 #    for c in columns:
 #       col_searchable=str(request.args.get("columns[%s][searchable]"%(i,)))
 #       col_search_str=str(request.args.get("columns[%s][search][value]"%(i,)))
@@ -1243,7 +1311,6 @@ def get_server_data(uid=False):
     if(search_str):
         for c in columns:
             this_list=[]
-            print ("SEARCHING THRU: ", c)
 #	    rc=s.get("%s/dataobject?uri=%s"%(API_PREFIX,search_str,), headers={'Real-User-DN':dn}).result()
 	    rc=s.get("%s/dataobject?%s=%s"%(API_PREFIX,c,search_str,), headers={'Real-User-DN':dn}).result()
 
@@ -1259,15 +1326,15 @@ def get_server_data(uid=False):
 #  	           data_list=data_list+list(new_to_add)
      	    #   data_list=rc.json()
     else:
-    	rc=s.get("%s/dataobject"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
+    	#rc=s.get("%s/dataobject?instance=False"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
+	rc=s.get("%s/dataobject"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
         if(rc):
             data_list=rc.json()
-            for i in range(len(data_list)):
-               if data_list[i]['do_info']:
-                   data_list[i]['name']=data_list[i]['do_info']['name']
-                   data_list[i]['uri']=data_list[i]['do_info']['uri']
-                   data_list[i]['description']=data_list[i]['do_info']['description']
-                   data_list[i].pop('do_info',None)
+            #for i in range(len(data_list)):
+            #   data_list[i]['name']=data_list[i]['name']
+            #   data_list[i]['uri']=data_list[i]['uri']
+            #   data_list[i]['description']=data_list[i]['description']
+	    #   date_list[i]['source_uid']=data_list[i]['source_uid']
 
     if(data_list):
         total=len(data_list)
