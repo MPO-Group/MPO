@@ -42,7 +42,7 @@ echo oid3 is $oid3
 aid1=`$MPO step $wid $oid1 --input=$oid2 --input=$oid3 --name="Read Input Files" --desc="Read shot number, snap file etc..."`
 cid=`$MPO comment $aid1 "This program is the only one in this workflow"`
 oid4=`$MPO add  $wid $wid --name="Plasma Current" --desc="Plasma current in MA" --uri="$($MPO -f raw archive -p mdsplus -s $shot -t magnetics -p'\magnetics::ip')"`
-oid5=`$MPO add  $wid $wid --name="PTDATA" --desc="Point Data" --uri="???"`
+oid5=`$MPO add  $wid $wid --name="PTDATA" --desc="Point Data" --uri="file://some/path/to/datafile"`
 aid2=`$MPO step $wid $oid4 --input=$oid5 --name="Read PTDATA" --desc="Read PTDATA and Plasma Current" --uri=EFIT1`
 aid3=`$MPO step $wid $aid2  --name="Calibrate Data" --desc="Calibrate input to EFIT" --uri=EFIT2`
 aid4=`$MPO step $wid $aid3 --input $aid1 --name="EFIT Data averaging" --desc="Average EFIT Data" --uri=EFIT3`
