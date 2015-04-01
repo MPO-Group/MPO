@@ -134,7 +134,8 @@ class mpo_methods(object):
     ID='uid'
     WORKID='work_uid'
     PARENTID='parent_uid' #field for object id to which comments and metadata are attached
-
+    RESULT='result'
+    
     MPO_VERSION='v0'
     WORKFLOW_RT = 'workflow'
     COMMENT_RT  = 'comment'
@@ -209,20 +210,23 @@ class mpo_methods(object):
             text=result.text
             print("format",result,str(type(result)),text,file=sys.stderr)
         if filter=='id':
+            rr=result.json()
+            if self.RESULT in rr: #then format is to have record list in result field
+                rr=rr[self.RESULT]
             output=[]
-            if isinstance(result.json(),list):
+            if isinstance(rr,list):
                 if self.debug:
                     print("Caution, response format of 'id' used when result is a list.",file=sys.stderr)
                     print("Returning list of ID's",file=sys.stderr)
 
-                for r in result.json():
+                for r in rr:
                     output.append(str(r[self.ID]))
 
                 if len(output)==1: #if it is a one element list, just return contents.
                     output=output[0]
             else:
-                if self.ID in result.json():
-                    output=result.json()[self.ID]
+                if self.ID in rr:
+                    output=rr[self.ID]
         elif filter=='json' or filter=='dict':
             output=result.json()
         elif filter=='pretty':
