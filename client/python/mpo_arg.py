@@ -678,7 +678,7 @@ class mpo_methods(object):
         archiver=archiver_class(self)
         print("restore protocol=%s"%protocol[0])
         print("restore args = %s"%protocol[1])
-        return archiver.restore(protocol[1])
+        return archiver.restore(uri=uri)
 
     def ls(self, uri=None, do_uid=None, *arg, **kw):
         import importlib
@@ -690,7 +690,7 @@ class mpo_methods(object):
         archiver=archiver_class(self)
         print("ls protocol=%s"%protocol[0])
         print("ls args = %s"%protocol[1])
-        return archiver.ls(protocol[1])
+        return archiver.ls(uri=uri)
 
 
 ### MPO commandline client
@@ -853,16 +853,16 @@ class mpo_cli(object):
         #ls
         ls_parser=subparsers.add_parser('ls',help='list the Archive of a data object.')
         grp = ls_parser.add_mutually_exclusive_group(required=True)
-        grp.add_argument('--uri', '-u', action='store')
+        grp.add_argument('--uri', '-', action='store')
         grp.add_argument('--do_uid', '-d', action='store')
         ls_parser.set_defaults(func=self.mpo.ls)
 
         #restore
-        ls_parser=subparsers.add_parser('restore',help='restore the Archive of a data object.')
-        grp = ls_parser.add_mutually_exclusive_group(required=True)
-        grp.add_argument('--uri', '-u', action='store')
+        restore_parser=subparsers.add_parser('restore',help='restore the Archive of a data object.')
+        grp = restore_parser.add_mutually_exclusive_group(required=True)
+        grp.add_argument('--uri', '-U', action='store')
         grp.add_argument('--do_uid', '-d', action='store')
-        ls_parser.set_defaults(func=self.mpo.restore)
+        restore_parser.set_defaults(func=self.mpo.restore)
 
 
         #comment

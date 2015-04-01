@@ -42,13 +42,7 @@ class mpo_ar_mdsplus(_ar.mpo_ar_dataobject):
             raise Exceptions("MDSplus Restore - must specifiy a URI")
         return uri
 
-    def restore_parse(self, *args):
-        self.parser.add_argument('--uri','-u',action='store',help='Specify the uri')
-
     def ls(self, uri=None, verbose=False):
         if verbose:
             print("listing a filespec data object uri = %s"%(uri,))
         return uri
-
-    def ls_parse(self, *args):
-        self.parser.add_argument('--uri','-u',action='store',help='Specify the uri')
