@@ -154,6 +154,7 @@ class mpo_methods(object):
                  archive_user='psfcmpo', archive_key=None,
                  archive_prefix=None, debug=False,filter=False,dryrun=False):
 
+
         self.debug=debug
         self.dryrun=dryrun
         self.filter=filter
@@ -175,7 +176,7 @@ class mpo_methods(object):
         self.session.verify=False
         #self.session.headers.update({})
 
-        
+
         if self.debug:
             print('certificate in mpo_arg.mpo_methods is:',cert,file=sys.stderr)
 #            print('#MPO user',self.get_user())
@@ -285,6 +286,7 @@ class mpo_methods(object):
 #        r = requests.get(url,params=datadict,
 #                             headers=self.GETheaders,**self.requestargs)
         r = self.session.get(url,params=datadict,headers=self.GETheaders)
+
         if self.debug or verbose:
             print('MPO.GET response',r.url,r.status_code,file=sys.stderr)
 
@@ -588,7 +590,7 @@ class mpo_methods(object):
     def collection(self, name="", desc="", collection=None, remove=False,
                    elements=None, **kwargs):
         """
-        Create a new collection of objects from a list of UUIDS.
+        Create a new collection of objects from a list of UUIDS, or add to an existing collection.
 
         args are:
         name -- name
@@ -616,17 +618,17 @@ class mpo_methods(object):
 
             if remove:
                 if desc!="":
-                    warnings.warn("InvalidArgs in collect. No description used when removing an element.")
+                    warnings.warn("InvalidArgs in collect/collection. No description used when removing an element.")
                 if name!="":
-                    warnings.warn("InvalidArgs in collect. No name used when removing an element.")
-                assert elements,"InvalidArgs in collect. Must specify an element to remove."
-                assert collection!=None,"InvalidArgs in collect. Must specify the collection from which to remove the element."
+                    warnings.warn("InvalidArgs in collect/collection. No name used when removing an element.")
+                assert elements,"InvalidArgs in collect/collection. Must specify an element to remove."
+                assert collection!=None,"InvalidArgs in collect/collection. Must specify the collection from which to remove the element."
 
                 for element in elements:
                     r=self.delete(self.COLLECTION_ELEMENT_RT.format(cid=collection)+'/'+element)
 
             else:
-                payload={"name":name,"description":desc,"elements":elements}
+                payload={"elements":elements}
                 r=self.post(self.COLLECTION_ELEMENT_RT.format(cid=collection), None,
                             collection, data=payload, **kwargs)
 

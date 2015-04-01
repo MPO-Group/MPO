@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import sys
+print('API python path',sys.path)
 
 from flask import Flask, render_template, request, jsonify
 #from flask.ext.jsonpify import jsonify #uncomment to support JSONP CORS access
@@ -331,11 +333,11 @@ def collection(id=None):
 @app.route(routes['collection']+'/<id>'+'/element'+'/<oid>', methods=['GET'])
 def collectionElement(id=None, oid=None):
     """
-    /collection/<id>/element       - GET a list of objects in a collection
+    /collection/:id/element       - GET a list of objects in a collection
                                    - POST to add to the collection
-    /collection/<id>/element/<oid> - GET details of a single object in a collection.
+    /collection/:id/element/:oid - GET details of a single object in a collection.
                                     Should resolve oid to full record from relevant table.
-    /collection/<id>/element?detail=full[sparse] - GET collection information with full
+    /collection/:id/element?detail=full[sparse] - GET collection information with full
                details [or default sparse as /collection/<id>]
     """
     dn=get_user_dn(request)
@@ -349,25 +351,33 @@ def collectionElement(id=None, oid=None):
         #elems must be a list of uids that are not already in this collection, if it exists.
         elems = payload.get('elements')
         if elems:
-            if not isinstance(elements,list):
-                elements=[elements]
+            if not isinstance(elems,list):
+                elements=[elems]
+            else:
+                elements=elems
         else:
             elements=[]
-        for e in elems[:]:
-            r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
-            if r['uid']: elems.remove(e)
-        payload['elements'] = elems
 
-        r = rdb.addRecord('collection_elements',json.dumps(payload),dn)
-        morer = rdb.getRecord('collection_elements',{'uid':r['uid']},dn)
-        publishEvent('mpo_collection_elements',onlyone(morer))
+        #remove elements already in the collection                
+        for e in elements:
+            r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
+            if len(r)!=0: elements.remove(e) #maybe add to response message this was done
+        payload['elements'] = elements
+
+        #add elements one and a time and create list of returned records
+        r=[]
+        for e in elements:
+            rr=rdb.addCollectionElement(id,e,dn)
+            r.append(rr)
+            morer = rdb.getRecord('collection_elements',{'uid':rr['uid']},dn)
+            publishEvent('mpo_collection_elements',onlyone(morer))
     elif request.method == 'GET':
         if oid:
             r = rdb.getRecord('collection_elements',{'uid':oid})
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id})
             
-        print ('cee',r)
+        #Find original item and add it to record.
         for record in r:
             print ('collection element r',record)
             r_uid=record['uid']
@@ -379,18 +389,24 @@ def collectionElement(id=None, oid=None):
                     'name':'what is this?','description':'empty','time':'nowhen'}
             #Translation for specific types
             if record['type']=='workflow':
-                detail=json.loads(rdb.getWorkflow({'uid':r_uid},dn))[0]
-                detail['related']=json.loads(rdb.getWorkflowCompositeID(r_uid,dn)).get('alias')
+                detail=rdb.getWorkflow({'uid':r_uid},dn)[0]
+                print('element workflow',detail)
+                detail['related']=rdb.getWorkflowCompositeID(r_uid,dn).get('alias')
                 links={}
                 links['link1']=root_url+'/workflow/'+r_uid
                 links['link2']=root_url+'/workflow?alias='+detail['related']
                 detail['link-related']=links
             elif record['type']=='dataobject':
-                detail=json.loads(rdb.getRecord('dataobject',{'uid':r_uid},dn))[0]
+                detail=rdb.getRecord('dataobject',{'uid':r_uid},dn)[0]
                 detail['related']=detail.get('uri')
                 detail['link-related']=root_url+'/dataobject/'+r_uid
+            elif record['type']=='dataobject_instance':
+                do_uid=(rdb.getRecord('dataobject_instance',{'uid':record['uid']},dn)[0]).get('do_uid')
+                detail=rdb.getRecord('dataobject',{'uid':do_uid},dn)[0]
+                detail['related']=detail.get('uri')
+                detail['link-related']=root_url+'/dataobject/'+do_uid
             elif record['type']=='collection':
-                thisdetail=json.loads(rdb.getRecord('collection',{'uid':r_uid},dn))[0]
+                thisdetail=rdb.getRecord('collection',{'uid':r_uid},dn)[0]
                 detail['related']=None
                 detail['link-related']=root_url+'/collection/'+r_uid+'/element'
                 detail['description']=thisdetail.get('description')

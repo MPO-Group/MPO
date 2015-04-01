@@ -112,7 +112,7 @@ def getRecordTable(id, dn=None):
     q=''
     v=()
     for k,l in query_map.iteritems():
-        if l.has_key('uid'):
+        if l.has_key('uid') and k!='collection_elements':
             q+="select distinct %s as table from "+k+" where "+l['uid']+"=%s"
             v+=k,id
             q+=' union '
@@ -187,7 +187,10 @@ def getRecord(table,queryargs={}, dn=None):
     # execute our Query
     cursor.execute(q)
     # retrieve the records from the database
-    records = [x for x in cursor.fetchall() if x['uri'] == queryargs['uri']] if queryargs.has_key('uri') else cursor.fetchall()
+    if queryargs.has_key('uri'):
+        records = [x for x in cursor.fetchall() if x.get('uri') == queryargs.get('uri')]
+    else:
+        records = cursor.fetchall()
     # Close communication with the database
     cursor.close()
     conn.close()
@@ -514,7 +517,8 @@ def getWorkflow(queryargs={},dn=None):
 
     # retrieve the records from the database and rearrange
     records = cursor.fetchall()
-
+    if dbdebug:
+        print('get workflow records',records)
     for r in records:
         r['user']={'firstname':r['firstname'], 'lastname':r['lastname'],
                'userid':r['userid'],'username':r['username']}
@@ -637,7 +641,7 @@ def getWorkflowComments(id,queryargs={},dn=None):
 
 def addRecord(table,request,dn):
     objs = json.loads(request)
-    objs['uid']=str(uuid.uuid4())
+    if not objs.has_key('uid'): objs['uid']=str(uuid.uuid4())
     objs['time']=datetime.datetime.now()
 
     # get a connection, if a connect cannot be made an exception will be raised here
@@ -648,6 +652,7 @@ def addRecord(table,request,dn):
 
     objs['user_uid'] = cursor.fetchone()['uuid']
     objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
+    print('addrecord', objs,objkeys)
 
     q = ( "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) +
           ") values ("+",".join(["%s" for x in objkeys])+")" )
