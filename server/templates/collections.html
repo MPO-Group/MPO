@@ -11,38 +11,11 @@ var subTree="";
 
 $(document).ready(function () {
 
-	$("#query_tbl").hide();
-
 	$("input.user_entry:text").val("");
 	$("input.user_entry_wf:text").val("");
 	
 	var jsonstr = '{{ ont_result|tojson }}';
 	var jsondata = jQuery.parseJSON(jsonstr);
-	
-	//left nav accordian function (old way with full ont obj)
-    /*$('li').click(function(ev) {
-        $(this).find('>ul').slideToggle();
-        ev.stopPropagation();
-    });*/
-
-	$('.user_entry_wf').on('keydown', function ( evt ) {
-		//user presses enter key
-
-		if( evt.keyCode == 13 ) {
-			var this_name=$(this).attr("name");
-			var this_value=$(this).val();		
-			//loop through dom by class
-			/*$('.user_entry_wf').each(function(i, obj) {
-				//i is index; obj is dom obj
-			});*/
-			//addWfAttrib(evt.target.id, $(this).val());
-			var url='/home';
-			var wftype="{{ wf_type }}";
-			var r="{{ rpp }}";
-			url+="?wf_type=" + wftype + "&r=" + r + "&"+this_name+"="+this_value;
-			window.location=url;
-		}
-	}); 
 
 	$('#wf_type_sel').on('change', function () {
 		var url = $(this).val(); // get selected value
@@ -424,120 +397,7 @@ function setWfQuality(wfid,numq) {
 
 
 </script>
-<style>
-#nav_split, #ont_search_header, #wf_search_header, #wf_attrib, #wf_hide {
-	display: none;
-}
-.nav_search_header {
- 	font-size: small;
-	color: #999;
-	font-style: italic;	
-}
 
-ul ul {
-    /*display:none;   */
-}
-ul li:hover > ul {
-    /*display:block;   */
-}
-.attrib {
-	font-size: small;
-	font-weight: normal;
-	font-style: normal;
-	text-decoration: none;
-	text-transform: none;
-}
-.user_sel {
-	font-size:12px;
-	font-style:italic;
-	color:#390;
-}
-.type_sel {
-	font-size:11px;
-	color:#666;
-	width: 80px;
-	border: 1px thin #ddd;
-	height: 22px;
-	vertical-align: middle;
-  -webkit-border-radius: 0px;
-     -moz-border-radius: 0px;
-          border-radius: 0px;		
-}
-.wf_more {
-	font-style: italic;
-	text-transform:none;
-	font-weight: 200;
-	list-style-type: none;
-}
-#clear_ont_path {
-	background-color: #F90;
-	height: 10px;
-	font-size: 9px;
-	color: #fff;
-	padding: 2px;
-  -webkit-border-radius: 0px;
-     -moz-border-radius: 0px;
-          border-radius: 0px;	
-}
-ul li input.user_entry {
-	border: 1px thin #ddd;
-	height: 10px;
-	line-height: 11px;
-	width: 50px;
-	font-size:12px;
-	vertical-align: middle;
-  -webkit-border-radius: 0px;
-     -moz-border-radius: 0px;
-          border-radius: 0px;	
-}
-ul li input.user_entry_wf {
-	border: 1px thin #ddd;
-	height: 10px;
-	line-height: 11px;
-	width: 125px;
-	font-size:12px;
-	vertical-align: middle;
-  -webkit-border-radius: 0px;
-     -moz-border-radius: 0px;
-          border-radius: 0px;	
-}
-
-ul li input.user_time_wf {
-	border: 1px thin #ddd;
-	height: 10px;
-	line-height: 11px;
-	width: 60px;
-	font-size:12px;
-	vertical-align: middle;
-  -webkit-border-radius: 0px;
-     -moz-border-radius: 0px;
-          border-radius: 0px;	
-}
-
-#ont_listing ul li {
-	font-size: 12px;
-	font-weight: normal;	
-}
-#ont_listing ul li ul li {
-	font-size: 12px;
-	font-weight: normal;
-	font-style: normal;
-	text-transform: none;
-}
-#ont_listing ul li ul li ul li {
-	font-size: 12px;
-}
-
-.set_quality {
-	cursor: pointer;
-}
-
-#workflow_tbl {
-	position:relative;
-	overflow:hidden;
-}
-
-</style>
 {% endblock %}
 {% block collect_active %} class="active" {% endblock %}
 {% block container %}
@@ -549,7 +409,7 @@ ul li input.user_time_wf {
         	<a href="/mpo/collections"><small>&lt;&lt; Back to list of collections</small></a>
         	<h4>MPO Collection: {{ coll_name }} <span class="glyphicon glyphicon-user"></span><small><strong>{{ coll_username }}</strong> - {{ coll_time }}</small></h4>
             <b>Description:</b> {{ coll_desc }}
-        	<div id="workflow_tbl">
+        	<div id="tbl">
             <!-- workflow list table -->
             <table class="main table table-hover table-striped" id="workflow_table">
                 <tr>
@@ -653,95 +513,7 @@ ul li input.user_time_wf {
      	{% endfor %}
 		</table>
 	{% endif %}
-    		</div> <!--end workflow table div -->
-            
-            
-            <!-- #query builder link
-            <div style="padding-top:3px;">
-                <span class="pull-right">
-                	<a href="#" id="toggle_windows">[+] add workflows</a>
-                </span>
-            </div>
-			-->
-            
-        	<div id="query_tbl">
-            <hr>
-            <!-- workflow list table -->
-            <table class="main">
-            	<tr>
-                	<th colspan="3">Query Builder</th>
-                </tr>
-                <tr>
-                	<td colspan="3">
-                    
-                                <!-- <div id="wf_search_header" class="nav_search_header">Workflow Attributes: </div>
-                                <div id="wf_path" class="user_sel"></div>
-								<br/><br/>
-                                <div id="ont_search_header" class="nav_search_header">Selected Ontology: </div>
-                                <div id="ont_path" class="user_sel"></div> -->
-                                <div class="input-append span12">
-                                <input class="span8" id="query_input" type="text">
-                                <button class="btn btn-success" type="button">GO</button>
-                                </div>
-                                <div><small><span class="btn btn-mini">AND</span> <span class="btn btn-mini">OR</span> </small> </div>
-                    </td>
-                </tr>
-                <tr>
-    	            <td valign="top" width="25%">
-                        <!-- workflow nav menu -->
-                        <ul class="nav nav-list">
-                            <li id="wf_attr_list" class="nav-header" style="cursor:pointer;">Workflow
-                            <ul>
-                                <li class="attrib"><a href="#">type</a> <span class="muted">=</span>
-                                <select id="wf_type_sel" class="type_sel">
-                                    <option value="{{ url_for("index", r=rpp) }}">ALL</option>
-                                    {% if wf_type_list %}
-                                        {% for t in wf_type_list %}
-                                            <option value="{{ url_for("index", wf_type=t,r=rpp) }}" {% if wf_type==t %} selected="selected" {% endif %}>{{ t }}</option>
-                                        {% endfor %}
-                                    {% endif %}
-                                </select>                    
-                                </li>
-                                <li class="attrib"><a href="#">time</a> <span class="muted">=</span> <input type="text" class="user_time_wf" id="wf_time_val1" name="wf_t1" /> to <input type="text" class="user_time_wf" id="wf_time_val2" name="wf_t2" /></li>
-                                <li id="wf_more" class="wf_more"><a href="#" onClick="showWfMore()">more... <span style="font-size:x-small;color:#ccc">&#9660;</span></a></li>
-                                <div id="wf_attrib">
-                                <li class="attrib"><a href="#">name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_name_val" name="wf_name" /></li>
-                                <li class="attrib"><a href="#">description</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_desc_val" name="wf_description"  /></li>
-                                <li class="attrib"><a href="#">last name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_ln_val" name="wf_lname"  /></li>
-                                <li class="attrib"><a href="#">first name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_fn_val" name="wf_fname"  /></li>
-                                <li class="attrib"><a href="#">user</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_user_val" name="wf_username"  /></li>
-                                <li id="wf_hide" class="wf_more"><a href="#" onClick="showWfMore()">hide...</a></li>
-                                </div>
-                            </ul>
-                            </li>
-                        </ul>
-	                </td>
-                	<td valign="top" width="30%">
-                    <!-- ontology nav menu -->
-                    <ul class="nav nav-list">
-                        <li id="ont_listing" class="nav-header" style="cursor:pointer;">Ontology
-    
-                        </li>
-                    </ul>
-                    </td>
-                    <td valign="top">
-                    <span style="vertical-align:top;"><small><span class="btn btn-mini">AND</span> <span class="btn btn-mini">OR</span> </small></span>
-                    <textarea rows="8" class="span10"></textarea>
-                    <span class="btn btn-mini btn-success offset1">SUBMIT</span>
-                    </td>
-                </tr>
-			</table>
-            ...
-            <table class="main">
-                <tr>
-                	<th>Search Results:</th>
-                </tr>
-            	<tr>
-                	<td>Dynamic search results...<div>Click on <a href="#">[+]</a> to add workflow to above table/collection</div><div>Workflow 1 <a href="#">[+]</a> </div><div>Workflow 2 <a href="#">[+]</a> </div>...</td>
-                </tr>
-			</table>
-            </div>
-        
+    		</div> <!--end workflow table div -->      
     	</div> <!-- end span9 -->    
     </div> <!-- end row fluid -->
 

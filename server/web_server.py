@@ -76,12 +76,6 @@ def before_request():
 def index():
     return render_template('index.html')
 
-
-#@app.route('/home')
-#def index():
-#    return render_template('index.html', db_server=DB_SERVER)
-
-
 @app.route('/workflows')
 def workflows():
     #use asynchronous requests now
@@ -101,7 +95,6 @@ def workflows():
 
     results=False
     if True:
-#        s = requests.session()
         #Establish API session
         s = FuturesSession(max_workers=45) #can use Pooling as well
         a = requests.adapters.HTTPAdapter(max_retries=4)
@@ -407,7 +400,6 @@ def graph(wid="", format="svg"):
         cid=item['child_uid']
         name=nodes[cid]['name']
         theshape=nodeshape[nodes[cid]['type']]
-#        graph.add_node( pydot.Node(cid, label=name, shape=theshape, URL='javascript:postcomment("\N")') )
         graph.add_node( pydot.Node(cid, id=cid, label=name, shape=theshape) )
         if item['child_type']!='workflow':
             graph.add_edge( pydot.Edge(pid, cid) )
@@ -429,7 +421,6 @@ def graph(wid="", format="svg"):
 
     if format == 'svg' :
         response.headers['Content-Type'] = 'text/plain'
-        #response.headers['Content-Type'] = 'image/svg+xml'
     elif format == 'png' :
         response.headers['Content-Type'] = 'image/png'
     elif format == 'gif' :
@@ -460,7 +451,7 @@ def getsvgxml(wid):
                                shape=nodeshape[nodes[wid]['type']]))
 
     object_order={} #stores numerical order of workflow objects.  used
-#for object list display order on workflow detail page
+    #for object list display order on workflow detail page
     object_order[0]={ 'uid':wid, 'name':nodes[wid]['name'], 'type':nodes[wid]['type'], 'time':nodes[wid]['time'] }
     count=1
     prev_name=""
@@ -588,7 +579,8 @@ def connections(wid=""):
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
-    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
+#    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
+    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver }
 
     if memcache_loaded:
         mc.set(cache_id, everything, time=600)
@@ -682,10 +674,6 @@ def nodes(wid=""):
     response = make_response(nodes)
     response.headers['Content-Type'] = 'text/plain'
     return response
-
-@app.route('/about')
-def about():
-    return render_template('about.html')
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
@@ -833,20 +821,10 @@ def submit_db():
         response.set_cookie('db_server',value=form['db'])
         return redirect_to_index
 
-        #wid=form['wf_id']
-
-#        submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
-#        cid = submit.json()
-#        result = requests.get("%s/comment/%s"%(API_PREFIX,cid['uid']), **certargs)
-#        newc = result.text
-#        if webdebug:
-#            pprint(newc)
-
     except:
         pass
 
     return redirect_to_index
-
     #return redirect(url_for('index', wid=form['parent_uid'])) # redirects to a refreshed homepage
     #                                                              # after comment submission,
     #                                                              # passes workflow ID so that the
@@ -915,7 +893,6 @@ def collections(uid=False):
 
     results=[]
     if True:
-#        s = requests.Session()
         s = FuturesSession(max_workers=45) #can use Pooling as well
         a = requests.adapters.HTTPAdapter(max_retries=10)
         s.mount('https://', a)
@@ -942,11 +919,6 @@ def collections(uid=False):
         #get collections now
         rc=s.get("%s/collection"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
         coll_list=rc.json()
-
-		#for temp in coll_list:
-        #    if temp['time']:
-        #        thetime=temp['time'][:19]
-        #        temp['time']=thetime
 
         coll_name="None"
         coll_desc="No collections found"
@@ -1130,7 +1102,7 @@ def collections(uid=False):
 
     everything={"db_server":DB_SERVER, "results":results, "ont_result":ont_result,
                 "rpp":rpp, "wf_type_list":wf_type_list,
-                "coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list,
+                "coll_name":coll_name, "coll_desc":coll_desc,
 		"coll_username":coll_username, "coll_time":coll_time  }
 
     return render_template('collections.html',  **everything)
@@ -1145,7 +1117,6 @@ def dataobject(uid=False):
 
     results=False
     if True:
-#        s = requests.Session()
         s = FuturesSession(max_workers=45) #can use Pooling as well
         a = requests.adapters.HTTPAdapter(max_retries=10)
         s.mount('https://', a)
@@ -1251,17 +1222,10 @@ def dataobject(uid=False):
         print("WEBDEBUG: results sent to index")
         pprint(results)
 
-    #retrieve workflow type UID from prior request
     worktreeroot = wf_type_req.result().json()
-    #issue new request for workflow type data
-    wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']),
-                        headers={'Real-User-DN':dn})
 
-    ont_result=ont_tree_req.result().json().get('root').get('children')
-    wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
-
-    everything={"db_server":DB_SERVER, "workflows":workflows, "ont_result":ont_result,
-                "rpp":rpp, "wf_type_list":wf_type_list, "coll_list":collections,
+    everything={"db_server":DB_SERVER, "workflows":workflows, 
+                "rpp":rpp, "coll_list":collections,
                 "name":name, "desc":desc,
                 "username":username, "time":time, "uri":uri  }
 
@@ -1467,10 +1431,6 @@ def testfeed():
      </html>
     """%MPO_API_SERVER
     return(debug_template)
-
-@app.route('/docs')
-def docs():
-    return app.send_static_file('docs.html')
 
 
 def get_child_terms(uid):
