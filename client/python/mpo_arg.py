@@ -348,6 +348,7 @@ class mpo_methods(object):
         workflow_ID -- the workflow being added to
         obj_ID -- the object we are making a connection from
         data -- the object being posted
+        uid  -- if this keyword is set, find record by uid to use in posting operation
         """
         #need flexible number of args so you can just post to a url.
 
@@ -384,6 +385,8 @@ class mpo_methods(object):
                 print('invalid workflow_ID in post',file=sys.stderr)  #throw exception
             datadict[self.WORKID]=workflow_ID
 
+        if kwargs.get('uid'):
+            datadict['uid']=kwargs.get('uid')
             
         if self.debug:
             print('MPO.POST to {u} with workflow:{wid}, parent:{pid} and payload of {p}'.format(
@@ -451,10 +454,11 @@ class mpo_methods(object):
         name --
         desc -- description
         uri -- uri for the data object added
-        source -- source uid for dataobject
+        source -- source uid for dataobject, provides direction source -> target
         """
 
         uri = kwargs.get('uri')
+        uid = kwargs.get('uid')
         desc = kwargs.get('desc')
         name = kwargs.get('name')
         source = kwargs.get('source')
@@ -462,9 +466,11 @@ class mpo_methods(object):
         if (self.debug):
             print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,source,kwargs, file=sys.stderr)
 
-
-        payload={"name":name,"description":desc,"uri":uri,"source":source}
-
+        if uid:
+            payload={"name":name,"description":desc,"uri":uri,"source_uid":source,"uid":uid}
+        else:
+            payload={"name":name,"description":desc,"uri":uri,"source_uid":source}
+            
         return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],data=payload,**kwargs)
 
 

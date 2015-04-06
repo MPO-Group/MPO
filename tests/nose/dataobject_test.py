@@ -1,6 +1,8 @@
 from __future__ import print_function
 from nose.tools import *
+from nose.plugins.attrib import attr
 import unittest
+import json
 
 import mpo_setup #custom method to set up api instance for these tests.
 class DataobjectTest(unittest.TestCase):
@@ -20,18 +22,59 @@ class DataobjectTest(unittest.TestCase):
         print (__name__,": tearing down.\n")
 
 
-    def create_object_test(self):
-        "Add a dataobject to a workflow in the MPO."
+    def create_object_workflow_test(self):
+        "Add a new dataobject to a workflow in the MPO."
         workflow = self.m.search(route='workflow')[0]
         wid = workflow.get('uid')
         print( "Adding databobject to workflow ",wid)
         dataobject=self.m.add(name="ImportantFile",desc="Adding a dataobject in nose test",
-                   uri="ftp://some.server.com/somefile", workflow_ID=wid, parentobj_ID=wid)
+                   uri="ftp://some.server.com/somefile", workflow_ID=wid, parentobj_ID=wid)[0]
         doi=dataobject.get('uid')
         assert doi
-        print( "created a dataobject in create_object with uid: "+ doi )
+        print( "created a dataobject in create_object with uid: "+ str(doi) )
+
+        
+    @attr(only='this') 
+    def create_object_workflow_test(self):
+        "Add an existing dataobject by uid to a workflow in the MPO."
+        workflow = self.m.search(route='workflow')[0]
+        wid = workflow.get('uid')
+        print( "Adding databobject to workflow ",wid)
+        dataobject = self.m.search(route='dataobject')[0]
+        doi = dataobject.get('uid')
+        dataobject_post=self.m.add(name="ImportantFile2",desc="Adding a dataobject by uid to workflow in nose test",
+                   uid=doi, workflow_ID=wid, parentobj_ID=wid)
+        #for now, return record is incomplete. you have to fetch record to get all info, take care to get instance
+        dataobject2 = self.m.search('workflow/{workid}/dataobject/{uid}'.format( workid=wid, uid=dataobject_post.get('uid') )  )
+        output=json.dumps(dataobject,separators=(',', ':'),indent=4)
+	print ('dataobject',output)
+        output=json.dumps(dataobject_post,separators=(',', ':'),indent=4)
+	print ('dataobject_post', output)
+        output=json.dumps(dataobject2,separators=(',', ':'),indent=4)
+	print ('dataobject2', output)
+        do_uid=dataobject2['result'][0].get('do_uid')
+        print("doi,do_uid",doi,do_uid)
+        assert do_uid==doi
+        print( "created a dataobject in create_object with uid: "+ str(do_uid) +","+str(doi) )
+
+        
+    def create_object_bare_test(self):
+        "creating dataobject by itself."
+        dataobject=self.m.add(name="ImportantFile",desc="Adding a bare dataobject from uri in nose test",
+                   uri="ftp://some.server.com/somefile")[0]
+        doi=dataobject.get('uid')
+        assert doi
+        print( "created a dataobject in create_object with uid: "+ str(doi) )
 
 
+    def create_object_bare_two_test(self):
+        "creating duplicate dataobject by itself."
+        do=self.m.search(route='dataobject', params={'uri':"ftp://some.server.com/somefile"} )[0]
+        dataobject=self.m.add(name="ImportantFile",desc="Adding a bare dataobject from uri in nose test",
+                   uri="ftp://some.server.com/somefile")[0]
+        doi=dataobject.get('uid')
+        assert doi==do.get('uid')
+        print( "created a dataobject in create_object with uid: "+ str(doi) )
 
     #other tests:
     #search for dataobject by ID also returns all instances.

@@ -652,7 +652,7 @@ def addRecord(table,request,dn):
 
     objs['user_uid'] = cursor.fetchone()['uuid']
     objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
-    print('addrecord', objs,objkeys)
+    if dbdebug: print('APIDEBUG: addrecord', objs,objkeys)
 
     q = ( "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) +
           ") values ("+",".join(["%s" for x in objkeys])+")" )

@@ -331,7 +331,7 @@ def collection(id=None):
 
 
 @app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
-@app.route(routes['collection']+'/<id>'+'/element'+'/<oid>', methods=['GET'])
+@app.route(routes['collection']+'/<id>/element/<oid>', methods=['GET'])
 def collectionElement(id=None, oid=None):
     """
     /collection/:id/element       - GET a list of objects in a collection
@@ -501,16 +501,23 @@ def workflow(id=None):
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
-@app.route(routes['workflow']+'/<id>/dataobject', methods=['GET'])
-def getWorkflowElement(id):
+@app.route(routes['workflow']+'/<wid>/dataobject', methods=['GET'])
+@app.route(routes['workflow']+'/<wid>/dataobject/<uid>', methods=['GET'])
+def getWorkflowElement(wid,uid=None):
     """
-     /workflow/:uid/dataobject - GET dataobjects in workflow specified by :uid
+     /workflow/:wid/dataobject/:uid - GET dataobjects in workflow specified by :wid
+                                      if :uid supplied, get specific dataobject
     """
-    records = rdb.getRecord('dataobject_instance',{'work_uid':id} )
+    if uid:
+        records = rdb.getRecord('dataobject_instance',{'work_uid':wid,'uid':uid} )
+    else:
+        records = rdb.getRecord('dataobject_instance',{'work_uid':wid} )
+
     for rr in records:
         do_uid=rr['do_uid']
         rr['do_info']=rdb.getRecord('dataobject',{'uid':do_uid} )[0]
-        
+   
+ 
     r={'result':records,'count':len(records),'link-requested':request.url, 'status':'ok'}
     
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
@@ -577,8 +584,7 @@ def getWorkflowCompositeID(id):
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
 def dataobject(id=None):
-    """
-    Route to add data objects and connect their instances to workflows.
+    """Route to add data objects and connect their instances to workflows.
 
     Route: GET  /dataobject/<id>
            Retrieves information on a specific dataobject.
@@ -593,26 +599,60 @@ def dataobject(id=None):
            If 'work_uid' is present, create an instance, connect it to the parent in the workflow
            and link instance to the dataobject as determined by the 'uri'.
            If 'work_uid' is NOT present, 'parent_uid' must also not be present. A new dataobject is created.
+
+           Dataobject instances in workflows can be created by
+           supplying a URI, DO_UID, or DOI_UID.  If a doi_uid is
+           given, it is resolved to the parent do_uid. If both URI and
+           UID are provided, the URI takes precedence.
+
     """
     dn=get_user_dn(request)
     istatus=200
+    api_version,root_url,root=get_api_version(request.url)    
+    messages={'warning':""}
+    messages['api-version']=api_version
+
     if request.method == 'POST':
         req = json.loads(request.data)
         #find the dataobject with the specified uri (assumed to be unique)
-        if not req['uri']: return Response({}, mimetype='application/json',status=istatus)
-        do = rdb.getRecord('dataobject',{'uri':req['uri']},dn)
+        #or if no URI given, find it by UID. If not found, we make it.
 
+#        if not req['uri']: return Response({}, mimetype='application/json',status=istatus)
+#        do = rdb.getRecord('dataobject',{'uri':req['uri']},dn)
+        if req.get('uri'):
+            do = rdb.getRecord('dataobject',{'uri':req['uri']},dn)
+            if req.get('uid'): #check if consistent
+                if do[0].get('uid'):
+                    if not do[0].get('uid') == req.get('uid'):
+                        messages['warning']+="\nCaution, dataobject UID does not match record from URI."
+        elif req.get('uid'): #if we get here, there is no URI only perhaps a UID
+            do = rdb.getRecord('dataobject',{'uid':req['uid']},dn)
+            #now remove the uid from the request so it does not get passed to
+            #the dataobject_instance creation
+            popuid=req.pop('uid')
+        else:
+            do = False
+        print('do debug', str(do),req.get('uid'),req.get('uri'),str(req) )
         #If the D.O. exists, point to it, if not, make it and point to it
         if do:
-            if not (req['work_uid'] and req['parent_uid']):
-                return Response({}, mimetype='application/json',status=istatus)
+            if not (req.get('work_uid') and req.get('parent_uid')):
+                messages['info']='dataobject found. provide both work_uid and parent_uid to attach to a workflow.'
+                do[0]['messages']=messages
+                return Response(json.dumps(do,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
             else:
                 req['do_uid']=do[0]['uid']
         else:
-            r = rdb.addRecord('dataobject',request.data,dn)
-            if not r: return Response({}, mimetype='application/json',status=istatus)
-            req['do_uid']=r['uid']
+            do = rdb.addRecord('dataobject',request.data,dn)
+            if not (req.get('work_uid') and req.get('parent_uid')):
+                messages['info']='dataobject created. provide both work_uid and parent_uid to attach to a workflow.'
+                do['messages']=messages
+                return Response(json.dumps(do,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
+            else:
+                print('do is ',str(do) )
+                req['do_uid']=do['uid']
+            
 
+        #At this point, we have a dataobject record. Now add it to the workflow since should also have a work_uid and parent_uid
         r = rdb.addRecord('dataobject_instance',json.dumps(req),dn)
         id = r['uid']
         morer = rdb.getRecord('dataobject_instance',{'uid':id},dn)
