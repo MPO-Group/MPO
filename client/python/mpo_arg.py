@@ -657,9 +657,9 @@ class mpo_methods(object):
         args = archiver.archive_parse(protocol[1:])
         if args:
             uri = archiver.archive(**args)
-            return self.add(name=name, desc=desc, uri=uri)
-        else:
-            return
+            if uri and isinstance(uri, str):
+                return self.add(name=name, desc=desc, uri=uri)
+        return uri
 
     def get_uri(self, uri=None, do_uid=None):
         if do_uid!=None:

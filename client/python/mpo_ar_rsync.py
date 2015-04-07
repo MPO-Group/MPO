@@ -18,14 +18,40 @@ class mpo_ar_rsync(_ar.mpo_ar_dataobject):
                     --destination=/archives/cmod/1090909009/diagnostic/some-file.dat
     """
 
+
     def archive(self, filespec=None, host=None, destination=None, verbose=False):
-        from subprocess import call
+        import os
+        from subprocess import check_call, CalledProcessError
         if verbose:
             print ("constructing an rsync object for %s to %s:%s"%(filespec,host,destination,))
-        uri = "rsync://%s/%s/%s" % (host, filespec, destination, )
-        status = call(['rsync', '-vap', filespec, "%s:%s"%(host,destination,)])
-        print "rsync status is %d"%(status,)
-        return(uri)
+        try:
+            if os.path.isdir(filespec):
+                if CheckDirRead(filespec):
+                    if destination:
+                        uri = "rsync://%s/%s/%s" % (host, destination,filespec, )
+                        status = call(['rsync', '-a', filespec, "%s:%s"%(host,destination,)])
+                    else:
+                        uri =  "rsync://%s/%s" % (host, filespec, )
+                        status = check_call(['rsync', '-a', filespec, "%s:"%(host,)])
+                else:
+                    raise Exception("Direcdtory %s is not readable"%filespec)
+            elif os.path.isfile(filespec):
+                if os.access(filespec, os.R_OK):
+                    if destination:
+                        uri = "rsync://%s/%s/%s" % (host, destination,filespec, )
+                        status = call(['rsync', filespec, "%s:%s"%(host,destination,)])
+                    else:
+                        uri =  "rsync://%s/%s" % (host, filespec, )
+                        status = check_call(['rsync', '-a', filespec, "%s:"%(host,)])
+                else:
+                    raise Exception("File %s is not readable"%filespec)
+            else:
+                raise Exception("File/Directory %s does not exist"%filespec)
+            return uri
+        except CalledProcessError,e:
+            return {"error": {"returncode": e.returncode, "cmd":e.cmd, "output":e.output}}
+        except Exception,e:
+            return e
 
     def archive_parse(self, *args):
         import copy
@@ -34,7 +60,7 @@ class mpo_ar_rsync(_ar.mpo_ar_dataobject):
         #global filespec options
         self.parser.add_argument('--filespec','-f',action='store',help='''Specify file or directory.''', required=True)
         self.parser.add_argument('--host','-H',action='store',help='''Specify the rsync host''', required=True)
-        self.parser.add_argument('--destination','-d',action='store',help='''Specify rsync destination''', required=True)
+        self.parser.add_argument('--destination','-d',action='store',help='''Specify rsync destination''')
         try:
             ans = self.parser.parse_args(*args)
         except SystemExit:
