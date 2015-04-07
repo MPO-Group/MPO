@@ -198,7 +198,10 @@ class mpo_methods(object):
         #check that result is a request object.
         # if isinstance(result,requests.models.Response):
         if not isinstance(result,requests.models.Response):
-            return str(result)
+            if result:
+                return str(result)
+            else:
+                return None
 
         if self.debug:
             text=result.text
@@ -233,7 +236,7 @@ class mpo_methods(object):
             output=str(result)
         elif filter=='text':
             output=str(result.text)
-        else: #default is string representation
+        else:
             output=str(result)
 
         return output
@@ -934,6 +937,7 @@ class mpo_cli(object):
 ####Application main routine. Instance of commandline application class using mpo methods class
 if __name__ == '__main__':
     import os
+    import pprint
 
     mpo_version    = os.getenv('MPO_VERSION','v0')
     mpo_api_url    = os.getenv('MPO_HOST', 'https://localhost:8080/') #API_URL
@@ -943,4 +947,5 @@ if __name__ == '__main__':
                     mpo_cert=mpo_cert)
     result=cli_app.cli()
 #    print(json.dumps(result.json(),separators=(',', ':'),indent=4))
-    print(result)
+    if result:
+        print(result)
