@@ -28,8 +28,12 @@ class mpo_ar_wos(_ar.mpo_ar_dataobject):
         #global filespec options
         self.parser.add_argument('--server','-S',action='store',help='Specify the server.', required=True)
         self.parser.add_argument('--oid','-o',action='store',help='Specify the object id.', required=True)
-        ans = self.parser.parse_args(*args)
+        try:
+            ans = self.parser.parse_args(*args)
+        except SystemExit:
+            return None
         return copy.deepcopy(ans.__dict__)
+
 
     def restore(self, uri=None, verbose=False):
         if verbose:

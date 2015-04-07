@@ -35,9 +35,12 @@ class mpo_ar_rsync(_ar.mpo_ar_dataobject):
         self.parser.add_argument('--filespec','-f',action='store',help='''Specify file or directory.''', required=True)
         self.parser.add_argument('--host','-H',action='store',help='''Specify the rsync host''', required=True)
         self.parser.add_argument('--destination','-d',action='store',help='''Specify rsync destination''', required=True)
-
-        ans = self.parser.parse_args(*args)
+        try:
+            ans = self.parser.parse_args(*args)
+        except SystemExit:
+            return None
         return copy.deepcopy(ans.__dict__)
+
 
     def restore(self, uri=None, verbose=False):
         from subprocess import call

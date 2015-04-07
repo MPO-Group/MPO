@@ -30,8 +30,12 @@ class mpo_ar_ptdata(_ar.mpo_ar_dataobject):
         self.parser.add_argument('--server','-S',action='store',help='Specify the server.')
         self.parser.add_argument('--shot','-s',action='store',help='Specify the shot number.', required=True, type=int)
         self.parser.add_argument('--point','-P',action='store',help='Specify the point name.', required=True)
-        ans = self.parser.parse_args(*args)
+        try:
+            ans = self.parser.parse_args(*args)
+        except SystemExit:
+            return None
         return copy.deepcopy(ans.__dict__)
+
 
     def restore(self, uri=None, verbose=False):
         if verbose:

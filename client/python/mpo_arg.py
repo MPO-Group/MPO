@@ -151,9 +151,7 @@ class mpo_methods(object):
 
     def __init__(self,api_url='https://localhost:8080',version='v0',
                  user='noone',password='pass',cert='no cert',
-                 archive_host='psfcstor1.psfc.mit.edu',
-                 archive_user='psfcmpo', archive_key=None,
-                 archive_prefix=None, debug=False,filter=False,dryrun=False):
+                 debug=False,filter=False,dryrun=False):
 
 
         self.debug=debug
@@ -163,10 +161,6 @@ class mpo_methods(object):
         self.password=password
         self.version=version
         self.cert=cert
-        self.archive_host=archive_host
-        self.archive_user=archive_user
-        self.archive_key=archive_key
-        self.archive_prefix=archive_prefix
         self.set_api_url(api_url)
         self.requestargs={'cert':self.cert,'verify':False}
 
@@ -658,11 +652,11 @@ class mpo_methods(object):
         archiver_class=getattr(mod, modname)
         archiver=archiver_class(self)
         args = archiver.archive_parse(protocol[1:])
-        uri = archiver.archive(**args)
-        if name :
+        if args:
+            uri = archiver.archive(**args)
             return self.add(name=name, desc=desc, uri=uri)
         else:
-            return uri
+            return
 
     def get_uri(self, uri=None, do_uid=None):
         if do_uid!=None:
@@ -715,10 +709,7 @@ class mpo_cli(object):
 #import foreign classes for methods here
 
     def __init__(self,api_url='https://localhost:8080',version='v0',
-                 user='noone',password='pass',mpo_cert='',
-                 archive_host='psfcstor1.psfc.mit.edu',
-                 archive_user='psfcmpo', archive_key=None,
-                 archive_prefix=None, debug=False, dryrun=False):
+                 user='noone',password='pass',mpo_cert='', debug=False, dryrun=False):
 
         self.debug=debug
         self.dryrun=dryrun
@@ -727,15 +718,11 @@ class mpo_cli(object):
         self.password=password
         self.version = version
         self.cert=mpo_cert
-        self.archive_host=archive_host
-        self.archive_user=archive_user
-        self.archive_key=archive_key
-        self.archive_prefix=archive_prefix
 
         #initialize foreign methods here
         #print('init',mpo_cert,archive_key,file=sys.stderr)
         self.mpo=mpo_methods(api_url,version,debug=self.debug,dryrun=self.dryrun,
-                             cert=mpo_cert,archive_key=archive_key)
+                             cert=mpo_cert)
 
     def type_uuid(self,uuid):
         if not isinstance(uuid,str):
@@ -951,14 +938,8 @@ if __name__ == '__main__':
     mpo_version    = os.getenv('MPO_VERSION','v0')
     mpo_api_url    = os.getenv('MPO_HOST', 'https://localhost:8080/') #API_URL
     mpo_cert       = os.getenv('MPO_AUTH', '~/.mpo/mpo_cert.pem')
-    archive_host   = os.getenv('MPO_ARCHIVE_HOST', 'psfcstor1.psfc.mit.edu')
-    archive_user   = os.getenv('MPO_ARCHIVE_USER', 'psfcmpo')
-    archive_key    = os.getenv('MPO_ARCHIVE_KEY', '~/.mporsync/id_rsa')
-    archive_prefix = os.getenv('MPO_ARCHIVE_PREFIX', 'mpo-persistent-store/')
 
     cli_app=mpo_cli(version=mpo_version, api_url=mpo_api_url,
-                    archive_host=archive_host, archive_user=archive_user,
-                    archive_key=archive_key, archive_prefix=archive_prefix,
                     mpo_cert=mpo_cert)
     result=cli_app.cli()
 #    print(json.dumps(result.json(),separators=(',', ':'),indent=4))
