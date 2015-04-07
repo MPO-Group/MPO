@@ -651,14 +651,18 @@ class mpo_methods(object):
 
     ### Persistent store methods ###
 
-    def archive(self, protocol=None, *arg, **kw):
+    def archive(self, name=None, desc=None, protocol=None, *arg, **kw):
         import importlib
         modname= "mpo_ar_%s"%protocol[0]
         mod = importlib.import_module(modname)
         archiver_class=getattr(mod, modname)
         archiver=archiver_class(self)
         args = archiver.archive_parse(protocol[1:])
-        return archiver.archive(**args)
+        uri = archiver.archive(**args)
+        if name :
+            return self.add(name=name, desc=desc, uri=uri)
+        else:
+            return uri
 
     def get_uri(self, uri=None, do_uid=None):
         if do_uid!=None:
@@ -684,7 +688,8 @@ class mpo_methods(object):
         archiver=archiver_class(self)
         print("restore protocol=%s"%protocol[0])
         print("restore args = %s"%protocol[1])
-        return archiver.restore(uri=uri)
+        result = archiver.restore(uri=uri)
+        return result
 
     def ls(self, uri=None, do_uid=None, *arg, **kw):
         import importlib
@@ -696,8 +701,8 @@ class mpo_methods(object):
         archiver=archiver_class(self)
         print("ls protocol=%s"%protocol[0])
         print("ls args = %s"%protocol[1])
-        return archiver.ls(uri=uri)
-
+        result = archiver.ls(uri=uri)
+        return result
 
 ### MPO commandline client
 class mpo_cli(object):
@@ -838,6 +843,8 @@ class mpo_cli(object):
 
         #archive, note all arguments must be processed by the protocol
         archive_parser=subparsers.add_parser('archive',help='Archive a data object.')
+        archive_parser.add_argument('--name', '-n', action='store')
+        archive_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
         archive_parser.add_argument('--protocol', '-p', action='store',metavar='protocol',
                                    nargs=argparse.REMAINDER)
         archive_parser.set_defaults(func=self.mpo.archive)
