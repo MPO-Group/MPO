@@ -28,7 +28,7 @@ $(document).ready(function () {
 				//i is index; obj is dom obj
 			});*/
 			//addWfAttrib(evt.target.id, $(this).val());
-			var url='/home';
+			var url="{{ url_for("workflows") }}";
 			var wftype="{{ wf_type }}";
 			var r="{{ rpp }}";
 			url+="?wf_type=" + wftype + "&r=" + r + "&"+this_name+"="+this_value;
