@@ -47,6 +47,7 @@ MPO_API_VERSION = 'v0'
 API_PREFIX = ''
 DB_SERVER = ''
 CONN_TYPE = ''
+
 webdebug = True
 app.debug = True
 
@@ -70,6 +71,18 @@ def before_request():
        CONN_TYPE='demo-api'
 
     API_PREFIX=MPO_API_SERVER+""+CONN_TYPE+"/"+MPO_API_VERSION
+
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    if(request.endpoint != 'register'):
+        #Check and redirect to /register if not registered
+        is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs)
+        if(is_mpo_user):
+            is_mpo_user=is_mpo_user.json()
+            if(len(is_mpo_user)==0):
+               return render_template('register.html')
 
 
 @app.route('/')
@@ -231,6 +244,14 @@ def workflows():
         def comment_cb(sess, resp, index):
             comments = resp.json()
             for temp in comments: #get number of comments, truncate time string
+
+                if temp['user_uid']:
+                    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,temp['user_uid'],), **certargs)
+                    user_info=user_req.json()
+                    username=user_info[0]['username']
+                    temp['username']=username
+
+
                 if temp['time']:
                     thetime=temp['time'][:19]
                     temp['time']=thetime
@@ -1335,6 +1356,8 @@ def register():
             check="<strong>Missing required fields: </strong>"
             n=0
             for k,v in form.iteritems():
+                print ("Processing ", k)
+		print (".... and ", v)
                 tmp=v.strip()
                 if not tmp:
                     if n>0:
@@ -1370,7 +1393,7 @@ def register():
                         msg="Thank you for registering."
                         if webdebug:
                             print (msg)
-                        return render_template('profile.html', msg=msg, result=result)
+                        return render_template('index.html', msg=msg, result=result)
                 else:
                     if webdebug:
                         print('WEBDEBUG: WARNING: in /register no status field in reply')
@@ -1379,7 +1402,7 @@ def register():
                     msg="Thank you for registering."
                     if webdebug:
                         print (msg)
-                        return render_template('profile.html', msg=msg, result=result)
+                        return render_template('index.html', msg=msg, result=result)
             else:
                 return render_template('register.html', msg=check, form=form)
 
@@ -1389,7 +1412,14 @@ def register():
             pass
 
     if request.method == 'GET':
-        return render_template('register.html', form="_")
+        #Check and redirect to /register if not registered
+        is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs)
+        if(is_mpo_user):
+            is_mpo_user=is_mpo_user.json()
+            if(len(is_mpo_user)==0): #Not registered, display form
+                return render_template('register.html', registered=0)
+            else:  #Already registered, disable form from template
+                return render_template('register.html', registered=1)
 
 @app.route('/profile')
 def profile():

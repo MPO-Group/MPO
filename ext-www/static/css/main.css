@@ -1,0 +1,181 @@
+@charset "utf-8";
+/* CSS Document */
+
+body {
+padding-top: 60px;
+padding-bottom: 40px;
+}
+.nav li {
+padding-top: 5px;
+}
+
+.cntr {
+ margin:0 auto;
+ float:none;
+}
+
+.leaderboard {
+padding: 60px;
+margin-bottom: 30px;
+background-image: url('/static/img/gridbg.gif');
+background-repeat:repeat;
+-webkit-border-radius: 6px;
+-moz-border-radius: 6px;
+border-radius: 6px;
+}
+.leaderboard h1 {
+font-size: 30px;
+margin-bottom: 10px;
+line-height: 1;
+/*letter-spacing: -1px;*/
+color:#FF6600;
+text-align:center;
+}
+
+.leaderboard h2 {
+font-size: 26px;
+margin-bottom: 10px;
+line-height: 1;
+/*letter-spacing: -1px;
+color:#FF6600;*/
+text-align:center;
+}
+
+.leaderboard h3 {
+font-size: 20px;
+margin-bottom: 10px;
+line-height: 1;
+/*letter-spacing: -1px;
+color:#FF6600;*/
+color:#999;
+text-align:center;
+}
+
+.leaderboard p {
+font-size: 16px;
+line-height: 27px;
+}
+
+.searchform {
+	width: 90%;
+	margin: 0 auto;
+}
+
+table {
+	width: 100%;
+	margin: 0 auto;
+}
+
+table .main {
+	border-collapse: collapse;
+}
+
+.main th { 
+	color:#666;
+	font-weight: bold;
+	background: #f2f2f2; 
+	border-top: 1px solid #e1e1e1;
+	text-align: left;
+}
+
+.main tr { 
+	color:#666;
+	border-left: 1px solid #e1e1e1;
+	border-right: 1px solid #e1e1e1;
+}
+
+.main td {
+	font-size: 12px;	
+}
+.main thead, th, tfoot {
+	font-weight: normal;
+}
+
+.main th,td,caption { 
+	padding: 7px; 
+	border-bottom: 1px solid #e1e1e1;	
+}
+
+.accordion-group {
+    border: 0px;
+
+}
+.accordion-heading .accordion-toggle {
+    padding: 0px;
+}
+
+.main td.comments {
+	line-height: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+.no-border {
+	border: 0px;
+}
+
+.bot-border {
+	border-bottom: 1px solid #e1e1e1;	
+}
+
+.xsmall {
+	font-size: 10px;
+}
+
+#reg_form {
+	width: 100%;
+	margin: 0 auto;
+}
+
+.form-signin {
+max-width: 300px;
+padding: 19px 29px 29px;
+margin: 0 auto 20px;
+background-color: #fff;
+border: 1px solid #e5e5e5;
+-webkit-border-radius: 5px;
+   -moz-border-radius: 5px;
+		border-radius: 5px;
+-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+   -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+		box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
+margin-bottom: 10px;
+}
+.form-signin input[type="text"],
+.form-signin input[type="password"] {
+font-size: 16px;
+height: auto;
+margin-bottom: 15px;
+padding: 7px 9px;
+}
+
+/* Icons */
+.icon-workflow {
+    background-image: url("https://mpo.gat.com/static/img/images/_icon_workflow.png");
+    background-position: center center;
+}
+
+.icon-activity {
+    background-image: url("https://mpo.gat.com/static/img/images/_icon_activity.png");
+    background-position: center center;
+}
+
+.icon-dataobject {
+    background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject.png");
+    background-position: center center;
+}
+.icon-dataobject-blue {
+    background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject_blue.png");
+    background-position: center center;
+}
+
+.big {
+    font-size: 30px;
+  	font-family: Cambria, "Hoefler Text", "Liberation Serif", Times, "Times New Roman", serif;	
+    padding-right: 10px;
+    margin: 0px 0px;
+    color: #F60;
+}
