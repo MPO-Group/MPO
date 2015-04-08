@@ -650,6 +650,7 @@ class mpo_methods(object):
 
     def archive(self, name=None, desc=None, protocol=None, *arg, **kw):
         import importlib
+        uri = None
         modname= "mpo_ar_%s"%protocol[0]
         mod = importlib.import_module(modname)
         archiver_class=getattr(mod, modname)
@@ -664,11 +665,11 @@ class mpo_methods(object):
     def get_uri(self, uri=None, do_uid=None):
         if do_uid!=None:
             r = self.get("%s/%s"%(self.DATAOBJECT_RT,do_uid))
-            do=json.loads(r.text)
+            do=json.loads(r.text)[0]
             if not isinstance(do, dict):
                 raise Exception("data_object query did not return a dictionary")
-            uri=do.uri
-        elif uri != None:
+            uri=do['uri']
+        elif not uri == None:
             r = self.get(self.DATAOBJECT_RT, params={'uri': uri})
             print(r)
         else:
