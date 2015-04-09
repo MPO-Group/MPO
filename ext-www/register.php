@@ -96,15 +96,15 @@ function valid_email($eml) {
     <meta name="description" content="Prototype Implementation of MPO Project">
     <meta name="author" content="">
     <!-- Le styles -->
-    <link href="static/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-    <link href="static/css/main.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="assets/css/main.css" rel="stylesheet">
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <script src="static/bootstrap/js/jquery.js"></script>
-    <script src="static/js/jquery-ui.min.js"></script>
+    <script src="assets/bootstrap/js/jquery.js"></script>
+    <script src="assets/js/jquery-ui.min.js"></script>
   </head>
 
   <body>
