@@ -248,6 +248,9 @@ def handle_invalid_usage(error):
     resp.status_code = error.status_code
     return resp
 
+################################################################################
+#                   Begin API routes                                           #
+################################################################################
 
 @app.route("/subscribe")
 @cross_origin()
@@ -306,25 +309,29 @@ def collection(id=None):
     /collection/<id> - GET collection information, including list of member UUIDs
     /collection/?element_uid=:uid - GET collections having element member giving by :uid
     """
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
+    dn=get_user_dn(request)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
+        
     if request.method == 'POST':
         print('api post collection',request.data)
-        r = rdb.addCollection(request.data,dn)
-        morer = rdb.getRecord('collection',{'uid':r['uid']},dn)
+        r = rdb.addCollection(request.data,dn=dn)
+        morer = rdb.getRecord('collection',{'uid':r['uid']},dn=dn)
         publishEvent('mpo_collection',onlyone(morer))
     elif request.method == 'GET':
         if id:
-            r = rdb.getRecord('collection',{'uid':id})
+            r = rdb.getRecord('collection',{'uid':id}, dn=dn)
         else:
             #particular cases
             #?element_uid
             if 'element_uid' in request.args:
-                r = rdb.getRecord('collection_elements',{'uid':request.args['element_uid']})
+                r = rdb.getRecord('collection_elements',{'uid':request.args['element_uid']}, dn=dn)
             #general searches
             else:
-                r = rdb.getRecord('collection',request.args)
+                r = rdb.getRecord('collection',request.args, dn=dn)
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
@@ -343,6 +350,9 @@ def collectionElement(id=None, oid=None):
     """
     dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if request.method == 'POST':
 
@@ -361,53 +371,53 @@ def collectionElement(id=None, oid=None):
 
         #remove elements already in the collection
         for e in elements[:]:
-            r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id})
+            r = rdb.getRecord('collection_elements',{'uid':e,'parent_uid':id}, dn=dn)
             if len(r)!=0: elements.remove(e) #maybe add to response message this was done
         payload['elements'] = elements
 
         #add elements one and a time and create list of returned records
         r=[]
         for e in elements:
-            rr=rdb.addRecord('collection_elements',json.dumps({'uid':e,'parent_uid':id}),dn)
+            rr=rdb.addRecord('collection_elements',json.dumps({'uid':e,'parent_uid':id}),dn=dn)
             r.append(rr)
-            morer = rdb.getRecord('collection_elements',{'uid':rr['uid']},dn)
+            morer = rdb.getRecord('collection_elements',{'uid':rr['uid']},dn=dn)
             publishEvent('mpo_collection_elements',onlyone(morer))
     elif request.method == 'GET':
         if oid:
-            r = rdb.getRecord('collection_elements',{'uid':oid})
+            r = rdb.getRecord('collection_elements',{'uid':oid}, dn=dn)
         else:
-            r = rdb.getRecord('collection_elements',{'parent_uid':id})
+            r = rdb.getRecord('collection_elements',{'parent_uid':id}, dn=dn)
 
         #Find original item and add it to record.
         for record in r:
             print ('collection element r',record)
             r_uid=record['uid']
             #getRecordTable returns a python dict
-            record['type']=rdb.getRecordTable( r_uid, dn )
+            record['type']=rdb.getRecordTable( r_uid, dn=dn )
 
             #set default field values
             detail={'related':'not sure','link-related':root_url,'related':'cousins',
                     'name':'what is this?','description':'empty','time':'nowhen'}
             #Translation for specific types
             if record['type']=='workflow':
-                detail=rdb.getWorkflow({'uid':r_uid},dn)[0]
+                detail=rdb.getWorkflow({'uid':r_uid},dn=dn)[0]
                 print('element workflow',detail)
-                detail['related']=rdb.getWorkflowCompositeID(r_uid,dn).get('alias')
+                detail['related']=rdb.getWorkflowCompositeID(r_uid,dn=dn).get('alias')
                 links={}
                 links['link1']=root_url+'/workflow/'+r_uid
                 links['link2']=root_url+'/workflow?alias='+detail['related']
                 detail['link-related']=links
             elif record['type']=='dataobject':
-                detail=rdb.getRecord('dataobject',{'uid':r_uid},dn)[0]
+                detail=rdb.getRecord('dataobject',{'uid':r_uid},dn=dn)[0]
                 detail['related']=detail.get('uri')
                 detail['link-related']=root_url+'/dataobject/'+r_uid
             elif record['type']=='dataobject_instance':
-                do_uid=(rdb.getRecord('dataobject_instance',{'uid':record['uid']},dn)[0]).get('do_uid')
-                detail=rdb.getRecord('dataobject',{'uid':do_uid},dn)[0]
+                do_uid=(rdb.getRecord('dataobject_instance',{'uid':record['uid']},dn=dn)[0]).get('do_uid')
+                detail=rdb.getRecord('dataobject',{'uid':do_uid},dn=dn)[0]
                 detail['related']=detail.get('uri')
                 detail['link-related']=root_url+'/dataobject/'+do_uid
             elif record['type']=='collection':
-                thisdetail=rdb.getRecord('collection',{'uid':r_uid},dn)[0]
+                thisdetail=rdb.getRecord('collection',{'uid':r_uid},dn=dn)[0]
                 detail['related']=None
                 detail['link-related']=root_url+'/collection/'+r_uid+'/element'
                 detail['description']=thisdetail.get('description')
@@ -440,6 +450,11 @@ def workflow(id=None):
 
     #Desperately need to add field error checking. Note, we have access to db.query_map
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     if apidebug:
         print ('APIDEBUG: You are: %s'% str(dn) )
         print ('APIDEBUG: workflow url request is %s' %request.url)
@@ -460,7 +475,7 @@ def workflow(id=None):
             type_uid = ont_entry.get('uid')
             p=json.loads(request.data)
             payload={"name":p['name'],"description":p['description'],"type_uid":type_uid,"value":wtype}
-            r = rdb.addWorkflow(payload,dn)
+            r = rdb.addWorkflow(payload,dn=dn)
             #should return ENTIRE record created. use rdb.getworkflow internally
         else:
             payload={"url":request.url, "body":request.data, "hint":valid, "uid":-1}
@@ -472,24 +487,24 @@ def workflow(id=None):
             darg=dict(request.args.items(multi=True)+[('uid',id)])
             if apidebug:
                 print('APIDEBUG: darg is %s' %darg)
-            r = rdb.getWorkflow({'uid':id},dn)
+            r = rdb.getWorkflow({'uid':id},dn=dn)
         else:
             if 'do_uri' in request.args:
                 #find data object by uri
-                r = rdb.getRecord('dataobject',{'uri':request.args['do_uri']})
+                r = rdb.getRecord('dataobject',{'uri':request.args['do_uri']}, dn=dn)
                 if len(r)==1:
                     do_uid=r[0].get('uid')
                     #find dataobject instances based on do_uid
-                    doi_list = rdb.getRecord('dataobject_instance',{'do_uid':do_uid} )
+                    doi_list = rdb.getRecord('dataobject_instance',{'do_uid':do_uid}, dn=dn )
                     result=[]
                     for doi in doi_list:
-                        result.append(rdb.getWorkflow({'uid':doi['work_uid']},dn)[0])
+                        result.append(rdb.getWorkflow({'uid':doi['work_uid']},dn=dn)[0])
                     r={'result':result,'count':len(result),'link-requested':request.url, 'status':'ok'}
                 else:
                     r={'uid':'0','msg':'not found'}
             #general searches
             else:
-                r = rdb.getWorkflow(request.args,dn)
+                r = rdb.getWorkflow(request.args,dn=dn)
                 #add workflow type here in return. Use complete path?
 
         if apidebug:
@@ -508,14 +523,20 @@ def getWorkflowElement(wid,uid=None):
      /workflow/:wid/dataobject/:uid - GET dataobjects in workflow specified by :wid
                                       if :uid supplied, get specific dataobject
     """
+    dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     if uid:
-        records = rdb.getRecord('dataobject_instance',{'work_uid':wid,'uid':uid} )
+        records = rdb.getRecord('dataobject_instance',{'work_uid':wid,'uid':uid}, dn=dn )
     else:
-        records = rdb.getRecord('dataobject_instance',{'work_uid':wid} )
+        records = rdb.getRecord('dataobject_instance',{'work_uid':wid}, dn=dn )
 
     for rr in records:
         do_uid=rr['do_uid']
-        rr['do_info']=rdb.getRecord('dataobject',{'uid':do_uid} )[0]
+        rr['do_info']=rdb.getRecord('dataobject',{'uid':do_uid}, dn=dn )[0]
    
  
     r={'result':records,'count':len(records),'link-requested':request.url, 'status':'ok'}
@@ -526,8 +547,13 @@ def getWorkflowElement(wid,uid=None):
 @app.route(routes['workflow']+'/<id>/graph', methods=['GET'])
 def getWorkflowGraph(id):
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     if request.method == 'GET':
-        r = rdb.getWorkflowElements(id,request.args,dn)
+        r = rdb.getWorkflowElements(id,request.args,dn=dn)
         return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
@@ -535,11 +561,15 @@ def getWorkflowGraph(id):
 @app.route(routes['workflow']+'/<id>/comments', methods=['GET'])
 def getWorkflowComments(id):
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     ids=id.strip().split(',')
     r={} #[]
     for id in ids:
-        rs = rdb.getWorkflowComments(id,request.args,dn)
+        rs = rdb.getWorkflowComments(id,request.args,dn=dn)
         if len(rs)!=0:        #append a dict query_id:result. strip off [].
             r[id]=rs
         else:
@@ -553,7 +583,13 @@ def getWorkflowComments(id):
 
 @app.route(routes['workflow']+'/<id>/type', methods=['GET'])
 def getWorkflowType(id):
-    return Response(json.dumps(rdb.getWorkflowType(id),cls=MPOSetEncoder),mimetype='application/json',status=200)
+    dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
+    return Response(json.dumps(rdb.getWorkflowType(id,dn=dn),cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
@@ -562,13 +598,18 @@ def getWorkflowCompositeID(id):
     Method to retrieve a workflow composite id in the field 'alias'.
     """
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     r={}
     if request.method == 'GET':
         #Add logic to parse id if comma separated
         if id:
             ids=id.strip().split(',')
             for id in ids:
-                rs = rdb.getWorkflowCompositeID(id,dn)
+                rs = rdb.getWorkflowCompositeID(id,dn=dn)
                 if rs:
                     r[id]=rs
                 else:
@@ -595,7 +636,7 @@ def dataobject(id=None):
            GET  /dataobject?instance returns all dataobject instances
     Route: POST /dataobject
            databody:
-               {'name':, 'description':,'work_uid':, 'uri':, 'parent_uid': }
+               {'name':, 'description':,'work_uid':, 'uri':, 'parent_uid':, 'uid': }
            If 'work_uid' is present, create an instance, connect it to the parent in the workflow
            and link instance to the dataobject as determined by the 'uri'.
            If 'work_uid' is NOT present, 'parent_uid' must also not be present. A new dataobject is created.
@@ -607,9 +648,12 @@ def dataobject(id=None):
 
     """
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     istatus=200
-    api_version,root_url,root=get_api_version(request.url)    
-    messages={'warning':""}
+    messages={}
     messages['api-version']=api_version
 
     if request.method == 'POST':
@@ -618,15 +662,15 @@ def dataobject(id=None):
         #or if no URI given, find it by UID. If not found, we make it.
 
 #        if not req['uri']: return Response({}, mimetype='application/json',status=istatus)
-#        do = rdb.getRecord('dataobject',{'uri':req['uri']},dn)
+#        do = rdb.getRecord('dataobject',{'uri':req['uri']},dn=dn)
         if req.get('uri'):
-            do = rdb.getRecord('dataobject',{'uri':req['uri']},dn)
+            do = rdb.getRecord('dataobject',{'uri':req['uri']},dn=dn)
             if req.get('uid'): #check if consistent
                 if do[0].get('uid'):
                     if not do[0].get('uid') == req.get('uid'):
-                        messages['warning']+="\nCaution, dataobject UID does not match record from URI."
+                        messages['warning']="\nCaution, dataobject UID does not match record from URI."
         elif req.get('uid'): #if we get here, there is no URI only perhaps a UID
-            do = rdb.getRecord('dataobject',{'uid':req['uid']},dn)
+            do = rdb.getRecord('dataobject',{'uid':req['uid']},dn=dn)
             #now remove the uid from the request so it does not get passed to
             #the dataobject_instance creation
             popuid=req.pop('uid')
@@ -642,7 +686,7 @@ def dataobject(id=None):
             else:
                 req['do_uid']=do[0]['uid']
         else:
-            do = rdb.addRecord('dataobject',request.data,dn)
+            do = rdb.addRecord('dataobject',request.data,dn=dn)
             if not (req.get('work_uid') and req.get('parent_uid')):
                 messages['info']='dataobject created. provide both work_uid and parent_uid to attach to a workflow.'
                 do['messages']=messages
@@ -653,9 +697,9 @@ def dataobject(id=None):
             
 
         #At this point, we have a dataobject record. Now add it to the workflow since should also have a work_uid and parent_uid
-        r = rdb.addRecord('dataobject_instance',json.dumps(req),dn)
+        r = rdb.addRecord('dataobject_instance',json.dumps(req),dn=dn)
         id = r['uid']
-        morer = rdb.getRecord('dataobject_instance',{'uid':id},dn)
+        morer = rdb.getRecord('dataobject_instance',{'uid':id},dn=dn)
         publishEvent('mpo_dataobject',onlyone(morer))
     elif request.method == 'GET':
 
@@ -664,17 +708,17 @@ def dataobject(id=None):
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = rdb.getRecord('dataobject',{'uid':id},dn)
+                rs = rdb.getRecord('dataobject',{'uid':id},dn=dn)
                 if len(rs)==1:
                     rs=rs[0]
                     rs['link-related']='link to get workflows using dataobject'
                     r[id]=rs
                 else: #record was not found, check other route
-                    rs = rdb.getRecord('dataobject_instance',{'uid':id},dn)
+                    rs = rdb.getRecord('dataobject_instance',{'uid':id},dn=dn)
                     if len(rs)==1:
                         rs=rs[0]
                         #add dataobject fields
-                        do_info=rdb.getRecord('dataobject',{'uid':rs.get('do_uid')},dn)
+                        do_info=rdb.getRecord('dataobject',{'uid':rs.get('do_uid')},dn=dn)
                         rs['do_info']=do_info[0]
                         r[id]=rs
                     else:
@@ -688,13 +732,13 @@ def dataobject(id=None):
         #Get all records, possibly with filters, support 'instance' flag
         else:
             if request.args.has_key('instance'):
-                records = rdb.getRecord('dataobject_instance',request.args,dn)
+                records = rdb.getRecord('dataobject_instance',request.args,dn=dn)
                 for rr in records:
                         do_uid=rr['do_uid']
-                        rr['do_info']=rdb.getRecord('dataobject',{'uid':do_uid} )[0]
+                        rr['do_info']=rdb.getRecord('dataobject',{'uid':do_uid}, dn=dn )[0]
                 r=records
             else:
-                r = rdb.getRecord('dataobject',request.args,dn)
+                r = rdb.getRecord('dataobject',request.args,dn=dn)
 
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
 
@@ -704,18 +748,24 @@ def dataobject(id=None):
 @app.route(routes['activity'], methods=['GET', 'POST'])
 def activity(id=None):
     istatus=200
+
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     if request.method == 'POST':
-        r = rdb.addRecord('activity',request.data,dn)
+        r = rdb.addRecord('activity',request.data,dn=dn)
         id = r['uid']
-        morer = rdb.getRecord('activity',{'uid':id},dn)
+        morer = rdb.getRecord('activity',{'uid':id},dn=dn)
         publishEvent('mpo_activity',onlyone(morer))
     elif request.method == 'GET':
         if id:
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = rdb.getRecord('activity',{'uid':id},dn)
+                rs = rdb.getRecord('activity',{'uid':id},dn=dn)
                 if rs:
                     r[id]=rs
                 else:
@@ -725,7 +775,7 @@ def activity(id=None):
                 r=rs
 
         else:
-            r = rdb.getRecord('activity',request.args,dn)
+            r = rdb.getRecord('activity',request.args,dn=dn)
 
 
     #if r='[]', later set metadata with number of records
@@ -736,18 +786,22 @@ def activity(id=None):
 
 
 
-
 @app.route(routes['comment']+'/<id>', methods=['GET'])
 @app.route(routes['comment'], methods=['GET', 'POST'])
 def comment(id=None):
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     if request.method == 'POST':
         req = json.loads(request.data)
-        req['ptype']=rdb.getRecordTable(req['parent_uid'])
-        r = rdb.addRecord('comment',json.dumps(req),dn)
+        req['ptype']=rdb.getRecordTable(req['parent_uid'], dn=dn)
+        r = rdb.addRecord('comment',json.dumps(req),dn=dn)
         id = r['uid']
         try:  #JCW just being careful here on first implementation
-            morer = rdb.getRecord('comment',{'uid':id},dn)
+            morer = rdb.getRecord('comment',{'uid':id},dn=dn)
         except Exception as e:
             import sys,os
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -762,7 +816,7 @@ def comment(id=None):
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = rdb.getRecord('comment',{'uid':id},dn)
+                rs = rdb.getRecord('comment',{'uid':id},dn=dn)
                 if len(rs)==1:
                     r[id]=rs[0] #unpack single element list
                 else:
@@ -772,7 +826,7 @@ def comment(id=None):
             else:
                 r=r
         else:
-            r = rdb.getRecord('comment',request.args,dn)
+            r = rdb.getRecord('comment',request.args,dn=dn)
 
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
@@ -782,10 +836,15 @@ def comment(id=None):
 @app.route(routes['metadata'], methods=['GET', 'POST'])
 def metadata(id=None):
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     if request.method == 'POST':
-        r = rdb.addMetadata( request.data, dn)
+        r = rdb.addMetadata( request.data, dn=dn)
         id = r['uid']
-        morer = rdb.getRecord('metadata',{'uid':id},dn)
+        morer = rdb.getRecord('metadata',{'uid':id},dn=dn)
         publishEvent('mpo_metadata',onlyone(morer))
     elif request.method == 'GET':
         #Add logic to parse id if comma separated
@@ -793,7 +852,7 @@ def metadata(id=None):
             ids=id.strip().split(',')
             r={}
             for id in ids:
-                rs = rdb.getRecord('metadata',{'uid':id},dn)
+                rs = rdb.getRecord('metadata',{'uid':id},dn=dn)
                 if len(rs)==1:
                     r[id]=rs[0] #unpack single element list
                 else:
@@ -803,7 +862,7 @@ def metadata(id=None):
             else:
                 r=r
         else:
-            r = rdb.getRecord('metadata',request.args,dn)
+            r = rdb.getRecord('metadata',request.args,dn=dn)
 
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
@@ -812,6 +871,11 @@ def metadata(id=None):
 @app.route(routes['ontology_class'], methods=['GET', 'POST'])
 def ontologyClass(id=None):
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     result = jsonify(json.loads(request.data),user_dn=dn)
     if request.method == 'POST':
         pass
@@ -837,11 +901,14 @@ def ontologyTermVocabulary(id=None):
 
     dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     if not id:
         id='None'
 
-    r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn )
+    r = rdb.getRecord('ontology_terms', {'parent_uid':id}, dn=dn )
     r.append(  {'link-requested':request.url} )
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
@@ -857,11 +924,15 @@ def ontologyTermTree(id=None):
     Vocabulary is defined as the next set of terms below it in the ontology term tree.
     '''
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if not id:
         id='0' #root parent_uid
 
-    r = rdb.getOntologyTermTree(id, dn )
+    r = rdb.getOntologyTermTree(id, dn=dn )
 
     return jsonify(**r)
 
@@ -876,9 +947,9 @@ def ontologyTerm(id=None):
     ontology/term?path=term/term2/termN
     '''
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)    
     if not rdb.validUser(dn):
-        if apidebug:
-            print ('APIDEBUG: Not a valid user %s'% dn )
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
         return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if request.method == 'POST':
@@ -887,17 +958,17 @@ def ontologyTerm(id=None):
         if not objs.has_key('parent_uid'): objs['parent_uid']=None
 
         # make sure the term doesn't exist already
-        vocab = rdb.getRecord('ontology_terms', {'parent_uid':objs['parent_uid']}, dn )
+        vocab = rdb.getRecord('ontology_terms', {'parent_uid':objs['parent_uid']}, dn=dn )
         for x in vocab:
             if objs['name'] == x['name']:
                 return Response(json.dumps({'uid':x['uid']}),mimetype='application/json')
 
-        r = rdb.addRecord('ontology_terms',json.dumps(objs),dn)
+        r = rdb.addRecord('ontology_terms',json.dumps(objs),dn=dn)
     else:
         if id:
-            r = rdb.getRecord('ontology_terms', {'uid':id}, dn )
+            r = rdb.getRecord('ontology_terms', {'uid':id}, dn=dn )
         else:
-            r = rdb.getRecord('ontology_terms', request.args, dn )
+            r = rdb.getRecord('ontology_terms', request.args, dn=dn )
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
@@ -906,11 +977,17 @@ def ontologyTerm(id=None):
 @app.route(routes['ontology_instance'], methods=['GET', 'POST'])
 def ontologyInstance(id=None):
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)    
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+
+
     if request.method == 'POST':
-        r = rdb.addOntologyInstance(request.data,dn)
+        r = rdb.addOntologyInstance(request.data,dn=dn)
     else:
         if id:
-            r = rdb.getRecord('ontology_instances', {'uid':id}, dn )
+            r = rdb.getRecord('ontology_instances', {'uid':id}, dn=dn )
         else:
             p_uids=request.args.get('parent_uid')
             if p_uids:
@@ -920,14 +997,14 @@ def ontologyInstance(id=None):
                 rargs=request.args.to_dict() #multidict conversion to dict
                 for pid in p_uids:
                     rargs['parent_uid']=pid
-                    rs = rdb.getRecord('ontology_instances', rargs, dn )
+                    rs = rdb.getRecord('ontology_instances', rargs, dn=dn )
                     print('ont inst',pid,str(rargs),str(type(rargs)))
                     r[pid]=rs #element list, can have multiple instances
 
                 if len(p_uids)==1: #return just single record if one uid
                     r=rs
             else:
-                r = rdb.getRecord('ontology_instances', request.args, dn )
+                r = rdb.getRecord('ontology_instances', request.args, dn=dn )
 
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
@@ -937,15 +1014,20 @@ def ontologyInstance(id=None):
 @app.route(routes['user'], methods=['GET', 'POST'])
 def user(id=None):
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)    
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    
     istatus=200
     if request.method == 'POST':
-        r = rdb.addUser( request.data, dn )
+        r = rdb.addUser( request.data, dn=dn )
         if not r: istatus=404
     elif request.method == 'GET':
         if id:
-            r = rdb.getUser( {'uid':id}, dn )
+            r = rdb.getUser( {'uid':id}, dn=dn )
         else:
-            r = rdb.getUser( request.args, dn )
+            r = rdb.getUser( request.args, dn=dn )
 
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
 
@@ -953,8 +1035,13 @@ def user(id=None):
 @app.route(routes['item']+'/<id>', methods=['GET'])
 def item(id):
     dn=get_user_dn(request)
+    api_version,root_url,root=get_api_version(request.url)    
+    if not rdb.validUser(dn):
+        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+
     if id:
-        r = rdb.getRecordTable( id, dn )
+        r = rdb.getRecordTable( id, dn=dn )
     else:
         payload={"url":request.url, "body":request.data, "hint":"Must provide an UID", "uid":-1}
         raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,

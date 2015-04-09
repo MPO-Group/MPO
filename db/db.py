@@ -37,7 +37,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                            'phone':'phone','dn':'dn'},
              'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
                            'work_uid':'w_guid', 'time':'creation_time','user_uid':'u_guid',
-                           'start':'start_time','end':'end_time', 
+                           'start':'start_time','end':'end_time', 'uri':'uri',
                            'status':'completion_status'},
              'activity_short' : {'w':'w_guid'},
              'dataobject' : {'name':'name', 'description':'description','uri':'uri','uid':'do_guid',

@@ -187,27 +187,33 @@ class mpo_methods(object):
 
 ### internal methods ###
 
-    def format(self,result,filter='id'):
+    def format(self,result,filter='id',field=None):
         """
         Routine to handle reformatting of responses from submethods. It is aware of the
         internal format returned.
         filter: defaults to the UID return but acceptable values are id, json, pretty, raw, text
         result: is the full Response object.
         """
-
-        #check that result is a request object.
-        # if isinstance(result,requests.models.Response):
+        #print('field in format is',field,filter,file=sys.stderr)
+        if not field:  field=self.ID
+        #print('field in format is',field,filter,file=sys.stderr)
+        
+        #check that result is a request object or a dictionary
         if not isinstance(result,requests.models.Response):
-            if result:
+            if not isinstance(result,dict):
                 return str(result)
             else:
-                return None
+                rr=result
+                text=str(result)
+        else:
+            text=result.text
+            rr=result.json()
 
         if self.debug:
-            text=result.text
-            print("format",result,str(type(result)),text,file=sys.stderr)
+            print("MPO_ARG DEBUG format:",field,result,str(type(result)),text,file=sys.stderr)
+
+            
         if filter=='id':
-            rr=result.json()
             if self.RESULT in rr: #then format is to have record list in result field
                 rr=rr[self.RESULT]
             output=[]
@@ -217,17 +223,17 @@ class mpo_methods(object):
                     print("Returning list of ID's",file=sys.stderr)
 
                 for r in rr:
-                    output.append(str(r[self.ID]))
+                    output.append(str(r[field]))
 
                 if len(output)==1: #if it is a one element list, just return contents.
                     output=output[0]
-            else:
-                if self.ID in rr:
-                    output=rr[self.ID]
+            elif field in rr:
+                output=rr[field]
+                
         elif filter=='json' or filter=='dict':
-            output=result.json()
+            output=rr
         elif filter=='pretty':
-            output=json.dumps(result.json(),separators=(',', ':'),indent=4)
+            output=json.dumps(rr,separators=(',', ':'),indent=4)
         elif filter=='raw':
             output=result
             print('raw header',output.headers,file=sys.stderr)
@@ -235,7 +241,7 @@ class mpo_methods(object):
             print('raw content',output.text,file=sys.stderr)
             output=str(result)
         elif filter=='text':
-            output=str(result.text)
+            output=str(text)
         else:
             output=str(result)
 
@@ -247,8 +253,8 @@ class mpo_methods(object):
 
     def test(self,route='default',*a,**kw):
         "NOP routine. Useful for new subcommand development"
-        print('init:',a,kw)
-        print('with route', route)
+        print('init:',a,kw,file=sys.stderr)
+        print('with route', route,file=sys.stderr)
         return
 
 ### GET, POST, DELETE low level routines
@@ -446,11 +452,12 @@ class mpo_methods(object):
         parentobj_ID are not present create just the dataobject.
 
         args are:
-        workflow_ID --
-        parentobj_ID --
-        name --
-        desc -- description
-        uri -- uri for the data object added
+        workflow_ID -- UID of workflow to add dataobject to
+        parentobj_ID -- UID of workflow element to attach dataobject to
+        name -- name of dataobject
+        desc -- description of dataobject
+        uri -- uri for the data object added, takes precedence over do_uid
+        uid -- UID of dataobject too add to workflow
         source -- source uid for dataobject, provides direction source -> target
         """
 
@@ -461,12 +468,14 @@ class mpo_methods(object):
         source = kwargs.get('source')
 
         if (self.debug):
-            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,source,kwargs, file=sys.stderr)
+            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,uid,source,kwargs, file=sys.stderr)
 
         if uid:
-            payload={"name":name,"description":desc,"uri":uri,"source_uid":source,"uid":uid}
+            payload={"name":name,"description":desc,"source_uid":source,"uid":uid}
+        elif uri:
+            payload={"name":name,"description":desc,"source_uid":source,"uri":uri}
         else:
-            payload={"name":name,"description":desc,"uri":uri,"source_uid":source}
+            return {"name":name,"description":desc,"source_uid":source,"message":"Must provide either uri or uid.", 'uid':-1, "status":-1}
             
         return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],data=payload,**kwargs)
 
@@ -662,6 +671,7 @@ class mpo_methods(object):
                 return self.add(name=name, desc=desc, uri=uri)
         return uri
 
+        
     def get_uri(self, uri=None, do_uid=None):
         if do_uid!=None:
             r = self.get("%s/%s"%(self.DATAOBJECT_RT,do_uid))
@@ -676,6 +686,7 @@ class mpo_methods(object):
             raise Exception("One of uri or do_uid must be specified")
         return uri
 
+    
     def restore(self, uri=None, do_uid=None, *arg, **kw):
         import importlib
         uri = self.get_uri(uri=uri, do_uid=do_uid)
@@ -684,8 +695,8 @@ class mpo_methods(object):
         mod = importlib.import_module(modname)
         archiver_class=getattr(mod, modname)
         archiver=archiver_class(self)
-        print("restore protocol=%s"%protocol[0])
-        print("restore args = %s"%protocol[1])
+#        print("restore protocol=%s"%protocol[0])
+#        print("restore args = %s"%protocol[1])
         result = archiver.restore(uri=uri)
         return result
 
@@ -745,8 +756,11 @@ class mpo_cli(object):
         parser.add_argument('--user','-u',action='store',help='''Specify user.''',default=self.user)
         parser.add_argument('--pass','-p',action='store',help='''Specify password.''',
                             default=self.password)
-        parser.add_argument('--format','-f',action='store',help='Set the format of the response.',
+        filter_group = parser.add_mutually_exclusive_group(required=False)
+        filter_group.add_argument('--format','-f',action='store',help='Set the format of the response.',
                             choices=['id','raw','text','json','dict','pretty'], default='id') #case insensitive?
+        filter_group.add_argument('--field',action='store',help='Return a specific field to shell. '+
+                            'EG "--field=uid" is the same as "--format=id".')
         parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
                             default=False)
         parser.add_argument('--host',action='store',help='specify API root URI')
@@ -791,7 +805,12 @@ class mpo_cli(object):
         add_parser.add_argument('parentobj_ID', action='store',metavar='parent')
         add_parser.add_argument('--name', '-n', action='store')
         add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
-        add_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        ud_group = add_parser.add_mutually_exclusive_group(required=True)
+        ud_group.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        ud_group.add_argument('--uid', action='store', help='Dataobject UID to be added to workflow.')
+        #uri and do_uid are exclusive. do_uid requires workflow and parent uids. uri may require either
+        #both workflow and parent_uid or neither depending on whether being added to workflow or created.
+        #confusion, have to explain that better.
         add_parser.add_argument('--source', '-s', action='store', help='Pointer to the creator of the dataobject')
         add_parser.set_defaults(func=self.mpo.add)
 
@@ -878,7 +897,7 @@ class mpo_cli(object):
         comment_parser.set_defaults(func=self.mpo.comment)
 
         #meta
-        meta_parser=subparsers.add_parser('meta',help='Add an action to a workflow.')
+        meta_parser=subparsers.add_parser('meta',help='Add metadata to a dataobject.')
         meta_parser.add_argument('obj_ID',action='store',metavar='object',
                                     help='UUID of object to attach metadata to',
                                     type=self.type_uuid)
@@ -929,7 +948,10 @@ class mpo_cli(object):
             return PrintException()
 
         #prepare output and return
-        if 'format' in kwargs:
+        #print('field is',kwargs.get('field'),kwargs.get('format'),str(r), str(type(r)),file=sys.stderr)
+        if kwargs.get('field'):
+            r=self.mpo.format(r,field=kwargs['field'])
+        elif kwargs.get('format'):
             r=self.mpo.format(r,filter=kwargs['format'])
 
         return r
