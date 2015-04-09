@@ -1,26 +1,25 @@
 import mpo_ar_dataobject as _ar
 
-class mpo_ar_mdsplus(_ar.mpo_ar_dataobject):
+class mpo_ar_ptdata(_ar.mpo_ar_dataobject):
     """
-    A class to construct data objects from files in the users file system.
-    No file manipulation is done.  
+    A class to construct data objects that describe records in GA's PTDATA
 
     This simply creates or returns an existing data object that referes to a 
     particular file.
 
     command line syntax:
-        mpo create [--protocol=| -p ] filesys [--filespec=|-f ] [file-name | directory-name]
+        mpo create [--protocol=| -p ] ptdata [--server=|-S ] server-name [--shot=|-s ] shot-number [--point=|-P ] point-name
 
     for example:
-        mpo create --protocol=filesys --filespec=/usr/local/cmod/shared/some-file.dat
+        mpo create --protocol=ptdata --server=ptdata.gat.com --shot=12345 --point=bcoil
     """
 
-    def archive(self, server=None, tree=None, shot=None, path=None, verbose=False):
+    def archive(self, server=None, shot=None, point=None, verbose=False):
         if verbose:
-            print ("constructing an MDSplus object for server=%s tree=%s shot=%d path=%s"%(server,tree,shot,path,))
+            print ("constructing an ptdata object for server=%s shot=%d point=%s"%(server,shot,point,))
         if server==None:
             server=""
-        uri = r'mdsplus://%s/%s/%d&path=%s'%(server,tree,shot,path,)
+        uri = r'ptdata://%s/%d/%s'%(server,shot,point,)
         return(uri)
 
     def archive_parse(self, *args):
@@ -29,9 +28,8 @@ class mpo_ar_mdsplus(_ar.mpo_ar_dataobject):
 
         #global filespec options
         self.parser.add_argument('--server','-S',action='store',help='Specify the server.')
-        self.parser.add_argument('--tree','-t',action='store',help='Specify the tree name.', required=True)
         self.parser.add_argument('--shot','-s',action='store',help='Specify the shot number.', required=True, type=int)
-        self.parser.add_argument('--path','-p',action='store',help='Specify the tree path.', required=True)
+        self.parser.add_argument('--point','-P',action='store',help='Specify the point name.', required=True)
         try:
             ans = self.parser.parse_args(*args)
         except SystemExit:
@@ -41,12 +39,13 @@ class mpo_ar_mdsplus(_ar.mpo_ar_dataobject):
 
     def restore(self, uri=None, verbose=False):
         if verbose:
-            print("NOOP ! restoring an MDSplus data object uri = %s"%(uri,))
+            print("NOOP ! restoring an ptdata data object uri = %s"%(uri,))
         if uri==None :
-            raise Exceptions("MDSplus Restore - must specifiy a URI")
+            raise Exceptions("PTDATA Restore - must specifiy a URI")
         return uri
 
     def ls(self, uri=None, verbose=False):
         if verbose:
             print("listing a filespec data object uri = %s"%(uri,))
         return uri
+

@@ -134,7 +134,8 @@ class mpo_methods(object):
     ID='uid'
     WORKID='work_uid'
     PARENTID='parent_uid' #field for object id to which comments and metadata are attached
-
+    RESULT='result'
+    
     MPO_VERSION='v0'
     WORKFLOW_RT = 'workflow'
     COMMENT_RT  = 'comment'
@@ -150,9 +151,7 @@ class mpo_methods(object):
 
     def __init__(self,api_url='https://localhost:8080',version='v0',
                  user='noone',password='pass',cert='no cert',
-                 archive_host='psfcstor1.psfc.mit.edu',
-                 archive_user='psfcmpo', archive_key=None,
-                 archive_prefix=None, debug=False,filter=False,dryrun=False):
+                 debug=False,filter=False,dryrun=False):
 
 
         self.debug=debug
@@ -162,10 +161,6 @@ class mpo_methods(object):
         self.password=password
         self.version=version
         self.cert=cert
-        self.archive_host=archive_host
-        self.archive_user=archive_user
-        self.archive_key=archive_key
-        self.archive_prefix=archive_prefix
         self.set_api_url(api_url)
         self.requestargs={'cert':self.cert,'verify':False}
 
@@ -192,41 +187,53 @@ class mpo_methods(object):
 
 ### internal methods ###
 
-    def format(self,result,filter='id'):
+    def format(self,result,filter='id',field=None):
         """
         Routine to handle reformatting of responses from submethods. It is aware of the
         internal format returned.
         filter: defaults to the UID return but acceptable values are id, json, pretty, raw, text
         result: is the full Response object.
         """
-
-        #check that result is a request object.
-        # if isinstance(result,requests.models.Response):
+        #print('field in format is',field,filter,file=sys.stderr)
+        if not field:  field=self.ID
+        #print('field in format is',field,filter,file=sys.stderr)
+        
+        #check that result is a request object or a dictionary
         if not isinstance(result,requests.models.Response):
-            return str(result)
+            if not isinstance(result,dict):
+                return str(result)
+            else:
+                rr=result
+                text=str(result)
+        else:
+            text=result.text
+            rr=result.json()
 
         if self.debug:
-            text=result.text
-            print("format",result,str(type(result)),text,file=sys.stderr)
+            print("MPO_ARG DEBUG format:",field,result,str(type(result)),text,file=sys.stderr)
+
+            
         if filter=='id':
+            if self.RESULT in rr: #then format is to have record list in result field
+                rr=rr[self.RESULT]
             output=[]
-            if isinstance(result.json(),list):
+            if isinstance(rr,list):
                 if self.debug:
                     print("Caution, response format of 'id' used when result is a list.",file=sys.stderr)
                     print("Returning list of ID's",file=sys.stderr)
 
-                for r in result.json():
-                    output.append(str(r[self.ID]))
+                for r in rr:
+                    output.append(str(r[field]))
 
                 if len(output)==1: #if it is a one element list, just return contents.
                     output=output[0]
-            else:
-                if self.ID in result.json():
-                    output=result.json()[self.ID]
+            elif field in rr:
+                output=rr[field]
+                
         elif filter=='json' or filter=='dict':
-            output=result.json()
+            output=rr
         elif filter=='pretty':
-            output=json.dumps(result.json(),separators=(',', ':'),indent=4)
+            output=json.dumps(rr,separators=(',', ':'),indent=4)
         elif filter=='raw':
             output=result
             print('raw header',output.headers,file=sys.stderr)
@@ -234,8 +241,8 @@ class mpo_methods(object):
             print('raw content',output.text,file=sys.stderr)
             output=str(result)
         elif filter=='text':
-            output=str(result.text)
-        else: #default is string representation
+            output=str(text)
+        else:
             output=str(result)
 
         return output
@@ -246,8 +253,8 @@ class mpo_methods(object):
 
     def test(self,route='default',*a,**kw):
         "NOP routine. Useful for new subcommand development"
-        print('init:',a,kw)
-        print('with route', route)
+        print('init:',a,kw,file=sys.stderr)
+        print('with route', route,file=sys.stderr)
         return
 
 ### GET, POST, DELETE low level routines
@@ -344,6 +351,7 @@ class mpo_methods(object):
         workflow_ID -- the workflow being added to
         obj_ID -- the object we are making a connection from
         data -- the object being posted
+        uid  -- if this keyword is set, find record by uid to use in posting operation
         """
         #need flexible number of args so you can just post to a url.
 
@@ -380,6 +388,8 @@ class mpo_methods(object):
                 print('invalid workflow_ID in post',file=sys.stderr)  #throw exception
             datadict[self.WORKID]=workflow_ID
 
+        if kwargs.get('uid'):
+            datadict['uid']=kwargs.get('uid')
             
         if self.debug:
             print('MPO.POST to {u} with workflow:{wid}, parent:{pid} and payload of {p}'.format(
@@ -442,25 +452,31 @@ class mpo_methods(object):
         parentobj_ID are not present create just the dataobject.
 
         args are:
-        workflow_ID --
-        parentobj_ID --
-        name --
-        desc -- description
-        uri -- uri for the data object added
-        source -- source uid for dataobject
+        workflow_ID -- UID of workflow to add dataobject to
+        parentobj_ID -- UID of workflow element to attach dataobject to
+        name -- name of dataobject
+        desc -- description of dataobject
+        uri -- uri for the data object added, takes precedence over do_uid
+        uid -- UID of dataobject too add to workflow
+        source -- source uid for dataobject, provides direction source -> target
         """
 
         uri = kwargs.get('uri')
+        uid = kwargs.get('uid')
         desc = kwargs.get('desc')
         name = kwargs.get('name')
         source = kwargs.get('source')
 
         if (self.debug):
-            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,source,kwargs, file=sys.stderr)
+            print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,uid,source,kwargs, file=sys.stderr)
 
-
-        payload={"name":name,"description":desc,"uri":uri,"source":source}
-
+        if uid:
+            payload={"name":name,"description":desc,"source_uid":source,"uid":uid}
+        elif uri:
+            payload={"name":name,"description":desc,"source_uid":source,"uri":uri}
+        else:
+            return {"name":name,"description":desc,"source_uid":source,"message":"Must provide either uri or uid.", 'uid':-1, "status":-1}
+            
         return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],data=payload,**kwargs)
 
 
@@ -641,29 +657,36 @@ class mpo_methods(object):
 
     ### Persistent store methods ###
 
-    def archive(self, protocol=None, *arg, **kw):
+    def archive(self, name=None, desc=None, protocol=None, *arg, **kw):
         import importlib
+        uri = None
         modname= "mpo_ar_%s"%protocol[0]
         mod = importlib.import_module(modname)
         archiver_class=getattr(mod, modname)
         archiver=archiver_class(self)
         args = archiver.archive_parse(protocol[1:])
-        return archiver.archive(**args)
+        if args:
+            uri = archiver.archive(**args)
+            if uri and isinstance(uri, str):
+                return self.add(name=name, desc=desc, uri=uri)
+        return uri
 
+        
     def get_uri(self, uri=None, do_uid=None):
         if do_uid!=None:
             r = self.get("%s/%s"%(self.DATAOBJECT_RT,do_uid))
-            do=json.loads(r.text)
+            do=json.loads(r.text)[0]
             if not isinstance(do, dict):
                 raise Exception("data_object query did not return a dictionary")
-            uri=do.uri
-        elif uri != None:
+            uri=do['uri']
+        elif not uri == None:
             r = self.get(self.DATAOBJECT_RT, params={'uri': uri})
             print(r)
         else:
             raise Exception("One of uri or do_uid must be specified")
         return uri
 
+    
     def restore(self, uri=None, do_uid=None, *arg, **kw):
         import importlib
         uri = self.get_uri(uri=uri, do_uid=do_uid)
@@ -672,9 +695,10 @@ class mpo_methods(object):
         mod = importlib.import_module(modname)
         archiver_class=getattr(mod, modname)
         archiver=archiver_class(self)
-        print("restore protocol=%s"%protocol[0])
-        print("restore args = %s"%protocol[1])
-        return archiver.restore(protocol[1])
+#        print("restore protocol=%s"%protocol[0])
+#        print("restore args = %s"%protocol[1])
+        result = archiver.restore(uri=uri)
+        return result
 
     def ls(self, uri=None, do_uid=None, *arg, **kw):
         import importlib
@@ -686,8 +710,8 @@ class mpo_methods(object):
         archiver=archiver_class(self)
         print("ls protocol=%s"%protocol[0])
         print("ls args = %s"%protocol[1])
-        return archiver.ls(protocol[1])
-
+        result = archiver.ls(uri=uri)
+        return result
 
 ### MPO commandline client
 class mpo_cli(object):
@@ -700,10 +724,7 @@ class mpo_cli(object):
 #import foreign classes for methods here
 
     def __init__(self,api_url='https://localhost:8080',version='v0',
-                 user='noone',password='pass',mpo_cert='',
-                 archive_host='psfcstor1.psfc.mit.edu',
-                 archive_user='psfcmpo', archive_key=None,
-                 archive_prefix=None, debug=False, dryrun=False):
+                 user='noone',password='pass',mpo_cert='', debug=False, dryrun=False):
 
         self.debug=debug
         self.dryrun=dryrun
@@ -712,15 +733,11 @@ class mpo_cli(object):
         self.password=password
         self.version = version
         self.cert=mpo_cert
-        self.archive_host=archive_host
-        self.archive_user=archive_user
-        self.archive_key=archive_key
-        self.archive_prefix=archive_prefix
 
         #initialize foreign methods here
         #print('init',mpo_cert,archive_key,file=sys.stderr)
         self.mpo=mpo_methods(api_url,version,debug=self.debug,dryrun=self.dryrun,
-                             cert=mpo_cert,archive_key=archive_key)
+                             cert=mpo_cert)
 
     def type_uuid(self,uuid):
         if not isinstance(uuid,str):
@@ -739,8 +756,11 @@ class mpo_cli(object):
         parser.add_argument('--user','-u',action='store',help='''Specify user.''',default=self.user)
         parser.add_argument('--pass','-p',action='store',help='''Specify password.''',
                             default=self.password)
-        parser.add_argument('--format','-f',action='store',help='Set the format of the response.',
+        filter_group = parser.add_mutually_exclusive_group(required=False)
+        filter_group.add_argument('--format','-f',action='store',help='Set the format of the response.',
                             choices=['id','raw','text','json','dict','pretty'], default='id') #case insensitive?
+        filter_group.add_argument('--field',action='store',help='Return a specific field to shell. '+
+                            'EG "--field=uid" is the same as "--format=id".')
         parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
                             default=False)
         parser.add_argument('--host',action='store',help='specify API root URI')
@@ -785,7 +805,12 @@ class mpo_cli(object):
         add_parser.add_argument('parentobj_ID', action='store',metavar='parent')
         add_parser.add_argument('--name', '-n', action='store')
         add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
-        add_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        ud_group = add_parser.add_mutually_exclusive_group(required=True)
+        ud_group.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
+        ud_group.add_argument('--uid', action='store', help='Dataobject UID to be added to workflow.')
+        #uri and do_uid are exclusive. do_uid requires workflow and parent uids. uri may require either
+        #both workflow and parent_uid or neither depending on whether being added to workflow or created.
+        #confusion, have to explain that better.
         add_parser.add_argument('--source', '-s', action='store', help='Pointer to the creator of the dataobject')
         add_parser.set_defaults(func=self.mpo.add)
 
@@ -828,6 +853,8 @@ class mpo_cli(object):
 
         #archive, note all arguments must be processed by the protocol
         archive_parser=subparsers.add_parser('archive',help='Archive a data object.')
+        archive_parser.add_argument('--name', '-n', action='store')
+        archive_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
         archive_parser.add_argument('--protocol', '-p', action='store',metavar='protocol',
                                    nargs=argparse.REMAINDER)
         archive_parser.set_defaults(func=self.mpo.archive)
@@ -849,16 +876,16 @@ class mpo_cli(object):
         #ls
         ls_parser=subparsers.add_parser('ls',help='list the Archive of a data object.')
         grp = ls_parser.add_mutually_exclusive_group(required=True)
-        grp.add_argument('--uri', '-u', action='store')
+        grp.add_argument('--uri', '-', action='store')
         grp.add_argument('--do_uid', '-d', action='store')
         ls_parser.set_defaults(func=self.mpo.ls)
 
         #restore
-        ls_parser=subparsers.add_parser('restore',help='restore the Archive of a data object.')
-        grp = ls_parser.add_mutually_exclusive_group(required=True)
-        grp.add_argument('--uri', '-u', action='store')
+        restore_parser=subparsers.add_parser('restore',help='restore the Archive of a data object.')
+        grp = restore_parser.add_mutually_exclusive_group(required=True)
+        grp.add_argument('--uri', '-U', action='store')
         grp.add_argument('--do_uid', '-d', action='store')
-        ls_parser.set_defaults(func=self.mpo.restore)
+        restore_parser.set_defaults(func=self.mpo.restore)
 
 
         #comment
@@ -870,7 +897,7 @@ class mpo_cli(object):
         comment_parser.set_defaults(func=self.mpo.comment)
 
         #meta
-        meta_parser=subparsers.add_parser('meta',help='Add an action to a workflow.')
+        meta_parser=subparsers.add_parser('meta',help='Add metadata to a dataobject.')
         meta_parser.add_argument('obj_ID',action='store',metavar='object',
                                     help='UUID of object to attach metadata to',
                                     type=self.type_uuid)
@@ -921,7 +948,10 @@ class mpo_cli(object):
             return PrintException()
 
         #prepare output and return
-        if 'format' in kwargs:
+        #print('field is',kwargs.get('field'),kwargs.get('format'),str(r), str(type(r)),file=sys.stderr)
+        if kwargs.get('field'):
+            r=self.mpo.format(r,field=kwargs['field'])
+        elif kwargs.get('format'):
             r=self.mpo.format(r,filter=kwargs['format'])
 
         return r
@@ -930,19 +960,15 @@ class mpo_cli(object):
 ####Application main routine. Instance of commandline application class using mpo methods class
 if __name__ == '__main__':
     import os
+    import pprint
 
     mpo_version    = os.getenv('MPO_VERSION','v0')
     mpo_api_url    = os.getenv('MPO_HOST', 'https://localhost:8080/') #API_URL
     mpo_cert       = os.getenv('MPO_AUTH', '~/.mpo/mpo_cert.pem')
-    archive_host   = os.getenv('MPO_ARCHIVE_HOST', 'psfcstor1.psfc.mit.edu')
-    archive_user   = os.getenv('MPO_ARCHIVE_USER', 'psfcmpo')
-    archive_key    = os.getenv('MPO_ARCHIVE_KEY', '~/.mporsync/id_rsa')
-    archive_prefix = os.getenv('MPO_ARCHIVE_PREFIX', 'mpo-persistent-store/')
 
     cli_app=mpo_cli(version=mpo_version, api_url=mpo_api_url,
-                    archive_host=archive_host, archive_user=archive_user,
-                    archive_key=archive_key, archive_prefix=archive_prefix,
                     mpo_cert=mpo_cert)
     result=cli_app.cli()
 #    print(json.dumps(result.json(),separators=(',', ':'),indent=4))
-    print(result)
+    if result:
+        print(result)

@@ -57,7 +57,7 @@ mydir=`dirname $myfp`
 PYTHONPATH=$mydir/db:$mydir/server
 export PYTHONPATH
 
-MPO_API_SERVER=${2:-https://localhost:8443}
+MPO_API_SERVER=${2:-https://localhost:8443/}
 MPO_API_VERSION=v0
 export MPO_API_SERVER MPO_API_VERSION
 MPO_WEB_SERVER_PORT=${1:-9443}
