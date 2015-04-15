@@ -158,7 +158,9 @@ $(document).ready(function () {
 		for(var j in tmp) {
 			if(j=="data") {
 				var tmp2=tmp[j];
-				var tmp3=tmp2[0]; 
+				var tmp3=tmp2[0];  
+				console.log("TMP 3 is.... " );
+				console.log(tmp3);
 				
 				
 				dataElements[tmp['name']]="";
@@ -184,15 +186,11 @@ $(document).ready(function () {
 					var fill=false;
 					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['uri']+"</small>";
 					if(tmp3['wf_link']) {
-						//dataElements[tmp['name']]+="<ul class=\"wf_links\"><li><small><em>Linked Workflows:</em></small>"; 
-						//dataElements[tmp['name']]+="<ul>";
 						for (var cnt in tmp3['wf_link']) {
-							if (tmp3['wf_link'][cnt]['work_uid'] != "{{ wid }}") {
+							if (tmp3['wf_link']['count'] > 1) {
 								fill=true;
-								//dataElements[tmp['name']]+="<li><small><a href=\"/connections/"+tmp3['wf_link'][cnt]['work_uid']+"\">"+tmp3['wf_link'][cnt]['work_uid']+"</a></small></li>";
 							}
 						}
-						//dataElements[tmp['name']]+="</ul></li></ul>"; 
 						if(fill)
 							fillSVGElement(tmp['uid']);
 					}
@@ -203,15 +201,11 @@ $(document).ready(function () {
 					var fill=false;
 					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['do_info']['uri']+"</small>";
 					if(tmp3['wf_link']) {
-						//dataElements[tmp['name']]+="<ul class=\"wf_links\"><li><small><em>Linked Workflows:</em></small>"; 
-						//dataElements[tmp['name']]+="<ul>";
-						for (var cnt in tmp3['wf_link']) {
-							if (tmp3['wf_link'][cnt]['work_uid'] != "{{ wid }}") {
+						console.log('WF_LINK is....');
+						console.log(tmp3['wf_link']);
+							if (tmp3['wf_link']['count'] > 1) {
 								fill=true;
-								//dataElements[tmp['name']]+="<li><small><a href=\"/connections/"+tmp3['wf_link'][cnt]['work_uid']+"\">"+tmp3['wf_link'][cnt]['work_uid']+"</a></small></li>";
 							}
-						}
-						//dataElements[tmp['name']]+="</ul></li></ul>"; 
 						if(fill)
 							fillSVGElement(tmp['uid']);
 					}

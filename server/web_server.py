@@ -70,6 +70,9 @@ def before_request():
     else:
        CONN_TYPE='demo-api'
 
+    if webdebug:
+       print ("WEBSERVER: db set to ",DB_SERVER)
+
     API_PREFIX=MPO_API_SERVER+""+CONN_TYPE+"/"+MPO_API_VERSION
 
     dn = get_user_dn(request)
@@ -79,10 +82,12 @@ def before_request():
     if(request.endpoint != 'register'):
         #Check and redirect to /register if not registered
         is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs)
+        print (is_mpo_user)
         if(is_mpo_user):
             is_mpo_user=is_mpo_user.json()
             if(len(is_mpo_user)==0):
-               return render_template('register.html')
+        #if is_mpo_user.status_code == 401:
+                return render_template('register.html')
 
 
 @app.route('/')
@@ -1356,8 +1361,6 @@ def register():
             check="<strong>Missing required fields: </strong>"
             n=0
             for k,v in form.iteritems():
-                print ("Processing ", k)
-		print (".... and ", v)
                 tmp=v.strip()
                 if not tmp:
                     if n>0:
