@@ -1014,10 +1014,13 @@ def ontologyInstance(id=None):
 @app.route(routes['user'], methods=['GET', 'POST'])
 def user(id=None):
     dn=get_user_dn(request)
-    api_version,root_url,root=get_api_version(request.url)    
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+    api_version,root_url,root=get_api_version(request.url)
+    #Unregistered users need to be able to be registered, hence comment this out for now.
+    #A better solution is to have a valid user register unregistered users. This could be
+    #the UI itself.
+#    if not rdb.validUser(dn):
+#        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+#        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     istatus=200
     if request.method == 'POST':
