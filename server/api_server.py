@@ -625,7 +625,8 @@ def getWorkflowCompositeID(id):
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
 def dataobject(id=None):
-    """Route to add data objects and connect their instances to workflows.
+    """
+    Route to add data objects and connect their instances to workflows.
 
     Route: GET  /dataobject/<id>
            Retrieves information on a specific dataobject.
@@ -676,7 +677,7 @@ def dataobject(id=None):
             popuid=req.pop('uid')
         else:
             do = False
-        print('do debug', str(do),req.get('uid'),req.get('uri'),str(req) )
+        #print('do debug', str(do),req.get('uid'),req.get('uri'),str(req) )
         #If the D.O. exists, point to it, if not, make it and point to it
         if do:
             if not (req.get('work_uid') and req.get('parent_uid')):
