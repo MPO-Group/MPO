@@ -16,6 +16,8 @@ Then to install the client:
 cd $INSTALL_DIR
 virtualenv mpo_env
 source mpo_env/bin/activate
+rm -rf mpo_env/bin/pip* mpo_env/lib/python2.7/site-packages/pip*
+easy_install pip
 pip install requests urllib3
  
 #create user preferences directory

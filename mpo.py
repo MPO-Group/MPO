@@ -8,6 +8,13 @@ if __name__ == '__main__':
  #    sys.path.insert(0, cmd_folder)
 
  # use this if you want to include modules from a subfolder
+    #install path to mpo_arg
+    cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(
+                    inspect.getfile( inspect.currentframe() ))[0],"./client/python")))
+    if cmd_subfolder not in sys.path:
+        sys.path.insert(0, cmd_subfolder)
+   
+    #path of this command
     cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(
                     inspect.getfile( inspect.currentframe() ))[0],"./")))
     if cmd_subfolder not in sys.path:
@@ -36,8 +43,6 @@ if __name__ == '__main__':
 
    
     cli_app=mpo_cli(version=mpo_version, api_url=mpo_api_url, 
-                    archive_host=archive_host, archive_user=archive_user, 
-                    archive_key=archive_key, archive_prefix=archive_prefix, 
                     mpo_cert=mpo_cert)    
     result=cli_app.cli()
 

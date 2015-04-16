@@ -37,7 +37,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                            'phone':'phone','dn':'dn'},
              'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
                            'work_uid':'w_guid', 'time':'creation_time','user_uid':'u_guid',
-                           'start':'start_time','end':'end_time',
+                           'start':'start_time','end':'end_time', 'uri':'uri',
                            'status':'completion_status'},
              'activity_short' : {'w':'w_guid'},
              'dataobject' : {'name':'name', 'description':'description','uri':'uri','uid':'do_guid',
@@ -112,7 +112,7 @@ def getRecordTable(id, dn=None):
     q=''
     v=()
     for k,l in query_map.iteritems():
-        if l.has_key('uid'):
+        if l.has_key('uid') and k!='collection_elements':
             q+="select distinct %s as table from "+k+" where "+l['uid']+"=%s"
             v+=k,id
             q+=' union '
@@ -187,7 +187,10 @@ def getRecord(table,queryargs={}, dn=None):
     # execute our Query
     cursor.execute(q)
     # retrieve the records from the database
-    records = [x for x in cursor.fetchall() if x['uri'] == queryargs['uri']] if queryargs.has_key('uri') else cursor.fetchall()
+    if queryargs.has_key('uri'):
+        records = [x for x in cursor.fetchall() if x.get('uri') == queryargs.get('uri')]
+    else:
+        records = cursor.fetchall()
     # Close communication with the database
     cursor.close()
     conn.close()
@@ -649,7 +652,7 @@ def addRecord(table,request,dn):
 
     objs['user_uid'] = cursor.fetchone()['uuid']
     objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
-    print('addrecord', objs,objkeys)
+    if dbdebug: print('APIDEBUG: addrecord', objs,objkeys)
 
     q = ( "insert into "+table+" (" + ",".join([query_map[table][x] for x in objkeys]) +
           ") values ("+",".join(["%s" for x in objkeys])+")" )
