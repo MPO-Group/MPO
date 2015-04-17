@@ -13,6 +13,7 @@ MinSpareServers 5
 MaxSpareServers 10
 
 
+Alias /mpo/doc /var/www/mposvn/doc/
 
 #these are typically put in /etc/apache2/sites-enabled/default-ssl or equivalent
 #change user,group as appropriate
