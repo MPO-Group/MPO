@@ -66,12 +66,13 @@ def before_request():
     if DB_SERVER=='prod':
        CONN_TYPE='api'
     elif DB_SERVER=='test':
-       CONN_TYPE='test-api'
+       CONN_TYPE='test-api'  #remove 'test-api' to use with uwsgi api server
     else:
        CONN_TYPE='demo-api'
 
     if webdebug:
-       print ("WEBSERVER: db set to ",DB_SERVER)
+        print ("WEBSERVER: db set to ",DB_SERVER)
+        print ('web debug, api_prefix',API_PREFIX)
 
     API_PREFIX=MPO_API_SERVER+""+CONN_TYPE+"/"+MPO_API_VERSION
 
@@ -198,6 +199,7 @@ def workflows():
             #wf_type=""
             #r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
 
+        if webdebug: print('web debug rjson',rjson, rmin, rmax)
         rjson=rjson[rmin-1:rmax]
         #calculate number of pages
         num_pages=int(math.ceil(float(num_wf)/float(rpp)))

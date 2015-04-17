@@ -60,23 +60,27 @@ class DataobjectTest(unittest.TestCase):
         print( "created a dataobject in create_object with uid: "+ str(do_uid) +","+str(doi) )
 
         
-    @attr(only='this') 
+
     def create_object_bare_test(self):
         "creating dataobject by itself."
         dataobject=self.m.add(name="ImportantFile",desc="Adding a bare dataobject from uri in nose test",
-                   uri="ftp://some.server.com/somefile")[0]
-        print ('bare test',dataobject)
-        doi=dataobject.get('uid')
+                   uri="ftp://some.server.com/somefile4")
+        print ('create object bare test',dataobject)
+        doi=dataobject[0].get('uid')
         print( "created a bare dataobject in create_object with uid: "+ str(doi) )
         assert doi
 
-
+    @attr(only='this')
     def create_object_bare_two_test(self):
         "creating duplicate dataobject by itself."
-        do=self.m.search(route='dataobject', params={'uri':"ftp://some.server.com/somefile"} )[0]
+        #do=self.m.search(route='dataobject', params={'uri':"ftp://some.server.com/somefile"} )[0]
+        do=self.m.search(route='dataobject' )[0] #get first one and use its uri
+        print('making duplicate of do:',do)
         dataobject=self.m.add(name="ImportantFile",desc="Adding a bare dataobject from uri in nose test",
-                   uri="ftp://some.server.com/somefile")[0]
-        doi=dataobject.get('uid')
+                              uri=do.get('uri'))
+#                   uri="ftp://some.server.com/somefile")[0]
+        print ('create object bare two test dataobject:',dataobject)
+        doi=dataobject[0].get('uid')
         print( "created a duplicate bare dataobject in nose test with uid: "+ str(doi) )
         assert doi==do.get('uid')
 

@@ -61,14 +61,15 @@ class CollectionTest(unittest.TestCase):
         "Verify GET collection returns correct fields."
         assert 1==1
 
-        
+    @attr(only='this')
     def test_collection4(self):
         "Collection of workflows. Also tests adding elements to existing collection."
         c1=self.m.collection(name="Nose_collection-workflows",
                              desc="Creating a collection of workflows in unit tests in "+ __name__)
-
+        print ('c1 is ', c1)
         #add a workflow
         wid=self.m.search(route='workflow')[0].get('uid')
+        print(' adding workflow ',wid)
         eid=self.m.collection(collection=c1['uid'],elements=[wid]) #[0].get('uid')
         print ('eid is ', eid)
         ce=self.m.search(route='collection/'+c1.get('uid')+'/element')

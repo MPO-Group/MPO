@@ -1,22 +1,22 @@
 #!/bin/sh
 #specify MPO server address. The API will read this value.
 #defaults are used if environment is not set
+
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+    echo MPO_HOME not defined, using relative path
+    export MPO_HOME=$(dirname $0)/../../../
+    echo using MPO_HOME = $MPO_HOME
+fi
+
 if ! [ -n "${MPO_HOST:+x}" ]
 then
   export MPO_HOST=https://localhost:8443
 fi
 
-
 if ! [ -n "${MPO_VERSION:+x}" ]
 then
   export MPO_VERSION=v0
-fi
-
-
-if ! [ -n "${MPO_HOME:+x}" ]
-then
-  echo MPO_HOME not defined, exiting
-  exit
 fi
 
 if ! [ -n "${MPO:+x}" ]
@@ -33,7 +33,7 @@ shot=550335
 #use API methods to create a workflow, exit if this fails. likely server is down.
 wid=`$MPO init --name=EFIT --desc="A first EFIT workflow" --type=EFIT`
 #check value, we use string comparison because UUID is a string
-if [ "$wid" -eq "-1" ]
+if [ "$wid" == "-1" ]
 then
    echo Critical error, cannot create workflow. Check configuration and server status.
    exit

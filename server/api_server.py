@@ -29,6 +29,10 @@ except Exception, e:
     print('MPO_DB_CONNECTION not found: %s. Using default mpoDB at localhost.' % e)
     conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
 
+#See if we want to server in a subdirectory internally, only used by uwsgi internal server
+#NOT USED PRESENTLY
+mount_point= os.environ.get('MPO_API_MOUNT')
+
 rdb.init(conn_string)
 
 app = Flask(__name__)
@@ -174,6 +178,7 @@ def get_api_version(url):
     root_url=o.scheme+"://"+o.netloc+o.path[:o.path.find(version)+len(version)] #url w/o query strings or parameters
 
     #Throw an exception if no version string is found
+    if apidebug: print('url is',url, version,root_url,root)
     return version,root_url,root
 
 
@@ -625,7 +630,8 @@ def getWorkflowCompositeID(id):
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
 def dataobject(id=None):
-    """Route to add data objects and connect their instances to workflows.
+    """
+    Route to add data objects and connect their instances to workflows.
 
     Route: GET  /dataobject/<id>
            Retrieves information on a specific dataobject.
@@ -676,7 +682,7 @@ def dataobject(id=None):
             popuid=req.pop('uid')
         else:
             do = False
-        print('do debug', str(do),req.get('uid'),req.get('uri'),str(req) )
+            
         #If the D.O. exists, point to it, if not, make it and point to it
         if do:
             if not (req.get('work_uid') and req.get('parent_uid')):
@@ -686,17 +692,19 @@ def dataobject(id=None):
             else:
                 req['do_uid']=do[0]['uid']
         else:
-            do = rdb.addRecord('dataobject',request.data,dn=dn)
+            do_add = rdb.addRecord('dataobject',request.data,dn=dn)
+            do = rdb.getRecord('dataobject',{'uid':do_add['uid']},dn=dn) #retrieve it to get full record
             if not (req.get('work_uid') and req.get('parent_uid')):
                 messages['info']='dataobject created. provide both work_uid and parent_uid to attach to a workflow.'
                 do['messages']=messages
                 return Response(json.dumps(do,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
             else:
-                print('do is ',str(do) )
+                if apidebug: print('do is ',str(do) )
                 req['do_uid']=do['uid']
             
 
-        #At this point, we have a dataobject record. Now add it to the workflow since should also have a work_uid and parent_uid
+        #At this point, we have a dataobject record. Now add it to the workflow since should
+        #also have a work_uid and parent_uid
         r = rdb.addRecord('dataobject_instance',json.dumps(req),dn=dn)
         id = r['uid']
         morer = rdb.getRecord('dataobject_instance',{'uid':id},dn=dn)

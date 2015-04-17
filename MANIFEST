@@ -1,0 +1,44 @@
+#Getting started
+README  - start here
+MANIFEST - this file, a short descriptive list of files in this directory
+DEPENDENCIES - a list of required software and python packages
+pip_list.txt - list of all required python packages is format suitable for
+	       loading by pip
+INSTALL - installation instructions
+setup.py - install script, not complete yet 
+apache2-site-config - configuration for apache serving MPO
+GA_httpd.conf - GA specific customizations for apache
+
+#Certificates
+MPO Demo User.p12 - certificate for Demo user
+MPO Demo User.pem  - certificate for Demo user
+MPO-UI-SERVER.crt  - certificate for UI, permits UI to talk to API
+MPO-UI-SERVER.key  - key for UI certificate
+mpo.psfc.mit.edu-ca.crt - certificate authority for MIT MPO server
+mpo.psfc.mit.edu.crt    - certificate for MIT MPO server
+mpo.psfc.mit.edu.key    - key for MIT MPO server  
+host_certificate.H4022.mpo.gat.com.pem - GA specific certificate
+private_key.pem - GA specific certificate
+
+#Servers
+api_server.sh - script to launch uwsgi API server for local usage and testing
+functions.sh - helper functions for api_server.sh
+api_server.wsgi - python wsgi launcher used by api_server.sh
+ga_api_server.sh - GA specific mods of above
+ga_web_server.sh - GA specific web server wsgi script
+event_server.sh - script to launch uwsgi event server for local usage and testing
+mdsplus.wsgi - python wsgi launcher used by event server. Requires mdsplus
+web_server.sh - shell script to launch uwsgi web server
+web_server.wsgi - python wsgi application for launch by web_server.sh
+
+#clients
+mpo.conf - configuration file for commandline client 
+mpo.py   - top level procedure for commandline client
+
+client/  - client implementations
+server/  - api and UI servers 
+db/      - database implementations and schema
+doc/     - documentation and auto-generated documentation
+tests/   - integrated and unit tests
+
+userlist.txt - initial list of users
