@@ -33,7 +33,7 @@ shot=550335
 #use API methods to create a workflow, exit if this fails. likely server is down.
 wid=`$MPO init --name=EFIT --desc="A first EFIT workflow" --type=EFIT`
 #check value, we use string comparison because UUID is a string
-if [ "$wid" == "-1" ]
+if [ "$wid" = "-1" ]
 then
    echo Critical error, cannot create workflow. Check configuration and server status.
    exit
