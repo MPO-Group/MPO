@@ -171,6 +171,11 @@ padding: 7px 9px;
     background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject_blue.png");
     background-position: center center;
 }
-.lighter{
-	opacity: 0.5;
+
+.big {
+    font-size: 30px;
+  	font-family: Cambria, "Hoefler Text", "Liberation Serif", Times, "Times New Roman", serif;	
+    padding-right: 10px;
+    margin: 0px 0px;
+    color: #F60;
 }

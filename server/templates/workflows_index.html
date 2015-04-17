@@ -1,0 +1,733 @@
+{% extends "base.html" %}
+{% block title %}MPO Workflows{% endblock %}
+{% block hscripts %}
+<script>
+var debug=0;
+var userPaths = [];
+var wfAttrib = [];
+var ontTreeMenu = "";
+var ont_selections = [];
+var subTree="";
+
+$(document).ready(function () {
+	
+	$("input.user_entry:text").val("");
+	$("input.user_entry_wf:text").val("");
+	
+	var jsonstr = '{{ ont_result|tojson }}';
+	var jsondata = jQuery.parseJSON(jsonstr);
+
+	$('.user_entry_wf').on('keydown', function ( evt ) {
+		//user presses enter key
+
+		if( evt.keyCode == 13 ) {
+			var this_name=$(this).attr("name");
+			var this_value=$(this).val();		
+			//loop through dom by class
+			/*$('.user_entry_wf').each(function(i, obj) {
+				//i is index; obj is dom obj
+			});*/
+			//addWfAttrib(evt.target.id, $(this).val());
+			var url="{{ url_for("workflows") }}";
+			var wftype="{{ wf_type }}";
+			var r="{{ rpp }}";
+			url+="?wf_type=" + wftype + "&r=" + r + "&"+this_name+"="+this_value;
+			window.location=url;
+		}
+	}); 
+
+	$('#wf_type_sel').on('change', function () {
+		var url = $(this).val(); // get selected value
+		if (url) { // require a URL
+		  window.location = url; // redirect
+		}
+		return false;
+	});
+
+	/**
+	*function handles comment submit event for each workflow in the list
+	*/
+	$('[id^=submit_comment_]').submit(function(event) {
+		var fadeTime = 5000;
+		var formData = $(this).serialize();
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('submit_comment') }}', // the url where we want to POST
+			data 		: formData, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			console.log(data);	
+			var prependHtml = '<blockquote id="block_' + data[0].uid  + '" >';
+			prependHtml += '<p style="font-size: 12px">' + data[0].content + '</p>';
+			prependHtml += '<small>by <cite title="Source Title"> '+ data[0].username +' - ' + data[0].time.substring(0,16) + ' </cite></small>';
+			prependHtml += '</blockquote><hr>';
+			
+			var p_uid=data[0].parent_uid;
+			var c_uid=data[0].uid;
+			
+			$("a#commentCtr"+p_uid).text(parseInt($("a#commentCtr"+p_uid).text())+1);
+			
+			$("#commentDrop"+p_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
+			
+			//drop comment section if it is not already dropped
+			if(!($('#commentDrop'+p_uid).hasClass('in'))) {
+				$('#commentDrop'+p_uid).addClass('in');
+				$('#commentDrop'+p_uid).css('height','auto');
+			}
+
+			$('#submit_results_'+p_uid).show();
+			$('#submit_results_'+p_uid).html("Comment submitted.");
+			$('#submit_results_'+p_uid).fadeOut(fadeTime, function() {
+					// Animation complete.
+					$('#submit_results_'+data[0].parent_uid).html("");
+				});
+			$('#block_' + c_uid).css('background-color', '#ddffdd');
+			$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);
+		});
+		// stop the form from submitting the normal way and refreshing the page
+		event.preventDefault();
+	});
+
+	//traverse(jsondata,process);
+	getMenuTopLevel(jsondata);
+	$("#ont_listing").append(ontTreeMenu);
+	//$("#wf_attr_list").find('>ul').show();
+	//$("#ont_tree").find('>ul').show();
+
+});
+
+function addOntPath(parent,subparent,child) {
+	tmppath="";
+	
+	if(parent) {
+		var foundp=false;
+		for(var i=0;i<userPaths.length;i++) {
+			if(userPaths[i].match(parent)) {
+				foundp=true;
+			}
+			else
+				foundp=false;
+		}
+		if(!foundp)
+			userPaths.push(parent);
+	}
+	if(subparent) {
+		var foundsp=false;
+		
+		for(var i=0;i<userPaths.length;i++) {
+			if (userPaths[i]===parent) {
+				userPaths.splice(i,1);				
+			}
+			else {
+				if(userPaths[i].indexOf(parent+","+subparent) != -1) {
+					foundsp=true;
+				}
+				else
+					foundsp=false;
+			}
+		}
+		if(!foundsp)
+			userPaths.push(parent+","+subparent);
+	}	
+	if(child) {
+		var foundc=false;
+		var index="";
+		tmpp=parent+","+subparent;
+		for(var i=0;i<userPaths.length;i++) {
+			if (userPaths[i]===tmpp) {
+				userPaths.splice(i,1);
+			}			
+			else if (userPaths[i].indexOf(tmpp+",") != -1) {
+				index=i;
+				if(userPaths[i].indexOf(child) != -1)
+					foundc=true;
+				else {
+					foundc=false;
+				}
+			}				
+		}
+		if(!foundc) {
+			if (index!=="") {
+				userPaths[index]=userPaths[index].concat(" &amp; "+child);
+			}
+			else
+				userPaths.push(parent+","+subparent+","+child);
+		}
+	}
+	
+	if(debug) console.log(userPaths);
+	
+	//var tmpArr=ontologyPathStr.split(",");
+	$("#ont_path").empty();
+	$("#nav_split").show();
+	$("#ont_search_header").show();
+	for (var x=0;x<userPaths.length;x++) {
+		tmpArr=userPaths[x].split(",");
+		$("#ont_path").append('<div>');
+		for(k=0;k<tmpArr.length;k++) {
+			if((k+1)===tmpArr.length)
+				$("#ont_path").append(tmpArr[k]);
+			else
+				$("#ont_path").append(tmpArr[k] + " > ");
+		}
+		$("#ont_path").append('</div>');
+	}
+	//$("#ont_path").html('<div class="muted"><small><em>'+output+'</em></small></div>');
+	//$("#ont_path").append('<div class="muted"><small><em>'+ontologyPathStr+'</em></small></div>');
+}
+
+function getSpecifiedValue(e,ot_guidv,parent,subparent,child) {
+	//check for enter key pressed
+    if (e.keyCode == 13) {
+		var value=$("#"+ot_guidv).val(); //get user input value
+		addOntPath(parent,subparent,child + "=" + value);		
+    }
+}
+
+function addWfAttrib(eleID,value) {
+	if(eleID == "wf_type_val")
+		wfAttrib["type"]=value;
+	else if(eleID == "wf_name_val")
+		wfAttrib["name"]=value;
+	else if(eleID == "wf_desc_val")
+		wfAttrib["desc"]=value;
+	else if(eleID == "wf_user_val")
+		wfAttrib["user"]=value;
+	else if(eleID == "wf_ln_val")
+		wfAttrib["lastname"]=value;
+	else if(eleID == "wf_fn_val")
+		wfAttrib["firstname"]=value;				
+	else if(eleID == "wf_time_val")
+		wfAttrib["time"]=value;
+	
+	$("#wf_path").empty();
+	$("#nav_split").show();
+	$("#wf_search_header").show();
+	var output="";
+	for(var key in wfAttrib) {
+		if (wfAttrib.hasOwnProperty(key)) {
+			output += key+"="+wfAttrib[key] + " & ";
+		}
+	}
+	output=output.substring(0, output.length - 2)
+	$("#wf_path").html(output);
+}
+
+function showWfMore() {
+	$("#wf_attrib").toggle();
+	$("#wf_more").toggle();
+	$("#wf_hide").toggle();
+}
+
+//called with every property and it's value
+function process(key,value) {
+    if(debug) console.log(key + " : "+value);
+}
+//recursive loop through json tree
+function traverse(obj,func) {
+    for (var i in obj) {
+        func.apply(this,[i,obj[i]]);
+        if (obj[i] !== null && typeof(obj[i])=="object") {
+			traverse(obj[i],func);
+        }
+    }
+}
+
+//build first level of ontology tree menu
+function getMenuTopLevel(obj) {
+	for (var key in obj) {
+		if(obj.hasOwnProperty(key)) {
+			ontTreeMenu+="<ul>";
+			for(var x in obj[key]) {
+				if(obj[key][x].hasOwnProperty("data")) {
+					//if(debug) { console.log(obj[key][x]["data"].name); }
+					var onclickStr = 'onClick="getSubLevel(\''+obj[key][x]["data"].uid+'\');"';
+					ontTreeMenu+="<li id=\""+obj[key][x]["data"].uid+"\"><a "+onclickStr+">"+obj[key][x]["data"].name;
+					if(obj[key][x].hasOwnProperty("children")) {
+						ontTreeMenu+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>"; //add down arrow
+					}
+					ontTreeMenu+="</a></li>";
+				}
+			}
+			ontTreeMenu+="</ul>";
+		}
+	}
+}
+
+//append list to parent
+function getMenuChildren(obj,parent_id) {
+	//Object {"Type": {"name": "Type", "parent_uid": "58c19102-b1b7-4f8d-8202-18fde0a88bad", "uid": "ee39ae67-139e-433e-b666-441437faa413"}}
+	subTree="<ul>";
+	for (var key in obj) {
+		if(obj.hasOwnProperty(key)) {
+			var onclickStr = 'onClick="getSubLevel(\''+obj[key].uid+'\');"';
+			subTree+="<li id=\""+obj[key].uid+"\"><a "+onclickStr+">"+obj[key].name;
+			if(checkSubLevel(obj[key].uid))
+				subTree+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>"; //add down arrow
+			subTree+="</a></li>";
+		}
+	}
+	subTree+="</ul>";
+	$("#"+parent_id).append(subTree);
+}
+
+function getSubLevel(uid) {
+	if(ont_selections.indexOf(uid) > -1) {
+		$("#"+uid).find('>ul').slideToggle();
+	}
+	else {
+		ont_selections.push(uid);
+		//url="/mpo/ontology/children/"+uid;
+		url="{{ url_for("ont_children") }}" + "/" + uid;
+		var jqxhr = $.ajax(url)
+		.done(function(data) {
+			if(!$.isEmptyObject(data)) {
+				getMenuChildren(data,uid);
+			}
+			else {
+				//show attributes
+				//alert("empty");
+			}
+		});
+	}
+}
+
+function getAttrib(uid) {
+	if(ont_selections.indexOf(uid) > -1) {
+		//$("#"+uid).slideToggle();
+		$("#"+uid).find('>ul').slideToggle();
+	}
+	else {
+		ont_selections.push(uid);
+		//url="/mpo/ontology/children/"+uid;
+		url="{{ url_for("ont_children") }}" + "/" + uid;
+		var jqxhr = $.ajax(url)
+		.done(function(data) {
+			getMenuChildren(data,uid);
+		});
+	}
+}
+
+function checkSubLevel(uid) {
+	//url="/mpo/ontology/children/"+uid;
+	url="{{ url_for("ont_children") }}" + "/" + uid;
+	var tmp1=0;
+
+	/*var jqxhr = $.ajax(url).done(function(data) {
+		console.log(data);
+		if(!$.isEmptyObject(data)) {
+			subTree+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>";
+			console.log(subTree);
+		}
+	});*/
+	var jqxhr = $.ajax({
+		url: url,
+		async: false
+	});
+	
+	jqxhr.done(function(data) {
+		if(!$.isEmptyObject(data)) {
+			subTree+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>";
+		}
+	});	
+}
+
+//workflow id, numq => quality value (1-4)
+function setWfQuality(wfid,numq) {
+	//ajax.post --> serialized json
+
+	//star images info
+	var numstars=4;
+	var img=["star_empty.png","star.png"];
+	var imgpath = "static/img/";
+	var imgstr="_img";
+
+	//POST data to API route
+	var url="{{ url_for('ontology_instance') }}";
+	var ont_path='/Generic/Status/quality';
+	var parent_uid=wfid;
+	var user="None";
+	var postData = {'parent_uid': parent_uid, 'value': numq.toString(), 'path': ont_path, 'user': user };
+
+	var jqxhr = $.ajax({
+		type: "POST",
+		url: url,
+		data : JSON.stringify(postData),
+		contentType: 'application/json'
+	});
+	
+	//remove pointer cursor class
+	$('#'+wfid+'_quality').removeClass('set_quality');
+	
+
+	//ajax request returns uid of 'quality' instance
+	jqxhr.done(function(data) {
+		console.log(data);
+	});
+
+	//set star image src according to star clicked
+	for(i=1;i<=numstars;i++) {
+		var img_element='#'+wfid+imgstr+i;
+		if(i<=numq)
+			$(img_element).attr('src', imgpath+img[1]); //star on
+		else
+			$(img_element).attr('src', imgpath+img[0]); //star off
+	//	$(img_element).removeAttr('onclick'); //remove onclick functionality
+	}
+}
+
+
+
+</script>
+<style>
+#nav_split, #ont_search_header, #wf_search_header, #wf_attrib, #wf_hide {
+	display: none;
+}
+.nav_search_header {
+ 	font-size: small;
+	color: #999;
+	font-style: italic;	
+}
+
+ul ul {
+    /*display:none;   */
+}
+ul li:hover > ul {
+    /*display:block;   */
+}
+.attrib {
+	font-size: small;
+	font-weight: normal;
+	font-style: normal;
+	text-decoration: none;
+	text-transform: none;
+}
+.user_sel {
+	font-size:12px;
+	font-style:italic;
+	color:#390;
+}
+.type_sel {
+	font-size:11px;
+	color:#666;
+	width: 80px;
+	border: 1px thin #ddd;
+	height: 22px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;		
+}
+.wf_more {
+	font-style: italic;
+	text-transform:none;
+	font-weight: 200;
+	list-style-type: none;
+}
+#clear_ont_path {
+	background-color: #F90;
+	height: 10px;
+	font-size: 9px;
+	color: #fff;
+	padding: 2px;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+ul li input.user_entry {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 50px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+ul li input.user_entry_wf {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 125px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+
+ul li input.user_time_wf {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 60px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+
+#ont_listing ul li {
+	font-size: 12px;
+	font-weight: normal;	
+}
+#ont_listing ul li ul li {
+	font-size: 12px;
+	font-weight: normal;
+	font-style: normal;
+	text-transform: none;
+}
+#ont_listing ul li ul li ul li {
+	font-size: 12px;
+}
+
+.set_quality {
+	cursor: pointer;
+}
+
+</style>
+{% endblock %}
+{% block workflows_active %} class="active" {% endblock %}
+{% block container %}
+    <div class="row-fluid">
+   	<div class="span12">
+    <h4>MPO Workflows</h4>
+    	<div class="row-fluid">
+<!-- If data exists in DB -->
+{% if results %}    
+		<!-- left navigation menu span -->
+        <div class="span3">
+          <div class="well sidebar-nav">
+          	<!-- workflow nav menu -->
+				<ul class="nav nav-list">
+	                <li>
+                    	<div id="wf_search_header" class="nav_search_header">Workflow Attributes: </div>
+                        <div id="wf_path" class="user_sel"></div>
+                    </li>                
+	                <li>
+                    	<div id="ont_search_header" class="nav_search_header">Selected Ontology: </div>
+                        <div id="ont_path" class="user_sel"></div>
+                    </li>
+                    <li id="nav_split">
+                    	<hr>
+                    </li>
+                    <li id="wf_attr_list" class="nav-header" style="cursor:pointer;">Workflow
+                	<ul>
+                        <li class="attrib"><a href="#">type</a> <span class="muted">=</span>
+                        <select id="wf_type_sel" class="type_sel">
+                        	<option value="{{ url_for("workflows", r=rpp) }}">ALL</option>
+                            {% if wf_type_list %}
+                            	{% for t in wf_type_list %}
+                           			<option value="{{ url_for("workflows", wf_type=t,r=rpp) }}" {% if wf_type==t %} selected="selected" {% endif %}>{{ t }}</option>
+                            	{% endfor %}
+                            {% endif %}
+                        </select>                    
+                        </li>
+                        <li class="attrib"><a href="#">time</a> <span class="muted">=</span> <input type="text" class="user_time_wf" id="wf_time_val1" name="wf_t1" /> to <input type="text" class="user_time_wf" id="wf_time_val2" name="wf_t2" /></li>
+                        <li id="wf_more" class="wf_more"><a href="#" onClick="showWfMore()">more... <span style="font-size:x-small;color:#ccc">&#9660;</span></a></li>
+                        <div id="wf_attrib">
+                        <li class="attrib"><a href="#">name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_name_val" name="wf_name" /></li>
+                        <li class="attrib"><a href="#">description</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_desc_val" name="wf_description"  /></li>
+                        <li class="attrib"><a href="#">last name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_ln_val" name="wf_lname"  /></li>
+                        <li class="attrib"><a href="#">first name</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_fn_val" name="wf_fname"  /></li>
+                        <li class="attrib"><a href="#">user</a> <span class="muted">=</span> <input type="text" class="user_entry_wf" id="wf_user_val" name="wf_username"  /></li>
+                        <li id="wf_hide" class="wf_more"><a href="#" onClick="showWfMore()">hide...</a></li>
+                        </div>
+                    </ul>
+					</li>
+                </ul>
+                <!-- ontology nav menu -->
+                <ul class="nav nav-list">
+                	<li id="ont_listing" class="nav-header" style="cursor:pointer;">Ontology
+
+                    </li>
+				</ul>
+          </div><!--/.well -->
+        </div><!--/span left navigation-->    
+    	<!-- workflow table list span -->
+		<div class="span9">       
+		{% if results %}
+            <!-- workflow list table -->
+            <table class="main table table-hover" id="mpoTable">
+	            <thead>
+      	        	<tr>
+                		<th width="2%">&nbsp;</th><th width="25%">CompositeID</th><th width="42%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th>
+	              	</tr>
+				</thead>
+                <tbody>
+    		{% for item in results %}
+                <div id="accordion2" class="accordion">
+                	<tr>
+                        {% set wf_number=loop.index+(current_page-1)*rpp %}
+                        <td><span class="muted"><em><small>{{ wf_number }}</small></em></td>
+                        <td>
+                        <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.type }} / {{ item.composite_seq }}</a>
+                        <br /><small><strong>UID: </strong><input type="text" value="{{ item.uid }}" class="small copy" readonly /></small>
+                        </td>
+                        <td>{{ item.description }}</a></td>
+                        <td class="xsmall">{{ item.time }}</td>
+                        <!-- <td>{{ item.username }}</td> -->
+                        <td>
+                            <div class="accordion-group">
+                              <div class="accordion-heading">
+                            <a href="#commentDrop{{ item.uid }}" id="commentCtr{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
+                              {% if item.num_comments %}
+                                {{ item.num_comments }}
+                              {% else %}
+                                0
+                              {% endif %}
+                            </a>
+                        &nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
+                          </div>
+                        </div>
+                   	 	</td>
+                        <td>
+                        {% if item.quality %}
+                             {% if item.quality == "1" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            {% elif item.quality == "2" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            {% elif item.quality == "3" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            {% elif item.quality == "4" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            {% endif %}
+                        {% else %}
+                            <span id="{{ item.uid }}_quality" class="set_quality">
+                                <img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            </span>
+                        {% endif %}
+                        </td>
+              		</tr>
+              		<tr>
+                        <td colspan="8" class="comments"> 
+                          <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
+                            <div class="accordion-inner no-border bot-border light-box">
+                              <form id="submit_comment_{{ item.uid }}">
+                                <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
+                                <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button>&nbsp;&nbsp;<span id="submit_results_{{ item.uid }}"></span></div>
+                              </form>
+                            </div>
+                          </div>
+                        </td>
+              		</tr>	      
+              		<!-- Comment Drop -->
+              		<tr>
+                          <td colspan="8" class="comments"> 
+                        <div class="accordion-body collapse {{ item.show_comments }}" id="commentDrop{{ item.uid }}">
+                          <div class="accordion-inner no-border bot-border">
+                          {% for i in item.comments %}
+                        <blockquote>
+                          <p style="font-size: 12px">{{ i.content }}</p>
+                          <small>by <cite title="Source Title">{{i.username}} {% if i.time %} - {{i.time}} {% endif %}</cite></small>
+                        </blockquote>
+                        <hr>
+                          {% endfor %}
+                          </div>
+                        </div>
+                      </td>
+              		</tr>
+              <!-- END Comment Drop -->
+            </div> <!-- end accordian -->
+			</tbody>
+     	{% endfor %}
+		</table>
+	{% endif %}
+<ul id="contextMenu" class="dropdown-menu" role="menu" style="display:none" >
+    <li><a tabindex="-1" href="#">View details in new tab</a></li>
+    <li><a tabindex="-1" href="#">Copy UID</a></li>
+    <!-- <li class="divider"></li>
+    <li><a tabindex="-1" href="#">Separated link</a></li> -->
+</ul>
+
+            <div style="padding-top:3px;"> <!-- sort menu -->
+                <span class="muted"><small>show:</small>
+                </span>
+                <span class="btn-group">
+                    <a class="btn btn-mini dropdown-toggle" data-toggle="dropdown" href="#">
+                    {{ rpp }}
+                    <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>&nbsp;<a href="{{ url_for("workflows", wf_type=wf_type,r=15) }}">15</a></li>
+                        <li>&nbsp;<a href="{{ url_for("workflows", wf_type=wf_type,r=30) }}">30</a></li>
+                        <li>&nbsp;<a href="{{ url_for("workflows", wf_type=wf_type,r=90) }}">90</a></li>
+                    </ul>
+                </span>
+               <!-- <span class="btn-group">
+                    <a class="btn btn-mini dropdown-toggle" data-toggle="dropdown" href="#">
+                    {% if wf_type %}
+                        {{ wf_type }}
+                    {% else %}
+                        all
+                    {% endif %}
+                    <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>&nbsp;<a href="{{ url_for("index", wf_type="EFIT",r=rpp) }}">EFIT</a></li>
+                        <li>&nbsp;<a href="{{ url_for("index", wf_type="SWIM",r=rpp) }}">SWIM</a></li>
+                        <li>&nbsp;<a href="{{ url_for("index", r=rpp) }}">all</a></li>
+                    </ul>
+                </span> -->
+                <!-- <span class="pull-right"><a href="search" role="button" class="btn btn-mini btn-success"><i class="icon-search icon-white"></i>&nbsp;Search</a></span> -->
+            </div> <!-- /sort menu -->  
+            <div class="pagination pagination-mini text-center">
+            <div id="pages2"> </div>
+            <script type='text/javascript'>
+                var options = {
+                    currentPage: {{ current_page }},
+                    totalPages: {{ num_pages }},
+                    pageUrl: function(type, page, current){
+                        //build URL here ==> /home?p=4&range=91%2C120&r=30
+                        var range1=1;
+                        var range2=15;
+                        if(page!=1) {
+                            range2=page*{{ rpp }};
+                            range1=range2-{{ rpp }}+1;
+                        }
+                        else {
+                            range1=1;
+                            range2={{ rpp }};			
+                        }
+                        return "{{ url_for("workflows") }}"+"?p="+page+"&range="+range1+","+range2+"&r={{ rpp }}"{% if wf_type %}+"&wf_type={{ wf_type }}"{% endif %};
+                    }
+                }
+                $('#pages2').bootstrapPaginator(options);
+            </script>
+            {% set range2=current_page*rpp %}
+            {% set range1=range2-rpp+1 %}
+            {% if range2>num_wf %}
+            {% set range2=num_wf %}
+            {% endif %}
+            <span class="muted"><em><small>showing <span id="range1">{{ range1 }}</span> to <span id="range2">{{ range2 }}</span> of {{ num_wf }} workflows</small></em></span>
+            </div> <!-- /pagination -->
+    	</div> <!-- /table list span -->   
+    	</div> <!-- end of inner fluid -->
+{% else %}
+<p>No results found.</p>
+{% endif %}  
+    </div> <!-- end of span12 -->
+    </div> <!-- end row fluid -->  
+ <em> Page created in: {{ page_created }} seconds. </em>
+{% endblock %}

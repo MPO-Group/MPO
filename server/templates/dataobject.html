@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}MPO Collections{% endblock %}
+{% block title %}MPO Data Object{% endblock %}
 {% block hscripts %}
 <script>
 var debug=0;
@@ -11,11 +11,29 @@ var subTree="";
 
 $(document).ready(function () {
 
+	$("#query_tbl").hide();
+
 	$("input.user_entry:text").val("");
 	$("input.user_entry_wf:text").val("");
 	
-	var jsonstr = '{{ ont_result|tojson }}';
-	var jsondata = jQuery.parseJSON(jsonstr);
+	$('.user_entry_wf').on('keydown', function ( evt ) {
+		//user presses enter key
+
+		if( evt.keyCode == 13 ) {
+			var this_name=$(this).attr("name");
+			var this_value=$(this).val();		
+			//loop through dom by class
+			/*$('.user_entry_wf').each(function(i, obj) {
+				//i is index; obj is dom obj
+			});*/
+			//addWfAttrib(evt.target.id, $(this).val());
+			var url='/home';
+			var wftype="{{ wf_type }}";
+			var r="{{ rpp }}";
+			url+="?wf_type=" + wftype + "&r=" + r + "&"+this_name+"="+this_value;
+			window.location=url;
+		}
+	}); 
 
 	$('#wf_type_sel').on('change', function () {
 		var url = $(this).val(); // get selected value
@@ -50,22 +68,7 @@ $(document).ready(function () {
 		
 	});
 
-
-/*
-	row = $("<tr></tr>");
-   col1 = $("<td>col1</td>");
-   col2 = $("<td>col2</td>");
-   col3 = $("<td>col3</td>");
-   row.append(col1,col2,col3).prependTo("#mytable");  
-*/
-	//traverse(jsondata,process);
-	getMenuTopLevel(jsondata);
-	$("#ont_listing").append(ontTreeMenu);
-	//$("#wf_attr_list").find('>ul').show();
-	//$("#ont_tree").find('>ul').show();
-	
-		/**
-	*function handles comment submit event for each workflow in the list
+	/*function handles comment submit event for each workflow in the list
 	*/
 	$('[id^=submit_comment_]').submit(function(event) {
 		var fadeTime = 5000;
@@ -111,7 +114,6 @@ $(document).ready(function () {
 		// stop the form from submitting the normal way and refreshing the page
 		event.preventDefault();
 	});
-
 });
 
 function addOntPath(parent,subparent,child) {
@@ -357,7 +359,7 @@ function setWfQuality(wfid,numq) {
 	//star images info
 	var numstars=4;
 	var img=["star_empty.png","star.png"];
-	var imgpath = "static/img/";
+	var imgpath = "/static/img/";
 	var imgstr="_img";
 
 	//POST data to API route
@@ -390,77 +392,157 @@ function setWfQuality(wfid,numq) {
 			$(img_element).attr('src', imgpath+img[1]); //star on
 		else
 			$(img_element).attr('src', imgpath+img[0]); //star off
-		$(img_element).removeAttr('onclick'); //remove onclick functionality
+		//$(img_element).removeAttr('onclick'); //remove onclick functionality
 	}
 }
 
 
 
 </script>
+<style>
+#nav_split, #ont_search_header, #wf_search_header, #wf_attrib, #wf_hide {
+	display: none;
+}
+.nav_search_header {
+ 	font-size: small;
+	color: #999;
+	font-style: italic;	
+}
 
+ul ul {
+    /*display:none;   */
+}
+ul li:hover > ul {
+    /*display:block;   */
+}
+.attrib {
+	font-size: small;
+	font-weight: normal;
+	font-style: normal;
+	text-decoration: none;
+	text-transform: none;
+}
+.user_sel {
+	font-size:12px;
+	font-style:italic;
+	color:#390;
+}
+.type_sel {
+	font-size:11px;
+	color:#666;
+	width: 80px;
+	border: 1px thin #ddd;
+	height: 22px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;		
+}
+.wf_more {
+	font-style: italic;
+	text-transform:none;
+	font-weight: 200;
+	list-style-type: none;
+}
+#clear_ont_path {
+	background-color: #F90;
+	height: 10px;
+	font-size: 9px;
+	color: #fff;
+	padding: 2px;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+ul li input.user_entry {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 50px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+ul li input.user_entry_wf {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 125px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+
+ul li input.user_time_wf {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 60px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+
+#ont_listing ul li {
+	font-size: 12px;
+	font-weight: normal;	
+}
+#ont_listing ul li ul li {
+	font-size: 12px;
+	font-weight: normal;
+	font-style: normal;
+	text-transform: none;
+}
+#ont_listing ul li ul li ul li {
+	font-size: 12px;
+}
+
+.set_quality {
+	cursor: pointer;
+}
+
+#workflow_tbl {
+	position:relative;
+	overflow:hidden;
+}
+
+</style>
 {% endblock %}
-{% block collect_active %} class="active" {% endblock %}
+{% block dataobject_active %} class="active" {% endblock %}
 {% block container %}
     <div class="row-fluid">  
     	<!-- workflow table list span -->
-		<div class="span12"><br>
-		{% if results %}
-        	<br />
-        	<a href="/mpo/collections"><small>&lt;&lt; Back to list of collections</small></a>
-        	<h4>MPO Collection: {{ coll_name }} <span class="glyphicon glyphicon-user"></span><small><strong>{{ coll_username }}</strong> - {{ coll_time }}</small></h4>
-            <b>Description:</b> {{ coll_desc }}
-        	<div id="tbl">
+		<div class="span12">
+        	<a href="/mpo/collections"><small>&lt;&lt; Back to list of data objects</small></a>
+        	<h4>MPO Data Object: <font color=#004B82>{{ name }}</font> <span class="icon-user lighter" style="padding-left: 10px"></span> <small><strong>{{ username }}</strong> - {{ time }}</small></h4>
+            <b>URI:</b> {{ uri }} <br />
+            <b>Description:</b> {{ desc }}
+            
+    		<hr />
+        	<div id="workflow_tbl">
+            <h5><img src="/static/img/images/_icon_workflow.png"/> Associated Workflows</h5>
+            {% if workflows.result %} 
             <!-- workflow list table -->
-            <table class="main table table-hover table-striped" id="workflow_table">
+            <table class="main" id="workflow_table" class="table table-striped table-bordered" >
                 <tr>
-                <th width="2%">&nbsp;</th><th width="25%">Name</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th width="3%"></th>
+              	<th width="25%">Name</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th><th width="3%"></th>
               </tr>
-    		{% for item in results %}
+    		{% for item in workflows.result %}
                 <div id="accordion2" class="accordion">
                 <tr>
-                    <td><span class="muted"><em><small>{{ wf_number }}</small></em></span></td>
-                        
-                  <td>{% if item.type == "workflow" %}
-                        <img src="/static/img/images/_icon_workflow.png"/>  
-                   		<a href="{{ url_for("connections", wid=item.uid) }}">{{ item.citem[0].name }}</a> <span class="muted"><br /><em><small>{{ item.citem[0].username }} / {{ item.citem[0].type }} / {{ item.citem[0].composite_seq }}</em></span><br />
-							{% elif item.type == "collection" %}
-                        <span class="icon-list-alt"></span>
-                        <a href="{{ url_for("collections", wid=item.uid) }}">{{ item.citem[0].name }}</a> <span class="muted"><br /><em><small>{{ item.citem[0].username }}</em></span><br />
-                        	{% elif item.type == "dataobject" %}
-                        <img src="/static/img/images/_icon_dataobject.png"/>  
-                    	<a href="{{ url_for("dataobject") }}/{{ item.uid }}">{{ item.citem[0].name }}</a>  <span class="muted"><br /><em><small>{{ item.citem[0].uri }}</small></em></span><br />
-                        	{% elif item.type == "dataobject_instance" %}
-                        <img src="/static/img/images/_icon_dataobject.png"/>  
-                    	<a href="{{ url_for("dataobject") }}/{{ item.citem[0].uid }}">{{ item.name }}</a>
-                        <span class="muted"><br /><em><small>{{ item.related }}</small></em></span>
-                       
-                      		{% endif %}
-                    </td>
-                    </td>
-                    	
                   <td>
-	                  {% if item.type == "dataobject_instance" %}
-                      <small>from  
-                        <img src="/static/img/images/_icon_workflow.png"/> 
-                        <a href="{{ url_for("connections") }}/{{ item.citem[0].work_uid }}" > {{ item.wf_cid }}</a></small><br />
-                  		{{ item.description }} <br />
-                        <small><strong>UID: </strong></small><input size="2" type="text" value="{{ item.uid }}" class="small copy" readonly />
-                      {% else %}
-                  		{{ item.citem[0].description }} <br />
-                        <small><strong>UID: </strong></small><input size="2" type="text" value="{{ item.citem[0].uid }}" class="small copy" readonly />
-                      {% endif %} <br />
-                      
-                      
-                  </td>
+                   		<a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} /<strong> {{ item.type }} </strong>/ {{ item.composite_seq }}</a>
+                  </td>                    	
+                  <td>{{ item.description }}</td>
                     	
-                  <td class="xsmall">
-                  {% if item.type == "dataobject_instance" %}
-                   	{{ item.time }} 
-                  {% else %}
-                   	{{ item.citem[0].time }} 
-                  {% endif %}              
-                  </td>
-                    	
+                    <td class="xsmall"> {{ item.time }}</td>
+ 
                     <!-- <td>{{ item.username }}</td> -->
                     <td>
                 <div class="accordion-group">
@@ -475,16 +557,49 @@ function setWfQuality(wfid,numq) {
                 &nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
                   </div>
                 </div>
-                </td>               
+                </td>
                 <td>
-                	<!-- <a href="#"title="remove workflow from collection">[-]</a> -->
+                {% if item.quality %}
+                <!-- <img src="/static/img/star.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> <img src="/static/img/star_empty.png"> -->
+                	{% if item.quality == "1" %}
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                        <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                        <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                        <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                    {% elif item.quality == "2" %}
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                        <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                        <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                        <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                    {% elif item.quality == "3" %}
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                        <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                        <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                        <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                    {% elif item.quality == "4" %}
+                    	<img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                        <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                        <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                        <img id="{{item.uid}}_img4" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',4)">
+                    {% endif %}
+                {% else %}
+                	<span id="{{ item.uid }}_quality" class="set_quality">
+                    	<img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                        <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                        <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                        <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                    </span>
+                {% endif %}
+                </td>
+                <td>
+                	
                 </td>
               </tr>
               <tr>
             <td colspan="8" class="comments"> 
               <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
-                <div class="accordion-inner no-border bot-border">                
-                  <form id="submit_comment_{{ item.uid }}">
+                <div class="accordion-inner no-border bot-border">
+                <form id="submit_comment_{{ item.uid }}">
                 <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
                 <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button></div>
                   </form>
@@ -512,8 +627,40 @@ function setWfQuality(wfid,numq) {
             </div> <!-- end accordian -->
      	{% endfor %}
 		</table>
-	{% endif %}
-    		</div> <!--end workflow table div -->      
+        {% else %}
+         	<p><em>There are no associated workflows.</em></p>
+        {% endif %} <!-- end if workflows-->
+    </div> <!--end workflow table div -->
+    <hr />
+    <!-- begin  collection list-->           
+        	<div id="workflow_tbl"> 
+            <h5><span class="icon-list-alt"></span> Associated Collections</h5>
+            <!-- workflow list table -->
+            {% if coll_list %}
+        	<div id="workflow_tbl">
+            <!-- workflow list table -->
+            <table class="main table table-hover table-striped" id="workflow_table">
+            	<tr>
+                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th>
+              	</tr>
+            	{% for item in coll_list %}
+                	<tr>
+                	<td><a href="{{ url_for("collections", uid=item.collection_uid) }}">{{ item.name }}</a></td>
+                    <td>{{ item.description }} </td>
+                    <td>{{ item.username }} </td>
+                    <td>{{ item.time }} </td>
+                    </tr>
+                {% endfor %}
+               </table>
+           {% else %}
+               	<p><em>There are no associated collections.</em></p>
+           {% endif %}  
+	
+    		</div> <!--end workflow table div -->
+    <!-- end collection list -->       
+            
+    
+        
     	</div> <!-- end span9 -->    
     </div> <!-- end row fluid -->
 

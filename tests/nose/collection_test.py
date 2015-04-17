@@ -47,6 +47,7 @@ class CollectionTest(unittest.TestCase):
         assert ce[0].get('uid')==oid
 
 
+
     def test_collection2(self):
         "List collections having a particular item as an element."
         oid=self.m.search(route='dataobject')[0].get('uid')
@@ -92,4 +93,16 @@ class CollectionTest(unittest.TestCase):
         assert ce[1].get('uid')==c2.get('uid')
 
 
-        
+    @attr(only='this')
+    def test_collection6(self):
+        "Create a collection with an dataobject element not in a workflow"
+        #note use of search route which is formatted, get always returns raw response
+        oid=self.m.search(route='dataobject?instance=false')[0].get('uid')
+        print('test collection adding original object with oid to collection: ',oid,'\n')
+        c=self.m.collection(name="Nose_collection",
+                            desc="Creating a collection in unit tests with original dataobject from "+
+                            __name__, elements=[oid] )
+        print('collection created with element', c,str(type(c)))
+        ce=self.m.search(route='collection/'+c.get('uid')+'/element')
+        print('col elements',ce,'\n')
+        assert ce[0].get('uid')==oid

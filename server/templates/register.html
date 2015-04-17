@@ -11,54 +11,62 @@
 {% endif %}
       <div class="leaderboard">
         <div>
-          <h1> MPO Registration </h1>
+          <h1> Certificate Registration with MPO</h1>
         </div>
         	<hr/>
         <div class="row-fluid">
+        <div class="span9 offset2" style="text-align:center">
+        {% if registered %} <p style="background-color:#DFF0D8; padding: 15px;"><strong>This certificate is already registered.</strong><br />You do not need to complete this form because the certficiate you are using is already registered with this MPO.  Please use the navigation menu above to access the MPO.</p> 
+        {% else %} <p style="background-color:#D9EDF7; padding: 15px;"><strong>Welcome! It looks like you have a valid certificate to access the MPO.</strong>
+        
+        <br />To finalize your access request process, please register your certificate with us.  After completing the certificate registration form, you will be able to access the MPO.</p>  {% endif %}
+        </div>
         <div class="span6 offset3">
-            <form id="reg_form" class="form-horizontal span12" action="{{ url_for("register") }}" method="post">  
+        
+        
+            <form data-toggle="validator" role="form" id="reg_form" class="form-horizontal span12" action="{{ url_for("register") }}" method="post">  
             	<div class="control-group">
                 	<label class="control-label"><small><em>*required fields</em></small></label>
                 </div>   
                 <div class="control-group">
                     <label class="control-label" for="firstname">*First Name</label>
                     <div class="controls">
-                        <input type="text" id="firstname" name="firstname" class="span10" value="{{ firstname }}">
+                        <input required type="text" id="firstname" name="firstname" class="form-control span10" value="{{ firstname }}" {% if registered %} disabled {% endif %}>
                     </div>
                 </div>
                 <div class="control-group">
                     <label class="control-label" for="lastname">*Last Name</label>
                     <div class="controls">
-                        <input type="text" id="lastname" name="lastname" class="span10"  value="{{ lastname }}">
+                        <input required type="text" id="lastname" name="lastname" class="form-control span10"  value="{{ lastname }}" {% if registered %} disabled {% endif %}>
                     </div>
                 </div>     
                 <div class="control-group">
                     <label class="control-label" for="organization">*Organization</label>
                     <div class="controls">
-                        <input type="text" id="organization" name="organization" class="span10"  value="{{ organization }}">
+                        <input required type="text" id="organization" name="organization" class="form-control span10"  value="{{ organization }}" {% if registered %} disabled {% endif %}>
                     </div>
                 </div>                              
                  <div class="control-group">
                     <label class="control-label" for="email">*Email</label>
                     <div class="controls">
-                        <input type="text" id="email" name="email" class="span10" value="{{ email }}">
+                        <input required type="email" id="email" name="email" class="form-control span10" value="{{ email }}" {% if registered %} disabled {% endif %}>
                     </div>
                 </div>
                  <div class="control-group">
                     <label class="control-label" for="phone">*Telephone</label>
                     <div class="controls">
-                        <input type="text" id="phone" name="phone" class="span8" value="{{ phone }}">
+                        <input required type="text" id="phone" name="phone" class="form-control span8" value="{{ phone }}" {% if registered %} disabled {% endif %}>
                     </div>
                 </div>
                  <div class="control-group">
                     <label class="control-label" for="username">*Username</label>
                     <div class="controls">
-                        <input type="text" name="username" class="span8" value="{{ username }}">
+                        <input required type="text" name="username" class="form-control span8" value="{{ username }}" {% if registered %} disabled {% endif %}>
                     </div>
                 </div>                
                 <div class="control-group">
                     <div class="controls">
-                        <button type="submit" class="btn btn-success" id="submit">submit</button>
+                        <button type="submit" class="btn btn-success" id="submit" {% if registered %} disabled {% endif %}>Submit</button>
                     </div>
                 </div>
                  <div class="control-group">

@@ -3,86 +3,6 @@
 {% block search_active %} class="active" {% endblock %}
 {% block container %}
 
-<!--
-	<form class="form-horizontal leaderboard searchform" action="#">
-        <h1>Search</h1>
-      <legend>Search Parameters</legend>
-        <div class="control-group">
-          <label class="control-label" for="param1">1</label>
-          <div class="controls">
-              <select name="p1type" class="span2">
-                <option>Select...</option>
-                <option value="name">name</option>
-                <option value="desc">description</option>
-                <option value="time">time</option>
-                <option value="dataID">id</option>
-                <option value="comment">comments</option>
-              </select>
-            <input type="text" class="span5" id="param1" placeholder="">
-          </div>
-        </div>
-        <div class="control-group">
-          <label class="control-label" for="param2">2</label>
-            <div class="controls">
-              <select name="p2type" class="span2">
-                <option>Select...</option>
-                <option value="name">name</option>
-                <option value="desc">description</option>
-                <option value="time">time</option>
-                <option value="dataID">id</option>
-                <option value="comment">comments</option>
-              </select>            
-              <input type="text" class="span5" id="param2" placeholder="">
-            </div>
-        </div>
-        <div class="control-group">
-          <label class="control-label" for="param3">3</label>
-            <div class="controls">
-              <select name="p3type" class="span2">
-                <option>Select...</option>
-                <option value="name">name</option>
-                <option value="desc">description</option>
-                <option value="time">time</option>
-                <option value="dataID">id</option>
-                <option value="comment">comments</option>
-              </select> 
-              <input type="text" class="span5" id="param3" placeholder="">
-            </div>
-        </div>
-        <div class="control-group">
-          <label class="control-label" for="param4">4</label>
-            <div class="controls">
-              <select name="p4type" class="span2">
-                <option>Select...</option>
-                <option value="name">name</option>
-                <option value="desc">description</option>
-                <option value="time">time</option>
-                <option value="dataID">id</option>
-                <option value="comment">comments</option>
-              </select>             
-              <input type="text" class="span5" id="param4" placeholder="">
-            </div>
-        </div>
-        <div class="control-group">
-          <label class="control-label" for="param5">5</label>
-            <div class="controls">
-              <select name="p5type" class="span2">
-                <option>Select...</option>
-                <option value="name">name</option>
-                <option value="desc">description</option>
-                <option value="time">time</option>
-                <option value="dataID">id</option>
-                <option value="comment">comments</option>
-              </select>               
-              <input type="text" class="span5" id="param5" placeholder="">
-            </div>
-        </div>      
-       <div class="control-group">
-       	 <div class="controls span7"><button type="submit" class="btn btn-large btn-success pull-right">Search</button></div>
-       </div>
-        
-      </form> -->
-
 <div class="leaderboard">
 	<div id="top">
     <h1>Search</h1>
@@ -91,11 +11,10 @@
     	<div class="span12">
         <form class="form-inline searchform" method="post" action="{{ url_for("search") }}">
             <input type="text" name="query" class="span7 offset2"  value="{% if query %}{{ query.query }}{% endif %}"> <button type="submit" class="btn btn-success">Search</button>
-            <!-- <div class="offset2" style="padding-top:7px;"><small><a href="#">Advanced Search</a></small></div> -->
         </form>
         </div>
     </div>
-    {% if results %}
+    {% if results and results.iteritems() %}
     <hr/>
     <div class="row-fluid">
     	<div class="span12">
@@ -113,41 +32,43 @@
         </div>
     </div>
     <div class="row-fluid">
-    	<div class="span12">
+    	<div class="span12"> 
             	{% for key,value in results.iteritems() %}                	
                 	<div id="{{ key }}" style="padding-top:40px;">
                         <h4 class="text-info">{{ key }}</h4>
                         {% for item in value %}
-                        	<div>
-                            {% if key != "workflow" and key != "user" and key != "comment" and key != "metadata" %}
-                            	{% set result_url=url_for("connections", wid=item.work_uid) %}
-                                <a href="{{ url_for("connections", wid=item.work_uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
-							{% elif key=="user" %}
-                            	{% set result_url=url_for("profile", wid=item.uid) %}
-                                <a href="{{ url_for("profile", wid=item.uid) }}" style="text-decoration:underline;">{{ item.username }}: <em>{{ item.lastname }}, {{ item.firstname }} - {{ item.organization }}</em></a>
-							{% elif key=="comment" %}
-                                <a href="#" style="text-decoration:underline;">{{ item.content }}: <em>by {{ item.username }}</em></a>
-							{% elif key=="metadata" %}
-                                <a href="#" style="text-decoration:underline;">{{ item.key }}: <em>{{ item.value }}</em></a>                                                                
-                            {% else %}
-                            	{% set result_url=url_for("connections", wid=item.uid) %}
-                                <a href="{{ url_for("connections", wid=item.uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
-                            {% endif %}
-                            </div>
+                        	{% if item %}
                             <div>
-                            {% if item != [] %}
-                            {% for k,v in item.iteritems() %}
-                                {% if k == "user" %}
-                                    {% if v %}                    	
-                                    <em>{{ k }}:</em> {{ v.username }}... 
-                                    {% endif %}
-                                {% elif k != "user_uid" %}
-                                    {% if v %}                    	
-                                    <em>{{ k }}:</em> {{ v }}... 
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                            {% endif %}
+                                {% if key != "workflow" and key != "user" and key != "comment" and key != "metadata" %}
+                                    {% set result_url=url_for("connections", wid=item.work_uid) %}
+                                    <a href="{{ url_for("connections", wid=item.work_uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
+                                {% elif key=="user" %}
+                                    {% set result_url=url_for("profile", wid=item.uid) %}
+                                    <a href="{{ url_for("profile", wid=item.uid) }}" style="text-decoration:underline;">{{ item.username }}: <em>{{ item.lastname }}, {{ item.firstname }} - {{ item.organization }}</em></a>
+                                {% elif key=="comment" %}
+                                    <a href="#" style="text-decoration:underline;">{{ item.content }}: <em>by {{ item.username }}</em></a>
+                                {% elif key=="metadata" %}
+                                    <a href="#" style="text-decoration:underline;">{{ item.key }}: <em>{{ item.value }}</em></a>                                                                
+                                {% else %}
+                                    {% set result_url=url_for("connections", wid=item.uid) %}
+                                    <a href="{{ url_for("connections", wid=item.uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
+                                {% endif %}                                   
+                                </div>
+                                <div>
+                                {% if item and item.iteritems %}
+                                    {% for k,v in item.iteritems() %}
+                                        {% if k == "user" %}
+                                            {% if v %}                    	
+                                            <em>{{ k }}:</em> {{ v.username }}... 
+                                            {% endif %}
+                                        {% elif k != "user_uid" %}
+                                            {% if v %}                    	
+                                            <em>{{ k }}:</em> {{ v }}... 
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}                            
+                            {% endif %}     
                             </div>
                             {% if result_url %}
                             <div>

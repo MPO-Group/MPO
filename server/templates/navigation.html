@@ -1,0 +1,45 @@
+
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand">&nbsp;&nbsp;</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+                <li {% block index_active %}{% endblock %}><a href="{{ url_for("index") }}"><span class="icon-home"></span> MPO Home</a></li>
+                <li {% block workflows_active %}{% endblock %}><a href="{{ url_for("workflows") }}"><img src="/static/img/images/_icon_workflow.png"/>   Workflows</a></li>
+                <li {% block collect_active %}{% endblock %}><a href="{{ url_for("collections") }}"><span class="icon-list-alt"></span> Collections</a></li>
+                <li {% block dataobject_active %}{% endblock %}><a href="{{ url_for("dataobject") }}"><img src="/static/img/images/_icon_dataobject.png"> Data Objects</a></li>
+                <li {% block search_active %}{% endblock %}><a href="{{ url_for("search") }}"><span class="icon-search"></span> Search</a></li>
+			</ul>
+            {% if request.path != "/home" %}
+            <span style="float:right; padding-top: 10px">
+            <form class="form-inline" action="{{ url_for('submit_db') }}" method="post">
+            <div class="form-group">
+            <label for="db"><span class="icon-link"></span> Current DB:</label>
+            <select id="_db" name="db" onchange="this.form.submit()">
+            <option value="test"
+            {% if db_server=="test" %}
+                selected
+             {% endif %}
+            >Test Database</option>
+            <option value="prod"
+            {% if db_server=="prod" %}
+                    selected
+             {% endif %}
+            >Production Database</option></select>
+            </div>
+            </form></span>
+            {% endif %}
+            <!--<ul class="nav pull-right">
+                <li><a href="#"><i class="icon-user"></i> Username</a></li>
+            </ul>-->
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>

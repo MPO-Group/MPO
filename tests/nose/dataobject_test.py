@@ -86,3 +86,4 @@ class DataobjectTest(unittest.TestCase):
 
     #other tests:
     #search for dataobject by ID also returns all instances.
+    #add a dataobject vs an instance (ie member of a workflow)

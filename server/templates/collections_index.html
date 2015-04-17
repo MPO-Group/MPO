@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}MPO Collections{% endblock %}
+{% block hscripts %}
+
+<style>
+#nav_split, #ont_search_header, #wf_search_header, #wf_attrib, #wf_hide {
+	display: none;
+}
+.nav_search_header {
+ 	font-size: small;
+	color: #999;
+	font-style: italic;	
+}
+
+ul ul {
+    /*display:none;   */
+}
+ul li:hover > ul {
+    /*display:block;   */
+}
+.attrib {
+	font-size: small;
+	font-weight: normal;
+	font-style: normal;
+	text-decoration: none;
+	text-transform: none;
+}
+.user_sel {
+	font-size:12px;
+	font-style:italic;
+	color:#390;
+}
+.type_sel {
+	font-size:11px;
+	color:#666;
+	width: 80px;
+	border: 1px thin #ddd;
+	height: 22px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;		
+}
+.wf_more {
+	font-style: italic;
+	text-transform:none;
+	font-weight: 200;
+	list-style-type: none;
+}
+#clear_ont_path {
+	background-color: #F90;
+	height: 10px;
+	font-size: 9px;
+	color: #fff;
+	padding: 2px;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+ul li input.user_entry {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 50px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+ul li input.user_entry_wf {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 125px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+
+ul li input.user_time_wf {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 60px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+
+#ont_listing ul li {
+	font-size: 12px;
+	font-weight: normal;	
+}
+#ont_listing ul li ul li {
+	font-size: 12px;
+	font-weight: normal;
+	font-style: normal;
+	text-transform: none;
+}
+#ont_listing ul li ul li ul li {
+	font-size: 12px;
+}
+
+.set_quality {
+	cursor: pointer;
+}
+
+#workflow_tbl {
+	position:relative;
+	overflow:hidden;
+}
+
+</style>
+{% endblock %}
+{% block collect_active %} class="active" {% endblock %}
+{% block container %}
+     <div class="row-fluid"><br/>    
+        <h4>MPO Collections</h4>
+<!-- If data exists in DB -->
+{% if coll_list %}    
+        	<div id="workflow_tbl">
+            <!-- workflow list table -->
+            <table class="main table table-hover table-striped" id="workflow_table">
+            	<tr>
+                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th>
+              	</tr>
+            	{% for item in coll_list %}
+                	<tr>
+                	<td><a href="{{ url_for("collections", uid=item.uid) }}">{{ item.name }}</a><br /><small><b>UID:</b> </small><input size="2" type="text" value="{{ item.uid }}" class="small copy" readonly />
+                    </td>
+                    <td>{{ item.description }} </td>
+                    <td>{{ item.username }} </td>
+                    <td>{{ item.time }} </td>
+                    </tr>
+                {% endfor %}
+               </table> 
+{% else %}
+<p>No results found.</p>
+{% endif %}  
+
+            </div>
+        
+    	</div> <!-- end span12 -->    
+    </div> <!-- end row fluid -->
+
+{% endblock %}

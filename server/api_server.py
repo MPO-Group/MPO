@@ -29,6 +29,10 @@ except Exception, e:
     print('MPO_DB_CONNECTION not found: %s. Using default mpoDB at localhost.' % e)
     conn_string = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"
 
+#See if we want to server in a subdirectory internally, only used by uwsgi internal server
+#NOT USED PRESENTLY
+mount_point= os.environ.get('MPO_API_MOUNT')
+
 rdb.init(conn_string)
 
 app = Flask(__name__)
@@ -174,6 +178,7 @@ def get_api_version(url):
     root_url=o.scheme+"://"+o.netloc+o.path[:o.path.find(version)+len(version)] #url w/o query strings or parameters
 
     #Throw an exception if no version string is found
+    if apidebug: print('url is',url, version,root_url,root)
     return version,root_url,root
 
 
@@ -687,12 +692,12 @@ def dataobject(id=None):
             else:
                 req['do_uid']=do[0]['uid']
         else:
-            do = rdb.addRecord('dataobject',request.data,dn=dn)
+            do_add = rdb.addRecord('dataobject',request.data,dn=dn)
+            do = rdb.getRecord('dataobject',{'uid':do_add['uid']},dn=dn) #retrieve it to get full record
             if not (req.get('work_uid') and req.get('parent_uid')):
                 messages['info']='dataobject created. provide both work_uid and parent_uid to attach to a workflow.'
                 do['messages']=messages
-                #we put do in a list for consistency in returns. addRecord currently does not return a list
-                return Response(json.dumps([do],cls=MPOSetEncoder), mimetype='application/json',status=istatus)
+                return Response(json.dumps(do,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
             else:
                 if apidebug: print('do is ',str(do) )
                 req['do_uid']=do['uid']

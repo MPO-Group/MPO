@@ -56,6 +56,7 @@ fi
 
 export MPO="$MPO -v" #remove/add -v for quiet/verbose output
 export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem'
+export CONN_TYPE='test-api' #mount point used by web_server.py
 echo env is
 env
 
@@ -67,8 +68,9 @@ psql -d $test_db -a -f $MPO_HOME/db/create_tables.sql
 
 #start up api and web servers
 echo Starting up uwsgi servers
-$MPO_HOME/api_server.sh $api_port "host=localhost dbname=$test_db user='mpoadmin' password='mpo2013' " &> api_out.txt &
-$MPO_HOME/web_server.sh $web_port https://localhost:$api_port &> web_out.txt &
+
+$MPO_HOME/api_server.sh $api_port "host=localhost dbname=$test_db user='mpoadmin' password='mpo2013' " /$CONN_TYPE&> api_out.txt &
+$MPO_HOME/web_server.sh $web_port https://localhost:$api_port/$CONN_TYPE &> web_out.txt &
 
 echo %TESTING first create the ontology terms %%%%%%%%%%%%
 #JCW note, make this a script, maybe move them to $MPO_HOME/db

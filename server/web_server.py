@@ -20,6 +20,7 @@ try:
 except ImportError:
     print("MPO Web server error, could not import memcache, page loads may be slower.")
     memcache_loaded=False
+memcache_loaded=False
 from requests_futures.sessions import FuturesSession
 
 app = Flask(__name__)
@@ -43,17 +44,59 @@ else:
     #access to webpages
 
 MPO_API_VERSION = 'v0'
-API_PREFIX=MPO_API_SERVER+"/"+MPO_API_VERSION
+API_PREFIX = ''
+DB_SERVER = ''
+CONN_TYPE = ''
+
 webdebug = True
 app.debug = True
+
 print('WEBSERVER: timestamp app started',stime.time() )
 
-@app.route('/')
-def landing():
-    return render_template('landing.html')
+@app.before_request
+def before_request():
+    global DB_SERVER
+    global API_PREFIX
+    global CONN_TYPE
 
-@app.route('/home')
+    DB_SERVER=request.cookies.get('db_server')
+    if webdebug:
+       print ("WEBSERVER: db selected ", DB_SERVER)
+
+    if DB_SERVER=='prod':
+       CONN_TYPE='api'
+    elif DB_SERVER=='test':
+       CONN_TYPE='test-api'  #remove 'test-api' to use with uwsgi api server
+    else:
+       CONN_TYPE='demo-api'
+
+    if webdebug:
+        print ("WEBSERVER: db set to ",DB_SERVER)
+        print ('web debug, api_prefix',API_PREFIX)
+
+    API_PREFIX=MPO_API_SERVER+""+CONN_TYPE+"/"+MPO_API_VERSION
+
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    if(request.endpoint != 'register'):
+        #Check and redirect to /register if not registered
+        is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs)
+        print (is_mpo_user)
+        if(is_mpo_user):
+            is_mpo_user=is_mpo_user.json()
+            if(len(is_mpo_user)==0):
+        #if is_mpo_user.status_code == 401:
+                return render_template('register.html')
+
+
+@app.route('/')
 def index():
+    return render_template('index.html')
+
+@app.route('/workflows')
+def workflows():
     #use asynchronous requests now
     #use grouped requests:
     groupedrequests=False
@@ -71,7 +114,6 @@ def index():
 
     results=False
     if True:
-#        s = requests.session()
         #Establish API session
         s = FuturesSession(max_workers=45) #can use Pooling as well
         a = requests.adapters.HTTPAdapter(max_retries=4)
@@ -126,7 +168,7 @@ def index():
 
         # need to check the status code
         if r.status_code == 401:
-            return redirect(url_for('landing', dest_url=request.path))
+            return redirect(url_for('index', dest_url=request.path))
 
         rjson = r.json()
 
@@ -157,6 +199,7 @@ def index():
             #wf_type=""
             #r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
 
+        if webdebug: print('web debug rjson',rjson, rmin, rmax)
         rjson=rjson[rmin-1:rmax]
         #calculate number of pages
         num_pages=int(math.ceil(float(num_wf)/float(rpp)))
@@ -208,6 +251,14 @@ def index():
         def comment_cb(sess, resp, index):
             comments = resp.json()
             for temp in comments: #get number of comments, truncate time string
+
+                if temp['user_uid']:
+                    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,temp['user_uid'],), **certargs)
+                    user_info=user_req.json()
+                    username=user_info[0]['username']
+                    temp['username']=username
+
+
                 if temp['time']:
                     thetime=temp['time'][:19]
                     temp['time']=thetime
@@ -228,7 +279,8 @@ def index():
         #retrieve workflow type UID from prior request
         worktreeroot = wf_type_req.result().json()
         #issue new request for workflow type data
-        wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']),
+        if(worktreeroot):
+       	    wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']),
                            headers={'Real-User-DN':dn})
 
         #list of workids for grouped requests
@@ -300,20 +352,22 @@ def index():
                 i['quality']=''
 
 
+    ont_result=""
+    wf_type_list=""
 
-
-    ont_result=ont_tree_req.result().json().get('root').get('children')
-    wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
+    if(worktreeroot):
+    	ont_result=ont_tree_req.result().json().get('root').get('children')
+        wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
 
     #calculate page_created time for display
     time_end = stime.time()
     begin_to_end = time_end - time_begin
     page_created = "%s" %((str(begin_to_end))[:6])
 
-    everything={"page_created":page_created, "results":results, "ont_result":ont_result,
+    everything={"db_server":DB_SERVER,"page_created":page_created, "results":results, "ont_result":ont_result,
                 "rpp":rpp, "current_page":current_page, "wf_type_list":wf_type_list,
                 "num_pages":num_pages, "num_wf":num_wf}
-    return render_template('index.html', **everything)
+    return render_template('workflows_index.html', **everything)
 
 
 
@@ -362,7 +416,7 @@ def graph(wid="", format="svg"):
 
     r=requests.get("%s/workflow/%s/graph"%(API_PREFIX,wid,), **certargs)
     r = r.json()
-    nodeshape={'activity':'rectangle','dataobject':'ellipse','workflow':'diamond'}
+    nodeshape={'activity':'rectangle','dataobject_instance':'ellipse','workflow':'diamond'}
     graph=pydot.Dot(graph_type='digraph')
     nodes = r['nodes']
     #add workflow node explicitly since in is not a child
@@ -374,7 +428,6 @@ def graph(wid="", format="svg"):
         cid=item['child_uid']
         name=nodes[cid]['name']
         theshape=nodeshape[nodes[cid]['type']]
-#        graph.add_node( pydot.Node(cid, label=name, shape=theshape, URL='javascript:postcomment("\N")') )
         graph.add_node( pydot.Node(cid, id=cid, label=name, shape=theshape) )
         if item['child_type']!='workflow':
             graph.add_edge( pydot.Edge(pid, cid) )
@@ -396,7 +449,6 @@ def graph(wid="", format="svg"):
 
     if format == 'svg' :
         response.headers['Content-Type'] = 'text/plain'
-        #response.headers['Content-Type'] = 'image/svg+xml'
     elif format == 'png' :
         response.headers['Content-Type'] = 'image/png'
     elif format == 'gif' :
@@ -427,7 +479,7 @@ def getsvgxml(wid):
                                shape=nodeshape[nodes[wid]['type']]))
 
     object_order={} #stores numerical order of workflow objects.  used
-#for object list display order on workflow detail page
+    #for object list display order on workflow detail page
     object_order[0]={ 'uid':wid, 'name':nodes[wid]['name'], 'type':nodes[wid]['type'], 'time':nodes[wid]['time'] }
     count=1
     prev_name=""
@@ -436,7 +488,6 @@ def getsvgxml(wid):
         cid=item['child_uid']
         name=nodes[cid]['name']
         if prev_name != name:
-            #print(str(count) + " " + name)
             object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'], 'time':nodes[cid]['time'] }
             prev_name=name
             count+=1
@@ -508,20 +559,22 @@ def connections(wid=""):
                 obj_time=data[0]['time']
                 data[0]['time']=obj_time[:19]
             wf_objects[key]['data']=data
-        elif value['type'] == "dataobject":
+        elif value['type'] == "dataobject_instance":
             #get data on each workflow element
-            req=requests.get("%s/dataobject?uid=%s"%(API_PREFIX,value['uid'],), **certargs)
+            req=requests.get("%s/dataobject/%s"%(API_PREFIX,value['uid'],), **certargs)
             data=req.json()
+ 
             if data[0]['time']:
                 obj_time=data[0]['time']
                 data[0]['time']=obj_time[:19]
 
             #get linked workflows using uri
-            if data[0]['uri'] and len(data[0]['uri']) > 1:
-                wf_links_req=requests.get("%s/dataobject?uri=%s"%(API_PREFIX,urllib.quote((data[0]['uri'])),), **certargs)
-                if wf_links_req.text != "[]":
+            if data[0]['do_info']['uri'] and len(data[0]['do_info']['uri']) > 1:
+		wf_links_req=requests.get("%s/workflow?do_uri=%s"%(API_PREFIX,urllib.quote((data[0]['do_info']['uri'])),), **certargs)
+	        if (wf_links_req):
                     wf_links=wf_links_req.json()
                     data[0]['wf_link']=wf_links
+
             wf_objects[key]['data']=data
 
         meta_req=requests.get("%s/metadata?parent_uid=%s"%
@@ -554,7 +607,8 @@ def connections(wid=""):
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
-    everything = {"wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
+#    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
+    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver }
 
     if memcache_loaded:
         mc.set(cache_id, everything, time=600)
@@ -649,10 +703,6 @@ def nodes(wid=""):
     response.headers['Content-Type'] = 'text/plain'
     return response
 
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     dn = get_user_dn(request)
@@ -680,9 +730,9 @@ def search():
                          'activity_short' : {'w':'w_guid'},
                          'dataobject' : {'name':'name', 'description':'description','uri':'uri','uid':'do_guid',
                                          'source_uid':'source_guid','time':'creation_time', 'user_uid':'u_guid'},
-                         'dataobject_instance' : {'do_uid':'do_guid', 'uid':'doi_guid',
-                                                  'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid'},
-                         'dataobject_instance_short': {'w':'w_guid'},
+                         #'dataobject_instance' : {'do_uid':'do_guid', 'uid':'doi_guid',
+                         #                         'time':'creation_time', 'user_uid':'u_guid','work_uid':'w_guid'},
+                         #'dataobject_instance_short': {'w':'w_guid'},
                          'metadata' : {'key':'name', 'uid':'md_guid', 'value':'value', 'key_uid':'type',
                                        'user_uid':'u_guid', 'time':'creation_time',
                                        'parent_uid':'parent_guid',
@@ -696,17 +746,18 @@ def search():
                 for pkey,pvalue in query_map.iteritems():
                     obj_result=[]
                     i=0
+                    found=False
                     for ckey in pvalue:
-                        found=False
                         if(pkey != "metadata_short" and pkey != "dataobject_short" and pkey != "activity_short"): #these get requests do not work and break the loop
                             if(pkey=="mpousers"): #api route is /user and not /mpousers
                                 pkey="user"
                             req=requests.get("%s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,), **certargs)
+
                             if req.text != "[]":
                                 obj_result.extend(req.json())
                                 found=True
                                 if webdebug:
-                                    print('searching route:')
+                                    print('Searching route:')
                                     print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
                     if found:
                         results[pkey]=obj_result
@@ -718,13 +769,11 @@ def search():
         if webdebug:
             print('WEBDEBUG: user query')
             pprint(form)
-            #print('WEBDEBUG: search results')
-            #pprint(results)
 
-        return render_template('search.html', query=form, results=results)
+        return render_template('search.html', query=form, results=results, db_server=DB_SERVER)
 
     if request.method == 'GET':
-        return render_template('search.html')
+        return render_template('search.html', db_server=DB_SERVER)
 
 
 @app.route('/ontology')
@@ -780,6 +829,38 @@ def ontology(uid=False):
 
     return render_template('ontology.html')
 
+@app.route('/submit_db', methods=['POST'])
+def submit_db():
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    newc=''
+    redirect_to_index = redirect(url_for('workflows'))
+    response = app.make_response(redirect_to_index )
+
+    try:
+        form = request.form.to_dict() #gets POSTed form fields as dict; fields: 'parent_uid','comment'
+        form['dn'] = dn
+        r = json.dumps(form) #convert to json
+        if webdebug:
+            print('WEBDEBUG: submit db')
+            pprint(r)
+            print(form['db'])
+        response.set_cookie('db_server',value=form['db'])
+        return redirect_to_index
+
+    except:
+        pass
+
+    return redirect_to_index
+    #return redirect(url_for('index', wid=form['parent_uid'])) # redirects to a refreshed homepage
+    #                                                              # after comment submission,
+    #                                                              # passes workflow ID so that the
+    #                                                              # comments will show for that workflow
+    #return redirect(url_for('connections', wid=wid))
+
+
+
 @app.route('/submit_comment', methods=['POST'])
 def submit_comment():
     dn = get_user_dn(request)
@@ -831,7 +912,6 @@ def ontology_instance():
     response.headers['Content-Type'] = 'text/plain'
     return response
 
-
 @app.route('/collections')
 @app.route('/collections/<uid>', methods=['GET'])
 def collections(uid=False):
@@ -841,7 +921,6 @@ def collections(uid=False):
 
     results=[]
     if True:
-#        s = requests.Session()
         s = FuturesSession(max_workers=45) #can use Pooling as well
         a = requests.adapters.HTTPAdapter(max_retries=10)
         s.mount('https://', a)
@@ -871,23 +950,32 @@ def collections(uid=False):
 
         coll_name="None"
         coll_desc="No collections found"
+        
+        ont_result=[]
+        wf_type_list=[]
+        coll_username=""
+        coll_time=""
+
         if uid:
             #get members of this collection
             r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
             results=r_coll.result().json()
             #get name and desc of this specific collection
             this_coll = [ c for c in coll_list if c['uid']==uid ]
-            if len(this_coll)>0:
-                coll_name=this_coll[0]['name']
-                coll_desc=this_coll[0]['description']
+	    if len(this_coll)>0:            
+		coll_name=this_coll[0]['name']
+            	coll_desc=this_coll[0]['description']
+		coll_username=this_coll[0]['username']
+	    	coll_time=this_coll[0]['time'][:19]
         else: #get members of first collection
             if len(coll_list)>0:
-                r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,coll_list[0]['uid']),
-                             headers={'Real-User-DN':dn}).result()
-                results=r_coll.json()
                 coll_name=coll_list[0]['name']
                 coll_desc=coll_list[0]['description']
-
+               
+    	    everything={ 
+	        "db_server":DB_SERVER, "rpp":rpp, 
+		"coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list }
+  	    return render_template('collections_index.html',  **everything)
 
         #Callbacks for use in following loop
         future_list=[]
@@ -926,15 +1014,17 @@ def collections(uid=False):
             results[index]['num_comments']=len(comments)
             results[index]['comments']=comments
 
-
-        def workflow_cb(sess, resp, index):
-            wf_info=resp.json()
-            if len(wf_info)!=0:
-                thetime=wf_info[0]['time'][:19]
-                wf_info[0]['time']=thetime
+	def collection_item_cb(sess, resp, index):
+            info=resp.json()
+      
+	    if((len(info))>1):
+  	    	info[0]=info
+            if len(info)!=0:
+                thetime=info[0]['time'][:19]
+                info[0]['time']=thetime
             else:
-                wf_info={}
-            results[index]['workflow']=wf_info
+                info={}
+            results[index]['citem']=info
 
 
         #get needed info from prior requests before going through workflows
@@ -945,7 +1035,9 @@ def collections(uid=False):
         else:
             qterm_uid='0'
             print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
-
+	if webdebug:
+	        print("WEBDEBUG: collection results sent to index")
+        	pprint(results)
 
         for index,i in enumerate(results):        #i is dict, loop through list of collection elements
             print('web server collections',i)
@@ -953,21 +1045,56 @@ def collections(uid=False):
             thetime=results[index]['time'][:19]
             results[index]['time']=thetime
 
-            #get workflow info
-            wf_req=s.get("%s/workflow/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                    background_callback=lambda sess,resp,index=index: workflow_cb(sess,resp,index) )
-            future_list.append(wf_req)
+	    #Process workflow items
+ 	    if results[index]['type']=="workflow":
+	    	#get workflow info
+            	wf_req=s.get("%s/workflow/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+            	        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+            	future_list.append(wf_req)
+	    	#get comments for each workflow in a collection
+            	c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+            	        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+            	future_list.append(c)
+            	#get workflow alias #JCW this needs to be extended to object names for general collections
+            	cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+            	          background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
+            	future_list.append(cid)
 
-            #get comments for each workflow in a collection
-            c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                    background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
-            future_list.append(c)
+	    #Process dataobject
+            elif results[index]['type']=="dataobject":
+                #get node info
+                wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+                future_list.append(wf_req)
+                #get comments for each workflow in a collection
+                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+                future_list.append(c)
+	
+	    #Process dataobject
+            elif results[index]['type']=="dataobject_instance":
+               #get node info
+                wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+                future_list.append(wf_req)
+                #get comments for each workflow in a collection
+                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+                future_list.append(c)
+                wf_id=wf_req.result().json()[0]['work_uid']
+	        doi_wf=s.get("%s/workflow/%s"%(API_PREFIX,wf_id), headers={'Real-User-DN':dn}).result()
+                doi_wf_cid=str(doi_wf.json()[0]['username'])+" / "+str(doi_wf.json()[0]['name'])+" / "+str(doi_wf.json()[0]['composite_seq'])
+ 		results[index]['wf_cid']=doi_wf_cid
 
-            #get workflow alias #JCW this needs to be extended to object names for general collections
-            cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                      background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
-            future_list.append(cid)
-
+	    elif results[index]['type']=="collection":
+                #get node info
+                wf_req=s.get("%s/collection/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+                future_list.append(wf_req)
+                #get comments for each workflow in a collection
+                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+                future_list.append(c)
 
             #get workflow ontology terms: quality values
             qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid),
@@ -976,31 +1103,250 @@ def collections(uid=False):
             future_list.append(qual_req)
 
 
+        if webdebug:
+            print("WEBDEBUG: results sent to index")
+            pprint(results)
+
     #JCW unroll callbacks here
     for future in future_list:
         future.result()
 
-    if webdebug:
-        print("WEBDEBUG: collection results sent to index")
-        pprint(results)
-            #print("WEBDEBUG: ontology_results sent to index")
-            #pprint(ont_result)
-
     #retrieve workflow type UID from prior request
     worktreeroot = wf_type_req.result().json()
     #issue new request for workflow type data
-    wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']),
+    if(worktreeroot):
+        wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']),
                         headers={'Real-User-DN':dn})
 
-    ont_result=ont_tree_req.result().json().get('root').get('children')
-    wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
+    ont_result_json=ont_tree_req.result().json()
+    if(ont_result_json):
+        ont_result=ont_result_json.get('root').get('children')
+    if(worktreeroot):
+        wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
 
-    everything={"results":results, "ont_result":ont_result,
+    if webdebug:
+        print("WEBDEBUG: collection results sent to index")
+        pprint(results)
+
+    everything={"db_server":DB_SERVER, "results":results, "ont_result":ont_result,
                 "rpp":rpp, "wf_type_list":wf_type_list,
-                "coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list }
+                "coll_name":coll_name, "coll_desc":coll_desc,
+		"coll_username":coll_username, "coll_time":coll_time  }
 
     return render_template('collections.html',  **everything)
 
+
+@app.route('/dataobjects')
+@app.route('/dataobjects/<uid>', methods=['GET'])
+def dataobject(uid=False):
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    results=False
+    if True:
+        s = FuturesSession(max_workers=45) #can use Pooling as well
+        a = requests.adapters.HTTPAdapter(max_retries=10)
+        s.mount('https://', a)
+        s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
+        s.verify=False
+        s.headers={'Real-User-DN':dn}
+        rpp=15
+
+        #send out some requests for preload
+        #get quality ontology term uid
+        quality_req=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,),
+                           headers={'Real-User-DN':dn})
+
+        #get UID of Workflow types in ontology
+        wf_type_req=s.get("%s/ontology/term?path=/Workflow/Type"%(API_PREFIX,),
+                           headers={'Real-User-DN':dn})
+
+        #get full ontology
+        ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,),
+                           headers={'Real-User-DN':dn})
+
+        quality_info=quality_req.result().json()
+        if len(quality_info)==1:
+            qterm_uid=quality_info[0]['uid']
+        else:
+            qterm_uid='0'
+            print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
+
+        if uid:
+            #Grab specified dataobject
+            r=s.get("%s/dataobject/%s"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
+            if(r):
+               results=r.result().json()
+               if "do_info" in results[0]:
+                   username=results[0]['username']
+                   uri=results[0]['do_info']['uri']
+                   name=results[0]['do_info']['name']
+                   time=results[0]['do_info']['time'][:19]
+                   desc=results[0]['do_info']['description']
+               else:
+                   username=results[0]['username']
+                   uri=results[0]['uri']
+                   name=results[0]['name']
+                   time=results[0]['time'][:19]
+                   desc=results[0]['description']
+ 
+               wf_links_req=requests.get("%s/workflow?do_uri=%s"%(API_PREFIX,urllib.quote(uri)), **certargs)
+               if (wf_links_req):
+                   wf_links=wf_links_req.json()
+                   workflows=wf_links
+                   for item in workflows['result']: 
+                      #filter milliseconds out (note, could be more robustly done with datetime functions)
+                      thetime=item['time'][:19]
+                      item['time']=thetime
+                      pid=item['uid']
+                      #get comments for a workflow
+                      comment=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid), **certargs).result().json()
+                      item['comments']=comment
+                      item['num_comments']=len(comment)
+       
+                      #get quality info for a workflow
+                      qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), **certargs )
+
+                      qual_data = qual_req.result().json()
+                      if qual_data:
+                         if qual_data[0]['value']:
+                             item['quality']=qual_data[0]['value']
+                      else:
+                         item['quality']=''
+   
+            #Grab a list of collections - first, get parent id
+            r=s.get("%s/collection?element_uid=%s"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
+            if(r):
+              # grab all collections for now
+              rc=s.get("%s/collection"%(API_PREFIX), headers={'Real-User-DN':dn})
+              if(rc):
+                  coll_list=rc.result().json()
+              # loop through parents
+              collections=r.result().json()
+              for item in collections:
+                 coll_uid=item['parent_uid']
+                 for citem in coll_list:
+                    if(citem['uid']==coll_uid):
+                       item['name']=citem['name']
+                       item['description']=citem['description']
+                       item['collection_uid']=citem['uid']
+                       break
+        else:
+            #Grab a list of all dataobjects
+	    dataobj_list=""
+            rc=s.get("%s/dataobject"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
+            if(rc):
+            	dataobj_list=rc.json()
+            	for temp in dataobj_list:
+                    if temp['time']:
+                    	thetime=temp['time'][:19]
+                    	temp['time']=thetime
+            everything={"db_server":DB_SERVER,"rpp":rpp, "coll_list":dataobj_list }
+
+            return render_template('dataobject_index.html',  **everything)
+
+    if webdebug:
+        print("WEBDEBUG: results sent to index")
+        pprint(results)
+
+    worktreeroot = wf_type_req.result().json()
+
+    everything={"db_server":DB_SERVER, "workflows":workflows, 
+                "rpp":rpp, "coll_list":collections,
+                "name":name, "desc":desc,
+                "username":username, "time":time, "uri":uri  }
+
+    return render_template('dataobject.html',  **everything)
+
+
+@app.route('/get_server_data', methods=['GET'])
+def get_server_data(uid=False):
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    s = FuturesSession(max_workers=45) #can use Pooling as well
+    a = requests.adapters.HTTPAdapter(max_retries=10)
+    s.mount('https://', a)
+    s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
+    s.verify=False
+    s.headers={'Real-User-DN':dn}
+
+    #Get request values - this should match up with the order of columns in HTML
+    columns=["uid", "name", "description", "uri", "source_uid", "username", "time"]
+    start=int(request.args.get('start'))
+    length=int(request.args.get('length')) 
+    end=start+length
+    draw=int(request.args.get('draw'))
+    order_by=int(request.args.get('order[0][column]'))
+    order_dir=request.args.get('order[0][dir]')
+    #overall serach value
+    search_str=request.args.get('search[value]')
+    i=0;
+
+    #search per column - columnsx4][search][value]
+#    for c in columns:
+#       col_searchable=str(request.args.get("columns[%s][searchable]"%(i,)))
+#       col_search_str=str(request.args.get("columns[%s][search][value]"%(i,)))
+#       i=i+1
+
+#       print ("COL: ",c," searchable: ",col_searchable, " AND VALUE: ", col_search_str)
+
+#       if(col_search_str<>"None"):
+#          rc=s.get("%s/dataobject?%s=%s"%(API_PREFIX,c,col_search_str,), headers={'Real-User-DN':dn}).result()
+#          if(rc):
+#               data_list=rc.json();
+
+    #Grab a list of all dataobjects
+    data_list=[]
+    if(search_str):
+        for c in columns:
+            this_list=[]
+#	    rc=s.get("%s/dataobject?uri=%s"%(API_PREFIX,search_str,), headers={'Real-User-DN':dn}).result()
+	    rc=s.get("%s/dataobject?%s=%s"%(API_PREFIX,c,search_str,), headers={'Real-User-DN':dn}).result()
+
+	    if(rc):
+               this_list=rc.json()
+               if("message" in this_list):
+	           this_list=[]
+               else:
+                   data_list+=this_list
+#                   in_data_list=set(data_list)
+#                   in_this_list=set(this_list)
+#                   new_to_add=in_this_list-in_data_list
+#  	           data_list=data_list+list(new_to_add)
+     	    #   data_list=rc.json()
+    else:
+    	#rc=s.get("%s/dataobject?instance=False"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
+	rc=s.get("%s/dataobject"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
+        if(rc):
+            data_list=rc.json()
+            #for i in range(len(data_list)):
+            #   data_list[i]['name']=data_list[i]['name']
+            #   data_list[i]['uri']=data_list[i]['uri']
+            #   data_list[i]['description']=data_list[i]['description']
+	    #   date_list[i]['source_uid']=data_list[i]['source_uid']
+
+    if(data_list):
+        total=len(data_list)
+#        keylist = data_list.keys()
+
+        if("message" in data_list):
+            data_list=[]
+  	if(data_list):
+	    #order list
+            if(order_dir=="desc"):
+                data_list.sort(key=lambda e: e[columns[order_by]], reverse=True)
+            else: 
+	        data_list.sort(key=lambda e: e[columns[order_by]])
+            data_list=data_list[start:end]
+            for temp in data_list:  
+               if temp['time']:
+                   thetime=temp['time'][:19]
+                   temp['time']=thetime
+
+    return jsonify(draw=draw, recordsTotal=total, recordsFiltered=total, data=data_list)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -1052,7 +1398,7 @@ def register():
                         msg="Thank you for registering."
                         if webdebug:
                             print (msg)
-                        return render_template('profile.html', msg=msg, result=result)
+                        return render_template('index.html', msg=msg, result=result)
                 else:
                     if webdebug:
                         print('WEBDEBUG: WARNING: in /register no status field in reply')
@@ -1061,7 +1407,7 @@ def register():
                     msg="Thank you for registering."
                     if webdebug:
                         print (msg)
-                        return render_template('profile.html', msg=msg, result=result)
+                        return render_template('index.html', msg=msg, result=result)
             else:
                 return render_template('register.html', msg=check, form=form)
 
@@ -1071,7 +1417,14 @@ def register():
             pass
 
     if request.method == 'GET':
-        return render_template('register.html', form="_")
+        #Check and redirect to /register if not registered
+        is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs)
+        if(is_mpo_user):
+            is_mpo_user=is_mpo_user.json()
+            if(len(is_mpo_user)==0): #Not registered, display form
+                return render_template('register.html', registered=0)
+            else:  #Already registered, disable form from template
+                return render_template('register.html', registered=1)
 
 @app.route('/profile')
 def profile():
@@ -1113,10 +1466,6 @@ def testfeed():
      </html>
     """%MPO_API_SERVER
     return(debug_template)
-
-@app.route('/docs')
-def docs():
-    return app.send_static_file('docs.html')
 
 
 def get_child_terms(uid):

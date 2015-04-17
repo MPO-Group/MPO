@@ -22,6 +22,7 @@ function usage {
   -h                   - print this message
   port                 - network port to listen on [8443]
   db_connection_string - string to connect to the database
+  mount point          - root url [/test-api] (NOT FUNCTIONAL YET)
 
   for example:
     ./api_server.sh 8443 'host=localhost dbname=mpoDB user=xxx password="yyy"'
@@ -44,6 +45,7 @@ mydir=`dirname $myfp`
 PYTHONPATH=$mydir/db:$mydir/server
 echo PYTHONPATH = $PYTHONPATH
 #this ignores any environmental variable, so you have to give it on the commandline
+MPO_API_MOUNT=${3:-'/'} #was /test-api but doesn't work yet
 MPO_DB_CONNECTION=${2:-host=\'localhost\' dbname=\'mpoDB\' user=\'mpoadmin\' password=\'mpo2013\'}
 MPO_API_SERVER_PORT=${1:-8443}
 MPO_API_SERVER_CERT=$mydir/mpo.psfc.mit.edu.crt
@@ -67,6 +69,7 @@ then
 VIRTPATH="-H $VIRTUAL_ENV"
 fi
 
+#uwsgi $GEVENT_OPT $THREAD_OPT $VIRTPATH --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --mount $MPO_API_MOUNT=$mydir/server/api_server.py  --callable app
 uwsgi $GEVENT_OPT $THREAD_OPT $VIRTPATH --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/api_server.py  --callable app 
 
 #add this above to redirect logging
