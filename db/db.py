@@ -97,7 +97,7 @@ def echo(table,queryargs={}, dn=None):
     Dummy function to test route and api method construction
     """
     queryargs['table']=table
-    return json.dumps(queryargs,cls=MPOSetEncoder)
+    return json.dumps(queryargs)
 
 def getRecordTable(id, dn=None):
     '''
@@ -318,7 +318,7 @@ def getOntologyTermTree(id='0',dn=None):
     #patch the method now for this instance only
     ot_subtree.to_dict=types.MethodType(to_dict, ot_subtree)
 
-    return ot_subtree.to_dict() #json.dumps(ot_subtree.to_dict(),cls=MPOSetEncoder)
+    return ot_subtree.to_dict()
 
 
 def getUser(queryargs={},dn=None):
@@ -362,10 +362,13 @@ def getUser(queryargs={},dn=None):
     return records
 
 
-def addUser(json_request,dn):
+def addUser(json_request,submitter_dn):
+    #The submitter dn will likely be the UI. Of course, this is not the dn we want to add.
+    #it should already be in the json_request. Eventually, some ACL should be applied here
+    #to determine submitter dn permissions and submitter should be a field in user records. --jcw APR 2015
     objs = json.loads(json_request)
     objs['uid']=str(uuid.uuid4())
-    objs['dn']=dn
+#    objs['dn']=dn
 
     #Check for valid keys against query map, we require all fields for user creation
     reqkeys=sorted([x.lower() for x in  query_map['mpousers'].keys() ] )
@@ -374,7 +377,7 @@ def addUser(json_request,dn):
         return '{"status":"error","error_mesg":"invalid or missing fields"}'
 
     if dbdebug:
-        print('adding user:',dn)
+        print('adding user:',objs['dn'],'by dn',submitter_dn)
 
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
@@ -389,7 +392,7 @@ def addUser(json_request,dn):
 
         if dbdebug:
             print(msg)
-        return json.dumps(msg,cls=MPOSetEncoder)
+        return json.dumps(msg)
 
     q = ("insert into mpousers (" + ",".join([query_map['mpousers'][x] for x in reqkeys]) +
          ") values ("+",".join(["%s" for x in reqkeys])+")")
@@ -435,7 +438,8 @@ def validUser(dn):
 
     cursor.execute("select username from mpousers where dn=%s",(dn,))
     records = cursor.fetchone()
-
+    if dbdebug:
+        print('DBDEBUG:: validuser','conn string', conn_string, 'dn',str(type(dn)),dn,'records',records)
     if (records):
         return True
     else:

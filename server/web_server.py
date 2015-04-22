@@ -20,7 +20,7 @@ try:
 except ImportError:
     print("MPO Web server error, could not import memcache, page loads may be slower.")
     memcache_loaded=False
-memcache_loaded=False
+
 from requests_futures.sessions import FuturesSession
 
 app = Flask(__name__)
@@ -64,31 +64,52 @@ def before_request():
        print ("WEBSERVER: db selected ", DB_SERVER)
 
     if DB_SERVER=='prod':
-       CONN_TYPE='api'
+       CONN_TYPE='test-api'
     elif DB_SERVER=='test':
        CONN_TYPE='test-api'  #remove 'test-api' to use with uwsgi api server
     else:
-       CONN_TYPE='demo-api'
+       CONN_TYPE='test-api'
 
-    if webdebug:
-        print ("WEBSERVER: db set to ",DB_SERVER)
-        print ('web debug, api_prefix',API_PREFIX)
-
-    API_PREFIX=MPO_API_SERVER+""+CONN_TYPE+"/"+MPO_API_VERSION
+    API_PREFIX=MPO_API_SERVER+"/"+CONN_TYPE+"/"+MPO_API_VERSION
+    if webdebug: print("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)
 
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
+    if webdebug:
+        print ("WEBSERVER: db set to ",DB_SERVER)
+        print ('web debug, api_prefix',API_PREFIX)
+        print ('WEBSERVER certargs',certargs)
+        print ('WEBSERVER  request.environ', request.environ)
+
+    import logging
+
+# These two lines enable debugging at httplib level (requests->urllib3->http.client)
+# You will see the REQUEST, including HEADERS and DATA, and RESPONSE with HEADERS but without DATA.
+# The only thing missing will be the response.body which is not logged.
+    try:
+        import http.client as http_client
+    except ImportError:
+    # Python 2
+        import httplib as http_client
+    http_client.HTTPConnection.debuglevel = 1
+
+# You must initialize logging, otherwise you'll not see debug output.
+    logging.basicConfig() 
+    logging.getLogger().setLevel(logging.DEBUG)
+    requests_log = logging.getLogger("requests.packages.urllib3")
+    requests_log.setLevel(logging.DEBUG)
+    requests_log.propagate = True
+
+ 
     if(request.endpoint != 'register'):
         #Check and redirect to /register if not registered
-        is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs)
-        print (is_mpo_user)
-        if(is_mpo_user):
-            is_mpo_user=is_mpo_user.json()
-            if(len(is_mpo_user)==0):
+        is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs).json()
+        print ('WEBDEBUG, is user:',request.endpoint,dn,str(is_mpo_user) )
+        if(len(is_mpo_user)==0):
         #if is_mpo_user.status_code == 401:
-                return render_template('register.html')
+            return render_template('register.html')
 
 
 @app.route('/')
@@ -1353,7 +1374,7 @@ def register():
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
-
+    if webdebug: print('register dn',dn, certargs)
     if request.method == 'POST':
         try:
             form = request.form.to_dict() #gets POSTed form fields as dict

@@ -1032,7 +1032,7 @@ def user(id=None):
     
     istatus=200
     if request.method == 'POST':
-        r = rdb.addUser( request.data, dn=dn )
+        r = rdb.addUser( request.data, submitter_dn=dn )
         if not r: istatus=404
     elif request.method == 'GET':
         if id:
