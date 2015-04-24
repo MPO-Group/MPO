@@ -114,7 +114,8 @@ def before_request():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    everything={"db_server":DB_SERVER}
+    return render_template('index.html', **everything)
 
 @app.route('/workflows')
 def workflows():
