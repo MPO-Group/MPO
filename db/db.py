@@ -216,6 +216,7 @@ def getRecord(table,queryargs={}, dn=None):
 
     return records
 
+
 def getWorkflowType(id,queryargs={},dn=None):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
@@ -229,6 +230,7 @@ def getWorkflowType(id,queryargs={},dn=None):
     conn.close()
 
     return records['value']
+
 
 def getOntologyTermTree(id='0',dn=None):
     """
@@ -717,6 +719,9 @@ def addCollection(request,dn):
 
     # Make the changes to the database persistent
     conn.commit()
+    cursor.close()
+    conn.close()
+    
     records = {} #JCW we are not returning the full record here.
     records['uid'] = c_guid
 
