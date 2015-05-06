@@ -696,11 +696,11 @@ def dataobject(id=None):
             do = rdb.getRecord('dataobject',{'uid':do_add['uid']},dn=dn) #retrieve it to get full record
             if not (req.get('work_uid') and req.get('parent_uid')):
                 messages['info']='dataobject created. provide both work_uid and parent_uid to attach to a workflow.'
-                do['messages']=messages
+                do[0]['messages']=messages
                 return Response(json.dumps(do,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
             else:
                 if apidebug: print('do is ',str(do) )
-                req['do_uid']=do['uid']
+                req['do_uid']=do[0]['uid']
             
 
         #At this point, we have a dataobject record. Now add it to the workflow since should
