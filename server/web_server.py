@@ -64,7 +64,7 @@ def before_request():
        print ("WEBSERVER: db selected ", DB_SERVER)
 
     if DB_SERVER=='prod':
-       CONN_TYPE='test-api'
+       CONN_TYPE='api'
     elif DB_SERVER=='test':
        CONN_TYPE='test-api'  #remove 'test-api' to use with uwsgi api server
     else:
