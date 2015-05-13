@@ -1,0 +1,1120 @@
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+--
+-- Name: gettermuidbypath(text); Type: FUNCTION; Schema: public; Owner: mpoadmin
+--
+
+CREATE FUNCTION gettermuidbypath(text) RETURNS uuid
+    LANGUAGE plpgsql
+    AS $_$
+declare
+  tuid uuid;
+  puid uuid;
+  i text;
+begin
+  for i in select * from unnest(string_to_array($1, '/'))
+  where unnest!=''
+  loop
+    if (puid is not null) then
+      select ot_guid from ontology_terms where name= i and parent_guid=puid into puid;
+    else
+      select ot_guid from ontology_terms where name=i and parent_guid is null into puid;
+    end if;
+  end loop;
+
+  return puid;
+
+end;
+$_$;
+
+
+ALTER FUNCTION public.gettermuidbypath(text) OWNER TO mpoadmin;
+
+--
+-- Name: getwid(uuid); Type: FUNCTION; Schema: public; Owner: mpoadmin
+--
+
+CREATE FUNCTION getwid(cid uuid) RETURNS uuid
+    LANGUAGE plpgsql
+    AS $$
+declare
+  parent_guid uuid;
+  parent_type text;
+  wid uuid;
+begin
+  execute 'select parent_guid, parent_type from comment where cm_guid=''' || cid || ''' union select parent_guid, parent_type from metadata where md_guid=''' || cid || '''' into parent_guid,parent_type;
+  while (parent_type = 'comment' or parent_type = 'metadata')
+  loop
+    execute 'select parent_guid, parent_type from comment where cm_guid=''' || parent_guid || ''' union select parent_guid, parent_type from metadata where md_guid=''' || parent_guid || '''' into parent_guid, parent_type;
+  end loop;
+  if parent_type = 'activity' then
+    execute 'select w_guid from ' || parent_type || ' where a_guid=''' || parent_guid || '''' into wid;
+  elsif parent_type = 'dataobject_instance' then
+    execute 'select w_guid from ' || parent_type || ' where doi_guid=''' || parent_guid || '''' into wid;
+  elsif parent_type = 'workflow' then
+    execute 'select w_guid from ' || parent_type || ' where w_guid=''' || parent_guid || '''' into wid;
+  end if;
+
+  return wid;
+end;
+$$;
+
+
+ALTER FUNCTION public.getwid(cid uuid) OWNER TO mpoadmin;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: activity; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE activity (
+    a_guid uuid NOT NULL,
+    name text,
+    av_guid uuid,
+    w_guid uuid,
+    description text,
+    uri text,
+    creation_time timestamp without time zone,
+    u_guid uuid,
+    start_time timestamp without time zone,
+    end_time timestamp without time zone,
+    completion_status text,
+    status_explanation text
+);
+
+
+ALTER TABLE public.activity OWNER TO mpoadmin;
+
+--
+-- Name: collection; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE collection (
+    c_guid uuid NOT NULL,
+    name text,
+    description text,
+    u_guid uuid,
+    creation_time timestamp without time zone
+);
+
+
+ALTER TABLE public.collection OWNER TO mpoadmin;
+
+--
+-- Name: collection_elements; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE collection_elements (
+    c_guid uuid,
+    e_guid uuid,
+    u_guid uuid,
+    creation_time timestamp without time zone
+);
+
+
+ALTER TABLE public.collection_elements OWNER TO mpoadmin;
+
+--
+-- Name: comment; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE comment (
+    cm_guid uuid NOT NULL,
+    content text,
+    uri text,
+    creation_time timestamp without time zone,
+    u_guid uuid,
+    comment_type text,
+    parent_guid uuid,
+    parent_type text
+);
+
+
+ALTER TABLE public.comment OWNER TO mpoadmin;
+
+--
+-- Name: dataobject; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE dataobject (
+    do_guid uuid NOT NULL,
+    name text,
+    description text,
+    uri text,
+    source_guid uuid,
+    creation_time timestamp without time zone,
+    u_guid uuid
+);
+
+
+ALTER TABLE public.dataobject OWNER TO mpoadmin;
+
+--
+-- Name: dataobject_instance; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE dataobject_instance (
+    doi_guid uuid NOT NULL,
+    do_guid uuid,
+    w_guid uuid,
+    creation_time timestamp without time zone,
+    u_guid uuid
+);
+
+
+ALTER TABLE public.dataobject_instance OWNER TO mpoadmin;
+
+--
+-- Name: metadata; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE metadata (
+    md_guid uuid NOT NULL,
+    name text,
+    value text,
+    type text,
+    uri text,
+    parent_guid uuid,
+    parent_type text,
+    creation_time timestamp without time zone,
+    u_guid uuid
+);
+
+
+ALTER TABLE public.metadata OWNER TO mpoadmin;
+
+--
+-- Name: mpousers; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE mpousers (
+    username text NOT NULL,
+    uuid uuid NOT NULL,
+    firstname text,
+    lastname text,
+    email text,
+    organization text,
+    phone text,
+    dn text
+);
+
+
+ALTER TABLE public.mpousers OWNER TO mpoadmin;
+
+--
+-- Name: ontology_classes; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE ontology_classes (
+    oc_guid uuid,
+    name text,
+    description text,
+    parent_guid uuid,
+    added_by uuid,
+    date_added timestamp without time zone,
+    reviewed_by uuid,
+    date_reviewed timestamp without time zone
+);
+
+
+ALTER TABLE public.ontology_classes OWNER TO mpoadmin;
+
+--
+-- Name: ontology_instances; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE ontology_instances (
+    oi_guid uuid NOT NULL,
+    target_guid uuid,
+    term_guid uuid,
+    value text,
+    creation_time timestamp without time zone,
+    u_guid uuid
+);
+
+
+ALTER TABLE public.ontology_instances OWNER TO mpoadmin;
+
+--
+-- Name: ontology_terms; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE ontology_terms (
+    ot_guid uuid NOT NULL,
+    class uuid,
+    name text,
+    description text,
+    parent_guid uuid,
+    value_type text,
+    units text,
+    specified boolean,
+    added_by uuid,
+    date_added timestamp without time zone,
+    reviewed_by uuid,
+    date_reviewed timestamp without time zone
+);
+
+
+ALTER TABLE public.ontology_terms OWNER TO mpoadmin;
+
+--
+-- Name: workflow; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE workflow (
+    w_guid uuid NOT NULL,
+    name text,
+    ws_guid uuid,
+    description text,
+    u_guid uuid,
+    comp_seq integer,
+    creation_time timestamp without time zone,
+    start_time timestamp without time zone,
+    end_time timestamp without time zone,
+    completion_status text,
+    status_explanation text
+);
+
+
+ALTER TABLE public.workflow OWNER TO mpoadmin;
+
+--
+-- Name: workflow_connectivity; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE workflow_connectivity (
+    wc_guid uuid NOT NULL,
+    w_guid uuid,
+    parent_guid uuid,
+    parent_type text,
+    child_guid uuid,
+    child_type text,
+    creation_time timestamp without time zone
+);
+
+
+ALTER TABLE public.workflow_connectivity OWNER TO mpoadmin;
+
+--
+-- Data for Name: activity; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY activity (a_guid, name, av_guid, w_guid, description, uri, creation_time, u_guid, start_time, end_time, completion_status, status_explanation) FROM stdin;
+3bdcc3ee-b2ad-4b04-84c2-71ae7fc52477	Read Input Files	\N	aea8f004-839a-4250-a537-af5547bc10ca	IPS Staging...	\N	2014-03-18 00:00:09.92133	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+ed707762-dcc7-4f54-bdae-c62f7e2dcfcd	Run IPS	\N	aea8f004-839a-4250-a537-af5547bc10ca	IPS subtasks	\N	2014-03-18 00:00:15.356003	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+b59e6613-a140-4014-8553-0972f366c62c	Simulation Ended	\N	aea8f004-839a-4250-a537-af5547bc10ca	Completed	\N	2014-03-18 00:00:17.088876	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+3ccc8be8-3eae-4701-8c31-372d26089323	EFITexec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:36.904669	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+e2e309fa-8bd4-4724-ad70-bf97e70d0e47	runKineticEFIT.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:14.129974	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+f2ffd549-6ca8-47d3-982b-f9a511425c22	mseConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:39.569538	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+ee49bcf8-5250-422b-aeab-f6f6d44c90b1	refit.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:45:44.191683	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+c2f5c7aa-5f22-42bd-950e-22881fe8293a	setupNFREYA.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:45:46.153363	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+6a4436f2-0877-4932-9762-045b546de2a6	ONETWOsetupProfiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:46:07.1803	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+3c9923db-9206-40be-9db9-cd4e08ed1997	boundaryConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:15.970055	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+baf10234-a4d2-4b19-b019-2fdfa3052c8d	runKineticEFIT.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:48.711535	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+39b12e8c-e87b-45c0-8821-cc06a87a599e	fetchSnap.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:10.903493	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+070b7e5c-0016-4dde-a56f-7e9c57c8e8cf	saveIteration.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:54.499841	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+2f4985c4-fb32-427f-85f7-deb244b9be34	runKineticEFIT.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:56.525811	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+c3decee5-ecad-4410-91fe-40fbcc63cab9	runZIPFIT.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:57.945655	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+a7878d6e-9763-44ab-bce3-13619192db91	ONETWOexec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:45:45.607101	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+427f78fb-8ea3-4c15-881b-3bbec0ea7924	EFITexec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:14.504518	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+e0fc3944-85b9-4a8d-96fd-40adb9363344	currentConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:19.620979	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+b309d620-cf25-4f78-a496-291bab69411b	saveIteration.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:39.796933	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+54906b3f-ebfe-4c25-86de-6a2122140a61	runZIPFIT.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:50.050096	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+ed5b1c63-6902-4587-92d4-20681da55a8e	ONETWOsetup.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:48:36.188206	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+375ac6bf-297b-4b81-abfb-c4f5a2b4e9fb	ONETWOloadFiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:02.531612	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+830d2ff2-2fce-4d0a-8918-3409b0c3c0ef	pressureConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:05.349406	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+9ff75882-14e2-47ef-ad82-f2b121c11086	runKineticEFIT.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:36.356018	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+4e73a7cb-8439-4cac-aca1-d3fe94d35350	enforce_quasineutrality.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:47.263773	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+45d9142c-d89e-4820-af66-af4bad927f15	ONETWOsetup.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:19:02.488469	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+eb24402e-f7d0-4b11-8fa1-b80f651b4762	EFITexec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:14.2789	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+95cfe820-89b7-4572-9eee-ea50f18c33a0	boundaryConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:39.828282	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+9aa5f704-59fb-4e45-bb04-d2f7391a2928	qConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:40.49354	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+fbabb950-0042-4a34-b824-0deff8537e24	createFiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:45:44.888065	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+e5d4733e-c3db-4eb5-af85-46a88b510174	ONETWOloadFiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:14.016018	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+545556fb-7ca2-47c9-8828-075ce4665f80	pressureConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:16.809649	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+2a1690d2-ad86-4a35-bc8e-5d871dda3e3f	ExtractZIPFITprof.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:49.794346	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+6e7900ce-bd9c-4545-b0ed-7d3b7722db6e	ONETWOexec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:48:36.081243	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+09646479-8f58-4ee6-88ba-a311aab3124a	ONETWO_base_exec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:48:58.238944	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+c5951042-97fb-4363-b15e-b332ad59923d	qConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:05.163513	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+04e66dc4-df23-4fb3-89bb-e2c6f8155534	reloadIteration.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:29.227028	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+3366ee69-2de4-4e9c-8955-0847c8fc8c1e	reorder_ions.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:46.560882	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+89bd839c-c3ec-4ebf-af2a-c5fa58316253	createFiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:19:02.017564	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+e3845fee-9444-41af-bd56-a6fa6b93fc41	ONETWO_base_exec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:19:24.471939	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+caf2d7dd-f66b-495c-9247-8cfb8012042d	ONETWOloadFiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:20:26.36527	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+57c8f94b-9d74-4d40-b74b-ef1ae390b78d	saveIteration.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:20:52.081044	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+a7f1449a-3426-4743-8e05-13ef3e85f420	test_kineticEFIT.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:08.950964	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+1dff6067-148a-4e92-9b42-ce1619bdd138	getData.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:45:44.355533	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+67dc8a49-e0c9-4c30-984a-cc66fa72dcab	ONETWO_base_exec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:46:09.771502	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+77d89e07-4ed0-414c-beb1-914f0c9489b6	qConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:16.595523	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+f9f187fc-2cba-4099-9b3c-157ef228e3a8	extractProfiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:49.071635	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+11351cab-9afa-4329-8fa2-c926cbd1ff9b	createFiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:48:35.684906	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+10b6c50d-abff-4e3c-9bc7-edbd7a9e4e3b	ONETWOsetupProfiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:48:57.400988	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+4fc60187-0d91-444d-b888-c4d05fe2a178	boundaryConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:04.660081	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+9475a76b-9a09-43b8-9b51-ba12f34462b1	saveIteration.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:28.152943	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+c200fadc-8b65-4802-9d7c-a7e86c70ddc8	run_profiles_gen.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:37.620864	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+edd1be77-ee07-463a-ac07-8d71e73c4bdb	runTGYRObase.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:49.305743	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+b6af659d-9d5a-4753-a365-32790329aec2	genNewProfiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:19:00.665467	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+44796202-584d-4854-9948-8ecef8137afa	ONETWOexec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:19:02.381634	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+bbaaad82-9875-4fdc-8228-815b4b7b7405	setupNFREYA.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:19:02.596659	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+ca75d34e-33ca-43ff-bff8-c98ae4fe0c60	ONETWOsetupProfiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:19:23.680779	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+3f7e99a9-ccb7-4e96-b836-077d5c3de33c	EFITexec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:20:33.602844	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+00cc92af-189d-4d3c-a70c-6a9b9bfacac5	reloadIteration.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:54.83475	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+f1ba7501-a1da-45b9-a27c-99fede86308a	extractProfiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:56.896068	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+a736f427-cffd-4078-8285-9abbadd29db3	ExtractZIPFITprof.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:44:57.68553	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+fc6972dc-5bbe-4faa-92a2-0d0ffcedeeb0	ONETWOsetup.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:45:45.974263	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+83601322-c9b6-4bec-94f4-0ca074cf0acd	setupECH.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:45:59.112749	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+f1bdd2f7-2204-475a-8006-98bdffc0f865	mseConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:15.763419	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+0df8d973-9d0c-40da-a784-755fce0998c5	autoKnot.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:20.036074	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+cb507508-0b52-414d-af35-fa360f01ddfa	reloadIteration.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:47:40.991054	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+55732c88-70b7-49b3-a95a-2e627ba79d4e	refit.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:48:35.02514	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+70e72bf5-c983-45f9-9b29-82a467c36dd1	setupNFREYA.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:48:36.299486	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+f2a0a664-a876-4a3a-a45c-94df5774d7ec	EFITexec.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:03.308841	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+5ba2a68b-ccdd-40dd-ba22-ac8a0f4a4732	currentConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:08.16578	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+e8af5728-ab0b-4bcd-96a3-6d29831d7497	extractProfiles.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:36.491723	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+f54a0b0b-000f-4099-8fac-c5be01960749	update_ion_data.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:48.746712	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+6f1e8db8-15e0-4446-8621-c8a24780195f	setupECH.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:19:15.520075	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+6a07d1f9-d9a5-4def-9da6-eaf12e194d55	getData.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:48:35.181313	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+bf937c9c-c10c-4fed-8c43-08336f6e0885	setupECH.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:48:49.381061	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+8bca526a-cb89-4df8-ac9d-fd6e80be0864	mseConstraint.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:04.446095	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+af22d1cc-e959-4b66-bc39-bcc307606751	autoKnot.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:08.653628	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+2c4eb12a-fc9e-4aa8-ab10-4b2497b2a673	runTGYRO.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:37.2504	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+64b20a1a-b54d-4fcd-8fd5-526a18e6568d	update_ion_data.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 19:50:48.950887	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+0c514200-ce64-418f-8fad-f38819f94f1a	load_remote.py	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITpythonTask	\N	2015-02-02 20:18:55.57964	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+ba160044-85fe-4b44-bd94-dccf7e077879	Read input files	\N	0407f11e-fbd9-4509-8fcc-ff452d5daf58	Read shot number, snap file etc...	\N	2015-05-12 21:57:23.894628	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+9b4e7b68-a035-419c-a44f-2d7d4f027c12	Read PTDATA and calibrate	\N	0407f11e-fbd9-4509-8fcc-ff452d5daf58	Read PTDATA pointnames and calibrate	EFIT	2015-05-12 21:57:24.304654	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+5af2f3b1-17b6-451b-9f5b-8a19eeff9521	Diamagnetic flux correction	\N	0407f11e-fbd9-4509-8fcc-ff452d5daf58	Diamagnetic flux correction contained within EFIT	EFIT	2015-05-12 21:57:24.480084	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+be3db7c7-f6a5-4453-a936-b279787d91f7	EFIT data averaging	\N	0407f11e-fbd9-4509-8fcc-ff452d5daf58	Average EFIT Data	EFIT	2015-05-12 21:57:24.842923	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+627dd3e0-fbbe-4327-a075-f1e60ab02627	Coil corrections	\N	0407f11e-fbd9-4509-8fcc-ff452d5daf58	Perform coil corrections on C and N1 coil	EFIT	2015-05-12 21:57:25.401869	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+4b1909cd-923f-4c95-b873-35fdca7c158c	Run EFIT	\N	0407f11e-fbd9-4509-8fcc-ff452d5daf58	Fit equilibrium and compute plasma parameters	EFIT	2015-05-12 21:57:25.814202	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+87307fa3-96bc-42bc-bd4e-a508139992d5	Write EFIT outputs	\N	0407f11e-fbd9-4509-8fcc-ff452d5daf58	Write the EFIT output files	EFIT	2015-05-12 21:57:25.9864	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+f8a0396b-1622-471c-a8e8-cfddcaee1cc7	Archive data	\N	0407f11e-fbd9-4509-8fcc-ff452d5daf58	Load data to MDSplus	EFIT	2015-05-12 21:57:27.241744	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+26d666ea-ac22-4455-8242-8263b32e3400	Read input files	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Read shot number, snap file etc...	\N	2015-05-12 21:57:38.27228	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+5d055619-3976-4a88-a69b-dc7e39fe717e	Read PTDATA and calibrate	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Read PTDATA pointnames and calibrate	EFIT	2015-05-12 21:57:38.636595	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+a977bec3-2e2b-48e2-b0c8-ddb061d0cbd3	Diamagnetic flux correction	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Diamagnetic flux correction contained within EFIT	EFIT	2015-05-12 21:57:38.810791	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+359b0ebe-09f9-4ee0-b6a8-5cad74845fce	EFIT data averaging	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Average EFIT Data	EFIT	2015-05-12 21:57:39.166384	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+b3e6b8e2-4c96-4089-b32f-0801ff2d78c3	Call MSE library	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Call MSE library	EFIT	2015-05-12 21:57:39.721292	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+150a3bd6-64bf-4695-986a-46fc976ae3df	Process and return MSE data	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Process and return MSE data	EFIT	2015-05-12 21:57:39.894132	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+0bdd4a6c-8cce-495a-8db5-851c98bfec8a	Coil corrections	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Perform coil corrections on C and N1 coil	EFIT	2015-05-12 21:57:40.082865	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+1959f795-e7c0-4a62-80ee-ac25143a21cc	Run EFIT	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Fit equilibrium and compute plasma parameters	EFIT	2015-05-12 21:57:40.440809	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+909dc0c7-9abf-49a9-ac15-c592ec9eda8b	Write EFIT outputs	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Write the EFIT output files	EFIT	2015-05-12 21:57:40.609591	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+d3adff7b-e21e-46bc-b389-4f778785f6dd	Archive data	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	Load data to MDSplus	EFIT	2015-05-12 21:57:41.893605	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+6d8b871b-ec5c-4093-b7af-231e3ab7cdee	Retrieve data	\N	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	Retrieve data from MDSplus	\N	2015-05-12 21:58:21.185419	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+54a2e553-2b0f-4ecd-90b4-885ebefaecd1	Fit electron temperature	\N	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	Fit electron temperature	Zipfit	2015-05-12 21:58:21.362822	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+ea131dc2-7041-4a3c-8936-e2473f824189	Write output files	\N	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	Write output files	Zipfit	2015-05-12 21:58:21.546102	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+21e43bb3-c648-4a94-8391-2f0cc0e45af4	Archive data	\N	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	Load data to MDSplus	Zipfit	2015-05-12 21:58:22.270776	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: collection; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY collection (c_guid, name, description, u_guid, creation_time) FROM stdin;
+\.
+
+
+--
+-- Data for Name: collection_elements; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY collection_elements (c_guid, e_guid, u_guid, creation_time) FROM stdin;
+\.
+
+
+--
+-- Data for Name: comment; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY comment (cm_guid, content, uri, creation_time, u_guid, comment_type, parent_guid, parent_type) FROM stdin;
+1eeb0a17-e93e-460c-8516-f11b278c8627	This workflow of a kineticEFIT regression test has been simplified by removing anything that starts with `reset`	\N	2015-02-02 20:02:29.226979	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	workflow
+e6ec3966-f57f-4b97-b133-9ac9f546bb26	Fitting weights updated 2013-06-01	\N	2015-05-12 21:57:23.715603	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	3c5a966d-557c-4828-82bb-6bd666e8e0ab	dataobject_instance
+bffecab6-fb3e-4fbc-82af-cf69cf69eeee	Backwards averaging	\N	2015-05-12 21:57:25.215252	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	be3db7c7-f6a5-4453-a936-b279787d91f7	activity
+dd286a8e-bb5c-4be9-8b7b-84fc3b90014f	Fitting weights updated 2013-06-01	\N	2015-05-12 21:57:38.099778	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	8312b0dc-a6ae-48ea-bd4f-24f280da7e7c	dataobject_instance
+4d5601e7-9e71-499d-ad1d-241962b1cc6a	Backwards averaging	\N	2015-05-12 21:57:39.537253	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	359b0ebe-09f9-4ee0-b6a8-5cad74845fce	activity
+\.
+
+
+--
+-- Data for Name: dataobject; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY dataobject (do_guid, name, description, uri, source_guid, creation_time, u_guid) FROM stdin;
+cd2fd257-ae62-4733-bb9b-0cb547f48aa3	Plasma State File	IPS Plasma State Monitor File	http://swimdata.gat.com/murakami/29841_monitor.nc	\N	2014-03-18 00:00:15.700055	f223db41-d1c5-41db-b8af-fde6c0a16f76
+0dd6e73b-2513-473f-ab23-344b070e491c	IPS Configuration File	IPS configuration description	http://swimdata.gat.com/murakami/29841.config	\N	2014-03-18 00:00:09.269601	f223db41-d1c5-41db-b8af-fde6c0a16f76
+8b39a46f-4feb-45b4-9c25-b8e8675a5eaa	IPS Input Files	Input files	//swimdata.gat.com/murakami/29841.config2	\N	2014-03-18 00:00:09.644537	f223db41-d1c5-41db-b8af-fde6c0a16f76
+8c573cc1-257e-4fb6-bcb7-a38ec6284444	Simulation Output Files	Simulation Output Files	http://swimdata.gat.com/murakami	\N	2014-03-18 00:00:16.732153	f223db41-d1c5-41db-b8af-fde6c0a16f76
+0e916350-8d84-4540-b230-47d7ee5cf60a	Shot	Plasma shot number	160124	\N	2015-05-12 21:57:21.800144	f223db41-d1c5-41db-b8af-fde6c0a16f76
+73e1eccd-e0a8-402b-be23-27f6e87995aa	Snap file	EFIT input file	mdsplus:///efit01/160124&path=\\efit01:namelist	\N	2015-05-12 21:57:22.020066	f223db41-d1c5-41db-b8af-fde6c0a16f76
+c35c5fa3-af4c-4324-b308-82af8fe007c4	Green's table	Green's table files	filesys:///link/efit/rpf01.d3d	\N	2015-05-12 21:57:22.403991	f223db41-d1c5-41db-b8af-fde6c0a16f76
+97eae234-2b92-4bd6-bd0f-2c0544e0630d	Magnetic probes list	Magnetic probes list and geometric configuration	160124||Probes and geom config	\N	2015-05-12 21:57:22.770285	f223db41-d1c5-41db-b8af-fde6c0a16f76
+230f76d4-08c8-4568-96ad-6ee7493ca5f8	Setup and configuration files	Setup and configuration files	160124||Setup and config files	\N	2015-05-12 21:57:22.967305	f223db41-d1c5-41db-b8af-fde6c0a16f76
+4df3388e-b1b5-4a7a-9b7f-e2703cda4eea	PTDATA pointnames	PTDATA pointnames	160124||PTDATA	\N	2015-05-12 21:57:24.087178	f223db41-d1c5-41db-b8af-fde6c0a16f76
+f4138e0f-d645-4ddd-998b-facc9961dc5c	A File	A EQDSK file data	mdsplus:///efit01/160124&path=\\efit01::results:aeqdsk	\N	2015-05-12 21:57:26.156507	f223db41-d1c5-41db-b8af-fde6c0a16f76
+f66fa944-6290-4a62-a561-612643956509	G File	G EQDSK file data	mdsplus:///efit01/160124&path=\\efit01::results:geqdsk	\N	2015-05-12 21:57:26.50563	f223db41-d1c5-41db-b8af-fde6c0a16f76
+af978ff0-a68c-4185-8448-abc73b1e9b57	M File	M file data	mdsplus:///efit01/160124&path=\\efit01::measurements	\N	2015-05-12 21:57:26.858793	f223db41-d1c5-41db-b8af-fde6c0a16f76
+b1cf87eb-5dde-4271-bad2-17be280b6ebc	Snap file	EFIT input file	mdsplus:///efit02/160124&path=\\efit02:namelist	\N	2015-05-12 21:57:36.407072	f223db41-d1c5-41db-b8af-fde6c0a16f76
+89e62621-87ee-4858-94ce-4a967a5b1c29	A File	A EQDSK file data	mdsplus:///efit02/160124&path=\\efit02::results:aeqdsk	\N	2015-05-12 21:57:40.794242	f223db41-d1c5-41db-b8af-fde6c0a16f76
+99d35b06-52b9-4d0b-a6c0-d2ecff872e13	G File	G EQDSK file data	mdsplus:///efit02/160124&path=\\efit02::results:geqdsk	\N	2015-05-12 21:57:41.155989	f223db41-d1c5-41db-b8af-fde6c0a16f76
+bddfa88d-0cf5-418e-bbf0-eb9eb78e3184	M File	M file data	mdsplus:///efit02/160124&path=\\efit02::measurements	\N	2015-05-12 21:57:41.52887	f223db41-d1c5-41db-b8af-fde6c0a16f76
+7fc53d4b-7b64-4ea5-878f-6eb62f0e3127	Thomson scattering	Thomson scattering data	mdsplus:///efit01/160124&path=\\electrons::ts.revisions.revision00	\N	2015-05-12 21:58:20.597233	f223db41-d1c5-41db-b8af-fde6c0a16f76
+df863810-e5dc-4ccc-8f59-d5da528adc9d	etemp file data	Electron temperature zipfit output file data	mdsplus:///zipfit01/160124&path=\\zipfit01::profiles:etempfit	\N	2015-05-12 21:58:21.728784	f223db41-d1c5-41db-b8af-fde6c0a16f76
+\.
+
+
+--
+-- Data for Name: dataobject_instance; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY dataobject_instance (doi_guid, do_guid, w_guid, creation_time, u_guid) FROM stdin;
+553ec756-4670-41ee-ae79-6e48572f145c	0dd6e73b-2513-473f-ab23-344b070e491c	aea8f004-839a-4250-a537-af5547bc10ca	2014-03-18 00:00:09.746363	f223db41-d1c5-41db-b8af-fde6c0a16f76
+6071cbb1-bcaf-41ab-a675-6237deea5f68	8b39a46f-4feb-45b4-9c25-b8e8675a5eaa	aea8f004-839a-4250-a537-af5547bc10ca	2014-03-18 00:00:09.847366	f223db41-d1c5-41db-b8af-fde6c0a16f76
+e6c10f90-9768-4aab-bf82-77c213458144	cd2fd257-ae62-4733-bb9b-0cb547f48aa3	aea8f004-839a-4250-a537-af5547bc10ca	2014-03-18 00:00:15.883828	f223db41-d1c5-41db-b8af-fde6c0a16f76
+d3a742b1-e72e-4096-bed0-008b5030b164	8c573cc1-257e-4fb6-bcb7-a38ec6284444	aea8f004-839a-4250-a537-af5547bc10ca	2014-03-18 00:00:16.980332	f223db41-d1c5-41db-b8af-fde6c0a16f76
+b1c208cd-c032-40a1-8fa0-73579f6bd292	0e916350-8d84-4540-b230-47d7ee5cf60a	0407f11e-fbd9-4509-8fcc-ff452d5daf58	2015-05-12 21:57:21.826537	f223db41-d1c5-41db-b8af-fde6c0a16f76
+565cfbba-4faf-45c4-ab90-7a5fbd88db75	73e1eccd-e0a8-402b-be23-27f6e87995aa	0407f11e-fbd9-4509-8fcc-ff452d5daf58	2015-05-12 21:57:22.205107	f223db41-d1c5-41db-b8af-fde6c0a16f76
+aabec915-353c-431e-bf33-4dfb08e11b22	c35c5fa3-af4c-4324-b308-82af8fe007c4	0407f11e-fbd9-4509-8fcc-ff452d5daf58	2015-05-12 21:57:22.587563	f223db41-d1c5-41db-b8af-fde6c0a16f76
+d996cf08-cac3-4099-870d-01cef579d68c	97eae234-2b92-4bd6-bd0f-2c0544e0630d	0407f11e-fbd9-4509-8fcc-ff452d5daf58	2015-05-12 21:57:22.784528	f223db41-d1c5-41db-b8af-fde6c0a16f76
+3c5a966d-557c-4828-82bb-6bd666e8e0ab	230f76d4-08c8-4568-96ad-6ee7493ca5f8	0407f11e-fbd9-4509-8fcc-ff452d5daf58	2015-05-12 21:57:22.977505	f223db41-d1c5-41db-b8af-fde6c0a16f76
+3cca9c0f-11ac-42d2-880d-532044b6f25a	4df3388e-b1b5-4a7a-9b7f-e2703cda4eea	0407f11e-fbd9-4509-8fcc-ff452d5daf58	2015-05-12 21:57:24.101167	f223db41-d1c5-41db-b8af-fde6c0a16f76
+c4c01268-38cd-42c4-9842-9293e5ad4c18	f4138e0f-d645-4ddd-998b-facc9961dc5c	0407f11e-fbd9-4509-8fcc-ff452d5daf58	2015-05-12 21:57:26.333143	f223db41-d1c5-41db-b8af-fde6c0a16f76
+b35a5154-fb33-43a8-80c9-e9e45f29c952	f66fa944-6290-4a62-a561-612643956509	0407f11e-fbd9-4509-8fcc-ff452d5daf58	2015-05-12 21:57:26.681402	f223db41-d1c5-41db-b8af-fde6c0a16f76
+c5f35fc8-ae11-4752-bd5a-cf975af77a59	af978ff0-a68c-4185-8448-abc73b1e9b57	0407f11e-fbd9-4509-8fcc-ff452d5daf58	2015-05-12 21:57:27.065391	f223db41-d1c5-41db-b8af-fde6c0a16f76
+48889cdd-3912-4d58-a37e-80b3d927642b	0e916350-8d84-4540-b230-47d7ee5cf60a	08d2f5db-97d8-49c9-bd99-85303b07f9e2	2015-05-12 21:57:36.232147	f223db41-d1c5-41db-b8af-fde6c0a16f76
+243ff63a-7052-4f6f-a366-257636494a22	b1cf87eb-5dde-4271-bad2-17be280b6ebc	08d2f5db-97d8-49c9-bd99-85303b07f9e2	2015-05-12 21:57:36.594975	f223db41-d1c5-41db-b8af-fde6c0a16f76
+5dc2ceae-9379-4e70-9834-62e1467e7dc4	c35c5fa3-af4c-4324-b308-82af8fe007c4	08d2f5db-97d8-49c9-bd99-85303b07f9e2	2015-05-12 21:57:36.946244	f223db41-d1c5-41db-b8af-fde6c0a16f76
+4795e433-1ac3-429d-b305-acf031af5db9	97eae234-2b92-4bd6-bd0f-2c0544e0630d	08d2f5db-97d8-49c9-bd99-85303b07f9e2	2015-05-12 21:57:37.140816	f223db41-d1c5-41db-b8af-fde6c0a16f76
+8312b0dc-a6ae-48ea-bd4f-24f280da7e7c	230f76d4-08c8-4568-96ad-6ee7493ca5f8	08d2f5db-97d8-49c9-bd99-85303b07f9e2	2015-05-12 21:57:37.315065	f223db41-d1c5-41db-b8af-fde6c0a16f76
+80af7341-8bed-41d1-ae7b-51d6d457322e	4df3388e-b1b5-4a7a-9b7f-e2703cda4eea	08d2f5db-97d8-49c9-bd99-85303b07f9e2	2015-05-12 21:57:38.456403	f223db41-d1c5-41db-b8af-fde6c0a16f76
+f8a9727a-0cda-44bf-b34c-dc3240fb9f66	89e62621-87ee-4858-94ce-4a967a5b1c29	08d2f5db-97d8-49c9-bd99-85303b07f9e2	2015-05-12 21:57:40.973816	f223db41-d1c5-41db-b8af-fde6c0a16f76
+4e52a60a-ea2d-45da-ab47-c4e8064c768b	99d35b06-52b9-4d0b-a6c0-d2ecff872e13	08d2f5db-97d8-49c9-bd99-85303b07f9e2	2015-05-12 21:57:41.342768	f223db41-d1c5-41db-b8af-fde6c0a16f76
+9a54f227-a2e6-4492-babd-86161b6b1bc9	bddfa88d-0cf5-418e-bbf0-eb9eb78e3184	08d2f5db-97d8-49c9-bd99-85303b07f9e2	2015-05-12 21:57:41.706282	f223db41-d1c5-41db-b8af-fde6c0a16f76
+0b1061d0-7eef-44db-a883-6d7f7f676cf5	0e916350-8d84-4540-b230-47d7ee5cf60a	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	2015-05-12 21:58:19.010205	f223db41-d1c5-41db-b8af-fde6c0a16f76
+6534884c-4e9d-4476-a84c-c47aab84dbaf	0e916350-8d84-4540-b230-47d7ee5cf60a	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	2015-05-12 21:58:19.223976	f223db41-d1c5-41db-b8af-fde6c0a16f76
+0e216d63-31d8-49dc-b694-1bbcc248add3	f4138e0f-d645-4ddd-998b-facc9961dc5c	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	2015-05-12 21:58:19.80443	f223db41-d1c5-41db-b8af-fde6c0a16f76
+835adac7-4a89-4472-b403-b6bfa298fdf0	f66fa944-6290-4a62-a561-612643956509	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	2015-05-12 21:58:20.370955	f223db41-d1c5-41db-b8af-fde6c0a16f76
+9c62b1b5-deb8-47a9-9f68-c22beb13d268	7fc53d4b-7b64-4ea5-878f-6eb62f0e3127	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	2015-05-12 21:58:20.988416	f223db41-d1c5-41db-b8af-fde6c0a16f76
+9bac0647-b31a-49bd-9029-ebe6c3529b00	df863810-e5dc-4ccc-8f59-d5da528adc9d	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	2015-05-12 21:58:22.080051	f223db41-d1c5-41db-b8af-fde6c0a16f76
+\.
+
+
+--
+-- Data for Name: metadata; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY metadata (md_guid, name, value, type, uri, parent_guid, parent_type, creation_time, u_guid) FROM stdin;
+659ce1e5-33de-4a45-8d36-67b0313efacd	Experimental_data_compensation_Ccoil	/link/efit/ccoil.ddd	text	\N	3c5a966d-557c-4828-82bb-6bd666e8e0ab	dataobject_instance	2015-05-12 21:57:23.156969	f223db41-d1c5-41db-b8af-fde6c0a16f76
+947539eb-1aef-461f-ad91-04d7687534ef	Experimental_data_compensation_N1coil	/link/efit/n1coil.ddd	text	\N	3c5a966d-557c-4828-82bb-6bd666e8e0ab	dataobject_instance	2015-05-12 21:57:23.341834	f223db41-d1c5-41db-b8af-fde6c0a16f76
+6c33be6d-7087-4939-bca6-3bab2b1cfb05	Fitting weight data	/link/efit/fitweight.dat	text	\N	3c5a966d-557c-4828-82bb-6bd666e8e0ab	dataobject_instance	2015-05-12 21:57:23.523838	f223db41-d1c5-41db-b8af-fde6c0a16f76
+3d64c708-37f1-484c-b5ea-91fe3925fbaa	compilation_date	2013-06-05	text	\N	5af2f3b1-17b6-451b-9f5b-8a19eeff9521	activity	2015-05-12 21:57:24.657222	f223db41-d1c5-41db-b8af-fde6c0a16f76
+366bed05-0171-46b5-b1c1-fecbae25f733	av_time (ms)	10	text	\N	be3db7c7-f6a5-4453-a936-b279787d91f7	activity	2015-05-12 21:57:25.028266	f223db41-d1c5-41db-b8af-fde6c0a16f76
+69ed21d2-9210-4a0d-a71f-c8928333ce03	compilation_date	2013-06-05	text	\N	627dd3e0-fbbe-4327-a075-f1e60ab02627	activity	2015-05-12 21:57:25.58118	f223db41-d1c5-41db-b8af-fde6c0a16f76
+5dc0bb25-c974-4481-a048-2ad65cb5f1da	Experimental_data_compensation_Ccoil	/link/efit/ccoil.ddd	text	\N	8312b0dc-a6ae-48ea-bd4f-24f280da7e7c	dataobject_instance	2015-05-12 21:57:37.549176	f223db41-d1c5-41db-b8af-fde6c0a16f76
+be019884-7570-4a82-9e3f-fd6fe02aaad9	Experimental_data_compensation_N1coil	/link/efit/n1coil.ddd	text	\N	8312b0dc-a6ae-48ea-bd4f-24f280da7e7c	dataobject_instance	2015-05-12 21:57:37.728747	f223db41-d1c5-41db-b8af-fde6c0a16f76
+59b06860-c19c-4e39-a84f-2651343857a2	Fitting weight data	/link/efit/fitweight.dat	text	\N	8312b0dc-a6ae-48ea-bd4f-24f280da7e7c	dataobject_instance	2015-05-12 21:57:37.911221	f223db41-d1c5-41db-b8af-fde6c0a16f76
+97b3b918-4e52-4a4b-8cd3-6476076af856	compilation_date	2013-06-05	text	\N	a977bec3-2e2b-48e2-b0c8-ddb061d0cbd3	activity	2015-05-12 21:57:38.983956	f223db41-d1c5-41db-b8af-fde6c0a16f76
+df3c36ff-0f4f-4327-9ed2-5b9e9785e324	av_time (ms)	10	text	\N	359b0ebe-09f9-4ee0-b6a8-5cad74845fce	activity	2015-05-12 21:57:39.349001	f223db41-d1c5-41db-b8af-fde6c0a16f76
+a58a8105-6057-4043-808a-98a85bf08f48	compilation_date	2013-06-05	text	\N	0bdd4a6c-8cce-495a-8db5-851c98bfec8a	activity	2015-05-12 21:57:40.251541	f223db41-d1c5-41db-b8af-fde6c0a16f76
+\.
+
+
+--
+-- Data for Name: mpousers; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY mpousers (username, uuid, firstname, lastname, email, organization, phone, dn) FROM stdin;
+mpoadmin	ddc315a1-6310-41e7-a84d-886bc904f3b2	\N	\N	\N	\N	\N	\N
+mpodemo	f223db41-d1c5-41db-b8af-fde6c0a16f76	MPO	Demo User	jas@psfc.mit.edu	MIT		/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu
+\.
+
+
+--
+-- Data for Name: ontology_classes; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY ontology_classes (oc_guid, name, description, parent_guid, added_by, date_added, reviewed_by, date_reviewed) FROM stdin;
+\.
+
+
+--
+-- Data for Name: ontology_instances; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY ontology_instances (oi_guid, target_guid, term_guid, value, creation_time, u_guid) FROM stdin;
+339e4fc4-aa70-42cd-bca4-4248d4e02fab	aea8f004-839a-4250-a537-af5547bc10ca	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	SWIM	2014-07-09 18:03:47.601387	f223db41-d1c5-41db-b8af-fde6c0a16f76
+abc232cf-4aa3-4fc7-8b78-4329284ef112	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	OMFIT	2015-02-02 19:43:51.497891	f223db41-d1c5-41db-b8af-fde6c0a16f76
+bd9e645a-f56f-4fa8-99a3-63292178d6da	0407f11e-fbd9-4509-8fcc-ff452d5daf58	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	EFIT	2015-05-12 21:57:21.58701	f223db41-d1c5-41db-b8af-fde6c0a16f76
+4b76f1af-98a9-47c1-bc60-ea8a21889a98	08d2f5db-97d8-49c9-bd99-85303b07f9e2	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	EFIT	2015-05-12 21:57:35.966954	f223db41-d1c5-41db-b8af-fde6c0a16f76
+db8329cd-1440-4018-810a-28c3406d0523	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	Zipfit	2015-05-12 21:58:18.82014	f223db41-d1c5-41db-b8af-fde6c0a16f76
+\.
+
+
+--
+-- Data for Name: ontology_terms; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY ontology_terms (ot_guid, class, name, description, parent_guid, value_type, units, specified, added_by, date_added, reviewed_by, date_reviewed) FROM stdin;
+f9a50453-ea1b-4845-bb0e-f80ae6eb16d6	\N	Workflow	Ontology terms for workflow entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+9282d6f1-72b1-4e27-a0d8-873d48c46843	\N	Activity	Ontology terms for activity entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+9c3d8704-58c5-4d09-9fc2-71674ee659aa	\N	Generic	Ontology terms for generic entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	Type	Terms that describe the workflow types	f9a50453-ea1b-4845-bb0e-f80ae6eb16d6	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+5bad691d-4806-4159-a004-e09054059aea	\N	EFIT	Ontology terms for workflows of type EFIT	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c9d814d4-2b2f-4aa3-b40b-5a19c84915b1	\N	SWIM	Ontology terms for workflows of type SWIM	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+7ab7517a-1252-4d06-b9f6-125b255d89c6	\N	Zipfit	Ontology terms for workflows of type Zipfit	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+8b86a082-e8d9-414e-922d-bd07fda89ae3	\N	OMFIT	Ontology terms for workflows of type OMFIT	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f5eb7d4e-3972-4efc-a1b0-c24fbb3ab730	\N	Gyro	Ontology terms for workflows of type Gyro	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	Code Characteristics	Terms that describe the code type	f5eb7d4e-3972-4efc-a1b0-c24fbb3ab730	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+81a40702-271c-4fa6-9622-38012261c38f	\N	Run Characteristics	Terms that describe the run type	f5eb7d4e-3972-4efc-a1b0-c24fbb3ab730	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	Run Metadata	Metadata terms associated with the run	f5eb7d4e-3972-4efc-a1b0-c24fbb3ab730	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+00c13dfe-4ce9-4f2c-a607-5f741497013b	\N	turbulence code	turbulence code type	98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c9523e4a-2ea3-4b2f-a010-8f8135184533	\N	version	code version, e.g. git version release (written as out.gyro.version when code is run)	98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+69813215-7e53-42ae-a317-fcf5a982a7bb	\N	documentation	link to code documentation, e.g. https://fusion.gat.com/theory/Gyrooverview	98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+4f81cd60-0238-4476-9542-5527db8f7e59	\N	source	link to code download, e.g. https://fusion.gat.com/theory/Gacode_announce	98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+83175f6f-bb62-415d-8ab9-a5ea828e6ef0	\N	linear plasma turbulence	Fortran code for linear plasma turbulence	00c13dfe-4ce9-4f2c-a607-5f741497013b	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e0668563-1963-45cb-acfe-7e20d3b11dcf	\N	nonlinear plasma turbulence	Fortran code for nonlinear plasma turbulence	00c13dfe-4ce9-4f2c-a607-5f741497013b	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e7a5e575-a0f2-44d9-a951-8ec4c45e8f7a	\N	operational mode	operational mode	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+1f0296f1-0e20-4702-b79b-d5609c424bbd	\N	boundary conditions	boundary conditions	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+8bffdb39-10ca-4c35-a0e8-38312ed6ed55	\N	profiles	origin of profiles	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+a0a6f8fb-030d-450d-817e-c69ff78932d9	\N	fluctuations	electrostatic or electromagnetic	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+73063e27-e46a-4c99-9cb8-318c9778924d	\N	electron dynamical method	electron dynamical method	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f772839a-2e2b-4d6c-bd31-2890f61f4122	\N	nonlinear dynamic model	nonlinear dynamics	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+bfea012a-4fc9-49dc-ac48-06845c18d408	\N	initial value	\N	e7a5e575-a0f2-44d9-a951-8ec4c45e8f7a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f0465200-4dfb-42f4-8170-cb1e691fb38e	\N	eigenvalue	\N	e7a5e575-a0f2-44d9-a951-8ec4c45e8f7a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+617cc1bb-53cf-40f1-b3c0-dafa85e42e4a	\N	periodic (flux tube)	\N	1f0296f1-0e20-4702-b79b-d5609c424bbd	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+44ac69ea-89bf-4d4f-a86b-1c522ac59b90	\N	nonperiodic (global or fixed profile)	\N	1f0296f1-0e20-4702-b79b-d5609c424bbd	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+9e8c3110-a0de-497a-82ae-0fcbc31d6ad6	\N	experimental	\N	8bffdb39-10ca-4c35-a0e8-38312ed6ed55	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+495b82e4-4e05-4874-8aec-fb1cf523d33a	\N	user-defined	\N	8bffdb39-10ca-4c35-a0e8-38312ed6ed55	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+91d1a474-faa7-423c-9b15-ae04d83aea44	\N	electrostatic	\N	a0a6f8fb-030d-450d-817e-c69ff78932d9	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c811d8f2-7cca-4979-ab37-ee4aa8a53b99	\N	electromagnetic	\N	a0a6f8fb-030d-450d-817e-c69ff78932d9	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+4ec04729-728f-4973-83c3-8ce9c2c20704	\N	adiabatic	\N	73063e27-e46a-4c99-9cb8-318c9778924d	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+baca1ec7-4703-42dd-8bc8-a116bf48e375	\N	drift kinetic	\N	73063e27-e46a-4c99-9cb8-318c9778924d	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+a23087ca-da10-4a96-9d81-c27a3a6c3117	\N	gyrokinetic	\N	73063e27-e46a-4c99-9cb8-318c9778924d	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+3af245c4-7bb8-4d2d-a5cc-0481461c4c8b	\N	on	\N	f772839a-2e2b-4d6c-bd31-2890f61f4122	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+47980fc3-8bb2-485f-9fa5-50e449e411bb	\N	off	\N	f772839a-2e2b-4d6c-bd31-2890f61f4122	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+ce66c12e-3a40-4352-91ee-68d7d28b7e00	\N	m_ref	mass of main ions	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+ee489e2c-2695-4a5f-9c1a-71ad187b6e39	\N	B_unit	toroidal magnetic field	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+ea840112-97c0-4359-b149-360ac70f4ed4	\N	a	plasma minor radius	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b6dd589c-4619-4472-a040-381db50b755e	\N	CsD/a	normalization for all time or frequency variables	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+6a60ccf8-ca97-4d2d-a68e-29466095d8be	\N	CsD	plasma sound speed	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+4d03d822-9ec6-4339-a903-2f5a41ecc4e7	\N	Te	central electron temperature	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+1c503f97-c991-4caa-9a52-fd0bf653249e	\N	ne	central electron density	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+410cad1d-6137-4956-b20e-55898616ece0	\N	rho_SD	gyroradius calculated using B_unit and CsD	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+7832f4f5-2977-4dd6-94ff-c1ab5c85dfd2	\N	chi_gBD	heat diffusivity (chi) normalized to gyroBohm (see technical manual	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+792b437e-4651-4f04-bf53-f8dfe7c1fa93	\N	Gamma_gBD	particle flux [Gamma] normalized to gyroBohm	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+0803ac9a-2032-4388-86b1-02518ae1ad47	\N	Q_gBD	heat flux [Q] normalized to gyroBohm (see technical manual)	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+63a8ce81-b1fd-427d-81e9-6663ed0771f6	\N	Pi_gBD	toroidal momentum flux [Pi] normalized to gyroBohm	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e39f969d-ca39-4579-b1f8-d521d7d2bce7	\N	S_qBD	turbulent energy exchange between ions and electrons normalized to gyroBohm (see technical manual)	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+0d05460c-a9c3-4096-b3d1-1e6f591924d3	\N	radius	r/a using geometric average of postion of flux surface at point of maximum plasma horizontal extent	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f8572580-815c-4ff7-be17-002206d5f532	\N	dlntdr	local logarithmic derivative of ion temperature= 1/Ti  *  dTi/dr	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+8f67ecc6-1765-47fc-908f-6dac853ae8eb	\N	dlnndr_electron	local logarithmic derivative of electron density = 1/ne  *  dbe/dr	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+a8c7d9a9-2d8d-4325-83e2-8b1220292101	\N	dlntdr_electron	local logarithmic derivative of electron temperature = 1/Te  *  dTe/dr	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	Code Characteristics	Terms that describe the code type	5bad691d-4806-4159-a004-e09054059aea	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+cc0d63bb-0b3b-486d-970c-4361f61e9cf2	\N	Run Characteristics	Terms that describe the run type	5bad691d-4806-4159-a004-e09054059aea	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	Run Metadata	Metadata terms associated with the run	5bad691d-4806-4159-a004-e09054059aea	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+8ecd02ab-20bd-4a0f-b236-dac72e95930b	\N	purpose	Fortran code purpose, e.g. Equilibrium and Reconstruction Fitting	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+3ff39914-8308-483d-856b-553117ed93ba	\N	version	code version, e.g. 05/14/2013	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+68a78045-3b22-4216-a198-834a9941adf3	\N	documentation	link to code documentation, e.g. https://fusion.gat.com/theory/Efit	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+20f475b0-77f0-4a85-adc5-6c1849f0c2a4	\N	bit_size	code bit-size version, e.g. 32 or 64	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+dc6486f0-1fd5-4057-95c9-5349ac684706	\N	source	link to code download, e.g. https://fusion.gat.com/theory/Efitsource	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+335b0692-72df-48fc-a29f-53bbfd0927c9	\N	2	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+bf238299-6498-4f0c-99d1-8f94e5cd5af9	\N	7	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d216a376-1f74-4909-bb84-ec8d0cc41222	\N	tree	Name of MDSplus tree into which the EFIT data was loaded	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+84863ca8-ad30-4dbd-8fda-c94616e83016	\N	wtotmax	Maximum stored energy	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+ec4e6805-a2a6-48c2-9542-3536925aa84d	\N	rsurf	The geometric center of the limiting flux surface at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+5a6ba27e-aecb-4411-90bb-7b1de18fc75f	\N	Run Characteristics	Terms that describe the run type	c9d814d4-2b2f-4aa3-b40b-5a19c84915b1	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+8aee1125-6d1e-4274-b8a8-36ef1212df36	\N	source	link to code download, e.g. http://cswim.org	9f949b47-3a75-414a-b0b2-13f234ff4544	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+6600e0f2-38b1-436d-b814-98df18a74cc9	\N	sim_name	Simulation name, e.g. ss31615_1	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+54b0b30e-283f-4c6a-88a9-d33e74a91311	\N	date_run	Time when SWIMM run started	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+49d6b431-1184-4c0a-8b46-c3cd29b76a82	\N	max_ti_0	Maximum value of Ti at rho=0	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	quality	Fitness of an object for a particular purpose	afc6898e-250f-47cd-9c29-b0a224bf6a95	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+41d6b079-ce61-4252-a42a-709beafecdfe	\N	In Progress	Workflow or specific activity has started but has not completed	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+0d85e8cd-ba0c-4479-9821-f561987cd83a	\N	32	32-bit code	20f475b0-77f0-4a85-adc5-6c1849f0c2a4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+afee1b69-04ed-4921-96f2-8d8e0d494cdf	\N	4	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+4bd90627-574e-4eac-9138-e327528b7f4b	\N	run_id	ID of run; usually based on the shot number	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+8ef0eaa0-c52d-4669-ba00-db721d04e1ae	\N	run_by	User who started EFIT run	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f52dbef1-0696-4e1e-8d10-81196531d73a	\N	a	Minor radius at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+161cecff-7e50-42c8-bf1f-9accd63e79ef	\N	delta_l	Lower triangularity at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+9adf7672-f7cc-42b6-bfbd-a02ebf21732a	\N	purpose	Fortran code purpose, e.g. Simulation of RF Wave Interactions with Magnetohydrodynamics	9f949b47-3a75-414a-b0b2-13f234ff4544	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+fd83d0d6-2c41-4aa8-9b53-da75a01fc563	\N	complete	Status	caf5d7aa-974f-4fd3-a171-12b4bc3df101	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+7eba82d7-f37f-4393-b184-497016c8e47f	\N	tokamak	Tokamak name, e.g. ITER	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b100bf73-fd4f-4ed2-9e23-8b8904f1aa5a	\N	run_comment	Description of run	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+bffa6315-479e-4e24-8ba1-6c53f478c137	\N	max_q_0	Maximum value of q at rho=0	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d2a01f9f-43dc-4ee1-9d75-558df87bdfd3	\N	2	Medium quality: Object may be useful for some purposes	c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+2bc03793-5185-4606-80b0-d107588a1c0d	\N	Non Standard Completion	Workflow or activity has failed or completed with errors	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+aa5f3428-ac1e-46fc-91c5-4347a50857a4	\N	64	64-bit code	20f475b0-77f0-4a85-adc5-6c1849f0c2a4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+bdd878d5-c3e5-4538-a02f-b3718ce53a9c	\N	5	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+5aca8347-c2e3-4a5b-a6db-2df3e1d65bb3	\N	experiment	Name of the responsible experimental facility	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+31f6d285-a77e-4b13-9245-de534d12b2c2	\N	runtag	Arbitrary name used to quickly identify a run or set of runs	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b2c85afd-1602-499a-aa9c-2e1cc422ae6f	\N	kappa	Elongation at plasma boundary at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b38d7452-4289-4762-b971-261646870244	\N	topology	Descriptive name for shape of plasma at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+a2877af1-56fa-42bd-bb83-fb1d5e90babf	\N	version	code version, e.g. 2.20	9f949b47-3a75-414a-b0b2-13f234ff4544	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+2f6f6200-76be-4858-a134-f9508c18c069	\N	nonstandard completion	Status	caf5d7aa-974f-4fd3-a171-12b4bc3df101	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+2bc146d3-9755-46bc-bb02-f8674abe21fa	\N	host	Host name of computer/cluster running simulation, e.g. hopper	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+27f7fcda-22a2-4d12-b254-290bae92c40b	\N	visualisation_url	URL of visualisation, e.g. http://swim.gat.com:8080/media/plot/all.php?run_id=30124	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+00cce28d-0444-43d9-a5ce-7aedea41aae1	\N	max_q_95	Maximum value of q_95	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+1cc149ff-0854-413c-9f1f-5fd32074b2ee	\N	3	High quality: Object is broadly useful	c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+52f25011-b6a4-4a98-aec6-cc502683fce8	\N	Ready for Review	Workflow or specific data object is ready for review	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	mode	The type of input used to run EFIT	cc0d63bb-0b3b-486d-970c-4361f61e9cf2	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+28ef0e69-fcf3-4ef8-a97d-9c7ecbbf5f8f	\N	6	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+482751b2-41be-4c48-9493-600d8f9c7085	\N	run_type	Type of run, e.g. btshot	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+47bfa49a-80b7-4c09-be04-b52dd847308f	\N	run_comment	Description of run, e.g. Automatic EFIT	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+7abc24e3-49a6-4881-804d-ab507cc977a2	\N	r	Major radius at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+bdea9fe0-788c-49dd-a388-f58d425c6106	\N	zmaxis	Height of magnetic axis at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+9f949b47-3a75-414a-b0b2-13f234ff4544	\N	Code Characteristics	Terms that describe the code type	c9d814d4-2b2f-4aa3-b40b-5a19c84915b1	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+11b39af5-c1ad-4d0d-8158-5dfd063a0ef3	\N	documentation	link to code documentation, e.g. http://cswim.org	9f949b47-3a75-414a-b0b2-13f234ff4544	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c28fcb1c-cb36-4cbd-bf57-43c49f305d76	\N	shot	Shot number for run, e.g. 111203	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+4e1d1810-c856-4dae-b2f4-5d4bf430a813	\N	tree	Name of MDSplus tree into which the monitor data was loaded	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+095d74eb-4662-4b5d-a00d-393dd2f59744	\N	max_te_0	Maximum value of Te at rho=0	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+875e1e91-4c0e-42a8-b390-dc7498100b59	\N	max_i_plasma	Maximum value of plasma current	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+afc6898e-250f-47cd-9c29-b0a224bf6a95	\N	Status	Generic status terms	9c3d8704-58c5-4d09-9fc2-71674ee659aa	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+5879c192-280d-4551-afc0-9dfa064fec6b	\N	4	Notable quality: Object is of special importance or interest	c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	State	Indicate state of progress on a object	afc6898e-250f-47cd-9c29-b0a224bf6a95	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+15ad0aff-b66f-4e22-a5e7-f926dfdbddda	\N	Review Complete	Workflow or specific data object review is complete	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+322e34a8-1b3b-45e7-8f07-fe1959936749	\N	3	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f27423ec-cb6c-41fd-858d-ee391848c4e8	\N	shot	Shot number for run	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+ad6fc2cb-9e1a-462e-96a1-fc9f3011c89a	\N	date_run	Time when EFIT run started	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+103b69b5-39cb-49b9-9ba9-67e40fdb2b4f	\N	t_efit	Time of EFIT at wtotmax	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e2ca03e1-da74-4adf-9746-cc93aebc50c0	\N	delta_u	Upper triangularity at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+3b35ab70-245a-4681-bc43-491bbd925522	\N	Run Metadata	Metadata terms associated with the run	c9d814d4-2b2f-4aa3-b40b-5a19c84915b1	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+caf5d7aa-974f-4fd3-a171-12b4bc3df101	\N	status	Status of run	5a6ba27e-aecb-4411-90bb-7b1de18fc75f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+1d2a247e-b8e2-4124-92b9-91813d8840e3	\N	portal_run_id	ID used on swim portal website, e.g. 30124	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+55a035c2-d66c-4c87-98d9-67d5863afb6e	\N	run_by	User who started SWIM run	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+02d6b8fe-833f-45cd-a72d-b1e05f284260	\N	max_ne_0	Maximum value of ne at rho=0	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+0b90178d-2c56-4eff-87c4-0f18094b77ea	\N	1	Low quality: Object should not be used for additional purposes	c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e233d740-ba7c-4161-9ef3-3d37e9c674ce	\N	Complete	Workflow or specific activity has completed	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: workflow; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY workflow (w_guid, name, ws_guid, description, u_guid, comp_seq, creation_time, start_time, end_time, completion_status, status_explanation) FROM stdin;
+aea8f004-839a-4250-a537-af5547bc10ca	SWIM	\N	29841 : fastran_30001Z2	f223db41-d1c5-41db-b8af-fde6c0a16f76	113	2014-03-18 00:00:04.31757	\N	\N	\N	\N
+7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	OMFITworkflow_2015-02-02__19:44:13__357343	\N	OMFIT workflow	f223db41-d1c5-41db-b8af-fde6c0a16f76	31	2015-02-02 19:43:51.497387	\N	\N	\N	\N
+0407f11e-fbd9-4509-8fcc-ff452d5daf58	EFIT	\N	EFIT01 for 160124	f223db41-d1c5-41db-b8af-fde6c0a16f76	1	2015-05-12 21:57:21.58635	\N	\N	\N	\N
+08d2f5db-97d8-49c9-bd99-85303b07f9e2	EFIT	\N	EFIT02 for 160124	f223db41-d1c5-41db-b8af-fde6c0a16f76	2	2015-05-12 21:57:35.96598	\N	\N	\N	\N
+9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	Zipfit Electron Temperature	\N	Zipfit Electron Temperature for 160124	f223db41-d1c5-41db-b8af-fde6c0a16f76	1	2015-05-12 21:58:18.819529	\N	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: workflow_connectivity; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY workflow_connectivity (wc_guid, w_guid, parent_guid, parent_type, child_guid, child_type, creation_time) FROM stdin;
+f4c38c56-b7cc-4200-af7a-28b75812a1bd	aea8f004-839a-4250-a537-af5547bc10ca	3bdcc3ee-b2ad-4b04-84c2-71ae7fc52477	activity	ed707762-dcc7-4f54-bdae-c62f7e2dcfcd	activity	2014-03-18 00:00:15.363122
+c635cd59-fb99-4b9a-affb-60dc23b9b9d7	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7f1449a-3426-4743-8e05-13ef3e85f420	activity	e2e309fa-8bd4-4724-ad70-bf97e70d0e47	dataobject	2015-02-02 19:44:14.134944
+a763f29f-0453-4334-ab53-038d38840f36	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	3ccc8be8-3eae-4701-8c31-372d26089323	activity	f2ffd549-6ca8-47d3-982b-f9a511425c22	dataobject	2015-02-02 19:44:39.574651
+e5eb377b-ba8f-4198-a8cc-8baad531fa2d	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f1ba7501-a1da-45b9-a27c-99fede86308a	activity	ee49bcf8-5250-422b-aeab-f6f6d44c90b1	dataobject	2015-02-02 19:45:44.195452
+9bd145c3-f3e3-40cd-92e5-af528840f845	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	e2e309fa-8bd4-4724-ad70-bf97e70d0e47	activity	eb24402e-f7d0-4b11-8fa1-b80f651b4762	dataobject	2015-02-02 19:44:14.285028
+e60fd983-6e32-4f73-94d8-ab7d60342d9f	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	3ccc8be8-3eae-4701-8c31-372d26089323	activity	95cfe820-89b7-4572-9eee-ea50f18c33a0	dataobject	2015-02-02 19:44:39.830733
+8e3b6a2f-34f6-4fed-8c04-df81e7381808	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	3ccc8be8-3eae-4701-8c31-372d26089323	activity	9aa5f704-59fb-4e45-bb04-d2f7391a2928	dataobject	2015-02-02 19:44:40.498971
+f0f0fbd8-e7c3-489e-bd75-de7fb205df1d	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f1ba7501-a1da-45b9-a27c-99fede86308a	activity	fbabb950-0042-4a34-b824-0deff8537e24	dataobject	2015-02-02 19:45:44.892092
+0ca51fe6-f928-4d02-822e-e3c25ddc5d35	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	67dc8a49-e0c9-4c30-984a-cc66fa72dcab	activity	e5d4733e-c3db-4eb5-af85-46a88b510174	dataobject	2015-02-02 19:47:14.021574
+fceda50b-8732-44d0-85c4-6f2883f14a07	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	427f78fb-8ea3-4c15-881b-3bbec0ea7924	activity	545556fb-7ca2-47c9-8828-075ce4665f80	dataobject	2015-02-02 19:47:16.814322
+5a5d995d-e41c-48f3-960e-bd9c7dc28e03	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f9f187fc-2cba-4099-9b3c-157ef228e3a8	activity	2a1690d2-ad86-4a35-bc8e-5d871dda3e3f	dataobject	2015-02-02 19:47:49.799393
+7f9d685e-d9d3-42fb-a0de-f141a3ac61ac	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	baf10234-a4d2-4b19-b019-2fdfa3052c8d	activity	6e7900ce-bd9c-4545-b0ed-7d3b7722db6e	dataobject	2015-02-02 19:48:36.086157
+ba81d100-8ced-4524-a287-e0b138275ff9	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	6e7900ce-bd9c-4545-b0ed-7d3b7722db6e	activity	09646479-8f58-4ee6-88ba-a311aab3124a	dataobject	2015-02-02 19:48:58.245245
+8c24faf1-8671-4ff4-9f10-3e5edad74e99	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f2a0a664-a876-4a3a-a45c-94df5774d7ec	activity	c5951042-97fb-4363-b15e-b332ad59923d	dataobject	2015-02-02 19:50:05.168413
+e5b04a2f-34e2-478c-a913-fc73ff87fd0a	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7f1449a-3426-4743-8e05-13ef3e85f420	activity	04e66dc4-df23-4fb3-89bb-e2c6f8155534	dataobject	2015-02-02 19:50:29.232913
+d15fa46b-b767-4d4d-8079-6d85b3cdba00	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	c200fadc-8b65-4802-9d7c-a7e86c70ddc8	activity	3366ee69-2de4-4e9c-8955-0847c8fc8c1e	dataobject	2015-02-02 19:50:46.566611
+c72e9940-b94d-47e0-bcb1-038e7c45f789	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	e8af5728-ab0b-4bcd-96a3-6d29831d7497	activity	89bd839c-c3ec-4ebf-af2a-c5fa58316253	dataobject	2015-02-02 20:19:02.020057
+68fb8c3f-cad4-4d2c-8d36-537256eb190f	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	44796202-584d-4854-9948-8ecef8137afa	activity	e3845fee-9444-41af-bd56-a6fa6b93fc41	dataobject	2015-02-02 20:19:24.47477
+0b560b1a-9942-4af4-adba-32638d97d717	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	e3845fee-9444-41af-bd56-a6fa6b93fc41	activity	caf2d7dd-f66b-495c-9247-8cfb8012042d	dataobject	2015-02-02 20:20:26.369408
+6862dc73-ceea-4486-ab48-0a080c883ec9	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	9ff75882-14e2-47ef-ad82-f2b121c11086	activity	57c8f94b-9d74-4d40-b74b-ef1ae390b78d	dataobject	2015-02-02 20:20:52.084147
+3ce11e65-4305-42e4-996b-973dc987d9fb	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7f1449a-3426-4743-8e05-13ef3e85f420	activity	39b12e8c-e87b-45c0-8821-cc06a87a599e	dataobject	2015-02-02 19:44:10.907941
+3b7e8364-e854-44ca-b730-8b810d830d5c	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	e2e309fa-8bd4-4724-ad70-bf97e70d0e47	activity	070b7e5c-0016-4dde-a56f-7e9c57c8e8cf	dataobject	2015-02-02 19:44:54.505279
+9b495646-ca5a-4a5a-9f1a-84469359ac80	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7f1449a-3426-4743-8e05-13ef3e85f420	activity	2f4985c4-fb32-427f-85f7-deb244b9be34	dataobject	2015-02-02 19:44:56.53711
+230d5551-c290-445c-892c-86eb97a4d0b6	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a736f427-cffd-4078-8285-9abbadd29db3	activity	c3decee5-ecad-4410-91fe-40fbcc63cab9	dataobject	2015-02-02 19:44:57.9536
+43bdc839-7f13-473a-8396-c018f7b43fca	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2f4985c4-fb32-427f-85f7-deb244b9be34	activity	a7878d6e-9763-44ab-bce3-13619192db91	dataobject	2015-02-02 19:45:45.610574
+2533e80f-5034-4795-a10b-b2952426f559	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2f4985c4-fb32-427f-85f7-deb244b9be34	activity	427f78fb-8ea3-4c15-881b-3bbec0ea7924	dataobject	2015-02-02 19:47:14.509901
+3d119468-cd15-489c-9573-2a954291f3f1	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	427f78fb-8ea3-4c15-881b-3bbec0ea7924	activity	e0fc3944-85b9-4a8d-96fd-40adb9363344	dataobject	2015-02-02 19:47:19.626412
+22c308a2-c426-4620-b5c6-a615149be1c7	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2f4985c4-fb32-427f-85f7-deb244b9be34	activity	b309d620-cf25-4f78-a496-291bab69411b	dataobject	2015-02-02 19:47:39.802319
+8a64aa75-0672-4c46-be84-d959e8c95b9d	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2a1690d2-ad86-4a35-bc8e-5d871dda3e3f	activity	54906b3f-ebfe-4c25-86de-6a2122140a61	dataobject	2015-02-02 19:47:50.055641
+513870e4-a1a0-4290-843a-93bd77a697ab	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	6e7900ce-bd9c-4545-b0ed-7d3b7722db6e	activity	ed5b1c63-6902-4587-92d4-20681da55a8e	dataobject	2015-02-02 19:48:36.190904
+02a66d05-9ac0-4794-afd4-4c03c0a4b65e	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	09646479-8f58-4ee6-88ba-a311aab3124a	activity	375ac6bf-297b-4b81-abfb-c4f5a2b4e9fb	dataobject	2015-02-02 19:50:02.534667
+18179924-5482-4cea-a802-864968020ba7	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f2a0a664-a876-4a3a-a45c-94df5774d7ec	activity	830d2ff2-2fce-4d0a-8918-3409b0c3c0ef	dataobject	2015-02-02 19:50:05.352117
+a8b1a24e-0972-4dd0-859e-9efe49af17e8	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7f1449a-3426-4743-8e05-13ef3e85f420	activity	9ff75882-14e2-47ef-ad82-f2b121c11086	dataobject	2015-02-02 19:50:36.359413
+a5e0a7cc-5ca7-4dd0-af50-6b6abe40d64d	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2c4eb12a-fc9e-4aa8-ab10-4b2497b2a673	activity	4e73a7cb-8439-4cac-aca1-d3fe94d35350	dataobject	2015-02-02 19:50:47.268529
+287e523c-35f3-4cc5-a245-64297cca2abf	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	44796202-584d-4854-9948-8ecef8137afa	activity	45d9142c-d89e-4820-af66-af4bad927f15	dataobject	2015-02-02 20:19:02.491105
+c313bfc5-bbbb-4d06-a00e-ede4ce7beb2a	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	workflow	a7f1449a-3426-4743-8e05-13ef3e85f420	dataobject	2015-02-02 19:44:08.975323
+ab3f8213-add2-4b2d-a7a6-14f21d67a82d	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	ee49bcf8-5250-422b-aeab-f6f6d44c90b1	activity	1dff6067-148a-4e92-9b42-ce1619bdd138	dataobject	2015-02-02 19:45:44.359696
+38fa5f50-7481-46bc-839c-b47e3ce4e079	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7878d6e-9763-44ab-bce3-13619192db91	activity	67dc8a49-e0c9-4c30-984a-cc66fa72dcab	dataobject	2015-02-02 19:46:09.777189
+a6d4971a-4d29-44af-9f9f-128fdda1caff	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	427f78fb-8ea3-4c15-881b-3bbec0ea7924	activity	77d89e07-4ed0-414c-beb1-914f0c9489b6	dataobject	2015-02-02 19:47:16.598362
+d264c86d-9501-4fe3-9ccd-b960807056a4	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	baf10234-a4d2-4b19-b019-2fdfa3052c8d	activity	f9f187fc-2cba-4099-9b3c-157ef228e3a8	dataobject	2015-02-02 19:47:49.074149
+8a17354f-8e5d-4b9e-b11a-7c368e65f5d0	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f9f187fc-2cba-4099-9b3c-157ef228e3a8	activity	11351cab-9afa-4329-8fa2-c926cbd1ff9b	dataobject	2015-02-02 19:48:35.689925
+a452a610-8d9a-4697-a634-1108571a8372	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	ed5b1c63-6902-4587-92d4-20681da55a8e	activity	10b6c50d-abff-4e3c-9bc7-edbd7a9e4e3b	dataobject	2015-02-02 19:48:57.403912
+ac82f08a-19f2-440c-91d9-0b9d67744784	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f2a0a664-a876-4a3a-a45c-94df5774d7ec	activity	4fc60187-0d91-444d-b888-c4d05fe2a178	dataobject	2015-02-02 19:50:04.662477
+4d4c216f-34c3-4d29-a110-8db325a7f2cc	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	baf10234-a4d2-4b19-b019-2fdfa3052c8d	activity	9475a76b-9a09-43b8-9b51-ba12f34462b1	dataobject	2015-02-02 19:50:28.158388
+e04b930b-f140-4ea3-8ee4-b4c610343c08	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2c4eb12a-fc9e-4aa8-ab10-4b2497b2a673	activity	c200fadc-8b65-4802-9d7c-a7e86c70ddc8	dataobject	2015-02-02 19:50:37.625712
+7cd72f6e-8612-4b54-ae87-2db53be76cb0	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2c4eb12a-fc9e-4aa8-ab10-4b2497b2a673	activity	edd1be77-ee07-463a-ac07-8d71e73c4bdb	dataobject	2015-02-02 19:50:49.310925
+563f8c02-a07c-4e50-90c8-afc3831edb17	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	0c514200-ce64-418f-8fad-f38819f94f1a	activity	b6af659d-9d5a-4753-a365-32790329aec2	dataobject	2015-02-02 20:19:00.667751
+214d661c-07a8-43aa-9f1b-47d6e1bf03b4	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	9ff75882-14e2-47ef-ad82-f2b121c11086	activity	44796202-584d-4854-9948-8ecef8137afa	dataobject	2015-02-02 20:19:02.384094
+ffa491ef-8cac-40a3-8138-2bc35c28b77e	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	45d9142c-d89e-4820-af66-af4bad927f15	activity	bbaaad82-9875-4fdc-8228-815b4b7b7405	dataobject	2015-02-02 20:19:02.599209
+d079a00a-2a1b-4c9a-88b7-cd8b7877ee52	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	45d9142c-d89e-4820-af66-af4bad927f15	activity	ca75d34e-33ca-43ff-bff8-c98ae4fe0c60	dataobject	2015-02-02 20:19:23.683113
+32155d6c-6427-4ef4-9f60-1dc6ce2ff47b	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	9ff75882-14e2-47ef-ad82-f2b121c11086	activity	3f7e99a9-ccb7-4e96-b836-077d5c3de33c	dataobject	2015-02-02 20:20:33.605235
+d0e0d110-13f3-41a8-b70c-f52ac1d15df8	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	e2e309fa-8bd4-4724-ad70-bf97e70d0e47	activity	3ccc8be8-3eae-4701-8c31-372d26089323	dataobject	2015-02-02 19:44:36.909375
+613cdd19-6eac-4fe0-b496-e4147923fe71	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7f1449a-3426-4743-8e05-13ef3e85f420	activity	00cc92af-189d-4d3c-a70c-6a9b9bfacac5	dataobject	2015-02-02 19:44:54.837763
+800ae251-c81c-4ec1-9189-f506e081e1da	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2f4985c4-fb32-427f-85f7-deb244b9be34	activity	f1ba7501-a1da-45b9-a27c-99fede86308a	dataobject	2015-02-02 19:44:56.898746
+846809d8-a399-4962-aaa8-1cf320c06053	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f1ba7501-a1da-45b9-a27c-99fede86308a	activity	a736f427-cffd-4078-8285-9abbadd29db3	dataobject	2015-02-02 19:44:57.687773
+ebe9001e-adf0-4b62-85d6-168953be3d74	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7878d6e-9763-44ab-bce3-13619192db91	activity	fc6972dc-5bbe-4faa-92a2-0d0ffcedeeb0	dataobject	2015-02-02 19:45:45.97678
+48e6af45-1efa-4b2f-bb14-6cb8a3ba7183	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	fc6972dc-5bbe-4faa-92a2-0d0ffcedeeb0	activity	83601322-c9b6-4bec-94f4-0ca074cf0acd	dataobject	2015-02-02 19:45:59.118188
+63bc7c93-ec83-44cc-9957-3be637335e1a	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	427f78fb-8ea3-4c15-881b-3bbec0ea7924	activity	f1bdd2f7-2204-475a-8006-98bdffc0f865	dataobject	2015-02-02 19:47:15.767763
+0ebb8da0-7665-48b6-880d-38919310602a	aea8f004-839a-4250-a537-af5547bc10ca	aea8f004-839a-4250-a537-af5547bc10ca	workflow	6071cbb1-bcaf-41ab-a675-6237deea5f68	dataobject_instance	2014-03-18 00:00:09.651058
+296997c0-9f0f-4a8e-8fb9-7f217207ac76	aea8f004-839a-4250-a537-af5547bc10ca	ed707762-dcc7-4f54-bdae-c62f7e2dcfcd	activity	e6c10f90-9768-4aab-bf82-77c213458144	dataobject_instance	2014-03-18 00:00:15.706203
+571679ef-faf8-4e37-817c-6fbdcebdebc0	aea8f004-839a-4250-a537-af5547bc10ca	aea8f004-839a-4250-a537-af5547bc10ca	workflow	553ec756-4670-41ee-ae79-6e48572f145c	dataobject_instance	2014-03-18 00:00:09.275944
+395debfd-04e9-480f-ad33-26ab720c646b	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	427f78fb-8ea3-4c15-881b-3bbec0ea7924	activity	0df8d973-9d0c-40da-a784-755fce0998c5	dataobject	2015-02-02 19:47:20.042218
+d9fcafb4-a319-47e0-96c8-ff9b647a1810	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7f1449a-3426-4743-8e05-13ef3e85f420	activity	cb507508-0b52-414d-af35-fa360f01ddfa	dataobject	2015-02-02 19:47:40.994534
+ac6ac323-1c48-4e79-802d-99927b64b47c	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f9f187fc-2cba-4099-9b3c-157ef228e3a8	activity	55732c88-70b7-49b3-a95a-2e627ba79d4e	dataobject	2015-02-02 19:48:35.030393
+6187c5c0-c165-444d-937d-5b532f18b1c3	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	ed5b1c63-6902-4587-92d4-20681da55a8e	activity	70e72bf5-c983-45f9-9b29-82a467c36dd1	dataobject	2015-02-02 19:48:36.304841
+871b3fda-ce45-4b54-bbd1-cfae45db7ceb	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	baf10234-a4d2-4b19-b019-2fdfa3052c8d	activity	f2a0a664-a876-4a3a-a45c-94df5774d7ec	dataobject	2015-02-02 19:50:03.311597
+60eb7eaa-10c3-407e-9791-b79ca70892f5	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f2a0a664-a876-4a3a-a45c-94df5774d7ec	activity	5ba2a68b-ccdd-40dd-ba22-ac8a0f4a4732	dataobject	2015-02-02 19:50:08.171641
+192bf956-4e2a-4ea4-ad63-18430e7999e2	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	9ff75882-14e2-47ef-ad82-f2b121c11086	activity	e8af5728-ab0b-4bcd-96a3-6d29831d7497	dataobject	2015-02-02 19:50:36.49706
+3719effb-3823-41f1-9c95-9a3bc5038b2f	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2c4eb12a-fc9e-4aa8-ab10-4b2497b2a673	activity	f54a0b0b-000f-4099-8fac-c5be01960749	dataobject	2015-02-02 19:50:48.753099
+77400d44-9d91-4d69-ac59-46f955bb60e9	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	45d9142c-d89e-4820-af66-af4bad927f15	activity	6f1e8db8-15e0-4446-8621-c8a24780195f	dataobject	2015-02-02 20:19:15.522782
+dc6a43f6-ef1a-4d0a-a5df-440980a31a92	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	fc6972dc-5bbe-4faa-92a2-0d0ffcedeeb0	activity	c2f5c7aa-5f22-42bd-950e-22881fe8293a	dataobject	2015-02-02 19:45:46.158718
+4d6a939b-be9d-4448-a966-67100bbdbb25	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	fc6972dc-5bbe-4faa-92a2-0d0ffcedeeb0	activity	6a4436f2-0877-4932-9762-045b546de2a6	dataobject	2015-02-02 19:46:07.183265
+df81abd8-27b7-45e0-a6be-678256baa2ac	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	427f78fb-8ea3-4c15-881b-3bbec0ea7924	activity	3c9923db-9206-40be-9db9-cd4e08ed1997	dataobject	2015-02-02 19:47:15.975158
+66efb4b6-af18-4ea6-9a8d-200db246cb92	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	a7f1449a-3426-4743-8e05-13ef3e85f420	activity	baf10234-a4d2-4b19-b019-2fdfa3052c8d	dataobject	2015-02-02 19:47:48.714703
+7a32f116-8cab-4ab4-9862-11cc66e21899	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	55732c88-70b7-49b3-a95a-2e627ba79d4e	activity	6a07d1f9-d9a5-4def-9da6-eaf12e194d55	dataobject	2015-02-02 19:48:35.186932
+e5251d1c-d0f8-4fbe-b020-a32165cad802	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	ed5b1c63-6902-4587-92d4-20681da55a8e	activity	bf937c9c-c10c-4fed-8c43-08336f6e0885	dataobject	2015-02-02 19:48:49.38682
+452e7b5f-1851-4711-acf7-942b80d77267	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f2a0a664-a876-4a3a-a45c-94df5774d7ec	activity	8bca526a-cb89-4df8-ac9d-fd6e80be0864	dataobject	2015-02-02 19:50:04.449755
+f8231c08-3729-4595-976a-ecd658d8dce7	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	f2a0a664-a876-4a3a-a45c-94df5774d7ec	activity	af22d1cc-e959-4b66-bc39-bcc307606751	dataobject	2015-02-02 19:50:08.659074
+b985baee-5ef5-4783-9d97-3c165cb85fd8	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	e8af5728-ab0b-4bcd-96a3-6d29831d7497	activity	2c4eb12a-fc9e-4aa8-ab10-4b2497b2a673	dataobject	2015-02-02 19:50:37.255907
+f23bbcab-64b4-4736-aaf5-231262f3671f	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	2c4eb12a-fc9e-4aa8-ab10-4b2497b2a673	activity	64b20a1a-b54d-4fcd-8fd5-526a18e6568d	dataobject	2015-02-02 19:50:48.956488
+2415b1e4-cf12-4f4e-8637-b098ad613ee7	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	edd1be77-ee07-463a-ac07-8d71e73c4bdb	activity	0c514200-ce64-418f-8fad-f38819f94f1a	dataobject	2015-02-02 20:18:55.585366
+5ddb38ed-a0d8-4a74-970c-68e577826563	aea8f004-839a-4250-a537-af5547bc10ca	553ec756-4670-41ee-ae79-6e48572f145c	dataobject_instance	3bdcc3ee-b2ad-4b04-84c2-71ae7fc52477	activity	2014-03-18 00:00:09.927731
+f9bceb10-c4f7-4122-991e-0888dcc98aaf	aea8f004-839a-4250-a537-af5547bc10ca	6071cbb1-bcaf-41ab-a675-6237deea5f68	dataobject_instance	3bdcc3ee-b2ad-4b04-84c2-71ae7fc52477	activity	2014-03-18 00:00:09.931188
+e4de318a-2959-41c3-b659-f756ff5e78c5	aea8f004-839a-4250-a537-af5547bc10ca	e6c10f90-9768-4aab-bf82-77c213458144	dataobject_instance	b59e6613-a140-4014-8553-0972f366c62c	activity	2014-03-18 00:00:17.094871
+a6f90a71-8858-4f3e-a2ec-e88057e4c41f	aea8f004-839a-4250-a537-af5547bc10ca	ed707762-dcc7-4f54-bdae-c62f7e2dcfcd	activity	d3a742b1-e72e-4096-bed0-008b5030b164	dataobject_instance	2014-03-18 00:00:16.738189
+5c145f74-c852-48df-ae93-a8416a36d3cd	0407f11e-fbd9-4509-8fcc-ff452d5daf58	0407f11e-fbd9-4509-8fcc-ff452d5daf58	workflow	b1c208cd-c032-40a1-8fa0-73579f6bd292	dataobject_instance	2015-05-12 21:57:21.832324
+b34c33e3-7900-42df-8a8d-6675ee491c13	0407f11e-fbd9-4509-8fcc-ff452d5daf58	0407f11e-fbd9-4509-8fcc-ff452d5daf58	workflow	565cfbba-4faf-45c4-ab90-7a5fbd88db75	dataobject_instance	2015-05-12 21:57:22.210837
+d6480d2a-e13d-41f6-96dc-9576f1c473d8	0407f11e-fbd9-4509-8fcc-ff452d5daf58	0407f11e-fbd9-4509-8fcc-ff452d5daf58	workflow	aabec915-353c-431e-bf33-4dfb08e11b22	dataobject_instance	2015-05-12 21:57:22.592102
+e9d2c41b-9fee-4c2c-b529-7df7ea1ed78c	0407f11e-fbd9-4509-8fcc-ff452d5daf58	0407f11e-fbd9-4509-8fcc-ff452d5daf58	workflow	d996cf08-cac3-4099-870d-01cef579d68c	dataobject_instance	2015-05-12 21:57:22.788808
+27884cc2-dd70-4d12-b3de-4a30c39c945c	0407f11e-fbd9-4509-8fcc-ff452d5daf58	0407f11e-fbd9-4509-8fcc-ff452d5daf58	workflow	3c5a966d-557c-4828-82bb-6bd666e8e0ab	dataobject_instance	2015-05-12 21:57:22.981741
+ee644a29-1c0f-46dc-b3bd-051ffd0367cf	0407f11e-fbd9-4509-8fcc-ff452d5daf58	b1c208cd-c032-40a1-8fa0-73579f6bd292	dataobject_instance	ba160044-85fe-4b44-bd94-dccf7e077879	activity	2015-05-12 21:57:23.897492
+acaa0ab1-df80-4284-9f10-8728e670216d	0407f11e-fbd9-4509-8fcc-ff452d5daf58	565cfbba-4faf-45c4-ab90-7a5fbd88db75	dataobject_instance	ba160044-85fe-4b44-bd94-dccf7e077879	activity	2015-05-12 21:57:23.899381
+f5340cae-74ff-44b5-84f0-d264983c1141	0407f11e-fbd9-4509-8fcc-ff452d5daf58	aabec915-353c-431e-bf33-4dfb08e11b22	dataobject_instance	ba160044-85fe-4b44-bd94-dccf7e077879	activity	2015-05-12 21:57:23.900981
+ba56c48f-a3eb-46d2-b01b-2fe88a5367e8	0407f11e-fbd9-4509-8fcc-ff452d5daf58	d996cf08-cac3-4099-870d-01cef579d68c	dataobject_instance	ba160044-85fe-4b44-bd94-dccf7e077879	activity	2015-05-12 21:57:23.903068
+49e1db33-3604-4955-85f6-a1a27ba583b1	0407f11e-fbd9-4509-8fcc-ff452d5daf58	3c5a966d-557c-4828-82bb-6bd666e8e0ab	dataobject_instance	ba160044-85fe-4b44-bd94-dccf7e077879	activity	2015-05-12 21:57:23.904848
+7a3899bb-2a24-4e04-9bb3-2f2e62e4f622	0407f11e-fbd9-4509-8fcc-ff452d5daf58	0407f11e-fbd9-4509-8fcc-ff452d5daf58	workflow	3cca9c0f-11ac-42d2-880d-532044b6f25a	dataobject_instance	2015-05-12 21:57:24.105232
+2dcc0824-f4f5-4568-9408-2a4ac1b841f3	0407f11e-fbd9-4509-8fcc-ff452d5daf58	3cca9c0f-11ac-42d2-880d-532044b6f25a	dataobject_instance	9b4e7b68-a035-419c-a44f-2d7d4f027c12	activity	2015-05-12 21:57:24.307185
+9d2f58ee-3e64-4e7f-bab1-b85c4d07987e	0407f11e-fbd9-4509-8fcc-ff452d5daf58	ba160044-85fe-4b44-bd94-dccf7e077879	activity	5af2f3b1-17b6-451b-9f5b-8a19eeff9521	activity	2015-05-12 21:57:24.482838
+79e34d5a-be44-473b-82da-e7a103bb129e	0407f11e-fbd9-4509-8fcc-ff452d5daf58	9b4e7b68-a035-419c-a44f-2d7d4f027c12	activity	5af2f3b1-17b6-451b-9f5b-8a19eeff9521	activity	2015-05-12 21:57:24.484748
+2c2ed733-f2c7-4232-92af-dd609e523e21	0407f11e-fbd9-4509-8fcc-ff452d5daf58	5af2f3b1-17b6-451b-9f5b-8a19eeff9521	activity	be3db7c7-f6a5-4453-a936-b279787d91f7	activity	2015-05-12 21:57:24.845944
+f2f1fe75-b8d5-43ea-8dd5-2341b3f4fb2d	0407f11e-fbd9-4509-8fcc-ff452d5daf58	be3db7c7-f6a5-4453-a936-b279787d91f7	activity	627dd3e0-fbbe-4327-a075-f1e60ab02627	activity	2015-05-12 21:57:25.404555
+4992d3c4-cbf9-44a3-9fe5-af17f7b75c2c	0407f11e-fbd9-4509-8fcc-ff452d5daf58	627dd3e0-fbbe-4327-a075-f1e60ab02627	activity	4b1909cd-923f-4c95-b873-35fdca7c158c	activity	2015-05-12 21:57:25.817237
+a8e03872-a4e7-48fd-b7b5-854226a0ef2b	0407f11e-fbd9-4509-8fcc-ff452d5daf58	4b1909cd-923f-4c95-b873-35fdca7c158c	activity	87307fa3-96bc-42bc-bd4e-a508139992d5	activity	2015-05-12 21:57:25.988926
+551c0c9a-6b5a-4b4f-a9dc-3408ed275430	0407f11e-fbd9-4509-8fcc-ff452d5daf58	87307fa3-96bc-42bc-bd4e-a508139992d5	activity	c4c01268-38cd-42c4-9842-9293e5ad4c18	dataobject_instance	2015-05-12 21:57:26.335961
+0e587a01-6ebd-4023-aa74-5bf4762100a6	0407f11e-fbd9-4509-8fcc-ff452d5daf58	87307fa3-96bc-42bc-bd4e-a508139992d5	activity	b35a5154-fb33-43a8-80c9-e9e45f29c952	dataobject_instance	2015-05-12 21:57:26.684209
+a21f288d-452e-40eb-9bd1-0ca88ec2997a	0407f11e-fbd9-4509-8fcc-ff452d5daf58	87307fa3-96bc-42bc-bd4e-a508139992d5	activity	c5f35fc8-ae11-4752-bd5a-cf975af77a59	dataobject_instance	2015-05-12 21:57:27.067845
+2db2970f-3ef1-4859-a367-743304de0073	0407f11e-fbd9-4509-8fcc-ff452d5daf58	c4c01268-38cd-42c4-9842-9293e5ad4c18	dataobject_instance	f8a0396b-1622-471c-a8e8-cfddcaee1cc7	activity	2015-05-12 21:57:27.244551
+d7dcefa2-b727-4b7b-9e22-8fe31b9834bf	0407f11e-fbd9-4509-8fcc-ff452d5daf58	b35a5154-fb33-43a8-80c9-e9e45f29c952	dataobject_instance	f8a0396b-1622-471c-a8e8-cfddcaee1cc7	activity	2015-05-12 21:57:27.247072
+75ffa6a1-58de-45fb-829c-22f8fefb4648	0407f11e-fbd9-4509-8fcc-ff452d5daf58	c5f35fc8-ae11-4752-bd5a-cf975af77a59	dataobject_instance	f8a0396b-1622-471c-a8e8-cfddcaee1cc7	activity	2015-05-12 21:57:27.249678
+429cebce-963b-4659-a9d7-a1761ae94145	08d2f5db-97d8-49c9-bd99-85303b07f9e2	08d2f5db-97d8-49c9-bd99-85303b07f9e2	workflow	48889cdd-3912-4d58-a37e-80b3d927642b	dataobject_instance	2015-05-12 21:57:36.234804
+9de5ed7c-f042-4e64-97af-e574e8ae70da	08d2f5db-97d8-49c9-bd99-85303b07f9e2	08d2f5db-97d8-49c9-bd99-85303b07f9e2	workflow	243ff63a-7052-4f6f-a366-257636494a22	dataobject_instance	2015-05-12 21:57:36.59772
+b2310c11-a25a-4fdc-a77d-0328ed22a8eb	08d2f5db-97d8-49c9-bd99-85303b07f9e2	08d2f5db-97d8-49c9-bd99-85303b07f9e2	workflow	5dc2ceae-9379-4e70-9834-62e1467e7dc4	dataobject_instance	2015-05-12 21:57:36.948857
+35e1c8da-da42-4724-ab34-e3f9bd21fabe	08d2f5db-97d8-49c9-bd99-85303b07f9e2	08d2f5db-97d8-49c9-bd99-85303b07f9e2	workflow	4795e433-1ac3-429d-b305-acf031af5db9	dataobject_instance	2015-05-12 21:57:37.144272
+34fb64b6-dfc7-4c0f-9c94-ee69f17b0964	08d2f5db-97d8-49c9-bd99-85303b07f9e2	08d2f5db-97d8-49c9-bd99-85303b07f9e2	workflow	8312b0dc-a6ae-48ea-bd4f-24f280da7e7c	dataobject_instance	2015-05-12 21:57:37.317599
+f029bf32-b83d-4ca8-9128-eb466bf3603f	08d2f5db-97d8-49c9-bd99-85303b07f9e2	48889cdd-3912-4d58-a37e-80b3d927642b	dataobject_instance	26d666ea-ac22-4455-8242-8263b32e3400	activity	2015-05-12 21:57:38.277726
+abc57752-6851-4bc4-a19f-d1b9042022fa	08d2f5db-97d8-49c9-bd99-85303b07f9e2	243ff63a-7052-4f6f-a366-257636494a22	dataobject_instance	26d666ea-ac22-4455-8242-8263b32e3400	activity	2015-05-12 21:57:38.281259
+d2383dda-5060-450e-b8af-c10f666c3819	08d2f5db-97d8-49c9-bd99-85303b07f9e2	5dc2ceae-9379-4e70-9834-62e1467e7dc4	dataobject_instance	26d666ea-ac22-4455-8242-8263b32e3400	activity	2015-05-12 21:57:38.284716
+822ef484-aa64-4be9-b088-01e27145b91b	08d2f5db-97d8-49c9-bd99-85303b07f9e2	4795e433-1ac3-429d-b305-acf031af5db9	dataobject_instance	26d666ea-ac22-4455-8242-8263b32e3400	activity	2015-05-12 21:57:38.286386
+2eaf8647-4f95-46c1-b4cc-46a79fbef315	08d2f5db-97d8-49c9-bd99-85303b07f9e2	8312b0dc-a6ae-48ea-bd4f-24f280da7e7c	dataobject_instance	26d666ea-ac22-4455-8242-8263b32e3400	activity	2015-05-12 21:57:38.287855
+74bb05a5-0230-462c-981e-82fabaf2c915	08d2f5db-97d8-49c9-bd99-85303b07f9e2	08d2f5db-97d8-49c9-bd99-85303b07f9e2	workflow	80af7341-8bed-41d1-ae7b-51d6d457322e	dataobject_instance	2015-05-12 21:57:38.459166
+ddd34376-23a7-4018-a24b-d76ae2e9beed	08d2f5db-97d8-49c9-bd99-85303b07f9e2	80af7341-8bed-41d1-ae7b-51d6d457322e	dataobject_instance	5d055619-3976-4a88-a69b-dc7e39fe717e	activity	2015-05-12 21:57:38.640207
+5ebbb945-9702-467e-9806-0ee08a1618b1	08d2f5db-97d8-49c9-bd99-85303b07f9e2	26d666ea-ac22-4455-8242-8263b32e3400	activity	a977bec3-2e2b-48e2-b0c8-ddb061d0cbd3	activity	2015-05-12 21:57:38.813781
+8452eec2-c67f-4b48-bba4-ef9aad53f3b0	08d2f5db-97d8-49c9-bd99-85303b07f9e2	5d055619-3976-4a88-a69b-dc7e39fe717e	activity	a977bec3-2e2b-48e2-b0c8-ddb061d0cbd3	activity	2015-05-12 21:57:38.815533
+848182b6-5986-46bd-a3cf-a4dd319e16f2	08d2f5db-97d8-49c9-bd99-85303b07f9e2	a977bec3-2e2b-48e2-b0c8-ddb061d0cbd3	activity	359b0ebe-09f9-4ee0-b6a8-5cad74845fce	activity	2015-05-12 21:57:39.170621
+84246224-f964-417f-9d13-565968b1c44c	08d2f5db-97d8-49c9-bd99-85303b07f9e2	359b0ebe-09f9-4ee0-b6a8-5cad74845fce	activity	b3e6b8e2-4c96-4089-b32f-0801ff2d78c3	activity	2015-05-12 21:57:39.725179
+8501cefa-5a6d-4647-b684-fbe56f7c7f91	08d2f5db-97d8-49c9-bd99-85303b07f9e2	909dc0c7-9abf-49a9-ac15-c592ec9eda8b	activity	4e52a60a-ea2d-45da-ab47-c4e8064c768b	dataobject_instance	2015-05-12 21:57:41.345312
+0f1055d2-36bc-4f26-8000-6b1f371a80c5	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	9bac0647-b31a-49bd-9029-ebe6c3529b00	dataobject_instance	21e43bb3-c648-4a94-8391-2f0cc0e45af4	activity	2015-05-12 21:58:22.274152
+d01feae1-4037-40a3-acf2-a2000e6fd40c	08d2f5db-97d8-49c9-bd99-85303b07f9e2	b3e6b8e2-4c96-4089-b32f-0801ff2d78c3	activity	150a3bd6-64bf-4695-986a-46fc976ae3df	activity	2015-05-12 21:57:39.897237
+f6dc5f70-844a-4cf4-8350-a59781af94b7	08d2f5db-97d8-49c9-bd99-85303b07f9e2	0bdd4a6c-8cce-495a-8db5-851c98bfec8a	activity	1959f795-e7c0-4a62-80ee-ac25143a21cc	activity	2015-05-12 21:57:40.443497
+c78b9570-8fd3-4103-abea-9149fd683719	08d2f5db-97d8-49c9-bd99-85303b07f9e2	f8a9727a-0cda-44bf-b34c-dc3240fb9f66	dataobject_instance	d3adff7b-e21e-46bc-b389-4f778785f6dd	activity	2015-05-12 21:57:41.8966
+35240fd3-68d9-41c5-a586-dc471c15a43a	08d2f5db-97d8-49c9-bd99-85303b07f9e2	4e52a60a-ea2d-45da-ab47-c4e8064c768b	dataobject_instance	d3adff7b-e21e-46bc-b389-4f778785f6dd	activity	2015-05-12 21:57:41.898346
+b83de8bd-3e79-4a0b-b51c-23c009bb5b4e	08d2f5db-97d8-49c9-bd99-85303b07f9e2	9a54f227-a2e6-4492-babd-86161b6b1bc9	dataobject_instance	d3adff7b-e21e-46bc-b389-4f778785f6dd	activity	2015-05-12 21:57:41.900003
+89768375-f81c-4b3f-b286-1589b07ac665	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	workflow	0e216d63-31d8-49dc-b694-1bbcc248add3	dataobject_instance	2015-05-12 21:58:19.80725
+ee7d01ad-7566-4d92-8f04-ef02149a3e43	08d2f5db-97d8-49c9-bd99-85303b07f9e2	b3e6b8e2-4c96-4089-b32f-0801ff2d78c3	activity	0bdd4a6c-8cce-495a-8db5-851c98bfec8a	activity	2015-05-12 21:57:40.085579
+03060ffd-0ac7-41e5-94d8-50dd9056c38f	08d2f5db-97d8-49c9-bd99-85303b07f9e2	1959f795-e7c0-4a62-80ee-ac25143a21cc	activity	909dc0c7-9abf-49a9-ac15-c592ec9eda8b	activity	2015-05-12 21:57:40.612128
+d511e36e-6c57-49f5-837f-4749af0b1dcf	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	workflow	0b1061d0-7eef-44db-a883-6d7f7f676cf5	dataobject_instance	2015-05-12 21:58:19.015145
+11894b92-f819-4e6f-96e2-29f94b79eb11	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	6534884c-4e9d-4476-a84c-c47aab84dbaf	dataobject_instance	6d8b871b-ec5c-4093-b7af-231e3ab7cdee	activity	2015-05-12 21:58:21.190538
+ab2a44fe-4779-4899-b1af-c5e6ca497dfb	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	0e216d63-31d8-49dc-b694-1bbcc248add3	dataobject_instance	6d8b871b-ec5c-4093-b7af-231e3ab7cdee	activity	2015-05-12 21:58:21.19408
+04dc5b6e-b393-40f2-8c6e-6ac01832020b	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	835adac7-4a89-4472-b403-b6bfa298fdf0	dataobject_instance	6d8b871b-ec5c-4093-b7af-231e3ab7cdee	activity	2015-05-12 21:58:21.197671
+eb123904-10a0-4d4a-b7d7-0efb061519f9	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	9c62b1b5-deb8-47a9-9f68-c22beb13d268	dataobject_instance	6d8b871b-ec5c-4093-b7af-231e3ab7cdee	activity	2015-05-12 21:58:21.199656
+b697490d-06ee-4fb7-af21-e5821d12dbad	08d2f5db-97d8-49c9-bd99-85303b07f9e2	909dc0c7-9abf-49a9-ac15-c592ec9eda8b	activity	f8a9727a-0cda-44bf-b34c-dc3240fb9f66	dataobject_instance	2015-05-12 21:57:40.976408
+73c50037-5eb3-4a4e-a529-bda442156adb	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	workflow	835adac7-4a89-4472-b403-b6bfa298fdf0	dataobject_instance	2015-05-12 21:58:20.377333
+0290842a-3e6f-4532-a836-d3c6a640b735	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	workflow	9c62b1b5-deb8-47a9-9f68-c22beb13d268	dataobject_instance	2015-05-12 21:58:20.991105
+0981823a-269f-44cc-b989-88ee3a20c333	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	54a2e553-2b0f-4ecd-90b4-885ebefaecd1	activity	ea131dc2-7041-4a3c-8936-e2473f824189	activity	2015-05-12 21:58:21.548818
+d4de1fea-9c74-4dc3-a947-cb30373093b9	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	ea131dc2-7041-4a3c-8936-e2473f824189	activity	9bac0647-b31a-49bd-9029-ebe6c3529b00	dataobject_instance	2015-05-12 21:58:22.083886
+0ab2b8aa-1212-43b3-800d-cea9b5aa77d7	08d2f5db-97d8-49c9-bd99-85303b07f9e2	909dc0c7-9abf-49a9-ac15-c592ec9eda8b	activity	9a54f227-a2e6-4492-babd-86161b6b1bc9	dataobject_instance	2015-05-12 21:57:41.708808
+95f7026b-4692-4efa-b890-4cf09a246749	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	workflow	6534884c-4e9d-4476-a84c-c47aab84dbaf	dataobject_instance	2015-05-12 21:58:19.226645
+36bea1a2-9dc0-4804-a202-139d4390169f	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	6d8b871b-ec5c-4093-b7af-231e3ab7cdee	activity	54a2e553-2b0f-4ecd-90b4-885ebefaecd1	activity	2015-05-12 21:58:21.365796
+\.
+
+
+--
+-- Name: activity_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY activity
+    ADD CONSTRAINT activity_pkey PRIMARY KEY (a_guid);
+
+
+--
+-- Name: collection_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY collection
+    ADD CONSTRAINT collection_pkey PRIMARY KEY (c_guid);
+
+
+--
+-- Name: comment_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY comment
+    ADD CONSTRAINT comment_pkey PRIMARY KEY (cm_guid);
+
+
+--
+-- Name: dataobject_instance_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY dataobject_instance
+    ADD CONSTRAINT dataobject_instance_pkey PRIMARY KEY (doi_guid);
+
+
+--
+-- Name: dataobject_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY dataobject
+    ADD CONSTRAINT dataobject_pkey PRIMARY KEY (do_guid);
+
+
+--
+-- Name: metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY metadata
+    ADD CONSTRAINT metadata_pkey PRIMARY KEY (md_guid);
+
+
+--
+-- Name: mpousers_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY mpousers
+    ADD CONSTRAINT mpousers_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: mpousers_username_key; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY mpousers
+    ADD CONSTRAINT mpousers_username_key UNIQUE (username);
+
+
+--
+-- Name: ontology_instances_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY ontology_instances
+    ADD CONSTRAINT ontology_instances_pkey PRIMARY KEY (oi_guid);
+
+
+--
+-- Name: ontology_terms_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY ontology_terms
+    ADD CONSTRAINT ontology_terms_pkey PRIMARY KEY (ot_guid);
+
+
+--
+-- Name: workflow_connectivity_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY workflow_connectivity
+    ADD CONSTRAINT workflow_connectivity_pkey PRIMARY KEY (wc_guid);
+
+
+--
+-- Name: workflow_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY workflow
+    ADD CONSTRAINT workflow_pkey PRIMARY KEY (w_guid);
+
+
+--
+-- Name: activity_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY activity
+    ADD CONSTRAINT activity_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: activity_w_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY activity
+    ADD CONSTRAINT activity_w_guid_fkey FOREIGN KEY (w_guid) REFERENCES workflow(w_guid);
+
+
+--
+-- Name: collection_elements_c_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY collection_elements
+    ADD CONSTRAINT collection_elements_c_guid_fkey FOREIGN KEY (c_guid) REFERENCES collection(c_guid);
+
+
+--
+-- Name: collection_elements_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY collection_elements
+    ADD CONSTRAINT collection_elements_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: collection_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY collection
+    ADD CONSTRAINT collection_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: comment_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY comment
+    ADD CONSTRAINT comment_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: dataobject_instance_do_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY dataobject_instance
+    ADD CONSTRAINT dataobject_instance_do_guid_fkey FOREIGN KEY (do_guid) REFERENCES dataobject(do_guid);
+
+
+--
+-- Name: dataobject_instance_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY dataobject_instance
+    ADD CONSTRAINT dataobject_instance_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: dataobject_instance_w_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY dataobject_instance
+    ADD CONSTRAINT dataobject_instance_w_guid_fkey FOREIGN KEY (w_guid) REFERENCES workflow(w_guid);
+
+
+--
+-- Name: dataobject_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY dataobject
+    ADD CONSTRAINT dataobject_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: metadata_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY metadata
+    ADD CONSTRAINT metadata_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: ontology_instances_term_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY ontology_instances
+    ADD CONSTRAINT ontology_instances_term_guid_fkey FOREIGN KEY (term_guid) REFERENCES ontology_terms(ot_guid);
+
+
+--
+-- Name: ontology_instances_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY ontology_instances
+    ADD CONSTRAINT ontology_instances_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: ontology_terms_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY ontology_terms
+    ADD CONSTRAINT ontology_terms_added_by_fkey FOREIGN KEY (added_by) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: workflow_connectivity_w_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY workflow_connectivity
+    ADD CONSTRAINT workflow_connectivity_w_guid_fkey FOREIGN KEY (w_guid) REFERENCES workflow(w_guid);
+
+
+--
+-- Name: workflow_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY workflow
+    ADD CONSTRAINT workflow_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
