@@ -13,8 +13,10 @@ if process_group=='test-api':
    os.environ['MPO_API_SERVER']='https://'+socket.getfqdn()+''
 elif process_group=='demo-mpoapi':
    os.environ['DEMO_AUTH'] = "/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu"
-else:
-   os.environ['MPO_API_SERVER']='https://'+socket.getfqdn()+''
+
+#else default to existing environment. Likely we are running uWSGI server locally under user account.
+#else:
+#   os.environ['MPO_API_SERVER']='https://'+socket.getfqdn()+''
 
 from web_server import app as application
 

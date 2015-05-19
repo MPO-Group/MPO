@@ -17,6 +17,7 @@ gevent==1.0
 greenlet==0.4.2
 ipython==0.13.2
 itsdangerous==0.23
+lxml==3.4.1
 numpy==1.7.1
 pexpect==2.4
 psycopg2==2.5.1

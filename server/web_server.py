@@ -15,8 +15,8 @@ from authentication import get_user_dn
 import urllib
 from collections import OrderedDict
 try:
-    memcache_loaded=True
     import memcache
+    memcache_loaded=True
 except ImportError:
     print("MPO Web server error, could not import memcache, page loads may be slower.")
     memcache_loaded=False
@@ -30,9 +30,15 @@ if memcache_loaded:
 else:
     mc = False
 
-MPO_API_SERVER=os.environ['MPO_API_SERVER']
-MPO_WEB_CLIENT_CERT=os.environ['MPO_WEB_CLIENT_CERT']
-MPO_WEB_CLIENT_KEY=os.environ['MPO_WEB_CLIENT_KEY']
+MPO_API_SERVER=os.environ.get('MPO_API_SERVER')
+if not MPO_API_SERVER:
+    print("""
+    WARNING: MPO_API_SERVER not set, using localhost:8443\n
+    """)
+    MPO_API_SERVER='https://localhost:8443'
+    
+MPO_WEB_CLIENT_CERT=os.environ.get('MPO_WEB_CLIENT_CERT')
+MPO_WEB_CLIENT_KEY=os.environ.get('MPO_WEB_CLIENT_KEY')
 if os.environ.has_key('MPO_EVENT_SERVER'):
     MPO_EVENT_SERVER=os.environ['MPO_EVENT_SERVER']
 else:
@@ -62,11 +68,16 @@ def before_request():
     DB_SERVER=request.cookies.get('db_server')
     if webdebug:
        print ("WEBSERVER: db selected ", DB_SERVER)
+       print ("WEBSERVER: COOKIES: ",request.cookies)
+    if not DB_SERVER:
+       DB_SERVER=''
 
     if DB_SERVER=='prod':
        CONN_TYPE='api'
     elif DB_SERVER=='test':
        CONN_TYPE='test-api'  #remove 'test-api' to use with uwsgi api server
+    elif DB_SERVER=='':
+       CONN_TYPE='' 
     else:
        CONN_TYPE='test-api'
 
@@ -442,20 +453,21 @@ def graph(wid="", format="svg"):
     graph=pydot.Dot(graph_type='digraph')
     nodes = r['nodes']
     #add workflow node explicitly since in is not a child
-    graph.add_node( pydot.Node(wid,label=nodes[wid]['name'],shape=
+    graph.add_node( pydot.Node(wid,label=str(nodes[wid].get('name')),shape=
                                nodeshape[nodes[wid]['type']]))
 
     for item in r['connectivity']:
         pid=item['parent_uid']
         cid=item['child_uid']
-        name=nodes[cid]['name']
+        name=str(nodes[cid].get('name'))
         theshape=nodeshape[nodes[cid]['type']]
         graph.add_node( pydot.Node(cid, id=cid, label=name, shape=theshape) )
         if item['child_type']!='workflow':
             graph.add_edge( pydot.Edge(pid, cid) )
+
     if format == 'svg' :
         svgxml = graph.create_svg()
-        ans = svgxml[245:] #removes the svg doctype header so only: <svg>...</svg>
+        ans = svgxml#[245:] #removes the svg doctype header so only: <svg>...</svg>
     elif format == 'png' :
         ans = graph.create_png()
     elif format == 'gif' :
@@ -497,18 +509,18 @@ def getsvgxml(wid):
     graph=pydot.Dot(graph_type='digraph')
     nodes = r['nodes']
     #add workflow node explicitly since in is not a child
-    graph.add_node( pydot.Node(wid,label=nodes[wid]['name'],
+    graph.add_node( pydot.Node(wid,label=str(nodes[wid].get('name')),
                                shape=nodeshape[nodes[wid]['type']]))
 
     object_order={} #stores numerical order of workflow objects.  used
     #for object list display order on workflow detail page
-    object_order[0]={ 'uid':wid, 'name':nodes[wid]['name'], 'type':nodes[wid]['type'], 'time':nodes[wid]['time'] }
+    object_order[0]={ 'uid':wid, 'name':str(nodes[wid].get('name')), 'type':nodes[wid]['type'], 'time':nodes[wid]['time'] }
     count=1
     prev_name=""
     for item in r['connectivity']:
         pid=item['parent_uid']
         cid=item['child_uid']
-        name=nodes[cid]['name']
+        name=str(nodes[cid].get('name'))
         if prev_name != name:
             object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'], 'time':nodes[cid]['time'] }
             prev_name=name
@@ -531,6 +543,8 @@ def getsvgxml(wid):
 @app.route('/connections', methods=['GET'])
 @app.route('/connections/<wid>', methods=['GET'])
 def connections(wid=""):
+  import lxml.etree as et
+    
   dn = get_user_dn(request)
   certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
@@ -557,14 +571,31 @@ def connections(wid=""):
   else:
     #cache missed or memcache not loaded
     getsvg=getsvgxml(wid)
+
     svgdoc=getsvg[0]
+
     wf_objects=getsvg[1] #dict of workflow elements: name & type
     #JCW Item 2. TODO This list is augmented with additional data below
     #JCW cont. Modify method to add that data on server side when type is svg
     #JCW cont. by embedding data in svg data header <defs/>
-    svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
-    svg=svgdoc[245:] #removes the svg doctype header so only: <svg>...</svg>
 
+    #parse to get just the root element, assumed to be <svg>
+    #svg=svgdoc[154:] #removes the svg doctype header so only: <svg>...</svg>
+    #svg=svgdoc[245:] #removes the svg doctype header so only: <svg>...</svg>
+    #this parsing could be moved into getsvgxml function too.
+    svgxml=et.fromstring(svgdoc) #get root document, drops DOCTYPE and leading comments
+    ns,tag=svgxml.tag[1:].split('}')
+    if not tag=='svg':
+        print ('WEBDEBUG: connection error, svg tag not found')
+        #render error template or set svg to error svg 
+        svg = """
+        <svg height="300" width="340">
+          <text x="80" y="150" fill="red">Error in graph rendering!</text>
+        </svg>
+        """
+    else:
+        svg = et.tostring(svgxml)
+        
     #get workflow info/alias
     wid_req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
     wid_info=wid_req.json() #JCW Item 1
