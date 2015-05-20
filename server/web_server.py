@@ -69,17 +69,16 @@ def before_request():
     if webdebug:
        print ("WEBSERVER: db selected ", DB_SERVER)
        print ("WEBSERVER: COOKIES: ",request.cookies)
-    if not DB_SERVER:
-       DB_SERVER=''
+#    if not DB_SERVER:
+#       DB_SERVER=''
 
     if DB_SERVER=='prod':
        CONN_TYPE='api'
     elif DB_SERVER=='test':
        CONN_TYPE='test-api'  #remove 'test-api' to use with uwsgi api server
-    elif DB_SERVER=='':
-       CONN_TYPE='' 
     else:
-       CONN_TYPE='test-api'
+       CONN_TYPE='test-api' #default to allow initial connection, but
+       #cookie should be set.
 
     API_PREFIX=MPO_API_SERVER+"/"+CONN_TYPE+"/"+MPO_API_VERSION
     if webdebug: print("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)

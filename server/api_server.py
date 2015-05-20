@@ -799,6 +799,7 @@ def activity(id=None):
 def comment(id=None):
     dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
+
     if not rdb.validUser(dn):
         if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
         return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
@@ -808,13 +809,14 @@ def comment(id=None):
         req['ptype']=rdb.getRecordTable(req['parent_uid'], dn=dn)
         r = rdb.addRecord('comment',json.dumps(req),dn=dn)
         id = r['uid']
+        if apidebug: print('APIDEBUG comment route:: dn = ',dn)
         try:  #JCW just being careful here on first implementation
             morer = rdb.getRecord('comment',{'uid':id},dn=dn)
         except Exception as e:
             import sys,os
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print('get comment',exc_type, fname, exc_tb.tb_lineno)
+            print('get comment exception',exc_type, fname, exc_tb.tb_lineno)
 
         publishEvent('mpo_comment',onlyone(morer))
 
@@ -1039,6 +1041,7 @@ def user(id=None):
             r = rdb.getUser( {'uid':id}, dn=dn )
         else:
             r = rdb.getUser( request.args, dn=dn )
+            if apidebug: print('APIDEBUG user route:: dn = ',dn)
 
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
 

@@ -18,7 +18,7 @@ Contents:
     MPO-UI-SERVER.crt       - A client certificate for the WEB_SERVER to identify itself 
                               to the API_SERVER
     MPO-UI-SERVER.key       - private key for this certificate
-NOTE:  The .key files must be chmod 600 and SVN does not do this.  So after updates execute:
+NOTE:  The .key files must be chmod 640 and SVN does not do this.  So after updates execute:
              chmod 600 *.key
 
 Scripts
