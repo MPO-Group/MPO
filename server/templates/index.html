@@ -19,19 +19,19 @@
            	<ul style="list-style: none">
             	<li>
                     <img src="/static/img/images/_icon_workflow.png"/> 
-                    <a href="https://mpo.gat.com{{ url_for("workflows") }}"><strong>Workflows</strong></a>: view all available workflows 
+                    <a href="{{ url_for("workflows") }}"><strong>Workflows</strong></a>: view all available workflows 
                 </li>
             	<li>
                 	<span class="icon-list-alt"></span> 
-                    <a href="https://mpo.gat.com{{ url_for("collections") }}"><strong>Collections</strong></a>: a custom group of workflows, activities, data objects and other collections
+                    <a href="{{ url_for("collections") }}"><strong>Collections</strong></a>: a custom group of workflows, activities, data objects and other collections
                 </li>
             	<li>
                 	<img src="/static/img/images/_icon_dataobject.png"> 
-                    <a href="https://mpo.gat.com{{ url_for("dataobject") }}"><strong>Data Objects</strong></a>: view all available data objects
+                    <a href="{{ url_for("dataobject") }}"><strong>Data Objects</strong></a>: view all available data objects
                	</li>
             	<li>
                 	<span class="icon-search"></span> 
-                    <a href="https://mpo.gat.com{{ url_for("search") }}"><strong>Search MPO</strong></a>: search MPO data 
+                    <a href="{{ url_for("search") }}"><strong>Search MPO</strong></a>: search MPO data 
              	</li>
      		</ul>
             </p><br />
