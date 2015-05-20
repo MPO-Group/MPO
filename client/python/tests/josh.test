@@ -11,7 +11,7 @@ fi
 
 if ! [ -n "${MPO_HOST:+x}" ]
 then
-  export MPO_HOST=https://localhost:8443
+  export MPO_HOST=https://localhost
 fi
 
 if ! [ -n "${MPO_VERSION:+x}" ]
