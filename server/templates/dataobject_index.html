@@ -20,7 +20,7 @@ $(document).ready(function() {
             { 
 			  "data": "name", 
 			  "render": function ( data, type, row ) {
-                    r=<strong>'+data+'</strong>';
+                    r='<a href={{ url_for("dataobject") }}/'+row.uid+'><strong>'+data+'</strong></a>';
 					return r;
 			   },
 			},
