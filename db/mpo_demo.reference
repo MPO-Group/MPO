@@ -222,7 +222,8 @@ CREATE TABLE mpousers (
     email text,
     organization text,
     phone text,
-    dn text
+    dn text,
+    creation_time timestamp without time zone
 );
 
 
@@ -548,9 +549,9 @@ a58a8105-6057-4043-808a-98a85bf08f48	compilation_date	2013-06-05	text	\N	0bdd4a6
 -- Data for Name: mpousers; Type: TABLE DATA; Schema: public; Owner: mpoadmin
 --
 
-COPY mpousers (username, uuid, firstname, lastname, email, organization, phone, dn) FROM stdin;
-mpoadmin	ddc315a1-6310-41e7-a84d-886bc904f3b2	\N	\N	\N	\N	\N	\N
-mpodemo	f223db41-d1c5-41db-b8af-fde6c0a16f76	MPO	Demo User	jas@psfc.mit.edu	MIT		/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu
+COPY mpousers (username, uuid, firstname, lastname, email, organization, phone, dn, creation_time) FROM stdin;
+mpoadmin	ddc315a1-6310-41e7-a84d-886bc904f3b2	\N	\N	\N	\N	\N	\N	2015-05-21 10:13:43.914938
+mpodemo	f223db41-d1c5-41db-b8af-fde6c0a16f76	MPO	Demo User	jas@psfc.mit.edu	MIT		/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu	2015-05-21 10:13:43.914938
 \.
 
 
