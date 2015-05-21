@@ -34,7 +34,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
                           'ptype':'parent_type','user_uid':'u_guid'},
              'mpousers' : {'username':'username', 'uid':'uuid', 'firstname': 'firstname',
                            'lastname':'lastname','email':'email','organization':'organization',
-                           'phone':'phone','dn':'dn'},
+                           'phone':'phone','dn':'dn','time':'creation_time'},
              'activity' : {'name':'name', 'description':'description', 'uid':'a_guid',
                            'work_uid':'w_guid', 'time':'creation_time','user_uid':'u_guid',
                            'start':'start_time','end':'end_time', 'uri':'uri',
@@ -370,6 +370,7 @@ def addUser(json_request,submitter_dn):
     #to determine submitter dn permissions and submitter should be a field in user records. --jcw APR 2015
     objs = json.loads(json_request)
     objs['uid']=str(uuid.uuid4())
+    objs['time']=datetime.datetime.now()
 #    objs['dn']=dn
 
     #Check for valid keys against query map, we require all fields for user creation
@@ -721,7 +722,7 @@ def addCollection(request,dn):
     conn.commit()
     cursor.close()
     conn.close()
-    
+
     records = {} #JCW we are not returning the full record here.
     records['uid'] = c_guid
 

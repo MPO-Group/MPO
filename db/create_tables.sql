@@ -18,13 +18,13 @@ create table mpousers
   email text,
   organization text,
   phone text,
-  dn text
-/*  creation_time timestamp */
+  dn text,
+  creation_time timestamp
 );
 /*insert into mpousers values ('romosan','bc789de3-7484-49dc-a498-3b5a3aad3c80', 'Alexander', 'Romosan', 'romosan@opteron05@lbl.gov','LBL','555-555-1234','xxx' );*/
 /*insert into mpousers values ('mdsadmin', 'a8bc7b5a-b4f5-49ec-87fb-20e5bddfa1af'); */
-insert into mpousers values ('mpoadmin', 'ddc315a1-6310-41e7-a84d-886bc904f3b2');
-insert into mpousers values ('mpodemo', 'f223db41-d1c5-41db-b8af-fde6c0a16f76', 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', '', '/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu');
+insert into mpousers (username,uuid,creation_time) values ('mpoadmin', 'ddc315a1-6310-41e7-a84d-886bc904f3b2',now());
+insert into mpousers (username,uuid,firstname,lastname,email,organization,dn,creation_time) values ('mpodemo', 'f223db41-d1c5-41db-b8af-fde6c0a16f76', 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', '/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu',now());
 alter table mpousers OWNER TO mpoadmin;
 
 drop table if exists collection cascade;
