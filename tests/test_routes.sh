@@ -56,7 +56,6 @@ fi
 
 export MPO="$MPO -v" #remove/add -v for quiet/verbose output
 export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem'
-export CONN_TYPE='test-api' #mount point used by web_server.py
 echo env is
 env
 
