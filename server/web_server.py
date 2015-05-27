@@ -54,6 +54,7 @@ API_PREFIX = ''
 DB_SERVER = ''
 CONN_TYPE = ''
 
+USING_UWSGI = os.environ.get('UWSGI_ORIGINAL_PROC_NAME')
 webdebug = True
 app.debug = True
 
@@ -69,8 +70,6 @@ def before_request():
     if webdebug:
        print ("WEBSERVER: db selected ", DB_SERVER)
        print ("WEBSERVER: COOKIES: ",request.cookies)
-#    if not DB_SERVER:
-#       DB_SERVER=''
 
     if DB_SERVER=='prod':
        CONN_TYPE='api'
@@ -80,6 +79,8 @@ def before_request():
        CONN_TYPE='test-api' #default to allow initial connection, but
        #cookie should be set.
 
+    if USING_UWSGI: CONN_TYPE='' #no sub-path for uwsgi test server
+        
     API_PREFIX=MPO_API_SERVER+"/"+CONN_TYPE+"/"+MPO_API_VERSION
     if webdebug: print("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)
 
@@ -637,6 +638,8 @@ def connections(wid=""):
         comment=requests.get("%s/comment?parent_uid=%s"%(API_PREFIX,value['uid'],), **certargs)
 
         if comment.text != "[]":
+            if webdebug:
+                print("WEBDEBUG comment: ",str(comment.content))
             cm=comment.json()
             k=0
             for i in cm:

@@ -108,13 +108,27 @@ behavior is to return the bare UUID value or an error code.
 
 * Get the controlled vocabulary for a term.
   For example, to see valid values for a tracked code input or Status
-  attribute, or to see what inputs can be tracked for a given code.
+  attribute, or to see what inputs can be tracked for a given code. We
+  first pass the `path` argument to the `ontology/term` route to get
+  the ID of that term.
 
   
-     term_id = \`mpo get ontology/term -p path=Generic/Status/quality\` 
+     term_id = \`mpo get ontology/term -p path=Generic/Status/quality\`
 
      `mpo --format=pretty get ontology/term/$term_id/vocabulary`
 
+* Data objects.
+  Dataobjects has both their own entry as well as references to them
+  in workflows known as instances. Given one, the other can be
+  retrieved. It can be easy to get confused about them, though.
+
+     `mpo  --format=pretty get dataobject`
+
+  Will retrieve a formatted list of all dataobjects in the database.
+
+     `mpo  --format=pretty get dataobject?instance`
+
+  Will retrieve a formatted list of all dataobject instances in the database.
 
 * Grouping requests.
   Most routes support grouped requests by uid.

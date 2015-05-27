@@ -18,6 +18,6 @@ elif process_group=='demo-mpowww': #demo server
    os.environ['MPO_API_SERVER']='https://'+socket.getfqdn()+''
 
 #otherwise, let existing environment stand, eg if using local uWSGI server
-
+print('in web_server.wsgi, environment is: ',os.environ)
 from web_server import app as application
 

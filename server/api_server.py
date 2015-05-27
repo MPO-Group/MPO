@@ -583,6 +583,7 @@ def getWorkflowComments(id):
 
     if len(r)==1:
         r=rs
+
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
 
@@ -626,6 +627,9 @@ def getWorkflowCompositeID(id):
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
 
+#Possible route for getting the instances of a dataobject
+#@app.route(routes['dataobject']+'/<id>/instance', methods=['GET'])
+
 
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
@@ -664,11 +668,16 @@ def dataobject(id=None):
 
     if request.method == 'POST':
         req = json.loads(request.data)
+
+        #Make sure name and description are present
+        if req.get('name')==None:
+            req['name']="None given"
+        if req.get('description')==None:
+            req['description']="None given"
+            
         #find the dataobject with the specified uri (assumed to be unique)
         #or if no URI given, find it by UID. If not found, we make it.
-
-#        if not req['uri']: return Response({}, mimetype='application/json',status=istatus)
-#        do = rdb.getRecord('dataobject',{'uri':req['uri']},dn=dn)
+        
         if req.get('uri'):
             do = rdb.getRecord('dataobject',{'uri':req['uri']},dn=dn)
             if req.get('uid'): #check if consistent
@@ -705,10 +714,20 @@ def dataobject(id=None):
 
         #At this point, we have a dataobject record. Now add it to the workflow since should
         #also have a work_uid and parent_uid
+        
+        #First check if we already have an instance attached to this parent_uid
+        #we only permit one instance per parent of the same object
+        #We needs something like get dataobject?instance&do_uid=do_uid&work_uid=wid
+        #to get a list of uses in this workflow and then figure out if they have the same parent.
+        #perhaps by using rdb.getWorkflowElements. This is really a topological question - we may
+        #have more of these.
+        
+        #check = rdb.getRecord('dataobject_instance',{'do_uid':id},dn=dn)
         r = rdb.addRecord('dataobject_instance',json.dumps(req),dn=dn)
         id = r['uid']
         morer = rdb.getRecord('dataobject_instance',{'uid':id},dn=dn)
         publishEvent('mpo_dataobject',onlyone(morer))
+        
     elif request.method == 'GET':
 
         #handling for comma separated UIDs

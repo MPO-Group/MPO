@@ -90,6 +90,10 @@ then
 VIRTPATH="-H $VIRTUAL_ENV"
 fi
 
+#Let web server know we are running under WSGI
+export MPO_WEB_SERVER=uwsgi
+
+
 uwsgi $GEVENT_OPT $THREAD_OPT $VIRTPATH --https  "0.0.0.0:$MPO_WEB_SERVER_PORT,$MPO_WEB_SERVER_CERT,$MPO_WEB_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/web_server.py  --callable app
 
 #with --master option, can restart after changes to server with

@@ -37,6 +37,8 @@ future_requests - provides asychronous requests. (part of requests in python3)
 
 MDSplus : provided by mdsplus-python, provides events capability
 
+lxml : XML parsing of SVG. Possible future use as XML output and translation.
+
 ### Not in production pymongo.py, BSON
 
 #mdsplus. Install mdsplus-kernel and mdsplus-python from mdsplus.org (or local copy in installation)

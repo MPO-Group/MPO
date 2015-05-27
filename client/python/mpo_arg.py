@@ -804,7 +804,7 @@ class mpo_cli(object):
         add_parser.add_argument('workflow_ID', action='store',metavar='workflow')
         add_parser.add_argument('parentobj_ID', action='store',metavar='parent')
         add_parser.add_argument('--name', '-n', action='store')
-        add_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
+        add_parser.add_argument('--desc', '-d', action='store', help='Describe the object')
         ud_group = add_parser.add_mutually_exclusive_group(required=True)
         ud_group.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
         ud_group.add_argument('--uid', action='store', help='Dataobject UID to be added to workflow.')
@@ -820,7 +820,7 @@ class mpo_cli(object):
         step_parser.add_argument('parentobj_ID', action='store',metavar='parent')
         step_parser.add_argument('--input', '-i', action='append',dest='input_objs')
         step_parser.add_argument('--name', '-n', action='store', default='UnNamed Object')
-        step_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
+        step_parser.add_argument('--desc', '-d', action='store', help='Describe the action or process')
         step_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
         step_parser.set_defaults(func=self.mpo.step)
 
@@ -854,7 +854,7 @@ class mpo_cli(object):
         #archive, note all arguments must be processed by the protocol
         archive_parser=subparsers.add_parser('archive',help='Archive a data object.')
         archive_parser.add_argument('--name', '-n', action='store')
-        archive_parser.add_argument('--desc', '-d', action='store', help='Describe the workflow')
+        archive_parser.add_argument('--desc', '-d', action='store', help='Describe the object being archived')
         archive_parser.add_argument('--protocol', '-p', action='store',metavar='protocol',
                                    nargs=argparse.REMAINDER)
         archive_parser.set_defaults(func=self.mpo.archive)
