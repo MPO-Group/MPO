@@ -32,8 +32,9 @@ export MPO_HOST=https://localhost:$api_port
 
 if ! [ -n "${MPO_HOME:+x}" ]
 then
-  echo WARNING: MPO_HOME not defined, using defaults.
-  export MPO_HOME=$(dirname $0)/../
+  echo WARNING: MPO_HOME not defined, assuming it is the directory above this script. 
+  #export MPO_HOME=$(dirname $0)/../
+  export MPO_HOME=$(cd $(dirname "$1") && pwd -P)/$(basename "$1")..
   echo mpo home is $MPO_HOME
 fi
 
@@ -60,6 +61,8 @@ echo env is
 env
 
 #start our own database
+test_db=mpo_demo
+test_db=mpoDB
 test_db=mpo_test
 dropdb $test_db
 createdb $test_db
