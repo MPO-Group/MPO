@@ -34,7 +34,7 @@ def setup():
     ### Establish a session to mpo
     print('mpo_setup env',mpo_cert,mpo_api_url)
     from mpo_arg import mpo_methods as mpo
-    m=mpo(api_url=mpo_api_url,cert=mpo_cert,debug=False,filter='json')
+    m=mpo(api_url=mpo_api_url,cert=mpo_cert,debug=True,filter='json')
     return m
 
 def teardown(m):
