@@ -6,7 +6,10 @@ def get_user_dn(request):
                 try:
                         ans =  request.environ['SSL_CLIENT_S_DN']
                 except:
-                        ans = ''
+                        try:
+                                ans = request.environ['DEMO_AUTH']
+                        except:
+                                ans = ''
 
         #If DN is that of the UI cert to API (MPO-UI-SERVER.crt), grab our special header for the user DN
         if ans.find('abla@fusion.gat.com')>-1:
