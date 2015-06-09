@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 print('API python path',sys.path)
-
 from flask import Flask, render_template, request, jsonify
 #from flask.ext.jsonpify import jsonify #uncomment to support JSONP CORS access
 from flask import redirect, Response, make_response
@@ -13,6 +12,7 @@ from flask.ext.cors import cross_origin
 from urlparse import urlparse
 from distutils.util import strtobool
 import datetime
+import functools
 
 #Only needed for event prototype
 import gevent
@@ -181,6 +181,36 @@ def get_api_version(url):
     if apidebug: print('url is',url, version,root_url,root)
     return version,root_url,root
 
+###############Authorization Decorators#####################
+def checkaccess(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+
+        print ("in the checkaccess wrapper")
+        if request.method == 'GET':
+            print("checking read access")
+            dn=get_user_dn(request)
+            if not rdb.validUser(dn) and os.environ['MPO_EDITION']=='DEMO':
+                if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+                return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+        elif request.method == 'POST':
+            print("checking write access")
+            dn=get_user_dn(request)
+            if not rdb.validUser(dn):
+		if os.environ['MPO_EDITION'] == 'DEMO':
+                    if apidebug: print ('APIDEBUG: DEMO User does not have write access')
+                    return Response(json.dumps({'error':'No write acceess for demo user'}), status=401)
+                if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
+                return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+        elif request.method == 'PUT':
+            print("checking modify access")
+        elif request.method == 'DELETE':
+            print("checking delete access")
+        else:
+            print("unknown method %s in checkaccess"%request.method)
+        return f(*args, dn=dn, **kwargs)
+    return wrapper
+
 
 ###############ROUTE handling###############################
 def response_valid(r):
@@ -302,10 +332,10 @@ else:
                 routes[k] = '/' + routes[k]
 
 
-
 @app.route(routes['collection']+'/<id>', methods=['GET'])
 @app.route(routes['collection'],  methods=['GET', 'POST'])
-def collection(id=None):
+@checkaccess
+def collection(id=None,dn=None):
     """
     Create and add to collections.
     Supported routes:
@@ -315,12 +345,6 @@ def collection(id=None):
     /collection/?element_uid=:uid - GET collections having element member giving by :uid
     """
     api_version,root_url,root=get_api_version(request.url)
-    dn=get_user_dn(request)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
-
-        
     if request.method == 'POST':
         print('api post collection',request.data)
         r = rdb.addCollection(request.data,dn=dn)
@@ -344,7 +368,8 @@ def collection(id=None):
 
 @app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
 @app.route(routes['collection']+'/<id>/element/<oid>', methods=['GET'])
-def collectionElement(id=None, oid=None):
+@checkaccess
+def collectionElement(id=None, oid=None, dn=None):
     """
     /collection/:id/element       - GET a list of objects in a collection
                                    - POST to add to the collection
@@ -353,12 +378,7 @@ def collectionElement(id=None, oid=None):
     /collection/:id/element?detail=full[sparse] - GET collection information with full
                details [or default sparse as /collection/<id>]
     """
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
-
     if request.method == 'POST':
 
         payload = json.loads(request.data)
@@ -444,9 +464,10 @@ def collectionElement(id=None, oid=None):
 
 
 
+@checkaccess
 @app.route(routes['workflow']+'/<id>', methods=['GET'])
 @app.route(routes['workflow'],  methods=['GET', 'POST'])
-def workflow(id=None):
+def workflow(id=None, dn=None):
     """
     Implementation of the /workflow route
     Enforces ontological constraints on workflows types retrieved from ontology_terms.
@@ -454,11 +475,7 @@ def workflow(id=None):
     """
 
     #Desperately need to add field error checking. Note, we have access to db.query_map
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     if apidebug:
         print ('APIDEBUG: You are: %s'% str(dn) )
@@ -523,16 +540,13 @@ def workflow(id=None):
 
 @app.route(routes['workflow']+'/<wid>/dataobject', methods=['GET'])
 @app.route(routes['workflow']+'/<wid>/dataobject/<uid>', methods=['GET'])
-def getWorkflowElement(wid,uid=None):
+@checkaccess
+def getWorkflowElement(wid,uid=None,dn=None):
     """
      /workflow/:wid/dataobject/:uid - GET dataobjects in workflow specified by :wid
                                       if :uid supplied, get specific dataobject
     """
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     if uid:
         records = rdb.getRecord('dataobject_instance',{'work_uid':wid,'uid':uid}, dn=dn )
@@ -550,12 +564,10 @@ def getWorkflowElement(wid,uid=None):
 
 
 @app.route(routes['workflow']+'/<id>/graph', methods=['GET'])
-def getWorkflowGraph(id):
+@checkaccess
+def getWorkflowGraph(id,dn=None):
     dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     if request.method == 'GET':
         r = rdb.getWorkflowElements(id,request.args,dn=dn)
@@ -564,12 +576,9 @@ def getWorkflowGraph(id):
 
 
 @app.route(routes['workflow']+'/<id>/comments', methods=['GET'])
-def getWorkflowComments(id):
-    dn=get_user_dn(request)
+@checkaccess
+def getWorkflowComments(id, dn=None):
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     ids=id.strip().split(',')
     r={} #[]
@@ -588,26 +597,20 @@ def getWorkflowComments(id):
 
 
 @app.route(routes['workflow']+'/<id>/type', methods=['GET'])
-def getWorkflowType(id):
-    dn=get_user_dn(request)
+@checkaccess
+def getWorkflowType(id, dn=None):
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     return Response(json.dumps(rdb.getWorkflowType(id,dn=dn),cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 @app.route(routes['workflow']+'/<id>/alias', methods=['GET'])
-def getWorkflowCompositeID(id):
+@checkaccess
+def getWorkflowCompositeID(id,dn=None):
     """
     Method to retrieve a workflow composite id in the field 'alias'.
     """
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     r={}
     if request.method == 'GET':
@@ -633,7 +636,8 @@ def getWorkflowCompositeID(id):
 
 @app.route(routes['dataobject']+'/<id>', methods=['GET'])
 @app.route(routes['dataobject'], methods=['GET', 'POST'])
-def dataobject(id=None):
+@checkaccess
+def dataobject(id=None, dn=None):
     """
     Route to add data objects and connect their instances to workflows.
 
@@ -657,11 +661,7 @@ def dataobject(id=None):
            UID are provided, the URI takes precedence.
 
     """
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     istatus=200
     messages={}
     messages['api-version']=api_version
@@ -773,14 +773,11 @@ def dataobject(id=None):
 
 @app.route(routes['activity']+'/<id>', methods=['GET'])
 @app.route(routes['activity'], methods=['GET', 'POST'])
-def activity(id=None):
+@checkaccess
+def activity(id=None, dn=None):
     istatus=200
 
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     if request.method == 'POST':
         r = rdb.addRecord('activity',request.data,dn=dn)
@@ -815,14 +812,10 @@ def activity(id=None):
 
 @app.route(routes['comment']+'/<id>', methods=['GET'])
 @app.route(routes['comment'], methods=['GET', 'POST'])
-def comment(id=None):
-    dn=get_user_dn(request)
+@checkaccess
+def comment(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)
 
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
-    
     if request.method == 'POST':
         req = json.loads(request.data)
         req['ptype']=rdb.getRecordTable(req['parent_uid'], dn=dn)
@@ -863,12 +856,9 @@ def comment(id=None):
 
 @app.route(routes['metadata']+'/<id>', methods=['GET'])
 @app.route(routes['metadata'], methods=['GET', 'POST'])
-def metadata(id=None):
-    dn=get_user_dn(request)
+@checkaccess
+def metadata(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     if request.method == 'POST':
         r = rdb.addMetadata( request.data, dn=dn)
@@ -898,12 +888,9 @@ def metadata(id=None):
 
 @app.route(routes['ontology_class']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_class'], methods=['GET', 'POST'])
-def ontologyClass(id=None):
-    dn=get_user_dn(request)
+@checkaccess
+def ontologyClass(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     result = jsonify(json.loads(request.data),user_dn=dn)
     if request.method == 'POST':
@@ -915,7 +902,8 @@ def ontologyClass(id=None):
 
 @app.route(routes['ontology_term']+'/<id>/vocabulary', methods=['GET'])
 @app.route(routes['ontology_term']+'/vocabulary', methods=['GET'])
-def ontologyTermVocabulary(id=None):
+@checkaccess
+def ontologyTermVocabulary(id=None, dn=None):
     '''
     Resource: ontology vocabulary
 
@@ -928,12 +916,7 @@ def ontologyTermVocabulary(id=None):
     It is a convenience route equivalent to GET ontology_term?parent_uid=uid
     '''
 
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
-    
     if not id:
         id='None'
 
@@ -944,19 +927,17 @@ def ontologyTermVocabulary(id=None):
 
 
 
+
 @app.route(routes['ontology_term']+'/<id>/tree', methods=['GET'])
 @app.route(routes['ontology_term']+'/tree', methods=['GET'])
 @cross_origin()
-def ontologyTermTree(id=None):
+@checkaccess
+def ontologyTermTree(id=None, dn=None):
     '''
     This function returns the vocabulary of an ontology term specified by its <id>=parent_id. 
     Vocabulary is defined as the next set of terms below it in the ontology term tree.
     '''
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if not id:
         id='0' #root parent_uid
@@ -968,18 +949,15 @@ def ontologyTermTree(id=None):
 
 @app.route(routes['ontology_term']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_term'], methods=['GET', 'POST'])
-def ontologyTerm(id=None):
+@checkaccess
+def ontologyTerm(id=None, dn=None):
     '''
     Retrieves the record of an ontology term from its <id> or path.
     valid routes:
     ontology/term/<id>
     ontology/term?path=term/term2/termN
     '''
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)    
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if request.method == 'POST':
         objs = json.loads(request.data)
@@ -1004,13 +982,9 @@ def ontologyTerm(id=None):
 
 @app.route(routes['ontology_instance']+'/<id>', methods=['GET'])
 @app.route(routes['ontology_instance'], methods=['GET', 'POST'])
-def ontologyInstance(id=None):
-    dn=get_user_dn(request)
+@checkaccess
+def ontologyInstance(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)    
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
-
 
     if request.method == 'POST':
         r = rdb.addOntologyInstance(request.data,dn=dn)
@@ -1038,18 +1012,14 @@ def ontologyInstance(id=None):
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json')
 
 
-
 @app.route(routes['user']+'/<id>', methods=['GET'])
 @app.route(routes['user'], methods=['GET', 'POST'])
-def user(id=None):
-    dn=get_user_dn(request)
+@checkaccess
+def user(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)
     #Unregistered users need to be able to be registered, hence comment this out for now.
     #A better solution is to have a valid user register unregistered users. This could be
     #the UI itself.
-#    if not rdb.validUser(dn):
-#        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-#        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
     
     istatus=200
     if request.method == 'POST':
@@ -1066,12 +1036,9 @@ def user(id=None):
 
 
 @app.route(routes['item']+'/<id>', methods=['GET'])
-def item(id):
-    dn=get_user_dn(request)
+@checkaccess
+def item(id, dn=None):
     api_version,root_url,root=get_api_version(request.url)    
-    if not rdb.validUser(dn):
-        if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-        return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
 
     if id:
         r = rdb.getRecordTable( id, dn=dn )

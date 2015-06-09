@@ -57,6 +57,8 @@ key_check $MPO_API_SERVER_KEY
 export MPO_DB_CONNECTION
 export PYTHONPATH
 
+MPO_EDITION="TEST"
+export MPO_EDITION
 #uncomment this opt (or set in launching env) to test gevent framework
 #export GEVENT_OPT="--gevent 100 --master --pidfile /tmp/web_master.pid"
 export THREAD_OPT=--enable-threads
