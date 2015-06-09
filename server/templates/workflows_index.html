@@ -60,7 +60,7 @@ $(document).ready(function () {
 		})
 		//callback
 		.done(function(data) {
-			console.log(data);	
+			//console.log(data);	
 			var prependHtml = '<blockquote id="block_' + data[0].uid  + '" >';
 			prependHtml += '<p style="font-size: 12px">' + data[0].content + '</p>';
 			prependHtml += '<small>by <cite title="Source Title"> '+ data[0].username +' - ' + data[0].time.substring(0,16) + ' </cite></small>';
@@ -87,6 +87,9 @@ $(document).ready(function () {
 				});
 			$('#block_' + c_uid).css('background-color', '#ddffdd');
 			$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);
+			//clear submitted comment text	
+			$('#content_'+p_uid).val('');	
+			
 		});
 		// stop the form from submitting the normal way and refreshing the page
 		event.preventDefault();
@@ -626,7 +629,7 @@ ul li input.user_time_wf {
                             <div class="accordion-inner no-border bot-border light-box">
                               <form id="submit_comment_{{ item.uid }}">
                                 <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
-                                <div><textarea rows="2" class="span12" name="content"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button>&nbsp;&nbsp;<span id="submit_results_{{ item.uid }}"></span></div>
+                                <div><textarea rows="2" class="span12" name="content" id="content_{{ item.uid }}"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button>&nbsp;&nbsp;<span id="submit_results_{{ item.uid }}"></span></div>
                               </form>
                             </div>
                           </div>

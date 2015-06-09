@@ -53,6 +53,7 @@ MPO_API_VERSION = 'v0'
 API_PREFIX = ''
 DB_SERVER = ''
 CONN_TYPE = ''
+USERNAME = ''
 
 USING_UWSGI = os.environ.get('UWSGI_ORIGINAL_PROC_NAME')
 webdebug = True
@@ -64,7 +65,8 @@ print('WEBSERVER: timestamp app started',stime.time() )
 def before_request():
     global DB_SERVER
     global API_PREFIX
-    global CONN_TYPE
+    global CONN_TYPE	
+    global USERNAME
 
     DB_SERVER=request.cookies.get('db_server')
     if webdebug:
@@ -89,6 +91,7 @@ def before_request():
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
     if webdebug:
+        print ('USERNAME: ', USERNAME)
         print ("WEBSERVER: db set to ",DB_SERVER)
         print ('web debug, api_prefix',API_PREFIX)
         print ('WEBSERVER certargs',certargs)
@@ -118,6 +121,7 @@ def before_request():
         #Check and redirect to /register if not registered
         is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs).json()
         print ('WEBDEBUG, is user:',request.endpoint,dn,str(is_mpo_user) )
+	USERNAME=is_mpo_user[0]['username']
         if(len(is_mpo_user)==0):
         #if is_mpo_user.status_code == 401:
             return render_template('register.html')
@@ -125,7 +129,7 @@ def before_request():
 
 @app.route('/')
 def index():
-    everything={"db_server":DB_SERVER}
+    everything={"username":USERNAME,"db_server":DB_SERVER}
     return render_template('index.html', **everything)
 
 @app.route('/workflows')
@@ -397,7 +401,8 @@ def workflows():
     begin_to_end = time_end - time_begin
     page_created = "%s" %((str(begin_to_end))[:6])
 
-    everything={"db_server":DB_SERVER,"page_created":page_created, "results":results, "ont_result":ont_result,
+    everything={"username":USERNAME,"db_server":DB_SERVER,"page_created":page_created, 
+		"results":results, "ont_result":ont_result,
                 "rpp":rpp, "current_page":current_page, "wf_type_list":wf_type_list,
                 "num_pages":num_pages, "num_wf":num_wf}
     return render_template('workflows_index.html', **everything)
@@ -663,7 +668,8 @@ def connections(wid=""):
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
 #    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
-    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver }
+    everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info, 
+		  "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver}
 
     if memcache_loaded:
         mc.set(cache_id, everything, time=600)
@@ -825,10 +831,10 @@ def search():
             print('WEBDEBUG: user query')
             pprint(form)
 
-        return render_template('search.html', query=form, results=results, db_server=DB_SERVER)
+        return render_template('search.html', query=form, results=results, db_server=DB_SERVER, username=USERNAME)
 
     if request.method == 'GET':
-        return render_template('search.html', db_server=DB_SERVER)
+        return render_template('search.html', db_server=DB_SERVER, username=USERNAME)
 
 
 @app.route('/ontology')
@@ -1028,8 +1034,8 @@ def collections(uid=False):
                 coll_desc=coll_list[0]['description']
                
     	    everything={ 
-	        "db_server":DB_SERVER, "rpp":rpp, 
-		"coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list }
+	        "username":USERNAME,"db_server":DB_SERVER, "rpp":rpp, 
+		"coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list}
   	    return render_template('collections_index.html',  **everything)
 
         #Callbacks for use in following loop
@@ -1183,7 +1189,7 @@ def collections(uid=False):
         print("WEBDEBUG: collection results sent to index")
         pprint(results)
 
-    everything={"db_server":DB_SERVER, "results":results, "ont_result":ont_result,
+    everything={"username":USERNAME,"db_server":DB_SERVER, "results":results, "ont_result":ont_result,
                 "rpp":rpp, "wf_type_list":wf_type_list,
                 "coll_name":coll_name, "coll_desc":coll_desc,
 		"coll_username":coll_username, "coll_time":coll_time  }
@@ -1297,7 +1303,7 @@ def dataobject(uid=False):
                     if temp['time']:
                     	thetime=temp['time'][:19]
                     	temp['time']=thetime
-            everything={"db_server":DB_SERVER,"rpp":rpp, "coll_list":dataobj_list }
+            everything={"username":USERNAME,"db_server":DB_SERVER,"rpp":rpp, "coll_list":dataobj_list }
 
             return render_template('dataobject_index.html',  **everything)
 
@@ -1307,7 +1313,7 @@ def dataobject(uid=False):
 
     worktreeroot = wf_type_req.result().json()
 
-    everything={"db_server":DB_SERVER, "workflows":workflows, 
+    everything={"username":USERNAME,"db_server":DB_SERVER, "workflows":workflows, 
                 "rpp":rpp, "coll_list":collections,
                 "name":name, "desc":desc,
                 "username":username, "time":time, "uri":uri  }
