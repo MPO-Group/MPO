@@ -31,37 +31,38 @@
                 <div class="control-group">
                     <label class="control-label" for="firstname">*First Name</label>
                     <div class="controls">
-                        <input required type="text" id="firstname" name="firstname" class="form-control span10" value="{{ firstname }}" {% if registered %} disabled {% endif %}>
+                    
+                        <input required type="text" id="firstname" name="firstname" class="form-control span10" value="{{ firstname }}" readonly="readonly">
                     </div>
                 </div>
                 <div class="control-group">
                     <label class="control-label" for="lastname">*Last Name</label>
                     <div class="controls">
-                        <input required type="text" id="lastname" name="lastname" class="form-control span10"  value="{{ lastname }}" {% if registered %} disabled {% endif %}>
+                        <input required type="text" id="lastname" name="lastname" class="form-control span10"  value="{{ lastname }}" readonly="readonly">
                     </div>
                 </div>     
                 <div class="control-group">
                     <label class="control-label" for="organization">*Organization</label>
                     <div class="controls">
-                        <input required type="text" id="organization" name="organization" class="form-control span10"  value="{{ organization }}" {% if registered %} disabled {% endif %}>
+                        <input required type="text" id="organization" name="organization" class="form-control span10"  value="{{ organization }}" readonly="readonly">
                     </div>
                 </div>                              
                  <div class="control-group">
                     <label class="control-label" for="email">*Email</label>
                     <div class="controls">
-                        <input required type="email" id="email" name="email" class="form-control span10" value="{{ email }}" {% if registered %} disabled {% endif %}>
+                        <input required type="email" id="email" name="email" class="form-control span10" value="{{ email }}" readonly="readonly">
                     </div>
                 </div>
                  <div class="control-group">
                     <label class="control-label" for="phone">*Telephone</label>
                     <div class="controls">
-                        <input required type="text" id="phone" name="phone" class="form-control span8" value="{{ phone }}" {% if registered %} disabled {% endif %}>
+                        <input required type="text" id="phone" name="phone" class="form-control span8" value="{{ phone }}" {% if registered %}  readonly="readonly"  {% endif %}>
                     </div>
                 </div>
                  <div class="control-group">
                     <label class="control-label" for="username">*Username</label>
                     <div class="controls">
-                        <input required type="text" name="username" class="form-control span8" value="{{ username }}" {% if registered %} disabled {% endif %}>
+                        <input required type="text" name="username" class="form-control span8" value="{{ username }}" readonly="readonly" >
                     </div>
                 </div>                
                 <div class="control-group">

@@ -11,7 +11,7 @@ from pprint import pprint
 import pydot
 import re,os
 import math
-from authentication import get_user_dn
+from authentication import get_user_dn, parse_dn
 import urllib
 from collections import OrderedDict
 try:
@@ -126,8 +126,16 @@ def before_request():
         is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs).json()
         print ('WEBDEBUG, is user:',request.endpoint,dn,str(is_mpo_user) )
         if(len(is_mpo_user)==0):
+	    parsed_dn=parse_dn(dn)
+            dn_email=parsed_dn['emailAddress']
+            dn_ou=parsed_dn['OU']
+            dn_name=parsed_dn['CN']
+            t=parsed_dn['CN'].find(' ')
+            dn_fname=dn_name[0:t]
+            dn_lname=dn_name[t+1:len(dn_name)]
+            everything={'firstname': dn_fname, 'lastname': dn_lname, 'email': dn_email, 'organization': dn_ou, 'username': dn_email}
         #if is_mpo_user.status_code == 401:
-            return render_template('register.html')
+            return render_template('register.html', **everything)
         USERNAME=is_mpo_user[0]['username']
 
 
@@ -1487,7 +1495,16 @@ def register():
         if(is_mpo_user):
             is_mpo_user=is_mpo_user.json()
             if(len(is_mpo_user)==0): #Not registered, display form
-                return render_template('register.html', registered=0)
+ 		dn = get_user_dn(request)		
+ 		parsed_dn=parse_dn(dn)
+            	dn_email=parsed_dn['emailAddress']
+            	dn_ou=parsed_dn['OU']
+            	dn_name=parsed_dn['CN']
+            	t=parsed_dn['CN'].find(' ')
+            	dn_fname=dn_name[0:t]
+            	dn_lname=dn_name[t+1:len(dn_name)]
+            	everything={'firstname': dn_fname, 'lastname': dn_lname, 'email': dn_email, 'organization': dn_ou, 'username': dn_email}
+                return render_template('register.html', **everything)
             else:  #Already registered, disable form from template
                 return render_template('register.html', registered=1)
 

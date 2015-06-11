@@ -11,7 +11,7 @@
           <a class="brand">&nbsp;&nbsp;</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
-                <li {% block index_active %}{% endblock %}><a href="{{ url_for("index") }}"><span class="icon-home"></span> MPO Home</a></li>
+                <li {% block index_active %}{% endblock %}><a href="{{ url_for("index") }}"><span class="icon-home"></span> Home</a></li>
                 <li {% block workflows_active %}{% endblock %}><a href="{{ url_for("workflows") }}"><img src="/static/img/images/_icon_workflow.png"/>   Workflows</a></li>
                 <li {% block collect_active %}{% endblock %}><a href="{{ url_for("collections") }}"><span class="icon-list-alt"></span> Collections</a></li>
                 <li {% block dataobject_active %}{% endblock %}><a href="{{ url_for("dataobject") }}"><img src="/static/img/images/_icon_dataobject.png"> Data Objects</a></li>
@@ -37,10 +37,11 @@
             </form>
             </span>
             {% endif %}   
-            
+            {% if username %}
             <ul class="nav pull-right">
-                <li><a href="#"><i class="icon-user"></i> <small>{{username}}</small></a></li>
+                <li><a href="#"><small><i class="icon-user"></i> <small>{{username}}</small></small></a></li>
             </ul>
+            {% endif %}
           </div><!--/.nav-collapse -->
         </div>
       </div>
