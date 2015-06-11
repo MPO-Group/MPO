@@ -68,21 +68,25 @@ def before_request():
     global CONN_TYPE	
     global USERNAME
 
-    DB_SERVER=request.cookies.get('db_server')
-    if webdebug:
-       print ("WEBSERVER: db selected ", DB_SERVER)
-       print ("WEBSERVER: COOKIES: ",request.cookies)
-
-    if DB_SERVER=='prod':
-       CONN_TYPE='api'
-    elif DB_SERVER=='test':
-       CONN_TYPE='test-api'  #remove 'test-api' to use with uwsgi api server
+    if USING_UWSGI: 
+	CONN_TYPE='' #no sub-path for uwsgi test server
     else:
-       CONN_TYPE='test-api' #default to allow initial connection, but
-       #cookie should be set.
+        if os.environ['MPO_EDITION'] == "PRODUCTION":
+            DB_SERVER=request.cookies.get('db_server')
+            if webdebug:
+                print ("WEBSERVER: db selected ", DB_SERVER)
+                print ("WEBSERVER: COOKIES: ",request.cookies)
 
-    if USING_UWSGI: CONN_TYPE='' #no sub-path for uwsgi test server
-        
+            if DB_SERVER=='prod':
+                CONN_TYPE='api'
+            elif DB_SERVER=='test':
+               CONN_TYPE='test-api'  #remove 'test-api' to use with uwsgi api server
+            else:
+               CONN_TYPE='test-api' #default to allow initial connection, but
+           #cookie should be set.
+        else:
+            CONN_TYPE='demo-api'
+            DB_SERVER='demo'
     API_PREFIX=MPO_API_SERVER+"/"+CONN_TYPE+"/"+MPO_API_VERSION
     if webdebug: print("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)
 
@@ -121,10 +125,10 @@ def before_request():
         #Check and redirect to /register if not registered
         is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs).json()
         print ('WEBDEBUG, is user:',request.endpoint,dn,str(is_mpo_user) )
-	USERNAME=is_mpo_user[0]['username']
         if(len(is_mpo_user)==0):
         #if is_mpo_user.status_code == 401:
             return render_template('register.html')
+        USERNAME=is_mpo_user[0]['username']
 
 
 @app.route('/')

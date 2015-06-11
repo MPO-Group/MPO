@@ -464,9 +464,9 @@ def collectionElement(id=None, oid=None, dn=None):
 
 
 
-@checkaccess
 @app.route(routes['workflow']+'/<id>', methods=['GET'])
 @app.route(routes['workflow'],  methods=['GET', 'POST'])
+@checkaccess
 def workflow(id=None, dn=None):
     """
     Implementation of the /workflow route
@@ -480,11 +480,6 @@ def workflow(id=None, dn=None):
     if apidebug:
         print ('APIDEBUG: You are: %s'% str(dn) )
         print ('APIDEBUG: workflow url request is %s' %request.url)
-
-    if not rdb.validUser(dn):
-        if apidebug:
-            print ('APIDEBUG: Not a valid user %s' % str(dn) )
-        return Response(None, status=401)
 
     if request.method == 'POST':
         #check for valid workflow type
@@ -566,7 +561,6 @@ def getWorkflowElement(wid,uid=None,dn=None):
 @app.route(routes['workflow']+'/<id>/graph', methods=['GET'])
 @checkaccess
 def getWorkflowGraph(id,dn=None):
-    dn=get_user_dn(request)
     api_version,root_url,root=get_api_version(request.url)
     
     if request.method == 'GET':
@@ -1014,7 +1008,6 @@ def ontologyInstance(id=None, dn=None):
 
 @app.route(routes['user']+'/<id>', methods=['GET'])
 @app.route(routes['user'], methods=['GET', 'POST'])
-@checkaccess
 def user(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)
     #Unregistered users need to be able to be registered, hence comment this out for now.
