@@ -17,7 +17,7 @@
                 <li {% block dataobject_active %}{% endblock %}><a href="{{ url_for("dataobject") }}"><img src="/static/img/images/_icon_dataobject.png"> Data Objects</a></li>
                 <li {% block search_active %}{% endblock %}><a href="{{ url_for("search") }}"><span class="icon-search"></span> Search</a></li>
 			</ul>
-            {% if request.path != "/home" %}
+            {% if request.path != "/home" and db_server != "demo" %}
             <span style="float:right; padding-top: 10px">
             <form class="form-inline" action="{{ url_for('submit_db') }}" method="post">
             <div class="form-group">
