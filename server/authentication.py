@@ -1,7 +1,7 @@
 import re
 import os 
 dn_re_slash = re.compile(r'(?:/)(.+?)(?:=)([^/]+)')
-dn_re_comma = re.compile(r'(?:,)(.+?)(?:=)([^,]+)')
+dn_re_comma = re.compile(r'(?:,|^)(.+?)(?:=)([^,]+)')
 
 def parse_dn(dn):
     ans = dict(dn_re_slash.findall(dn))

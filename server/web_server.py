@@ -127,8 +127,10 @@ def before_request():
         print ('WEBDEBUG, is user:',request.endpoint,dn,str(is_mpo_user) )
         if(len(is_mpo_user)==0):
 	    parsed_dn=parse_dn(dn)
+            print("BEFORE: dn = %s"%dn)
+	    pprint(parsed_dn)
             dn_email=parsed_dn['emailAddress']
-            dn_ou=parsed_dn['OU']
+            dn_ou=parsed_dn['O']
             dn_name=parsed_dn['CN']
             t=parsed_dn['CN'].find(' ')
             dn_fname=dn_name[0:t]
@@ -138,6 +140,10 @@ def before_request():
             return render_template('register.html', **everything)
         USERNAME=is_mpo_user[0]['username']
 
+
+TEST_API_PREFIX=MPO_API_SERVER+"/"+"test-api"+"/"+MPO_API_VERSION
+DEMO_API_PREFIX=MPO_API_SERVER+"/"+"demo-api"+"/"+MPO_API_VERSION
+PRODUCTION_API_PREFIX=MPO_API_SERVER+"/"+"api"+"/"+MPO_API_VERSION
 
 @app.route('/')
 def index():
@@ -1449,9 +1455,9 @@ def register():
                         n+=1
 
             r = json.dumps(form) #convert to json
-            result_post = requests.post("%s/user"%API_PREFIX, r, **certargs)
+            result_post = requests.post("%s/user"%PRODUCTION_API_PREFIX, r, **certargs)
+            result_post = requests.post("%s/user"%TEST_API_PREFIX, r, **certargs)
             result=result_post.json() #Convert body Response to json datastructure
-
             if webdebug:
                 print("WEBDEBUG: get form")
                 print(form)
