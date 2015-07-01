@@ -12,7 +12,12 @@
        		<hr/>
             
             <p style="padding-top: 20px;" id="about">
-            <font class="big">Welcome, MPO Users!</font>
+            
+            {% if db_server != "demo" %}
+            <font class="big">Welcome, MPO Users!</font><br>
+			{% else %}
+            <font class="big">Welcome to the MPO Demo Website!</font><br>
+            {% endif %}            
             <p>
             Here is a list of available views:  
             
@@ -36,6 +41,7 @@
      		</ul>
             </p><br />
             
+            {% if db_server != "demo" %}
             <h4>MPO Databases: </h4> 
             <p>
                 <ul>
@@ -51,6 +57,7 @@
                     <li><a href="#">MPO Project Public Website</a></li>
             	</ul>
             </p>
+            {% endif %}            
             </div>
         </div> <!-- end row fluid --> 
      </div> <!-- end leaderboard -->
