@@ -10,7 +10,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=True
+dbdebug=False
 
 
 #  list of valid query fields and their mapped name in the table, Use

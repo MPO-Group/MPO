@@ -1,3 +1,4 @@
+import mod_wsgi
 import subprocess,os
 os.environ["UDP_EVENTS"]="yes"
 os.environ["MDS_PATH"]="/usr/local/cmod/tdi;/usr/local/mdsplus/tdi"

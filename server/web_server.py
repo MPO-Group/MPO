@@ -6,6 +6,8 @@ from flask import redirect, url_for, make_response
 from flask.ext.cors import cross_origin
 import json
 import requests
+from requests_futures.sessions import FuturesSession #asynch support for performance
+import threading
 import datetime
 from pprint import pprint
 import pydot
@@ -14,22 +16,52 @@ import math
 from authentication import get_user_dn, parse_dn
 import urllib
 from collections import OrderedDict
+
+
 try:
-    import memcache
+    import memcache   #for efficient viewing of pages a second time
     memcache_loaded=True
 except ImportError:
     print("MPO Web server error, could not import memcache, page loads may be slower.")
     memcache_loaded=False
 
-from requests_futures.sessions import FuturesSession
 
-app = Flask(__name__)
 
 if memcache_loaded:
     mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 else:
     mc = False
 
+#debug logging
+webdebug = False  #our inline print statements
+if webdebug:
+    httploglevel=1
+else:
+    httploglevel=0
+
+import logging #python module for handling of log messages and levels
+
+    # These two lines enable debugging at httplib level (requests->urllib3->http.client)
+    # You will see the REQUEST, including HEADERS and DATA, and RESPONSE with HEADERS but without DATA.
+    # The only thing missing will be the response.body which is not logged.
+try:
+    import http.client as http_client
+except ImportError:
+    # Python 2
+    import httplib as http_client
+
+http_client.HTTPConnection.debuglevel = httploglevel
+
+    # You must initialize logging, otherwise you'll not see debug output.
+logging.basicConfig() 
+logging.getLogger().setLevel(logging.DEBUG)
+
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(logging.WARN)  #logging.DEBUG , logging.WARN, logging.FATAL
+requests_log.propagate = True
+
+
+#Setup from process environment
 MPO_API_SERVER=os.environ.get('MPO_API_SERVER')
 if not MPO_API_SERVER:
     print("""
@@ -56,9 +88,19 @@ CONN_TYPE = ''
 USERNAME = ''
 
 USING_UWSGI = os.environ.get('UWSGI_ORIGINAL_PROC_NAME')
-webdebug = True
-app.debug = True
 
+
+#Establish some asychronous request workers
+s = FuturesSession(max_workers=10) #we only want to call this once to avoid cleaning up workers socket connections
+a = requests.adapters.HTTPAdapter(max_retries=10,pool_connections=100, pool_maxsize=100, pool_block=True) #defaults are 0,10,10,False
+s.mount('https://', a)
+s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
+s.verify=False
+
+
+#Begin the application
+app = Flask(__name__)
+app.debug = True
 print('WEBSERVER: timestamp app started',stime.time() )
 
 @app.before_request
@@ -89,6 +131,7 @@ def before_request():
             DB_SERVER='demo'
     API_PREFIX=MPO_API_SERVER+"/"+CONN_TYPE+"/"+MPO_API_VERSION
     if webdebug: print("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)
+    print("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)
 
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
@@ -100,25 +143,6 @@ def before_request():
         print ('web debug, api_prefix',API_PREFIX)
         print ('WEBSERVER certargs',certargs)
         print ('WEBSERVER  request.environ', request.environ)
-
-    import logging
-
-# These two lines enable debugging at httplib level (requests->urllib3->http.client)
-# You will see the REQUEST, including HEADERS and DATA, and RESPONSE with HEADERS but without DATA.
-# The only thing missing will be the response.body which is not logged.
-    try:
-        import http.client as http_client
-    except ImportError:
-    # Python 2
-        import httplib as http_client
-    http_client.HTTPConnection.debuglevel = 1
-
-# You must initialize logging, otherwise you'll not see debug output.
-    logging.basicConfig() 
-    logging.getLogger().setLevel(logging.DEBUG)
-    requests_log = logging.getLogger("requests.packages.urllib3")
-    requests_log.setLevel(logging.DEBUG)
-    requests_log.propagate = True
 
  
     if(request.endpoint != 'register'):
@@ -152,114 +176,109 @@ def index():
 
 @app.route('/workflows')
 def workflows():
-    #use asynchronous requests now
-    #use grouped requests:
+    #using asynchronous requests now
+    global s
+    #optionally use grouped requests:
     groupedrequests=False
-    print('WEBSERVER: timestamp start index',stime.time() )
+
+    print('WEBSERVER: workflows timestamp start index',stime.time() )
+    if webdebug: print('WEBSERVER: workflows thread count START : ', threading.active_count() )
     #Need to get the latest information from MPO database here
     #and pass it to index.html template
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
     if webdebug:
-        print('WEBDEBUG: certargs',certargs)
+        print('WEBDEBUG: workflows certargs',certargs)
 
     ##timing begin
     time_begin = stime.time()
 
     results=False
-    if True:
-        #Establish API session
-        s = FuturesSession(max_workers=45) #can use Pooling as well
-        a = requests.adapters.HTTPAdapter(max_retries=4)
-        s.mount('https://', a)
-        s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
-        s.verify=False
-        s.headers={'Real-User-DN':dn}
 
-        #send out some requests for preload
-        #get quality ontology term uid
-        quality_req=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,),
-                           headers={'Real-User-DN':dn})
+    #Set dn for API session
+    s.headers={'Real-User-DN':dn, 'Connection':'close' }
 
-        #get UID of Workflow types in ontology
-        wf_type_req=s.get("%s/ontology/term?path=/Workflow/Type"%(API_PREFIX,),
-                           headers={'Real-User-DN':dn})
+    #send out some requests for preload
+    #get quality ontology term uid
+    quality_req=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,))
 
-        #get full ontology
-        ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,),
-                           headers={'Real-User-DN':dn})
+    #get UID of Workflow types in ontology
+    wf_type_req=s.get("%s/ontology/term?path=/Workflow/Type"%(API_PREFIX,))
 
-        ##get URL variables for this page
-        wid=request.args.get('wid')
+    #get full ontology
+    ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,))
 
-        #pagination control variables
-        wf_range=request.args.get('range')
-        wf_page=request.args.get('p')
-        wf_rpp=request.args.get('r')
-        wf_type=request.args.get('wf_type')
+    #get URL variables for this page
+    wid=request.args.get('wid')
 
-        wf_name=request.args.get('wf_name')
-        wf_desc=request.args.get('wf_desc')
-        wf_lname=request.args.get('wf_lname')
-        wf_fname=request.args.get('wf_fname')
-        wf_username=request.args.get('wf_username')
+    #pagination control variables
+    wf_range=request.args.get('range')
+    wf_page=request.args.get('p')
+    wf_rpp=request.args.get('r')
+    wf_type=request.args.get('wf_type')
 
-        if wf_page:
-            current_page=int(wf_page)
-        else:
-            current_page=1
+    wf_name=request.args.get('wf_name')
+    wf_desc=request.args.get('wf_desc')
+    wf_lname=request.args.get('wf_lname')
+    wf_fname=request.args.get('wf_fname')
+    wf_username=request.args.get('wf_username')
 
-        #records per page, 15 is default
-        if wf_rpp:
-            rpp=int(wf_rpp)
-        else:
-            rpp=15
+    if wf_page:
+        current_page=int(wf_page)
+    else:
+        current_page=1
 
-        #get total # of workflows
-        r=s.get("%s/workflow"%API_PREFIX,  headers={'Real-User-DN':dn}).result()
-        #JCW may want to provide resource for this when transfer becomes large
-        #().result() needed by FuturesSession to block for async response
+    #records per page, 15 is default
+    if wf_rpp:
+        rpp=int(wf_rpp)
+    else:
+        rpp=15
 
-        # need to check the status code
-        if r.status_code == 401:
-            return redirect(url_for('index', dest_url=request.path))
+    #get total # of workflows
+    r=s.get("%s/workflow"%API_PREFIX).result()
+    #JCW may want to provide resource for this when transfer becomes large
+    #().result() needed by FuturesSession to block for async response
+    
+    # need to check the status code
+    if r.status_code == 401:
+        return redirect(url_for('index', dest_url=request.path))
 
-        rjson = r.json()
+    rjson = r.json()
 
-        num_wf=len(rjson) # number of workflows returned from api call
+    num_wf=len(rjson) # number of workflows returned from api call
 
-        ### get start & end of range of workflows
-        if wf_range:
-            rlist=wf_range.split(',')
-            rmin=int(rlist[0])
-            #rmax=int(rlist[1])
-            rmax=rmin+rpp-1
-        else:
-            #default range
-            rmin=1
-            rmax=rpp
+    ### get start & end of range of workflows
+    if wf_range:
+        rlist=wf_range.split(',')
+        rmin=int(rlist[0])
+        #rmax=int(rlist[1])
+        rmax=rmin+rpp-1
+    else:
+        #default range
+        rmin=1
+        rmax=rpp
 
-        if wf_type:
-            if wf_type != "all":
-                #get workflows by specified type, JCW: can just filter initial query
-                #CAUTION, may want to actually make this query if we choose not to get all workflows the first time
-                #r=s.get("%s/workflow?type=%s"%(API_PREFIX,wf_type,), headers={'Real-User-DN':dn})
-                #rjson = r.json()
-                rjson = [item for item in rjson if item['type'] == wf_type]
-                num_wf=len(rjson) # number of workflows of specified type
-                #get range of workflows of specified type
-                #r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
-        #else:
-            #wf_type=""
-            #r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
+    if wf_type:
+        if wf_type != "all":
+            #get workflows by specified type, JCW: can just filter initial query
+            #CAUTION, may want to actually make this query if we choose not to get all workflows the first time
+            #r=s.get("%s/workflow?type=%s"%(API_PREFIX,wf_type,), headers={'Real-User-DN':dn})
+            #rjson = r.json()
+            rjson = [item for item in rjson if item['type'] == wf_type]
+            num_wf=len(rjson) # number of workflows of specified type
+            #get range of workflows of specified type
+            #r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
+    #else:
+        #wf_type=""
+        #r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
 
-        if webdebug: print('web debug rjson',rjson, rmin, rmax)
-        rjson=rjson[rmin-1:rmax]
-        #calculate number of pages
-        num_pages=int(math.ceil(float(num_wf)/float(rpp)))
+    if webdebug: print('web debug rjson',rjson, rmin, rmax)
+    rjson=rjson[rmin-1:rmax]
+    #calculate number of pages
+    num_pages=int(math.ceil(float(num_wf)/float(rpp)))
 
-        results = rjson #r.json()
+    results = rjson #r.json()
 
         ### ontology tree
         #req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
@@ -275,108 +294,106 @@ def workflows():
 #        wf_ont_tree=requests.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']), **certargs).json()
 
 
-        #Callbacks for use in following loop
-        future_list=[]
+    #Callbacks for use in following loop
+    future_list=[]
 
-        def qual_cb(sess, resp, index):
-            #verify response and grab value
-            qual_data = resp.json()
-            if qual_data:
-                if qual_data[0]['value']:
-                    results[index]['quality']=qual_data[0]['value']
-            else:
-                results[index]['quality']=''
-
-            if resp.status_code != 200:
-                print("Error in index.html in retrieving quality for %s %s"%(qterm_uid,pid))
-                results[index]['quality']=''
-
-
-        def alias_cb(sess, resp, index):
-            #verify response and grab value
-            cid = resp.json()
-            if cid:
-                results[index]['alias']=cid['alias']
-
-            if resp.status_code != 200:
-                print("Error in index.html in retrieving alias for %s."%(str(results[index])) )
-                results[index]['alias']='alias/not/found'
-
-
-        def comment_cb(sess, resp, index):
-            comments = resp.json()
-            for temp in comments: #get number of comments, truncate time string
-
-                if temp['user_uid']:
-                    user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,temp['user_uid'],), **certargs)
-                    user_info=user_req.json()
-                    username=user_info[0]['username']
-                    temp['username']=username
-
-
-                if temp['time']:
-                    thetime=temp['time'][:19]
-                    temp['time']=thetime
-
-            results[index]['num_comments']=len(comments)
-            results[index]['comments']=comments
-
-
-        #get needed info from prior requests before going through workflows
-        #quality uid
-        quality_info=quality_req.result().json()
-        if len(quality_info)==1:
-            qterm_uid=quality_info[0]['uid']
+    def qual_cb(sess, resp, index):
+        #verify response and grab value
+        qual_data = resp.json()
+        if qual_data:
+            if qual_data[0]['value']:
+                results[index]['quality']=qual_data[0]['value']
         else:
-            qterm_uid='0'
-            print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
+            results[index]['quality']=''
 
-        #retrieve workflow type UID from prior request
-        worktreeroot = wf_type_req.result().json()
-        #issue new request for workflow type data
-        if(worktreeroot):
-       	    wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']),
-                           headers={'Real-User-DN':dn})
-
-        #list of workids for grouped requests
-        if groupedrequests:
-            wids = ','.join([i['uid'] for i in results])
-            acm =s.get("%s/workflow/%s/comments"%(API_PREFIX,wids),  headers={'Real-User-DN':dn})
-            aal =s.get("%s/workflow/%s/alias"%(API_PREFIX,wids),  headers={'Real-User-DN':dn})
-            aqual=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,wids),
-                        headers={'Real-User-DN':dn})
+        if resp.status_code != 200:
+            print("Error in index.html in retrieving quality for %s %s"%(qterm_uid,pid))
+            results[index]['quality']=''
 
 
-        #get comments and quality factors for workflows
-        for index,i in enumerate(results):        #i is dict, loop through list of workflows
-            #if ?wid=<wid> used, show comments for only that workflow
-            if wid:
-                if wid == i['uid']:
-                    results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
-            else:
-                results[index]['show_comments'] = ''
+    def alias_cb(sess, resp, index):
+        #verify response and grab value
+        cid = resp.json()
+        if cid:
+            results[index]['alias']=cid['alias']
 
-            #filter milliseconds out (note, could be more robustly done with datetime functions)
-            thetime=results[index]['time'][:19]
-            results[index]['time']=thetime
+        if resp.status_code != 200:
+            print("Error in index.html in retrieving alias for %s."%(str(results[index])) )
+            results[index]['alias']='alias/not/found'
 
-            if not groupedrequests:
-                pid=i['uid']
-            #get comments for a workflow
-                c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+
+    def comment_cb(sess, resp, index):
+        comments = resp.json()
+        for temp in comments: #get number of comments, truncate time string
+
+            if temp['user_uid']:
+                user_req=requests.get("%s/user?uid=%s"%(API_PREFIX,temp['user_uid'],), **certargs)
+                user_info=user_req.json()
+                username=user_info[0]['username']
+                temp['username']=username
+
+
+            if temp['time']:
+                thetime=temp['time'][:19]
+                temp['time']=thetime
+
+        results[index]['num_comments']=len(comments)
+        results[index]['comments']=comments
+
+
+    #get needed info from prior requests before going through workflows
+    #quality uid
+    quality_info=quality_req.result().json()
+    if len(quality_info)==1:
+        qterm_uid=quality_info[0]['uid']
+    else:
+        qterm_uid='0'
+        print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
+
+    #retrieve workflow type UID from prior request
+    worktreeroot = wf_type_req.result().json()
+    #issue new request for workflow type data
+    if(worktreeroot):
+        wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']))
+        
+    #list of workids for grouped requests
+    if groupedrequests:
+        wids = ','.join([i['uid'] for i in results])
+        acm =s.get("%s/workflow/%s/comments"%(API_PREFIX,wids))
+        aal =s.get("%s/workflow/%s/alias"%(API_PREFIX,wids))
+        aqual=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,wids))
+
+    #get comments and quality factors for workflows
+    for index,i in enumerate(results):        #i is dict, loop through list of workflows
+        #if ?wid=<wid> used, show comments for only that workflow
+        if wid:
+            if wid == i['uid']:
+                results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
+        else:
+            results[index]['show_comments'] = ''
+
+        #filter milliseconds out (note, could be more robustly done with datetime functions)
+        thetime=results[index]['time'][:19]
+        results[index]['time']=thetime
+
+        if not groupedrequests:
+            pid=i['uid']
+        #get comments for a workflow
+            c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),
                     background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
-                future_list.append(c)
-
-            #get alias' for workflow display
-                cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+            future_list.append(c)
+            
+        #get alias' for workflow display
+            cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),
                       background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
-                future_list.append(cid)
-
-            #get workflow ontology terms: quality values
-                qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid),
-                           headers={'Real-User-DN':dn},
+            future_list.append(cid)
+            
+        #get workflow ontology terms: quality values
+            qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid),
                            background_callback=lambda sess,resp,index=index: qual_cb(sess,resp,index) )
-                future_list.append(qual_req)
+            future_list.append(qual_req)
+            
+
 
     #process comments, alias'
 
@@ -413,7 +430,10 @@ def workflows():
     if(worktreeroot):
     	ont_result=ont_tree_req.result().json().get('root').get('children')
         wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
+        
 
+
+    
     #calculate page_created time for display
     time_end = stime.time()
     begin_to_end = time_end - time_begin
@@ -436,13 +456,6 @@ def ont_children(uid=""):
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
-
-    s = requests.Session()
-    a = requests.adapters.HTTPAdapter(max_retries=10)
-    s.mount('https://', a)
-    s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
-    s.verify=False
-    s.headers={'Real-User-DN':dn}
 
     result=""
     if uid:
@@ -709,12 +722,6 @@ def workflow(wid=""):
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
-    s = requests.Session()
-    a = requests.adapters.HTTPAdapter(max_retries=10)
-    s.mount('https://', a)
-    s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
-    s.verify=False
-    s.headers={'Real-User-DN':dn}
 
     req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
     wf=req.json()
@@ -994,37 +1001,29 @@ def ontology_instance():
 @app.route('/collections')
 @app.route('/collections/<uid>', methods=['GET'])
 def collections(uid=False):
+    global s
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
     results=[]
     if True:
-        s = FuturesSession(max_workers=45) #can use Pooling as well
-        a = requests.adapters.HTTPAdapter(max_retries=10)
-        s.mount('https://', a)
-        s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
-        s.verify=False
         s.headers={'Real-User-DN':dn}
         rpp=15
 
 
         #send out some requests for preload
         #get quality ontology term uid
-        quality_req=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,),
-                           headers={'Real-User-DN':dn})
+        quality_req=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,))
 
         #get UID of Workflow types in ontology
-        wf_type_req=s.get("%s/ontology/term?path=/Workflow/Type"%(API_PREFIX,),
-                           headers={'Real-User-DN':dn})
+        wf_type_req=s.get("%s/ontology/term?path=/Workflow/Type"%(API_PREFIX,))
 
         #get full ontology
-        ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,),
-                           headers={'Real-User-DN':dn})
-
+        ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,))
 
         #get collections now
-        rc=s.get("%s/collection"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
+        rc=s.get("%s/collection"%(API_PREFIX,)).result()
         coll_list=rc.json()
 
         coll_name="None"
@@ -1037,7 +1036,7 @@ def collections(uid=False):
 
         if uid:
             #get members of this collection
-            r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
+            r_coll=s.get("%s/collection/%s/element"%(API_PREFIX,uid))
             results=r_coll.result().json()
             #get name and desc of this specific collection
             this_coll = [ c for c in coll_list if c['uid']==uid ]
@@ -1127,57 +1126,56 @@ def collections(uid=False):
 	    #Process workflow items
  	    if results[index]['type']=="workflow":
 	    	#get workflow info
-            	wf_req=s.get("%s/workflow/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-            	        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+            	wf_req=s.get("%s/workflow/%s"%(API_PREFIX,pid),
+                             background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
             	future_list.append(wf_req)
 	    	#get comments for each workflow in a collection
-            	c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+            	c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),
             	        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
             	future_list.append(c)
             	#get workflow alias #JCW this needs to be extended to object names for general collections
-            	cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+            	cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),
             	          background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
             	future_list.append(cid)
 
 	    #Process dataobject
             elif results[index]['type']=="dataobject":
                 #get node info
-                wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+                wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),
+                             background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
                 future_list.append(wf_req)
                 #get comments for each workflow in a collection
-                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),
                         background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
                 future_list.append(c)
 	
 	    #Process dataobject
             elif results[index]['type']=="dataobject_instance":
                #get node info
-                wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+                wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),
+                             background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
                 future_list.append(wf_req)
                 #get comments for each workflow in a collection
-                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),
                         background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
                 future_list.append(c)
                 wf_id=wf_req.result().json()[0]['work_uid']
-	        doi_wf=s.get("%s/workflow/%s"%(API_PREFIX,wf_id), headers={'Real-User-DN':dn}).result()
+	        doi_wf=s.get("%s/workflow/%s"%(API_PREFIX,wf_id)).result()
                 doi_wf_cid=str(doi_wf.json()[0]['username'])+" / "+str(doi_wf.json()[0]['name'])+" / "+str(doi_wf.json()[0]['composite_seq'])
  		results[index]['wf_cid']=doi_wf_cid
 
 	    elif results[index]['type']=="collection":
                 #get node info
-                wf_req=s.get("%s/collection/%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
-                        background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
+                wf_req=s.get("%s/collection/%s"%(API_PREFIX,pid),
+                             background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
                 future_list.append(wf_req)
                 #get comments for each workflow in a collection
-                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),  headers={'Real-User-DN':dn},
+                c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),
                         background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
                 future_list.append(c)
 
             #get workflow ontology terms: quality values
             qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid),
-                           headers={'Real-User-DN':dn},
                            background_callback=lambda sess,resp,index=index: qual_cb(sess,resp,index) )
             future_list.append(qual_req)
 
@@ -1194,14 +1192,17 @@ def collections(uid=False):
     worktreeroot = wf_type_req.result().json()
     #issue new request for workflow type data
     if(worktreeroot):
-        wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']),
-                        headers={'Real-User-DN':dn})
+        wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']))
+
 
     ont_result_json=ont_tree_req.result().json()
     if(ont_result_json):
         ont_result=ont_result_json.get('root').get('children')
     if(worktreeroot):
         wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
+
+    #close the requests connection
+    s.close()
 
     if webdebug:
         print("WEBDEBUG: collection results sent to index")
@@ -1218,32 +1219,25 @@ def collections(uid=False):
 @app.route('/dataobjects')
 @app.route('/dataobjects/<uid>', methods=['GET'])
 def dataobject(uid=False):
+    global s
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
     results=False
     if True:
-        s = FuturesSession(max_workers=45) #can use Pooling as well
-        a = requests.adapters.HTTPAdapter(max_retries=10)
-        s.mount('https://', a)
-        s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
-        s.verify=False
         s.headers={'Real-User-DN':dn}
         rpp=15
 
         #send out some requests for preload
         #get quality ontology term uid
-        quality_req=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,),
-                           headers={'Real-User-DN':dn})
+        quality_req=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,))
 
         #get UID of Workflow types in ontology
-        wf_type_req=s.get("%s/ontology/term?path=/Workflow/Type"%(API_PREFIX,),
-                           headers={'Real-User-DN':dn})
+        wf_type_req=s.get("%s/ontology/term?path=/Workflow/Type"%(API_PREFIX,))
 
         #get full ontology
-        ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,),
-                           headers={'Real-User-DN':dn})
+        ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,))
 
         quality_info=quality_req.result().json()
         if len(quality_info)==1:
@@ -1254,7 +1248,7 @@ def dataobject(uid=False):
 
         if uid:
             #Grab specified dataobject
-            r=s.get("%s/dataobject/%s"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
+            r=s.get("%s/dataobject/%s"%(API_PREFIX,uid))
             if(r):
                results=r.result().json()
                if "do_info" in results[0]:
@@ -1280,12 +1274,12 @@ def dataobject(uid=False):
                       item['time']=thetime
                       pid=item['uid']
                       #get comments for a workflow
-                      comment=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid), **certargs).result().json()
+                      comment=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid)).result().json()
                       item['comments']=comment
                       item['num_comments']=len(comment)
        
                       #get quality info for a workflow
-                      qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid), **certargs )
+                      qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid))
 
                       qual_data = qual_req.result().json()
                       if qual_data:
@@ -1295,10 +1289,10 @@ def dataobject(uid=False):
                          item['quality']=''
    
             #Grab a list of collections - first, get parent id
-            r=s.get("%s/collection?element_uid=%s"%(API_PREFIX,uid), headers={'Real-User-DN':dn})
+            r=s.get("%s/collection?element_uid=%s"%(API_PREFIX,uid))
             if(r):
               # grab all collections for now
-              rc=s.get("%s/collection"%(API_PREFIX), headers={'Real-User-DN':dn})
+              rc=s.get("%s/collection"%(API_PREFIX) )
               if(rc):
                   coll_list=rc.result().json()
               # loop through parents
@@ -1314,13 +1308,16 @@ def dataobject(uid=False):
         else:
             #Grab a list of all dataobjects
 	    dataobj_list=""
-            rc=s.get("%s/dataobject"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
+            rc=s.get("%s/dataobject"%(API_PREFIX)).result()
             if(rc):
             	dataobj_list=rc.json()
             	for temp in dataobj_list:
                     if temp['time']:
                     	thetime=temp['time'][:19]
                     	temp['time']=thetime
+
+            #close the connection
+            s.close()
             everything={"username":USERNAME,"db_server":DB_SERVER,"rpp":rpp, "coll_list":dataobj_list }
 
             return render_template('dataobject_index.html',  **everything)
@@ -1330,6 +1327,10 @@ def dataobject(uid=False):
         pprint(results)
 
     worktreeroot = wf_type_req.result().json()
+
+
+    #close the connection
+    s.close()
 
     everything={"username":USERNAME,"db_server":DB_SERVER, "workflows":workflows, 
                 "rpp":rpp, "coll_list":collections,
@@ -1341,15 +1342,11 @@ def dataobject(uid=False):
 
 @app.route('/get_server_data', methods=['GET'])
 def get_server_data(uid=False):
+    global s
     dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
-    s = FuturesSession(max_workers=45) #can use Pooling as well
-    a = requests.adapters.HTTPAdapter(max_retries=10)
-    s.mount('https://', a)
-    s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
-    s.verify=False
     s.headers={'Real-User-DN':dn}
 
     #Get request values - this should match up with the order of columns in HTML
@@ -1383,7 +1380,7 @@ def get_server_data(uid=False):
         for c in columns:
             this_list=[]
 #	    rc=s.get("%s/dataobject?uri=%s"%(API_PREFIX,search_str,), headers={'Real-User-DN':dn}).result()
-	    rc=s.get("%s/dataobject?%s=%s"%(API_PREFIX,c,search_str,), headers={'Real-User-DN':dn}).result()
+	    rc=s.get("%s/dataobject?%s=%s"%(API_PREFIX,c,search_str,)).result()
 
 	    if(rc):
                this_list=rc.json()
@@ -1398,7 +1395,7 @@ def get_server_data(uid=False):
      	    #   data_list=rc.json()
     else:
     	#rc=s.get("%s/dataobject?instance=False"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
-	rc=s.get("%s/dataobject"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
+	rc=s.get("%s/dataobject"%(API_PREFIX)).result()
         if(rc):
             data_list=rc.json()
             #for i in range(len(data_list)):

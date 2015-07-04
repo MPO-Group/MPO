@@ -37,7 +37,7 @@ rdb.init(conn_string)
 
 app = Flask(__name__)
 app.debug=True
-apidebug=True
+apidebug=False
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
@@ -186,15 +186,15 @@ def checkaccess(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
 
-        print ("in the checkaccess wrapper")
+        if apidebug: print ("APIDEBUG: in the checkaccess wrapper")
         if request.method == 'GET':
-            print("checking read access")
+            if apidebug: print("APIDEBUG: checking read access")
             dn=get_user_dn(request)
             if not rdb.validUser(dn) and os.environ['MPO_EDITION']=='DEMO':
                 if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
                 return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
         elif request.method == 'POST':
-            print("checking write access")
+            if apidebug:  print("APIDEBUG: checking write access")
             dn=get_user_dn(request)
             if not rdb.validUser(dn):
 		if os.environ['MPO_EDITION'] == 'DEMO':
@@ -207,7 +207,7 @@ def checkaccess(f):
         elif request.method == 'DELETE':
             print("checking delete access")
         else:
-            print("unknown method %s in checkaccess"%request.method)
+            print("API ERROR: unknown method %s in checkaccess."%request.method)
         return f(*args, dn=dn, **kwargs)
     return wrapper
 
@@ -989,13 +989,13 @@ def ontologyInstance(id=None, dn=None):
             p_uids=request.args.get('parent_uid')
             if p_uids:
                 p_uids=p_uids.strip().split(',')
-                print('ont inst',p_uids,str(len(p_uids)))
+                
                 r={}
                 rargs=request.args.to_dict() #multidict conversion to dict
                 for pid in p_uids:
                     rargs['parent_uid']=pid
                     rs = rdb.getRecord('ontology_instances', rargs, dn=dn )
-                    print('ont inst',pid,str(rargs),str(type(rargs)))
+
                     r[pid]=rs #element list, can have multiple instances
 
                 if len(p_uids)==1: #return just single record if one uid

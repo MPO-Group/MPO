@@ -18,6 +18,10 @@ elif process_group=='demo-mpowww': #demo server
    os.environ['MPO_EDITION'] = "DEMO"
    os.environ['DEMO_AUTH'] = "/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu"
    os.environ['MPO_API_SERVER']='https://'+socket.getfqdn()+''
+elif process_group=='test-mpowww': #demo server
+   os.environ['MPO_EDITION'] = "TEST"
+   os.environ['MPO_API_SERVER']='https://'+socket.getfqdn()+'test-api'
+
 
 #otherwise, let existing environment stand, eg if using local uWSGI server
 print('in web_server.wsgi, environment is: ',os.environ)
