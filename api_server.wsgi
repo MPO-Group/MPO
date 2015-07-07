@@ -15,7 +15,8 @@ if process_group=='test-api': #uses test database
 elif process_group=='demo-api':
    os.environ['MPO_DB_CONNECTION'] = "host='localhost' dbname='mpo_demo' user='mpoadmin' password='mpo2013'"
    os.environ['MPO_EDITION'] = "DEMO"
-   os.environ['DEMO_AUTH'] = "/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu"
+#   os.environ['DEMO_AUTH'] = "/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu"
+   os.environ['DEMO_AUTH'] = "emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US"
    if not '/var/www/demo-mposvn/db' in sys.path:
       sys.path.insert(0, '/var/www/demo-mposvn/db')
       sys.path.insert(0, '/var/www/demo-mposvn/server')
