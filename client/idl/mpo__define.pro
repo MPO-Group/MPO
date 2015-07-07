@@ -30,7 +30,14 @@
 ;
 ; OPTIONAL INPUTS:
 ;
+; 
 ; KEYWORD PARAMETERS:
+;
+; obj_new for initialization: host=host, version=version, cert=cert, /debug, version='v0'
+    ;         cert :: filename with path containing PEM certificate
+    ;         host :: the API host for MPO
+    ;         version :: defaults to 'v0'
+
 ;
 ; OUTPUTS:
 ;
@@ -52,7 +59,7 @@
 ;
 ; EXAMPLE:
 ;
-; mpo=obj_new('mpo',host='mpo-dev.psfc.mit.edu',port='8080',version='v0')
+; mpo=obj_new('mpo',host='mpo-dev.psfc.mit.edu',cert='./keycert.pem',version='v0')
 ;
 ; wf=mpo->start('Transp run','idl test', 'Transp')
 ;
@@ -563,7 +570,7 @@ end
 ; PURPOSE:
 ;      Interface with the MPO RESTful API
 ;
-;        The INIT method starts a workflow.
+;        The START method starts a workflow.
 ;        It returns the server response for a new workflow.
 ;        URL should be the host root.
 ;        Syntactic sugar, alias for post
@@ -664,15 +671,21 @@ FUNCTION mpo::error, key
   return, errorstr.(tindex[0])
 end
 
+
+
 PRO mpo::cleanup
  obj_destroy,self.req
  return
 end
 
+
+
 FUNCTION mpo::archive, protocol, arg_struct
   archiver=obj_new('mpo_ar_'+protocol, arg_struct)
   return, archiver->archive()
 end
+
+
 
 FUNCTION mpo::init , host=host, version=version, cert=cert, debug=debug
 
@@ -680,6 +693,16 @@ FUNCTION mpo::init , host=host, version=version, cert=cert, debug=debug
 ;;just put port in host name; if not keyword_set(port)    then port='443'
  if not keyword_set(version) then version='v0'
  if not keyword_set(cert) then cert='./MPO Demo User.pem'
+ if not file_test(cert) then begin
+    print, 'CRITICAL: certificate file not found'
+    exit
+ endif
+
+ if not (strmid(cert,0,1) eq '.') || (strmid(cert,0,1) eq '/') then 
+     print, 'CRITICAL: certificate filename must have path'
+     exit
+ endif
+
  self.debug=0
  if keyword_set(debug) then self.debug=1
 
@@ -701,7 +724,7 @@ FUNCTION mpo::init , host=host, version=version, cert=cert, debug=debug
  self.req=OBJ_NEW('IDLnetUrl')
 ; uncomment for debugging
  self.req->SetProperty, CALLBACK_FUNCTION='debug_req'
- self.req->SetProperty, URL_PORT=port
+; self.req->SetProperty, URL_PORT=port
  self.req->SetProperty, URL_SCHEME='https' ;important
  self.req->SetProperty, HEADERS=self.POSTheaders
  self.req->Setproperty, URL_HOST=host
