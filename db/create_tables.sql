@@ -27,6 +27,17 @@ insert into mpousers (username,uuid,creation_time) values ('mpoadmin', 'ddc315a1
 insert into mpousers (username,uuid,firstname,lastname,email,organization,dn,creation_time) values ('mpodemo', 'f223db41-d1c5-41db-b8af-fde6c0a16f76', 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', '/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu',now());
 alter table mpousers OWNER TO mpoadmin;
 
+drop table if exists mpoauth cascade;
+create table mpoauth
+(
+  u_guid uuid primary key,
+  read boolean,
+  write boolean
+);
+inert into mpoauth (u_guid, read, write) values ('bc789de3-7484-49dc-a498-3b5a3aad3c80', true, true)
+inert into mpoauth (u_guid, read, write) values ('f223db41-d1c5-41db-b8af-fde6c0a16f76', true, true)
+alter table mpoauth OWNER TO mpoadmin;
+
 drop table if exists collection cascade;
 create table collection
 (

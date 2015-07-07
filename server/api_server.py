@@ -190,18 +190,15 @@ def checkaccess(f):
         if request.method == 'GET':
             if apidebug: print("APIDEBUG: checking read access")
             dn=get_user_dn(request)
-            if not rdb.validUser(dn) and os.environ['MPO_EDITION']=='DEMO':
-                if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-                return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+            if not rdb.validReader(dn):
+                if apidebug: print ('APIDEBUG: Not a valid data reader %s'% dn )
+                return Response(json.dumps({'error':'No read access for this user','dn':dn}), status=401)
         elif request.method == 'POST':
             if apidebug:  print("APIDEBUG: checking write access")
             dn=get_user_dn(request)
-            if not rdb.validUser(dn):
-		if os.environ['MPO_EDITION'] == 'DEMO':
-                    if apidebug: print ('APIDEBUG: DEMO User does not have write access')
-                    return Response(json.dumps({'error':'No write acceess for demo user'}), status=401)
-                if apidebug: print ('APIDEBUG: Not a valid user %s'% dn )
-                return Response(json.dumps({'error':'invalid user','dn':dn}), status=401)
+            if not rdb.validWriter(dn):
+                if apidebug: print ('APIDEBUG: DEMO User does not have write access')
+                return Response(json.dumps({'error':'No write acceess for user', 'dn':dn}), status=401)
         elif request.method == 'PUT':
             print("checking modify access")
         elif request.method == 'DELETE':

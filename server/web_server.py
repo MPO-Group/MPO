@@ -1434,7 +1434,6 @@ def register():
         try:
             form = request.form.to_dict() #gets POSTed form fields as dict
             form['dn'] = dn
-
             #validate input
             check="<strong>Missing required fields: </strong>"
             n=0
@@ -1450,10 +1449,10 @@ def register():
                         else:
                             check+=k
                         n+=1
-
             r = json.dumps(form) #convert to json
             result_post = requests.post("%s/user"%PRODUCTION_API_PREFIX, r, **certargs)
             result_post = requests.post("%s/user"%TEST_API_PREFIX, r, **certargs)
+            result_post = requests.post("%s/user"%DEMO_API_PREFIX, r, **certargs)
             result=result_post.json() #Convert body Response to json datastructure
             if webdebug:
                 print("WEBDEBUG: get form")

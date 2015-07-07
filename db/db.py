@@ -401,6 +401,9 @@ def addUser(json_request,submitter_dn):
          ") values ("+",".join(["%s" for x in reqkeys])+")")
     v= tuple([objs[x] for x in reqkeys])
     cursor.execute(q,v)
+    # add a record in the mpoauth table for this user
+    q = "insert into mpoauth (u_guid, read, write) values('%s', true, true)"%objs['uid']
+    cursor.execute(q)
     #JCW Example of returning created record. By calling get getUser()
     #method we also get translation to api labels.
     #       cursor.execute('select * from mpousers where uuid=%s ',(objs['uid'],) )
@@ -429,8 +432,37 @@ def addUser(json_request,submitter_dn):
         print('uid is ', objs['uid'])
         print('adduser records',records)
 
+    
     return records
 
+
+def validReader(dn):
+    return checkAccess(dn, read=True)
+
+def validWriter(dn):
+    return checkAccess(dn, read=True, write=True)
+
+def checkAccess(dn, read=False, write=False):
+    #make sure the user exists in the db and is a reader return true/false
+    conn = mypool.connect()
+
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+
+    cursor.execute("select b.read,b.write from mpousers a, mpoauth b where a.dn=%s and a.uuid=b.u_guid",(dn,))
+    records = cursor.fetchone()
+
+    if dbdebug:
+        print('DBDEBUG:: validuser','conn string', conn_string, 'dn',str(type(dn)),dn,'records',records)
+    try:
+	if read and write:
+            return records['read'] and records['write']
+	elif read:
+            return records['read']
+	else:
+            return True
+    except:
+	return False
 
 def validUser(dn):
     #make sure the user exists in the db. return true/false
