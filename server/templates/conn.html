@@ -273,8 +273,8 @@ $(document).ready(function () {
 		rightScrollHeight=hnew.toString() + "px";
 		document.getElementsByTagName("svg").item(0).setAttribute("width",w);
 		document.getElementsByTagName("svg").item(0).setAttribute("height",h);
-		//document.getElementById("graph1").transform.baseVal.getItem(0).setScale(".85",".85"); //VERSUS ORIGINAL SIZE 1166 wide x 712 high**
-		document.getElementById("graph1").transform.baseVal.getItem(0).setScale(hratio.toString(),vratio.toString()); //size ratio of workflow on load compared to original size
+		//document.getElementById("{{ graphname }}").transform.baseVal.getItem(0).setScale(".85",".85"); //VERSUS ORIGINAL SIZE 1166 wide x 712 high**
+		document.getElementById("{{ graphname }}").transform.baseVal.getItem(0).setScale(hratio.toString(),vratio.toString()); //size ratio of workflow on load compared to original size
 	}
 	//end svg size adjust
 	/*$( window ).resize(function() {
@@ -650,7 +650,7 @@ function buildPageElements(wfID) {
 				h=hnew.toString() + "pt";
 				document.getElementsByTagName("svg").item(0).setAttribute("width",w);
 				document.getElementsByTagName("svg").item(0).setAttribute("height",h);
-				document.getElementById("graph1").transform.baseVal.getItem(0).setScale(".56",".56");
+				document.getElementById("{{ graphname }}").transform.baseVal.getItem(0).setScale(".56",".56");
 			}
 			//end svg size adjust
 			initZoomPan();

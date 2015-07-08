@@ -629,9 +629,11 @@ def connections(wid=""):
           <text x="80" y="150" fill="red">Error in graph rendering!</text>
         </svg>
         """
+        graphname='text'
     else:
+        graphname =  svgxml.getchildren()[0].attrib['id']
         svg = et.tostring(svgxml)
-        
+
     #get workflow info/alias
     wid_req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
     wid_info=wid_req.json() #JCW Item 1
@@ -700,7 +702,7 @@ def connections(wid=""):
     evserver=MPO_EVENT_SERVER
 #    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
     everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info, 
-		  "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver}
+		  "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname}
 
     if memcache_loaded:
         mc.set(cache_id, everything, time=600)
