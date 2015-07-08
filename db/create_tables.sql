@@ -1,11 +1,11 @@
-/* uncomment to wipe out the whole database and recreate
+/* uncomment to wipe out the whole database and recreate */
 
-drop database if exists mpodbdev; */
+drop database if exists mpoDB; 
 
 drop role if exists mpoadmin;
 create user mpoadmin with password 'mpo2013';
 
-/* create database mpodbdev OWNER mpoadmin; */
+create database mpoDB OWNER mpoadmin; 
 
 
 drop table if exists mpousers cascade;
