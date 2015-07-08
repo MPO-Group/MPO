@@ -362,7 +362,7 @@ FUNCTION json_to_struct, json, nodelete=nodelete
                                 ; apparently IDL is also unhappy with
                                 ; date strings, so just convert all
                                 ; double quotes
-        jj=strjoin(strsplit(jj, '"', /extract), "'")
+        jj=strjoin(strsplit(jj, '"', /extract, /preserve_null), "'")
         ;
         ; Now we have string containing a valid IDL structure (in theory).
         ; Normally we would just EXECUTE() it, but EXECUTE() has a limit of
@@ -400,6 +400,7 @@ FUNCTION json_to_struct, json, nodelete=nodelete
             ENDWHILE
             OPENW, unit,tmp+dirsep+fname+'.pro',/GET_LUN
             PRINTF, unit, 'FUNCTION '+fname
+            PRINTF, unit, '    null=""'     
             PRINTF, unit, '    structure = [ $'
         ENDIF
         IF k EQ N_ELEMENTS(json) - 1 THEN eol = ']' ELSE eol = ', $'
@@ -595,12 +596,20 @@ end
 
 FUNCTION mpo::add , workflow_uid, parent_uid, name, description, uri
 
- parent_uid = [parent_uid]
- payload =   get_payload($
+ if isa(workflow_uid, 'string') then begin
+
+     parent_uid = [parent_uid]
+     payload =   get_payload($
                                   self.workid,workflow_uid,$
                                   self.parentid,parent_uid,$
                                   "name",name,"description",description,$
                                   "uri",uri   )
+ endif else begin
+     payload =   get_payload($
+                                  "name",name,"description",description,$
+                                  "uri",uri   )
+
+ endelse
  res = self->post(self.dataobject_rt, payload)
  return, res
 end
@@ -682,7 +691,17 @@ end
 
 FUNCTION mpo::archive, protocol, arg_struct
   archiver=obj_new('mpo_ar_'+protocol, arg_struct)
-  return, archiver->archive()
+  uri = archiver->archive()
+  tags = tag_names(arg_struct)
+  if (where(tags eq 'NAME') ge 0) and (where (tags eq 'DESCRIPTION') ge 0) then $
+    ans = self->add(0,0,arg_struct.name, arg_struct.description, uri) $
+  else if (where (tags eq 'NAME') ge 0) then $
+    ans = self->add(0,0,arg_struct.name, '', uri) $
+  else if (where (tags eq 'DESCRIPTION') ge 0) then $
+    ans = self->add(0,0,'', arg_struct.description, uri) $
+  else $
+    ans = self->add(0,0,'', '', uri)
+  return, ans.uri
 end
 
 
@@ -698,7 +717,7 @@ FUNCTION mpo::init , host=host, version=version, cert=cert, debug=debug
     exit
  endif
 
- if not (strmid(cert,0,1) eq '.') || (strmid(cert,0,1) eq '/') then 
+ if not ((strmid(cert,0,1) eq '.') || (strmid(cert,0,1) eq '/')) then begin 
      print, 'CRITICAL: certificate filename must have path'
      exit
  endif

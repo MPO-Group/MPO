@@ -655,7 +655,7 @@ def dataobject(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)
     istatus=200
     messages={}
-    messages['api-version']=api_version
+    messages['api_version']=api_version
 
     if request.method == 'POST':
         req = json.loads(request.data)
