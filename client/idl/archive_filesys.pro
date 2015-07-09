@@ -46,6 +46,6 @@
 ;     Josh Stillerman, October 2014 , MIT.
 ;        Initial version
 ;-
-function archive_filesys, mpo, filespec
-  return, mpo->archive('filesys', {filespec:filespec})
+function archive_filesys, mpo, filespec, name=name, description=description
+  return, mpo->archive('filesys', {filespec:filespec, name:name, description=description})
 end

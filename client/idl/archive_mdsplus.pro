@@ -46,6 +46,6 @@
 ;     Josh Stillerman, October 2014 , MIT.
 ;        Initial version
 ;-
-function archive_mdsplus, mpo, server, tree, shot, path
-  return, mpo->archive('mdsplus', {server:server, tree:tree, shot:shot, path:path})
+function archive_mdsplus, mpo, server, tree, shot, path, name=name, description=description
+  return, mpo->archive('mdsplus', {server:server, tree:tree, shot:shot, path:path, name:name, description:description})
 end

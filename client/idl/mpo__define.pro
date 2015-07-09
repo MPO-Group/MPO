@@ -596,7 +596,7 @@ end
 
 FUNCTION mpo::add , workflow_uid, parent_uid, name, description, uri
 
- if isa(workflow_uid, 'string') then begin
+ if type(workflow_uid) eq 7 then begin
 
      parent_uid = [parent_uid]
      payload =   get_payload($
