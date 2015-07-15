@@ -1,0 +1,8 @@
+[api]
+#optionally declare mpo api version being used
+MPO_VERSION = v0
+#set your authorized certificate in PEM format, either MIT or MPO issued cert
+MPO_AUTH = /etc/MPO Demo User.pem
+#select one of these by making it MPO_HOST. 
+#select test-api, demo-api, or api as the final path, see --host argument in mpo command as well
+MPO_HOST = https://mpo.psfc.mit.edu/test-api
