@@ -211,6 +211,19 @@ CREATE TABLE metadata (
 ALTER TABLE public.metadata OWNER TO mpoadmin;
 
 --
+-- Name: mpoauth; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+CREATE TABLE mpoauth (
+    u_guid uuid NOT NULL,
+    read boolean,
+    write boolean
+);
+
+
+ALTER TABLE public.mpoauth OWNER TO mpoadmin;
+
+--
 -- Name: mpousers; Type: TABLE; Schema: public; Owner: mpoadmin; Tablespace: 
 --
 
@@ -438,6 +451,8 @@ ea131dc2-7041-4a3c-8936-e2473f824189	Write output files	\N	9b18b6e7-8c2e-4db9-99
 --
 
 COPY collection (c_guid, name, description, u_guid, creation_time) FROM stdin;
+bce93ae0-c311-45a6-b7d1-d49bc7b81bad	Shot 160124 collection	Sample workflow collection	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:25:50.62295
+a1a529a7-e7bb-4885-b5fb-92d9003782f5	EFIT input file collection	Sample dataobject collection	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.284817
 \.
 
 
@@ -446,6 +461,13 @@ COPY collection (c_guid, name, description, u_guid, creation_time) FROM stdin;
 --
 
 COPY collection_elements (c_guid, e_guid, u_guid, creation_time) FROM stdin;
+bce93ae0-c311-45a6-b7d1-d49bc7b81bad	0407f11e-fbd9-4509-8fcc-ff452d5daf58	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:25:50.623385
+bce93ae0-c311-45a6-b7d1-d49bc7b81bad	08d2f5db-97d8-49c9-bd99-85303b07f9e2	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:25:50.623689
+bce93ae0-c311-45a6-b7d1-d49bc7b81bad	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:25:50.624043
+a1a529a7-e7bb-4885-b5fb-92d9003782f5	c35c5fa3-af4c-4324-b308-82af8fe007c4	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.285267
+a1a529a7-e7bb-4885-b5fb-92d9003782f5	97eae234-2b92-4bd6-bd0f-2c0544e0630d	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.285541
+a1a529a7-e7bb-4885-b5fb-92d9003782f5	b1cf87eb-5dde-4271-bad2-17be280b6ebc	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.285774
+a1a529a7-e7bb-4885-b5fb-92d9003782f5	73e1eccd-e0a8-402b-be23-27f6e87995aa	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.286016
 \.
 
 
@@ -546,12 +568,29 @@ a58a8105-6057-4043-808a-98a85bf08f48	compilation_date	2013-06-05	text	\N	0bdd4a6
 
 
 --
+-- Data for Name: mpoauth; Type: TABLE DATA; Schema: public; Owner: mpoadmin
+--
+
+COPY mpoauth (u_guid, read, write) FROM stdin;
+bc789de3-7484-49dc-a498-3b5a3aad3c80	t	t
+f223db41-d1c5-41db-b8af-fde6c0a16f76	t	t
+d221ada5-7481-484e-998d-f07bf57f6e40	t	t
+d49abda9-2f9b-4945-9011-6b11f998b4a1	t	t
+fb8e5fd4-2a6c-11e5-b345-feff819cdc9f	t	t
+\.
+
+
+--
 -- Data for Name: mpousers; Type: TABLE DATA; Schema: public; Owner: mpoadmin
 --
 
 COPY mpousers (username, uuid, firstname, lastname, email, organization, phone, dn, creation_time) FROM stdin;
-mpoadmin	ddc315a1-6310-41e7-a84d-886bc904f3b2	\N	\N	\N	\N	\N	\N	2015-05-21 10:13:43.914938
-mpodemo	f223db41-d1c5-41db-b8af-fde6c0a16f76	MPO	Demo User	jas@psfc.mit.edu	MIT		emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US	2015-05-21 10:13:43.914938
+leexia@fusion.gat.com	01f59750-bf36-4d1d-801a-754261e71076	Xia	Lee	leexia@fusion.gat.com	GA	8584554168	/C=US/ST=California/L=LaJolla/O=General Atomics/O=c21f969b5f03d33d43e04f8f136e7682/OU=?/CN=Xia Lee/emailAddress=leexia@fusion.gat.com	2015-07-02 20:14:17.314205
+covielloe@fusion.gat.com	d221ada5-7481-484e-998d-f07bf57f6e40	Liz	Coviello	covielloe@fusion.gat.com	c70903749ed556d98a4966fdfb9ccd04	1234	/C=US/ST=California/L=LaJolla/O=General Atomics/O=c70903749ed556d98a4966fdfb9ccd04/OU=MPO/CN=Liz Coviello/emailAddress=covielloe@fusion.gat.com	2015-07-03 11:05:16.168803
+mpoadmin	ddc315a1-6310-41e7-a84d-886bc904f3b2	\N	\N	\N	\N	\N	\N	2015-07-07 14:50:58.976481
+mpodemo	f223db41-d1c5-41db-b8af-fde6c0a16f76	MPO	Demo User	jas@psfc.mit.edu	MIT		emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US	2015-07-07 14:52:46.743915
+jas@psfc.mit.edu	d49abda9-2f9b-4945-9011-6b11f998b4a1	MPO	Demo User	jas@psfc.mit.edu	c21f969b5f03d33d43e04f8f136e7682	3038	/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu	2015-07-07 15:19:41.587471
+mpoui	fb8e5fd4-2a6c-11e5-b345-feff819cdc9f	MPO	UI	covielloe@fusion.gat.com	General Atomics	\N	/C=US/ST=California/L=LaJolla/O=General Atomics/O=c21f969b5f03d33d43e04f8f136e7682/OU=GAT/CN=MPO-UI-SERVER/emailAddress=abla@fusion.gat.com	\N
 \.
 
 
@@ -930,6 +969,14 @@ ALTER TABLE ONLY metadata
 
 
 --
+-- Name: mpoauth_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
+--
+
+ALTER TABLE ONLY mpoauth
+    ADD CONSTRAINT mpoauth_pkey PRIMARY KEY (u_guid);
+
+
+--
 -- Name: mpousers_pkey; Type: CONSTRAINT; Schema: public; Owner: mpoadmin; Tablespace: 
 --
 
@@ -1103,21 +1150,6 @@ ALTER TABLE ONLY workflow_connectivity
 
 ALTER TABLE ONLY workflow
     ADD CONSTRAINT workflow_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
-
-
-drop table if exists mpoauth cascade;
-create table mpoauth
-(
-  u_guid uuid primary key,
-  read boolean,
-  write boolean
-);
-insert into mpoauth (u_guid, read, write) values ('bc789de3-7484-49dc-a498-3b5a3aad3c80', true, true);
-insert into mpoauth (u_guid, read, write) values ('f223db41-d1c5-41db-b8af-fde6c0a16f76', true, true);
-alter table mpoauth OWNER TO mpoadmin;
-alter table mpoauth add constraint mpoauth_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
-
-insert into mpoauth (u_guid) select uuid from mpousers;
 
 
 --
