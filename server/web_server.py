@@ -1457,9 +1457,20 @@ def register():
                             check+=k
                         n+=1
             r = json.dumps(form) #convert to json
-            result_post = requests.post("%s/user"%PRODUCTION_API_PREFIX, r, **certargs)
-            result_post = requests.post("%s/user"%TEST_API_PREFIX, r, **certargs)
-            result_post = requests.post("%s/user"%DEMO_API_PREFIX, r, **certargs)
+
+	    # check if users already in db, add new users only
+	    in_prod=requests.get("%s/user?dn=%s"%(PRODUCTION_API_PREFIX,dn), **certargs).json()
+            if(len(in_prod)==0):
+		print "ADDING TO PROD"
+		result_post = requests.post("%s/user"%PRODUCTION_API_PREFIX, r, **certargs)
+            in_test=requests.get("%s/user?dn=%s"%(TEST_API_PREFIX,dn), **certargs).json()
+            if(len(in_test)==0): 
+ 		print "ADDING TO TEMP"
+            	result_post = requests.post("%s/user"%TEST_API_PREFIX, r, **certargs)
+            in_demo=requests.get("%s/user?dn=%s"%(DEMO_API_PREFIX,dn), **certargs).json()
+            if(len(in_demo)==0):
+		print"ADDING TO DEMO"
+	    	result_post = requests.post("%s/user"%DEMO_API_PREFIX, r, **certargs)
             result=result_post.json() #Convert body Response to json datastructure
             if webdebug:
                 print("WEBDEBUG: get form")
@@ -1489,7 +1500,7 @@ def register():
                     msg="Thank you for registering."
                     if webdebug:
                         print (msg)
-                        return render_template('index.html', msg=msg, result=result)
+                    return render_template('index.html', msg=msg, result=result)
             else:
                 return render_template('register.html', msg=check, form=form)
 
