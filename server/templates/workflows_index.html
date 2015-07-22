@@ -526,8 +526,8 @@ ul li input.user_time_wf {
                         <select id="wf_type_sel" class="type_sel">
                         	<option value="{{ url_for("workflows", r=rpp) }}">ALL</option>
                             {% if wf_type_list %}
-                            	{% for t in wf_type_list %}
-                           			<option value="{{ url_for("workflows", wf_type=t,r=rpp) }}" {% if wf_type==t %} selected="selected" {% endif %}>{{ t }}</option>
+                            	{% for t in wf_type_list %} 
+                                	<option value="{{ url_for("workflows", wf_type=t,r=rpp) }}" {% if wf_type==t %} selected="selected" {% endif %}>{{ t }}</option>
                             	{% endfor %}
                             {% endif %}
                         </select>                    

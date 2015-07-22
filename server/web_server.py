@@ -440,7 +440,7 @@ def workflows():
     page_created = "%s" %((str(begin_to_end))[:6])
 
     everything={"username":USERNAME,"db_server":DB_SERVER,"page_created":page_created, 
-		"results":results, "ont_result":ont_result,
+		"results":results, "ont_result":ont_result, "wf_type":wf_type,
                 "rpp":rpp, "current_page":current_page, "wf_type_list":wf_type_list,
                 "num_pages":num_pages, "num_wf":num_wf}
     return render_template('workflows_index.html', **everything)
@@ -1043,12 +1043,14 @@ def collections(uid=False):
             #get name and desc of this specific collection
             this_coll = [ c for c in coll_list if c['uid']==uid ]
 	    if len(this_coll)>0:            
+		print "##############also here"
 		coll_name=this_coll[0]['name']
             	coll_desc=this_coll[0]['description']
 		coll_username=this_coll[0]['username']
 	    	coll_time=this_coll[0]['time'][:19]
         else: #get members of first collection
             if len(coll_list)>0:
+		print "######################here"
                 coll_name=coll_list[0]['name']
                 coll_desc=coll_list[0]['description']
                
