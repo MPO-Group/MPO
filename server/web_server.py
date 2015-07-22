@@ -840,13 +840,16 @@ def search():
                             if(pkey=="mpousers"): #api route is /user and not /mpousers
                                 pkey="user"
                             req=requests.get("%s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,), **certargs)
-
-                            if req.text != "[]":
-                                obj_result.extend(req.json())
-                                found=True
-                                if webdebug:
-                                    print('Searching route:')
-                                    print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
+	                    if req.status_code == 500:
+				if webdebug:
+				   print "Error in webserver, 500 from search api route: %s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,)
+			    else:
+ 			        if req.text != "[]":
+                                   obj_result.extend(req.json())
+                                   found=True
+                                   if webdebug:
+                                 	print('Searching route - data returned:')
+                                    	print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
                     if found:
                         results[pkey]=obj_result
 
@@ -857,6 +860,8 @@ def search():
         if webdebug:
             print('WEBDEBUG: user query')
             pprint(form)
+	    print('WEBDEBUG: result')
+	    print results
 
         return render_template('search.html', query=form, results=results, db_server=DB_SERVER, username=USERNAME)
 
@@ -1043,14 +1048,12 @@ def collections(uid=False):
             #get name and desc of this specific collection
             this_coll = [ c for c in coll_list if c['uid']==uid ]
 	    if len(this_coll)>0:            
-		print "##############also here"
 		coll_name=this_coll[0]['name']
             	coll_desc=this_coll[0]['description']
 		coll_username=this_coll[0]['username']
 	    	coll_time=this_coll[0]['time'][:19]
         else: #get members of first collection
             if len(coll_list)>0:
-		print "######################here"
                 coll_name=coll_list[0]['name']
                 coll_desc=coll_list[0]['description']
                
