@@ -1,6 +1,7 @@
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: module mpo_arg</title>
+<meta charset="utf-8">
 </head><body bgcolor="#f0f0f8">
 
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
@@ -8,7 +9,7 @@
 <td valign=bottom>&nbsp;<br>
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>mpo_arg</strong></big></big></font></td
 ><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/covielloe/mposvn/trunk/client/python/mpo_arg.py">/home/covielloe/mposvn/trunk/client/python/mpo_arg.py</a></font></td></tr></table>
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mpo-head/trunk/client/python/mpo_arg.py">/Users/jwright/Codes/mpo-head/trunk/client/python/mpo_arg.py</a></font></td></tr></table>
     <p><tt>Test&nbsp;commandline&nbsp;parsing<br>
 Will&nbsp;permit&nbsp;all&nbsp;parsing&nbsp;to&nbsp;be&nbsp;moved&nbsp;to&nbsp;the&nbsp;meta&nbsp;command&nbsp;where&nbsp;it&nbsp;belongs.<br>
 Then&nbsp;methods&nbsp;can&nbsp;stay&nbsp;put&nbsp;functional&nbsp;invocation.<br>
@@ -37,14 +38,13 @@ help</tt></p>
 <a href="datetime.html">datetime</a><br>
 </td><td width="25%" valign=top><a href="json.html">json</a><br>
 <a href="linecache.html">linecache</a><br>
-<a href="logging.html">logging</a><br>
 <a href="os.html">os</a><br>
-</td><td width="25%" valign=top><a href="requests.html">requests</a><br>
-<a href="sys.html">sys</a><br>
+<a href="requests.html">requests</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
 <a href="textwrap.html">textwrap</a><br>
 <a href="traceback.html">traceback</a><br>
-</td><td width="25%" valign=top><a href="unittest.html">unittest</a><br>
-<a href="warnings.html">warnings</a><br>
+<a href="unittest.html">unittest</a><br>
+</td><td width="25%" valign=top><a href="warnings.html">warnings</a><br>
 </td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
@@ -128,7 +128,7 @@ Commandline&nbsp;invocation:<br>
 mpo&nbsp;&lt;mpo&nbsp;flags&gt;&nbsp;method&nbsp;&lt;url&gt;&nbsp;&lt;method&nbsp;flags&gt;&nbsp;&lt;payload&gt;<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="mpo_cli-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, mpo_cert<font color="#909090">=''</font>, debug<font color="#909090">=False</font>, dryrun<font color="#909090">=False</font>)</dt></dl>
+<dl><dt><a name="mpo_cli-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, mpo_cert<font color="#909090">=''</font>, archive_host<font color="#909090">='psfcstor1.psfc.mit.edu'</font>, archive_user<font color="#909090">='psfcmpo'</font>, archive_key<font color="#909090">=None</font>, archive_prefix<font color="#909090">=None</font>, debug<font color="#909090">=False</font>, dryrun<font color="#909090">=False</font>)</dt></dl>
 
 <dl><dt><a name="mpo_cli-cli"><strong>cli</strong></a>(self)</dt></dl>
 
@@ -159,29 +159,36 @@ m.flags=values&nbsp;#set&nbsp;some&nbsp;defaults,&nbsp;eg&nbsp;m.server=$MPO_HOS
 m.mpo_method(url=url,payload=payload,arg1=arg1,arg2=arg2)<br>&nbsp;</tt></td></tr>
 <tr><td>&nbsp;</td>
 <td width="100%">Methods defined here:<br>
-<dl><dt><a name="mpo_methods-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, cert<font color="#909090">='no cert'</font>, debug<font color="#909090">=False</font>, filter<font color="#909090">=False</font>, dryrun<font color="#909090">=False</font>)</dt></dl>
+<dl><dt><a name="mpo_methods-__init__"><strong>__init__</strong></a>(self, api_url<font color="#909090">='https://localhost:8080'</font>, version<font color="#909090">='v0'</font>, user<font color="#909090">='noone'</font>, password<font color="#909090">='pass'</font>, cert<font color="#909090">='cert'</font>, archive_host<font color="#909090">='psfcstor1.psfc.mit.edu'</font>, archive_user<font color="#909090">='psfcmpo'</font>, archive_key<font color="#909090">=None</font>, archive_prefix<font color="#909090">=None</font>, debug<font color="#909090">=False</font>, filter<font color="#909090">=False</font>, dryrun<font color="#909090">=False</font>)</dt></dl>
 
-<dl><dt><a name="mpo_methods-add"><strong>add</strong></a>(self, workflow_ID<font color="#909090">=None</font>, parentobj_ID<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Add&nbsp;dataobject_instance&nbsp;to&nbsp;a&nbsp;workflow.&nbsp;If&nbsp;the&nbsp;uri&nbsp;doesn't&nbsp;exist&nbsp;in<br>
-the&nbsp;db&nbsp;create&nbsp;the&nbsp;appropriate&nbsp;dataobject.&nbsp;If&nbsp;the&nbsp;workflow_ID&nbsp;and<br>
-parentobj_ID&nbsp;are&nbsp;not&nbsp;present&nbsp;create&nbsp;just&nbsp;the&nbsp;dataobject.<br>
+<dl><dt><a name="mpo_methods-add"><strong>add</strong></a>(self, workflow_ID<font color="#909090">=None</font>, parentobj_ID<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Add&nbsp;at&nbsp;dataobject&nbsp;to&nbsp;a&nbsp;workflow.<br>
 &nbsp;<br>
 args&nbsp;are:<br>
-workflow_ID&nbsp;--&nbsp;UID&nbsp;of&nbsp;workflow&nbsp;to&nbsp;add&nbsp;dataobject&nbsp;to<br>
-parentobj_ID&nbsp;--&nbsp;UID&nbsp;of&nbsp;workflow&nbsp;element&nbsp;to&nbsp;attach&nbsp;dataobject&nbsp;to<br>
-name&nbsp;--&nbsp;name&nbsp;of&nbsp;dataobject<br>
-desc&nbsp;--&nbsp;description&nbsp;of&nbsp;dataobject<br>
-uri&nbsp;--&nbsp;uri&nbsp;for&nbsp;the&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;added,&nbsp;takes&nbsp;precedence&nbsp;over&nbsp;do_uid<br>
-uid&nbsp;--&nbsp;UID&nbsp;of&nbsp;dataobject&nbsp;too&nbsp;add&nbsp;to&nbsp;workflow<br>
-source&nbsp;--&nbsp;source&nbsp;uid&nbsp;for&nbsp;dataobject,&nbsp;provides&nbsp;direction&nbsp;source&nbsp;-&gt;&nbsp;target</tt></dd></dl>
+workflow_ID&nbsp;--<br>
+parentobj_ID&nbsp;--<br>
+name&nbsp;--<br>
+desc&nbsp;--&nbsp;description<br>
+uri&nbsp;--&nbsp;uri&nbsp;for&nbsp;the&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;added</tt></dd></dl>
 
-<dl><dt><a name="mpo_methods-archive"><strong>archive</strong></a>(self, name<font color="#909090">=None</font>, desc<font color="#909090">=None</font>, protocol<font color="#909090">=None</font>, *arg, **kw)</dt></dl>
+<dl><dt><a name="mpo_methods-add_do"><strong>add_do</strong></a>(self, **kwargs)</dt><dd><tt>Add&nbsp;a&nbsp;dataobject&nbsp;with&nbsp;no&nbsp;workflow&nbsp;or&nbsp;partentobj_id.<br>
+This&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;can&nbsp;then&nbsp;be&nbsp;connected&nbsp;to&nbsp;one&nbsp;or&nbsp;more<br>
+workflows.<br>
+&nbsp;<br>
+if&nbsp;a&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;with&nbsp;this&nbsp;workflow&nbsp;already&nbsp;exists,&nbsp;then&nbsp;return&nbsp;it.<br>
+&nbsp;<br>
+args&nbsp;are:<br>
+name&nbsp;--<br>
+desc&nbsp;--&nbsp;description<br>
+uri&nbsp;--&nbsp;uri&nbsp;for&nbsp;the&nbsp;data&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;added</tt></dd></dl>
 
-<dl><dt><a name="mpo_methods-collection"><strong>collection</strong></a>(self, name<font color="#909090">=''</font>, desc<font color="#909090">=''</font>, collection<font color="#909090">=None</font>, remove<font color="#909090">=False</font>, elements<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>Create&nbsp;a&nbsp;new&nbsp;collection&nbsp;of&nbsp;objects&nbsp;from&nbsp;a&nbsp;list&nbsp;of&nbsp;UUIDS,&nbsp;or&nbsp;add&nbsp;to&nbsp;an&nbsp;existing&nbsp;collection.<br>
+<dl><dt><a name="mpo_methods-archive"><strong>archive</strong></a>(self, protocol<font color="#909090">=None</font>, *arg, **kw)</dt></dl>
+
+<dl><dt><a name="mpo_methods-collection"><strong>collection</strong></a>(self, name<font color="#909090">=''</font>, desc<font color="#909090">=''</font>, collection<font color="#909090">=None</font>, remove<font color="#909090">=False</font>, elements<font color="#909090">=[]</font>, **kwargs)</dt><dd><tt>Create&nbsp;a&nbsp;new&nbsp;collection&nbsp;of&nbsp;objects&nbsp;from&nbsp;a&nbsp;list&nbsp;of&nbsp;UUIDS.<br>
 &nbsp;<br>
 args&nbsp;are:<br>
 name&nbsp;--&nbsp;name<br>
 desc&nbsp;--&nbsp;description<br>
-elements&nbsp;--&nbsp;*list*&nbsp;of&nbsp;UUID&nbsp;strings&nbsp;to&nbsp;initialize&nbsp;collection&nbsp;with&nbsp;(may&nbsp;be&nbsp;empty)<br>
+elements&nbsp;--&nbsp;list&nbsp;of&nbsp;UUID&nbsp;strings&nbsp;to&nbsp;initialize&nbsp;collection&nbsp;with&nbsp;(may&nbsp;be&nbsp;empty)<br>
 collection&nbsp;--&nbsp;UUID&nbsp;of&nbsp;existing&nbsp;collection.&nbsp;If&nbsp;present,&nbsp;name&nbsp;and&nbsp;desc&nbsp;are&nbsp;ignored.<br>
 remove&nbsp;--&nbsp;if&nbsp;set&nbsp;to&nbsp;True,&nbsp;remove&nbsp;rather&nbsp;than&nbsp;add&nbsp;the&nbsp;element&nbsp;to&nbsp;the&nbsp;collection.&nbsp;Requires<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;collection&nbsp;and&nbsp;element&nbsp;list&nbsp;and&nbsp;no&nbsp;name&nbsp;or&nbsp;description.</tt></dd></dl>
@@ -197,10 +204,8 @@ Keyword&nbsp;arguments:<br>
 params&nbsp;--&nbsp;python&nbsp;dictionary&nbsp;or&nbsp;a&nbsp;list&nbsp;of&nbsp;tuples,&nbsp;not&nbsp;supported&nbsp;yet<br>
 route&nbsp;--&nbsp;API&nbsp;route&nbsp;for&nbsp;resource</tt></dd></dl>
 
-<dl><dt><a name="mpo_methods-format"><strong>format</strong></a>(self, result, filter<font color="#909090">='id'</font>, field<font color="#909090">=None</font>)</dt><dd><tt>Routine&nbsp;to&nbsp;handle&nbsp;reformatting&nbsp;of&nbsp;responses&nbsp;from&nbsp;submethods.&nbsp;It&nbsp;is&nbsp;aware&nbsp;of&nbsp;the<br>
-internal&nbsp;format&nbsp;returned.<br>
-filter:&nbsp;defaults&nbsp;to&nbsp;the&nbsp;UID&nbsp;return&nbsp;but&nbsp;acceptable&nbsp;values&nbsp;are&nbsp;id,&nbsp;json,&nbsp;pretty,&nbsp;raw,&nbsp;text<br>
-result:&nbsp;is&nbsp;the&nbsp;full&nbsp;Response&nbsp;<a href="__builtin__.html#object">object</a>.</tt></dd></dl>
+<dl><dt><a name="mpo_methods-format"><strong>format</strong></a>(self, result, filter<font color="#909090">='id'</font>)</dt><dd><tt>Routine&nbsp;to&nbsp;handle&nbsp;reformatting&nbsp;of&nbsp;responses&nbsp;from&nbsp;submethods.&nbsp;It&nbsp;is&nbsp;aware&nbsp;of&nbsp;the<br>
+internal&nbsp;format&nbsp;returned.</tt></dd></dl>
 
 <dl><dt><a name="mpo_methods-get"><strong>get</strong></a>(self, route<font color="#909090">=''</font>, params<font color="#909090">={}</font>, verbose<font color="#909090">=False</font>, **kwargs)</dt></dl>
 
@@ -245,19 +250,16 @@ Used&nbsp;by&nbsp;all&nbsp;methods&nbsp;that&nbsp;create&nbsp;objects&nbsp;in&nb
 Keyword&nbsp;arguments:<br>
 workflow_ID&nbsp;--&nbsp;the&nbsp;workflow&nbsp;being&nbsp;added&nbsp;to<br>
 obj_ID&nbsp;--&nbsp;the&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;we&nbsp;are&nbsp;making&nbsp;a&nbsp;connection&nbsp;from<br>
-data&nbsp;--&nbsp;the&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;being&nbsp;posted<br>
-uid&nbsp;&nbsp;--&nbsp;if&nbsp;this&nbsp;keyword&nbsp;is&nbsp;set,&nbsp;find&nbsp;record&nbsp;by&nbsp;uid&nbsp;to&nbsp;use&nbsp;in&nbsp;posting&nbsp;operation</tt></dd></dl>
+data&nbsp;--&nbsp;the&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;being&nbsp;posted</tt></dd></dl>
 
 <dl><dt><a name="mpo_methods-restore"><strong>restore</strong></a>(self, uri<font color="#909090">=None</font>, do_uid<font color="#909090">=None</font>, *arg, **kw)</dt></dl>
 
-<dl><dt><a name="mpo_methods-search"><strong>search</strong></a>(self, route, params<font color="#909090">={}</font>, **kwargs)</dt><dd><tt>Find&nbsp;objects&nbsp;by&nbsp;query.&nbsp;A&nbsp;supermethod&nbsp;of&nbsp;GET.<br>
+<dl><dt><a name="mpo_methods-search"><strong>search</strong></a>(self, route, params, **kwargs)</dt><dd><tt>Find&nbsp;objects&nbsp;by&nbsp;query.&nbsp;An&nbsp;supermethod&nbsp;of&nbsp;GET.<br>
 Presently,&nbsp;identical&nbsp;to&nbsp;'get'&nbsp;but&nbsp;can&nbsp;be&nbsp;generalized.<br>
 &nbsp;<br>
 Keyword&nbsp;arguments:<br>
 params&nbsp;--&nbsp;python&nbsp;dictionary<br>
 route&nbsp;--&nbsp;API&nbsp;route&nbsp;for&nbsp;resource</tt></dd></dl>
-
-<dl><dt><a name="mpo_methods-set_api_url"><strong>set_api_url</strong></a>(self, api_url)</dt></dl>
 
 <dl><dt><a name="mpo_methods-step"><strong>step</strong></a>(self, workflow_ID<font color="#909090">=None</font>, parentobj_ID<font color="#909090">=None</font>, input_objs<font color="#909090">=None</font>, **kwargs)</dt><dd><tt>For&nbsp;adding&nbsp;actions<br>
 args:<br>
@@ -300,6 +302,8 @@ Data and other attributes defined here:<br>
 
 <dl><dt><strong>METADATA_RT</strong> = 'metadata'</dl>
 
+<dl><dt><strong>MPO_PORT</strong> = '8080'</dl>
+
 <dl><dt><strong>MPO_VERSION</strong> = 'v0'</dl>
 
 <dl><dt><strong>ONTOLOGY_INSTANCE_RT</strong> = 'ontology/instance'</dl>
@@ -310,11 +314,11 @@ Data and other attributes defined here:<br>
 
 <dl><dt><strong>POSTheaders</strong> = {'content-type': 'application/json'}</dl>
 
-<dl><dt><strong>RESULT</strong> = 'result'</dl>
-
 <dl><dt><strong>WORKFLOW_RT</strong> = 'workflow'</dl>
 
 <dl><dt><strong>WORKID</strong> = 'work_uid'</dl>
+
+<dl><dt><strong>WORKID_QRY</strong> = 'workid'</dl>
 
 </td></tr></table> <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -381,7 +385,7 @@ Data descriptors inherited from <a href="exceptions.html#BaseException">exceptio
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-PrintException"><strong>PrintException</strong></a>()</dt><dd><tt>###Some&nbsp;utilities&nbsp;functions</tt></dd></dl>
+<td width="100%"><dl><dt><a name="-PrintException"><strong>PrintException</strong></a>()</dt></dl>
  <dl><dt><a name="-str2bool"><strong>str2bool</strong></a>(v)</dt></dl>
 </td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">

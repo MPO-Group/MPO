@@ -1,6 +1,7 @@
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: module db</title>
+<meta charset="utf-8">
 </head><body bgcolor="#f0f0f8">
 
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
@@ -8,7 +9,7 @@
 <td valign=bottom>&nbsp;<br>
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>db</strong></big></big></font></td
 ><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/covielloe/mposvn/trunk/db/db.py">/home/covielloe/mposvn/trunk/db/db.py</a></font></td></tr></table>
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mpo-head/trunk/db/db.py">/Users/jwright/Codes/mpo-head/trunk/db/db.py</a></font></td></tr></table>
     <p><tt>#&nbsp;file&nbsp;:&nbsp;db.py</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -28,23 +29,158 @@
 <a href="uuid.html">uuid</a><br>
 </td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="simplejson.encoder.html#JSONEncoder">simplejson.encoder.JSONEncoder</a>(<a href="__builtin__.html#object">__builtin__.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="db.html#MPOSetEncoder">MPOSetEncoder</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="MPOSetEncoder">class <strong>MPOSetEncoder</strong></a>(<a href="simplejson.encoder.html#JSONEncoder">simplejson.encoder.JSONEncoder</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>This&nbsp;class&nbsp;autoconverts&nbsp;datetime.datetime&nbsp;class&nbsp;types&nbsp;returned&nbsp;from&nbsp;postgres.<br>
+Add&nbsp;any&nbsp;new&nbsp;types&nbsp;not&nbsp;handled&nbsp;by&nbsp;json.dumps()&nbsp;by&nbsp;default.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="db.html#MPOSetEncoder">MPOSetEncoder</a></dd>
+<dd><a href="simplejson.encoder.html#JSONEncoder">simplejson.encoder.JSONEncoder</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="MPOSetEncoder-default"><strong>default</strong></a>(self, obj)</dt></dl>
+
+<hr>
+Methods inherited from <a href="simplejson.encoder.html#JSONEncoder">simplejson.encoder.JSONEncoder</a>:<br>
+<dl><dt><a name="MPOSetEncoder-__init__"><strong>__init__</strong></a>(self, skipkeys<font color="#909090">=False</font>, ensure_ascii<font color="#909090">=True</font>, check_circular<font color="#909090">=True</font>, allow_nan<font color="#909090">=True</font>, sort_keys<font color="#909090">=False</font>, indent<font color="#909090">=None</font>, separators<font color="#909090">=None</font>, encoding<font color="#909090">='utf-8'</font>, default<font color="#909090">=None</font>, use_decimal<font color="#909090">=True</font>, namedtuple_as_object<font color="#909090">=True</font>, tuple_as_array<font color="#909090">=True</font>, bigint_as_string<font color="#909090">=False</font>, item_sort_key<font color="#909090">=None</font>, for_json<font color="#909090">=False</font>, ignore_nan<font color="#909090">=False</font>)</dt><dd><tt>Constructor&nbsp;for&nbsp;<a href="simplejson.encoder.html#JSONEncoder">JSONEncoder</a>,&nbsp;with&nbsp;sensible&nbsp;defaults.<br>
+&nbsp;<br>
+If&nbsp;skipkeys&nbsp;is&nbsp;false,&nbsp;then&nbsp;it&nbsp;is&nbsp;a&nbsp;TypeError&nbsp;to&nbsp;attempt<br>
+encoding&nbsp;of&nbsp;keys&nbsp;that&nbsp;are&nbsp;not&nbsp;str,&nbsp;int,&nbsp;long,&nbsp;float&nbsp;or&nbsp;None.&nbsp;&nbsp;If<br>
+skipkeys&nbsp;is&nbsp;True,&nbsp;such&nbsp;items&nbsp;are&nbsp;simply&nbsp;skipped.<br>
+&nbsp;<br>
+If&nbsp;ensure_ascii&nbsp;is&nbsp;true,&nbsp;the&nbsp;output&nbsp;is&nbsp;guaranteed&nbsp;to&nbsp;be&nbsp;str<br>
+objects&nbsp;with&nbsp;all&nbsp;incoming&nbsp;unicode&nbsp;characters&nbsp;escaped.&nbsp;&nbsp;If<br>
+ensure_ascii&nbsp;is&nbsp;false,&nbsp;the&nbsp;output&nbsp;will&nbsp;be&nbsp;unicode&nbsp;object.<br>
+&nbsp;<br>
+If&nbsp;check_circular&nbsp;is&nbsp;true,&nbsp;then&nbsp;lists,&nbsp;dicts,&nbsp;and&nbsp;custom&nbsp;encoded<br>
+objects&nbsp;will&nbsp;be&nbsp;checked&nbsp;for&nbsp;circular&nbsp;references&nbsp;during&nbsp;encoding&nbsp;to<br>
+prevent&nbsp;an&nbsp;infinite&nbsp;recursion&nbsp;(which&nbsp;would&nbsp;cause&nbsp;an&nbsp;OverflowError).<br>
+Otherwise,&nbsp;no&nbsp;such&nbsp;check&nbsp;takes&nbsp;place.<br>
+&nbsp;<br>
+If&nbsp;allow_nan&nbsp;is&nbsp;true,&nbsp;then&nbsp;NaN,&nbsp;Infinity,&nbsp;and&nbsp;-Infinity&nbsp;will&nbsp;be<br>
+encoded&nbsp;as&nbsp;such.&nbsp;&nbsp;This&nbsp;behavior&nbsp;is&nbsp;not&nbsp;JSON&nbsp;specification&nbsp;compliant,<br>
+but&nbsp;is&nbsp;consistent&nbsp;with&nbsp;most&nbsp;JavaScript&nbsp;based&nbsp;encoders&nbsp;and&nbsp;decoders.<br>
+Otherwise,&nbsp;it&nbsp;will&nbsp;be&nbsp;a&nbsp;ValueError&nbsp;to&nbsp;encode&nbsp;such&nbsp;floats.<br>
+&nbsp;<br>
+If&nbsp;sort_keys&nbsp;is&nbsp;true,&nbsp;then&nbsp;the&nbsp;output&nbsp;of&nbsp;dictionaries&nbsp;will&nbsp;be<br>
+sorted&nbsp;by&nbsp;key;&nbsp;this&nbsp;is&nbsp;useful&nbsp;for&nbsp;regression&nbsp;tests&nbsp;to&nbsp;ensure<br>
+that&nbsp;JSON&nbsp;serializations&nbsp;can&nbsp;be&nbsp;compared&nbsp;on&nbsp;a&nbsp;day-to-day&nbsp;basis.<br>
+&nbsp;<br>
+If&nbsp;indent&nbsp;is&nbsp;a&nbsp;string,&nbsp;then&nbsp;JSON&nbsp;array&nbsp;elements&nbsp;and&nbsp;object&nbsp;members<br>
+will&nbsp;be&nbsp;pretty-printed&nbsp;with&nbsp;a&nbsp;newline&nbsp;followed&nbsp;by&nbsp;that&nbsp;string&nbsp;repeated<br>
+for&nbsp;each&nbsp;level&nbsp;of&nbsp;nesting.&nbsp;``None``&nbsp;(the&nbsp;default)&nbsp;selects&nbsp;the&nbsp;most&nbsp;compact<br>
+representation&nbsp;without&nbsp;any&nbsp;newlines.&nbsp;For&nbsp;backwards&nbsp;compatibility&nbsp;with<br>
+versions&nbsp;of&nbsp;simplejson&nbsp;earlier&nbsp;than&nbsp;2.1.0,&nbsp;an&nbsp;integer&nbsp;is&nbsp;also&nbsp;accepted<br>
+and&nbsp;is&nbsp;converted&nbsp;to&nbsp;a&nbsp;string&nbsp;with&nbsp;that&nbsp;many&nbsp;spaces.<br>
+&nbsp;<br>
+If&nbsp;specified,&nbsp;separators&nbsp;should&nbsp;be&nbsp;an&nbsp;(item_separator,&nbsp;key_separator)<br>
+tuple.&nbsp;&nbsp;The&nbsp;default&nbsp;is&nbsp;(',&nbsp;',&nbsp;':&nbsp;')&nbsp;if&nbsp;*indent*&nbsp;is&nbsp;``None``&nbsp;and<br>
+(',',&nbsp;':&nbsp;')&nbsp;otherwise.&nbsp;&nbsp;To&nbsp;get&nbsp;the&nbsp;most&nbsp;compact&nbsp;JSON&nbsp;representation,<br>
+you&nbsp;should&nbsp;specify&nbsp;(',',&nbsp;':')&nbsp;to&nbsp;eliminate&nbsp;whitespace.<br>
+&nbsp;<br>
+If&nbsp;specified,&nbsp;default&nbsp;is&nbsp;a&nbsp;function&nbsp;that&nbsp;gets&nbsp;called&nbsp;for&nbsp;objects<br>
+that&nbsp;can't&nbsp;otherwise&nbsp;be&nbsp;serialized.&nbsp;&nbsp;It&nbsp;should&nbsp;return&nbsp;a&nbsp;JSON&nbsp;encodable<br>
+version&nbsp;of&nbsp;the&nbsp;object&nbsp;or&nbsp;raise&nbsp;a&nbsp;``TypeError``.<br>
+&nbsp;<br>
+If&nbsp;encoding&nbsp;is&nbsp;not&nbsp;None,&nbsp;then&nbsp;all&nbsp;input&nbsp;strings&nbsp;will&nbsp;be<br>
+transformed&nbsp;into&nbsp;unicode&nbsp;using&nbsp;that&nbsp;encoding&nbsp;prior&nbsp;to&nbsp;JSON-encoding.<br>
+The&nbsp;default&nbsp;is&nbsp;UTF-8.<br>
+&nbsp;<br>
+If&nbsp;use_decimal&nbsp;is&nbsp;true&nbsp;(not&nbsp;the&nbsp;default),&nbsp;``decimal.Decimal``&nbsp;will<br>
+be&nbsp;supported&nbsp;directly&nbsp;by&nbsp;the&nbsp;encoder.&nbsp;For&nbsp;the&nbsp;inverse,&nbsp;decode&nbsp;JSON<br>
+with&nbsp;``parse_float=decimal.Decimal``.<br>
+&nbsp;<br>
+If&nbsp;namedtuple_as_object&nbsp;is&nbsp;true&nbsp;(the&nbsp;default),&nbsp;objects&nbsp;with<br>
+``_asdict()``&nbsp;methods&nbsp;will&nbsp;be&nbsp;encoded&nbsp;as&nbsp;JSON&nbsp;objects.<br>
+&nbsp;<br>
+If&nbsp;tuple_as_array&nbsp;is&nbsp;true&nbsp;(the&nbsp;default),&nbsp;tuple&nbsp;(and&nbsp;subclasses)&nbsp;will<br>
+be&nbsp;encoded&nbsp;as&nbsp;JSON&nbsp;arrays.<br>
+&nbsp;<br>
+If&nbsp;bigint_as_string&nbsp;is&nbsp;true&nbsp;(not&nbsp;the&nbsp;default),&nbsp;ints&nbsp;2**53&nbsp;and&nbsp;higher<br>
+or&nbsp;lower&nbsp;than&nbsp;-2**53&nbsp;will&nbsp;be&nbsp;encoded&nbsp;as&nbsp;strings.&nbsp;This&nbsp;is&nbsp;to&nbsp;avoid&nbsp;the<br>
+rounding&nbsp;that&nbsp;happens&nbsp;in&nbsp;Javascript&nbsp;otherwise.<br>
+&nbsp;<br>
+If&nbsp;specified,&nbsp;item_sort_key&nbsp;is&nbsp;a&nbsp;callable&nbsp;used&nbsp;to&nbsp;sort&nbsp;the&nbsp;items&nbsp;in<br>
+each&nbsp;dictionary.&nbsp;This&nbsp;is&nbsp;useful&nbsp;if&nbsp;you&nbsp;want&nbsp;to&nbsp;sort&nbsp;items&nbsp;other&nbsp;than<br>
+in&nbsp;alphabetical&nbsp;order&nbsp;by&nbsp;key.<br>
+&nbsp;<br>
+If&nbsp;for_json&nbsp;is&nbsp;true&nbsp;(not&nbsp;the&nbsp;default),&nbsp;objects&nbsp;with&nbsp;a&nbsp;``for_json()``<br>
+method&nbsp;will&nbsp;use&nbsp;the&nbsp;return&nbsp;value&nbsp;of&nbsp;that&nbsp;method&nbsp;for&nbsp;encoding&nbsp;as&nbsp;JSON<br>
+instead&nbsp;of&nbsp;the&nbsp;object.<br>
+&nbsp;<br>
+If&nbsp;*ignore_nan*&nbsp;is&nbsp;true&nbsp;(default:&nbsp;``False``),&nbsp;then&nbsp;out&nbsp;of&nbsp;range<br>
+:class:`float`&nbsp;values&nbsp;(``nan``,&nbsp;``inf``,&nbsp;``-inf``)&nbsp;will&nbsp;be&nbsp;serialized<br>
+as&nbsp;``null``&nbsp;in&nbsp;compliance&nbsp;with&nbsp;the&nbsp;ECMA-262&nbsp;specification.&nbsp;If&nbsp;true,<br>
+this&nbsp;will&nbsp;override&nbsp;*allow_nan*.</tt></dd></dl>
+
+<dl><dt><a name="MPOSetEncoder-encode"><strong>encode</strong></a>(self, o)</dt><dd><tt>Return&nbsp;a&nbsp;JSON&nbsp;string&nbsp;representation&nbsp;of&nbsp;a&nbsp;Python&nbsp;data&nbsp;structure.<br>
+&nbsp;<br>
+&gt;&gt;&gt;&nbsp;from&nbsp;simplejson&nbsp;import&nbsp;<a href="simplejson.encoder.html#JSONEncoder">JSONEncoder</a><br>
+&gt;&gt;&gt;&nbsp;<a href="simplejson.encoder.html#JSONEncoder">JSONEncoder</a>().<a href="#MPOSetEncoder-encode">encode</a>({"foo":&nbsp;["bar",&nbsp;"baz"]})<br>
+'{"foo":&nbsp;["bar",&nbsp;"baz"]}'</tt></dd></dl>
+
+<dl><dt><a name="MPOSetEncoder-iterencode"><strong>iterencode</strong></a>(self, o, _one_shot<font color="#909090">=False</font>)</dt><dd><tt>Encode&nbsp;the&nbsp;given&nbsp;object&nbsp;and&nbsp;yield&nbsp;each&nbsp;string<br>
+representation&nbsp;as&nbsp;available.<br>
+&nbsp;<br>
+For&nbsp;example::<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;chunk&nbsp;in&nbsp;<a href="simplejson.encoder.html#JSONEncoder">JSONEncoder</a>().<a href="#MPOSetEncoder-iterencode">iterencode</a>(bigobject):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mysocket.write(chunk)</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="simplejson.encoder.html#JSONEncoder">simplejson.encoder.JSONEncoder</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes inherited from <a href="simplejson.encoder.html#JSONEncoder">simplejson.encoder.JSONEncoder</a>:<br>
+<dl><dt><strong>item_separator</strong> = ', '</dl>
+
+<dl><dt><strong>key_separator</strong> = ': '</dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#eeaa77">
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl><dt><a name="-addCollection"><strong>addCollection</strong></a>(request, dn)</dt></dl>
+ <dl><dt><a name="-addComment"><strong>addComment</strong></a>(json_request, dn)</dt></dl>
  <dl><dt><a name="-addMetadata"><strong>addMetadata</strong></a>(json_request, dn)</dt></dl>
  <dl><dt><a name="-addOntologyClass"><strong>addOntologyClass</strong></a>(json_request, dn)</dt></dl>
  <dl><dt><a name="-addOntologyInstance"><strong>addOntologyInstance</strong></a>(json_request, dn)</dt></dl>
+ <dl><dt><a name="-addOntologyTerm"><strong>addOntologyTerm</strong></a>(json_request, dn)</dt></dl>
  <dl><dt><a name="-addRecord"><strong>addRecord</strong></a>(table, request, dn)</dt></dl>
- <dl><dt><a name="-addUser"><strong>addUser</strong></a>(json_request, submitter_dn)</dt></dl>
+ <dl><dt><a name="-addUser"><strong>addUser</strong></a>(json_request, dn)</dt></dl>
  <dl><dt><a name="-addWorkflow"><strong>addWorkflow</strong></a>(request, dn)</dt></dl>
- <dl><dt><a name="-checkAccess"><strong>checkAccess</strong></a>(dn, read<font color="#909090">=False</font>, write<font color="#909090">=False</font>)</dt></dl>
  <dl><dt><a name="-echo"><strong>echo</strong></a>(table, queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt><dd><tt>Dummy&nbsp;function&nbsp;to&nbsp;test&nbsp;route&nbsp;and&nbsp;api&nbsp;method&nbsp;construction</tt></dd></dl>
  <dl><dt><a name="-getOntologyTermTree"><strong>getOntologyTermTree</strong></a>(id<font color="#909090">='0'</font>, dn<font color="#909090">=None</font>)</dt><dd><tt>Constructs&nbsp;a&nbsp;tree&nbsp;from&nbsp;the&nbsp;ontology&nbsp;terms&nbsp;and&nbsp;returns<br>
-structure&nbsp;suitable&nbsp;for&nbsp;parsing&nbsp;into&nbsp;graph&nbsp;or&nbsp;menu.<br>
-Return&nbsp;is&nbsp;as&nbsp;a&nbsp;python&nbsp;dictionary&nbsp;(not&nbsp;JSON).</tt></dd></dl>
+structure&nbsp;suitable&nbsp;for&nbsp;parsing&nbsp;into&nbsp;graph&nbsp;or&nbsp;menu.</tt></dd></dl>
  <dl><dt><a name="-getRecord"><strong>getRecord</strong></a>(table, queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt><dd><tt>Generic&nbsp;record&nbsp;retrieval.&nbsp;Handles&nbsp;GET&nbsp;requests&nbsp;for&nbsp;all&nbsp;tables.<br>
 Use&nbsp;as&nbsp;a&nbsp;template&nbsp;for&nbsp;route&nbsp;specific&nbsp;behavior.<br>
 &nbsp;<br>
@@ -53,22 +189,16 @@ To&nbsp;get&nbsp;a&nbsp;specific&nbsp;record,&nbsp;call&nbsp;with&nbsp;{'uid':id
 id&nbsp;overrides&nbsp;any&nbsp;query&nbsp;arguments&nbsp;since&nbsp;it&nbsp;specifies&nbsp;an&nbsp;exact&nbsp;record.&nbsp;You&nbsp;can&nbsp;get&nbsp;an&nbsp;empty<br>
 replay&nbsp;with&nbsp;conflicting&nbsp;restrictions&nbsp;in&nbsp;queryargs.&nbsp;This&nbsp;function&nbsp;should&nbsp;be&nbsp;called&nbsp;with&nbsp;either<br>
 id&nbsp;or&nbsp;queryarg&nbsp;arguments.</tt></dd></dl>
- <dl><dt><a name="-getRecordTable"><strong>getRecordTable</strong></a>(id, dn<font color="#909090">=None</font>)</dt><dd><tt>Given&nbsp;a&nbsp;record&nbsp;id&nbsp;return&nbsp;the&nbsp;table&nbsp;that&nbsp;record&nbsp;is&nbsp;in.</tt></dd></dl>
  <dl><dt><a name="-getUser"><strong>getUser</strong></a>(queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt></dl>
  <dl><dt><a name="-getWorkflow"><strong>getWorkflow</strong></a>(queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt><dd><tt>Processes&nbsp;the&nbsp;/workflow&nbsp;route.&nbsp;Handles&nbsp;get&nbsp;query&nbsp;arguments.</tt></dd></dl>
  <dl><dt><a name="-getWorkflowComments"><strong>getWorkflowComments</strong></a>(id, queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt></dl>
  <dl><dt><a name="-getWorkflowCompositeID"><strong>getWorkflowCompositeID</strong></a>(id, dn<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;composite&nbsp;id&nbsp;of&nbsp;the&nbsp;form&nbsp;user/workflow_name/composite_seq</tt></dd></dl>
- <dl><dt><a name="-getWorkflowElements"><strong>getWorkflowElements</strong></a>(id, queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;datastructure&nbsp;{connectivity:&nbsp;[{parent_uid:,&nbsp;parent_type:,&nbsp;child_uid:,&nbsp;child_type:}...&nbsp;],<br>
-nodes:&nbsp;[{type:,&nbsp;name:,&nbsp;time:}...&nbsp;]&nbsp;}<br>
-That&nbsp;describes&nbsp;the&nbsp;workflow&nbsp;as&nbsp;a&nbsp;complete&nbsp;DAG.</tt></dd></dl>
+ <dl><dt><a name="-getWorkflowElements"><strong>getWorkflowElements</strong></a>(id, queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt></dl>
  <dl><dt><a name="-getWorkflowType"><strong>getWorkflowType</strong></a>(id, queryargs<font color="#909090">={}</font>, dn<font color="#909090">=None</font>)</dt></dl>
- <dl><dt><a name="-get_conn"><strong>get_conn</strong></a>()</dt></dl>
- <dl><dt><a name="-init"><strong>init</strong></a>(conn_str)</dt></dl>
+ <dl><dt><a name="-getconn"><strong>getconn</strong></a>()</dt></dl>
  <dl><dt><a name="-processArgument"><strong>processArgument</strong></a>(a)</dt><dd><tt>Handle&nbsp;arguments&nbsp;in&nbsp;GET&nbsp;queries.&nbsp;If&nbsp;in&nbsp;double&nbsp;quotes,&nbsp;strip&nbsp;quotes&nbsp;and&nbsp;pass&nbsp;as&nbsp;literal&nbsp;search.<br>
 Otherwise&nbsp;interpret&nbsp;possible&nbsp;wildcards.&nbsp;Spaces&nbsp;between&nbsp;words&nbsp;are&nbsp;treated&nbsp;as&nbsp;wildcards.</tt></dd></dl>
- <dl><dt><a name="-validReader"><strong>validReader</strong></a>(dn)</dt></dl>
  <dl><dt><a name="-validUser"><strong>validUser</strong></a>(dn)</dt></dl>
- <dl><dt><a name="-validWriter"><strong>validWriter</strong></a>(dn)</dt></dl>
 </td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#55aa55">
@@ -76,8 +206,9 @@ Otherwise&nbsp;interpret&nbsp;possible&nbsp;wildcards.&nbsp;Spaces&nbsp;between&
 <font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>conn_string</strong> = ''<br>
+<td width="100%"><strong>conn_string</strong> = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"<br>
 <strong>dbdebug</strong> = False<br>
-<strong>mypool</strong> = None<br>
-<strong>query_map</strong> = {'activity': {'description': 'description', 'end': 'end_time', 'name': 'name', 'start': 'start_time', 'status': 'completion_status', 'time': 'creation_time', 'uid': 'a_guid', 'uri': 'uri', 'user_uid': 'u_guid', 'work_uid': 'w_guid'}, 'activity_short': {'w': 'w_guid'}, 'collection': {'description': 'description', 'name': 'name', 'time': 'creation_time', 'uid': 'c_guid', 'user_uid': 'u_guid'}, 'collection_elements': {'parent_uid': 'c_guid', 'time': 'creation_time', 'uid': 'e_guid', 'user_uid': 'u_guid'}, 'comment': {'content': 'content', 'parent_uid': 'parent_GUID', 'ptype': 'parent_type', 'time': 'creation_time', 'type': 'comment_type', 'uid': 'cm_guid', 'user_uid': 'u_guid'}, 'dataobject': {'description': 'description', 'name': 'name', 'source_uid': 'source_guid', 'time': 'creation_time', 'uid': 'do_guid', 'uri': 'uri', 'user_uid': 'u_guid'}, 'dataobject_instance': {'do_uid': 'do_guid', 'time': 'creation_time', 'uid': 'doi_guid', 'user_uid': 'u_guid', 'work_uid': 'w_guid'}, 'dataobject_instance_short': {'w': 'w_guid'}, 'metadata': {'key': 'name', 'key_uid': 'type', 'parent_type': 'parent_type', 'parent_uid': 'parent_guid', 'time': 'creation_time', 'uid': 'md_guid', 'user_uid': 'u_guid', 'value': 'value'}, 'metadata_short': {'c': 'creation_time', 'n': 'name', 't': 'type', 'v': 'value'}, ...}</td></tr></table>
+<strong>e</strong> = KeyError('MPO_DB_CONNECTION',)<br>
+<strong>mypool</strong> = &lt;sqlalchemy.pool.QueuePool object&gt;<br>
+<strong>query_map</strong> = {'activity': {'description': 'description', 'end': 'end_time', 'name': 'name', 'start': 'start_time', 'status': 'completion_status', 'time': 'creation_time', 'uid': 'a_guid', 'user_uid': 'u_guid', 'work_uid': 'w_guid'}, 'activity_short': {'w': 'w_guid'}, 'collection': {'description': 'description', 'name': 'name', 'time': 'creation_time', 'uid': 'c_guid', 'user_uid': 'u_guid'}, 'collection_elements': {'parent_uid': 'c_guid', 'time': 'creation_time', 'uid': 'e_guid', 'user_uid': 'u_guid'}, 'comment': {'content': 'content', 'parent_uid': 'parent_GUID', 'ptype': 'parent_type', 'time': 'creation_time', 'type': 'comment_type', 'uid': 'cm_guid', 'user_uid': 'u_guid'}, 'dataobject': {'description': 'description', 'name': 'name', 'time': 'creation_time', 'uid': 'do_guid', 'uri': 'uri', 'user_uid': 'u_guid', 'work_uid': 'w_guid'}, 'dataobject_short': {'w': 'w_guid'}, 'metadata': {'key': 'name', 'key_uid': 'type', 'parent_type': 'parent_type', 'parent_uid': 'parent_guid', 'time': 'creation_time', 'uid': 'md_guid', 'user_uid': 'u_guid', 'value': 'value'}, 'metadata_short': {'c': 'creation_time', 'n': 'name', 't': 'type', 'v': 'value'}, 'mpousers': {'dn': 'dn', 'email': 'email', 'firstname': 'firstname', 'lastname': 'lastname', 'organization': 'organization', 'phone': 'phone', 'uid': 'uuid', 'username': 'username'}, ...}</td></tr></table>
 </body></html>
