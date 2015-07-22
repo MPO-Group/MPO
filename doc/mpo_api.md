@@ -76,7 +76,7 @@ behavior is to return the bare UUID value or an error code.
 * Setting the 'ratings' quality of a work flow.
 
     GET uuid of quality status.
-    term_id = \`mpo get ontology/term -p path=Generic/Status/quality\`
+    term_id=\`mpo get ontology/term -p path=Generic/Status/quality\`
 
     Result:
     ```json
@@ -100,10 +100,10 @@ behavior is to return the bare UUID value or an error code.
     the value, you can just use the path. You do need the uuid of the
     workflow.
 
-     wid=\`mpo get workflow alias=jwright/EFIT/4\`
+     wid=\`mpo get workflow -p alias=jwright/EFIT/4\`
 
     POST a rating
-     `mpo --format=pretty ontology_instance -p vocabulary=/Generic/Status/quality 1`
+     `mpo --format=pretty ontology_instance $wid -p vocabulary=/Generic/Status/quality 1`
 
 
 * Get the controlled vocabulary for a term.
@@ -113,7 +113,7 @@ behavior is to return the bare UUID value or an error code.
   the ID of that term.
 
   
-     term_id = \`mpo get ontology/term -p path=Generic/Status/quality\`
+     term_id=\`mpo get ontology/term -p path=Generic/Status/quality\`
 
      `mpo --format=pretty get ontology/term/$term_id/vocabulary`
 
@@ -122,11 +122,11 @@ behavior is to return the bare UUID value or an error code.
   in workflows known as instances. Given one, the other can be
   retrieved. It can be easy to get confused about them, though.
 
-     `mpo  --format=pretty get dataobject`
+     `mpo --format=pretty get dataobject`
 
   Will retrieve a formatted list of all dataobjects in the database.
 
-     `mpo  --format=pretty get dataobject?instance`
+     `mpo --format=pretty get dataobject?instance`
 
   Will retrieve a formatted list of all dataobject instances in the database.
 
