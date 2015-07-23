@@ -13,8 +13,8 @@ for mdfile in *.md; do
     MD $mdfile $htmlfile
 done
 
-SRCLIST='../server/web_server.py ../server/api_server.py\
-        ../db/db.py ../client/python/mpo_arg.py'
+export PYTHONPATH=$PYTHONPATH:../server:../db
+SRCLIST='../server/web_server.py ../server/api_server.py ../db/db.py ../client/python/mpo_arg.py'
 
 for SRC in $SRCLIST; do
     python -m  pydoc -w $SRC

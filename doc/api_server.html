@@ -9,7 +9,7 @@
 <td valign=bottom>&nbsp;<br>
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>api_server</strong></big></big></font></td
 ><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mpo-head/trunk/server/api_server.py">/Users/jwright/Codes/mpo-head/trunk/server/api_server.py</a></font></td></tr></table>
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/jwright/Codes/mposvn/trunk/server/api_server.py">/Users/jwright/Codes/mposvn/trunk/server/api_server.py</a></font></td></tr></table>
     <p></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -18,10 +18,14 @@
 <font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="gevent.html">gevent</a><br>
-</td><td width="25%" valign=top><a href="json.html">json</a><br>
-</td><td width="25%" valign=top><a href="db.html">db</a><br>
-</td><td width="25%" valign=top><a href="time.html">time</a><br>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="datetime.html">datetime</a><br>
+<a href="functools.html">functools</a><br>
+</td><td width="25%" valign=top><a href="gevent.html">gevent</a><br>
+<a href="json.html">json</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="db.html">db</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<a href="time.html">time</a><br>
 </td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
@@ -36,8 +40,179 @@
 <dt><font face="helvetica, arial"><a href="api_server.html#ServerSentEvent">ServerSentEvent</a>
 </font></dt></dl>
 </dd>
+<dt><font face="helvetica, arial"><a href="exceptions.html#Exception">exceptions.Exception</a>(<a href="exceptions.html#BaseException">exceptions.BaseException</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="api_server.html#InvalidAPIUsage">InvalidAPIUsage</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="json.encoder.html#JSONEncoder">json.encoder.JSONEncoder</a>(<a href="__builtin__.html#object">__builtin__.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="api_server.html#MPOSetEncoder">MPOSetEncoder</a>
+</font></dt></dl>
+</dd>
 </dl>
  <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="InvalidAPIUsage">class <strong>InvalidAPIUsage</strong></a>(<a href="exceptions.html#Exception">exceptions.Exception</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="api_server.html#InvalidAPIUsage">InvalidAPIUsage</a></dd>
+<dd><a href="exceptions.html#Exception">exceptions.Exception</a></dd>
+<dd><a href="exceptions.html#BaseException">exceptions.BaseException</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="InvalidAPIUsage-__init__"><strong>__init__</strong></a>(self, message<font color="#909090">=''</font>, status_code<font color="#909090">=None</font>, payload<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="InvalidAPIUsage-to_dict"><strong>to_dict</strong></a>(self)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>status_code</strong> = 400</dl>
+
+<hr>
+Data and other attributes inherited from <a href="exceptions.html#Exception">exceptions.Exception</a>:<br>
+<dl><dt><strong>__new__</strong> = &lt;built-in method __new__ of type object&gt;<dd><tt>T.<a href="#InvalidAPIUsage-__new__">__new__</a>(S,&nbsp;...)&nbsp;-&gt;&nbsp;a&nbsp;new&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;with&nbsp;type&nbsp;S,&nbsp;a&nbsp;subtype&nbsp;of&nbsp;T</tt></dl>
+
+<hr>
+Methods inherited from <a href="exceptions.html#BaseException">exceptions.BaseException</a>:<br>
+<dl><dt><a name="InvalidAPIUsage-__delattr__"><strong>__delattr__</strong></a>(...)</dt><dd><tt>x.<a href="#InvalidAPIUsage-__delattr__">__delattr__</a>('name')&nbsp;&lt;==&gt;&nbsp;del&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="InvalidAPIUsage-__getattribute__"><strong>__getattribute__</strong></a>(...)</dt><dd><tt>x.<a href="#InvalidAPIUsage-__getattribute__">__getattribute__</a>('name')&nbsp;&lt;==&gt;&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="InvalidAPIUsage-__getitem__"><strong>__getitem__</strong></a>(...)</dt><dd><tt>x.<a href="#InvalidAPIUsage-__getitem__">__getitem__</a>(y)&nbsp;&lt;==&gt;&nbsp;x[y]</tt></dd></dl>
+
+<dl><dt><a name="InvalidAPIUsage-__getslice__"><strong>__getslice__</strong></a>(...)</dt><dd><tt>x.<a href="#InvalidAPIUsage-__getslice__">__getslice__</a>(i,&nbsp;j)&nbsp;&lt;==&gt;&nbsp;x[i:j]<br>
+&nbsp;<br>
+Use&nbsp;of&nbsp;negative&nbsp;indices&nbsp;is&nbsp;not&nbsp;supported.</tt></dd></dl>
+
+<dl><dt><a name="InvalidAPIUsage-__reduce__"><strong>__reduce__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="InvalidAPIUsage-__repr__"><strong>__repr__</strong></a>(...)</dt><dd><tt>x.<a href="#InvalidAPIUsage-__repr__">__repr__</a>()&nbsp;&lt;==&gt;&nbsp;repr(x)</tt></dd></dl>
+
+<dl><dt><a name="InvalidAPIUsage-__setattr__"><strong>__setattr__</strong></a>(...)</dt><dd><tt>x.<a href="#InvalidAPIUsage-__setattr__">__setattr__</a>('name',&nbsp;value)&nbsp;&lt;==&gt;&nbsp;x.name&nbsp;=&nbsp;value</tt></dd></dl>
+
+<dl><dt><a name="InvalidAPIUsage-__setstate__"><strong>__setstate__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="InvalidAPIUsage-__str__"><strong>__str__</strong></a>(...)</dt><dd><tt>x.<a href="#InvalidAPIUsage-__str__">__str__</a>()&nbsp;&lt;==&gt;&nbsp;str(x)</tt></dd></dl>
+
+<dl><dt><a name="InvalidAPIUsage-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data descriptors inherited from <a href="exceptions.html#BaseException">exceptions.BaseException</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+</dl>
+<dl><dt><strong>args</strong></dt>
+</dl>
+<dl><dt><strong>message</strong></dt>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="MPOSetEncoder">class <strong>MPOSetEncoder</strong></a>(<a href="json.encoder.html#JSONEncoder">json.encoder.JSONEncoder</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>This&nbsp;class&nbsp;autoconverts&nbsp;datetime.datetime&nbsp;class&nbsp;types&nbsp;returned&nbsp;from&nbsp;postgres.<br>
+Add&nbsp;any&nbsp;new&nbsp;types&nbsp;not&nbsp;handled&nbsp;by&nbsp;json.dumps()&nbsp;by&nbsp;default.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="api_server.html#MPOSetEncoder">MPOSetEncoder</a></dd>
+<dd><a href="json.encoder.html#JSONEncoder">json.encoder.JSONEncoder</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="MPOSetEncoder-default"><strong>default</strong></a>(self, obj)</dt></dl>
+
+<hr>
+Methods inherited from <a href="json.encoder.html#JSONEncoder">json.encoder.JSONEncoder</a>:<br>
+<dl><dt><a name="MPOSetEncoder-__init__"><strong>__init__</strong></a>(self, skipkeys<font color="#909090">=False</font>, ensure_ascii<font color="#909090">=True</font>, check_circular<font color="#909090">=True</font>, allow_nan<font color="#909090">=True</font>, sort_keys<font color="#909090">=False</font>, indent<font color="#909090">=None</font>, separators<font color="#909090">=None</font>, encoding<font color="#909090">='utf-8'</font>, default<font color="#909090">=None</font>)</dt><dd><tt>Constructor&nbsp;for&nbsp;<a href="json.encoder.html#JSONEncoder">JSONEncoder</a>,&nbsp;with&nbsp;sensible&nbsp;defaults.<br>
+&nbsp;<br>
+If&nbsp;skipkeys&nbsp;is&nbsp;false,&nbsp;then&nbsp;it&nbsp;is&nbsp;a&nbsp;TypeError&nbsp;to&nbsp;attempt<br>
+encoding&nbsp;of&nbsp;keys&nbsp;that&nbsp;are&nbsp;not&nbsp;str,&nbsp;int,&nbsp;long,&nbsp;float&nbsp;or&nbsp;None.&nbsp;&nbsp;If<br>
+skipkeys&nbsp;is&nbsp;True,&nbsp;such&nbsp;items&nbsp;are&nbsp;simply&nbsp;skipped.<br>
+&nbsp;<br>
+If&nbsp;*ensure_ascii*&nbsp;is&nbsp;true&nbsp;(the&nbsp;default),&nbsp;all&nbsp;non-ASCII<br>
+characters&nbsp;in&nbsp;the&nbsp;output&nbsp;are&nbsp;escaped&nbsp;with&nbsp;\uXXXX&nbsp;sequences,<br>
+and&nbsp;the&nbsp;results&nbsp;are&nbsp;str&nbsp;instances&nbsp;consisting&nbsp;of&nbsp;ASCII<br>
+characters&nbsp;only.&nbsp;&nbsp;If&nbsp;ensure_ascii&nbsp;is&nbsp;False,&nbsp;a&nbsp;result&nbsp;may&nbsp;be&nbsp;a<br>
+unicode&nbsp;instance.&nbsp;&nbsp;This&nbsp;usually&nbsp;happens&nbsp;if&nbsp;the&nbsp;input&nbsp;contains<br>
+unicode&nbsp;strings&nbsp;or&nbsp;the&nbsp;*encoding*&nbsp;parameter&nbsp;is&nbsp;used.<br>
+&nbsp;<br>
+If&nbsp;check_circular&nbsp;is&nbsp;true,&nbsp;then&nbsp;lists,&nbsp;dicts,&nbsp;and&nbsp;custom&nbsp;encoded<br>
+objects&nbsp;will&nbsp;be&nbsp;checked&nbsp;for&nbsp;circular&nbsp;references&nbsp;during&nbsp;encoding&nbsp;to<br>
+prevent&nbsp;an&nbsp;infinite&nbsp;recursion&nbsp;(which&nbsp;would&nbsp;cause&nbsp;an&nbsp;OverflowError).<br>
+Otherwise,&nbsp;no&nbsp;such&nbsp;check&nbsp;takes&nbsp;place.<br>
+&nbsp;<br>
+If&nbsp;allow_nan&nbsp;is&nbsp;true,&nbsp;then&nbsp;NaN,&nbsp;Infinity,&nbsp;and&nbsp;-Infinity&nbsp;will&nbsp;be<br>
+encoded&nbsp;as&nbsp;such.&nbsp;&nbsp;This&nbsp;behavior&nbsp;is&nbsp;not&nbsp;JSON&nbsp;specification&nbsp;compliant,<br>
+but&nbsp;is&nbsp;consistent&nbsp;with&nbsp;most&nbsp;JavaScript&nbsp;based&nbsp;encoders&nbsp;and&nbsp;decoders.<br>
+Otherwise,&nbsp;it&nbsp;will&nbsp;be&nbsp;a&nbsp;ValueError&nbsp;to&nbsp;encode&nbsp;such&nbsp;floats.<br>
+&nbsp;<br>
+If&nbsp;sort_keys&nbsp;is&nbsp;true,&nbsp;then&nbsp;the&nbsp;output&nbsp;of&nbsp;dictionaries&nbsp;will&nbsp;be<br>
+sorted&nbsp;by&nbsp;key;&nbsp;this&nbsp;is&nbsp;useful&nbsp;for&nbsp;regression&nbsp;tests&nbsp;to&nbsp;ensure<br>
+that&nbsp;JSON&nbsp;serializations&nbsp;can&nbsp;be&nbsp;compared&nbsp;on&nbsp;a&nbsp;day-to-day&nbsp;basis.<br>
+&nbsp;<br>
+If&nbsp;indent&nbsp;is&nbsp;a&nbsp;non-negative&nbsp;integer,&nbsp;then&nbsp;JSON&nbsp;array<br>
+elements&nbsp;and&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;members&nbsp;will&nbsp;be&nbsp;pretty-printed&nbsp;with&nbsp;that<br>
+indent&nbsp;level.&nbsp;&nbsp;An&nbsp;indent&nbsp;level&nbsp;of&nbsp;0&nbsp;will&nbsp;only&nbsp;insert&nbsp;newlines.<br>
+None&nbsp;is&nbsp;the&nbsp;most&nbsp;compact&nbsp;representation.&nbsp;&nbsp;Since&nbsp;the&nbsp;default<br>
+item&nbsp;separator&nbsp;is&nbsp;',&nbsp;',&nbsp;&nbsp;the&nbsp;output&nbsp;might&nbsp;include&nbsp;trailing<br>
+whitespace&nbsp;when&nbsp;indent&nbsp;is&nbsp;specified.&nbsp;&nbsp;You&nbsp;can&nbsp;use<br>
+separators=(',',&nbsp;':&nbsp;')&nbsp;to&nbsp;avoid&nbsp;this.<br>
+&nbsp;<br>
+If&nbsp;specified,&nbsp;separators&nbsp;should&nbsp;be&nbsp;a&nbsp;(item_separator,&nbsp;key_separator)<br>
+tuple.&nbsp;&nbsp;The&nbsp;default&nbsp;is&nbsp;(',&nbsp;',&nbsp;':&nbsp;').&nbsp;&nbsp;To&nbsp;get&nbsp;the&nbsp;most&nbsp;compact&nbsp;JSON<br>
+representation&nbsp;you&nbsp;should&nbsp;specify&nbsp;(',',&nbsp;':')&nbsp;to&nbsp;eliminate&nbsp;whitespace.<br>
+&nbsp;<br>
+If&nbsp;specified,&nbsp;default&nbsp;is&nbsp;a&nbsp;function&nbsp;that&nbsp;gets&nbsp;called&nbsp;for&nbsp;objects<br>
+that&nbsp;can't&nbsp;otherwise&nbsp;be&nbsp;serialized.&nbsp;&nbsp;It&nbsp;should&nbsp;return&nbsp;a&nbsp;JSON&nbsp;encodable<br>
+version&nbsp;of&nbsp;the&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;or&nbsp;raise&nbsp;a&nbsp;``TypeError``.<br>
+&nbsp;<br>
+If&nbsp;encoding&nbsp;is&nbsp;not&nbsp;None,&nbsp;then&nbsp;all&nbsp;input&nbsp;strings&nbsp;will&nbsp;be<br>
+transformed&nbsp;into&nbsp;unicode&nbsp;using&nbsp;that&nbsp;encoding&nbsp;prior&nbsp;to&nbsp;JSON-encoding.<br>
+The&nbsp;default&nbsp;is&nbsp;UTF-8.</tt></dd></dl>
+
+<dl><dt><a name="MPOSetEncoder-encode"><strong>encode</strong></a>(self, o)</dt><dd><tt>Return&nbsp;a&nbsp;JSON&nbsp;string&nbsp;representation&nbsp;of&nbsp;a&nbsp;Python&nbsp;data&nbsp;structure.<br>
+&nbsp;<br>
+&gt;&gt;&gt;&nbsp;<a href="json.encoder.html#JSONEncoder">JSONEncoder</a>().<a href="#MPOSetEncoder-encode">encode</a>({"foo":&nbsp;["bar",&nbsp;"baz"]})<br>
+'{"foo":&nbsp;["bar",&nbsp;"baz"]}'</tt></dd></dl>
+
+<dl><dt><a name="MPOSetEncoder-iterencode"><strong>iterencode</strong></a>(self, o, _one_shot<font color="#909090">=False</font>)</dt><dd><tt>Encode&nbsp;the&nbsp;given&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;and&nbsp;yield&nbsp;each&nbsp;string<br>
+representation&nbsp;as&nbsp;available.<br>
+&nbsp;<br>
+For&nbsp;example::<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;chunk&nbsp;in&nbsp;<a href="json.encoder.html#JSONEncoder">JSONEncoder</a>().<a href="#MPOSetEncoder-iterencode">iterencode</a>(bigobject):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mysocket.write(chunk)</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="json.encoder.html#JSONEncoder">json.encoder.JSONEncoder</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes inherited from <a href="json.encoder.html#JSONEncoder">json.encoder.JSONEncoder</a>:<br>
+<dl><dt><strong>item_separator</strong> = ', '</dl>
+
+<dl><dt><strong>key_separator</strong> = ': '</dl>
+
+</td></tr></table> <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ffc8d8">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -66,35 +241,86 @@ Data descriptors defined here:<br>
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-activity"><strong>activity</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
- <dl><dt><a name="-collection"><strong>collection</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
- <dl><dt><a name="-comment"><strong>comment</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
- <dl><dt><a name="-dataobject"><strong>dataobject</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+<td width="100%"><dl><dt><a name="-activity"><strong>activity</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-checkaccess"><strong>checkaccess</strong></a>(f)</dt><dd><tt>###############Authorization&nbsp;Decorators#####################</tt></dd></dl>
+ <dl><dt><a name="-collection"><strong>collection</strong></a>(*args, **kwargs)</dt><dd><tt>Create&nbsp;and&nbsp;add&nbsp;to&nbsp;collections.<br>
+Supported&nbsp;routes:<br>
+/collection&nbsp;-&nbsp;GET&nbsp;a&nbsp;list&nbsp;of&nbsp;all&nbsp;(or&nbsp;filtered)&nbsp;collections<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;POST&nbsp;a&nbsp;new&nbsp;collection<br>
+/collection/&lt;id&gt;&nbsp;-&nbsp;GET&nbsp;collection&nbsp;information,&nbsp;including&nbsp;list&nbsp;of&nbsp;member&nbsp;UUIDs<br>
+/collection/?element_uid=:uid&nbsp;-&nbsp;GET&nbsp;collections&nbsp;having&nbsp;element&nbsp;member&nbsp;giving&nbsp;by&nbsp;:uid</tt></dd></dl>
+ <dl><dt><a name="-collectionElement"><strong>collectionElement</strong></a>(*args, **kwargs)</dt><dd><tt>/collection/:id/element&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;GET&nbsp;a&nbsp;list&nbsp;of&nbsp;objects&nbsp;in&nbsp;a&nbsp;collection<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;POST&nbsp;to&nbsp;add&nbsp;to&nbsp;the&nbsp;collection<br>
+/collection/:id/element/:oid&nbsp;-&nbsp;GET&nbsp;details&nbsp;of&nbsp;a&nbsp;single&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;in&nbsp;a&nbsp;collection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Should&nbsp;resolve&nbsp;oid&nbsp;to&nbsp;full&nbsp;record&nbsp;from&nbsp;relevant&nbsp;table.<br>
+/collection/:id/element?detail=full[sparse]&nbsp;-&nbsp;GET&nbsp;collection&nbsp;information&nbsp;with&nbsp;full<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;details&nbsp;[or&nbsp;default&nbsp;sparse&nbsp;as&nbsp;/collection/&lt;id&gt;]</tt></dd></dl>
+ <dl><dt><a name="-comment"><strong>comment</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-dataobject"><strong>dataobject</strong></a>(*args, **kwargs)</dt><dd><tt>Route&nbsp;to&nbsp;add&nbsp;data&nbsp;objects&nbsp;and&nbsp;connect&nbsp;their&nbsp;instances&nbsp;to&nbsp;workflows.<br>
+&nbsp;<br>
+Route:&nbsp;GET&nbsp;&nbsp;/dataobject/&lt;id&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Retrieves&nbsp;information&nbsp;on&nbsp;a&nbsp;specific&nbsp;dataobject.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;In&nbsp;the&nbsp;case&nbsp;&lt;id&gt;&nbsp;is&nbsp;&lt;id&gt;&nbsp;of&nbsp;an&nbsp;instance,&nbsp;instance&nbsp;inherits&nbsp;properties&nbsp;of&nbsp;the&nbsp;original&nbsp;<a href="__builtin__.html#object">object</a>.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;In&nbsp;the&nbsp;case&nbsp;&lt;id&gt;&nbsp;is&nbsp;&lt;id&gt;&nbsp;of&nbsp;an&nbsp;dataobject,&nbsp;just&nbsp;the&nbsp;properties&nbsp;of&nbsp;the&nbsp;dataobject&nbsp;are&nbsp;returned.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOT&nbsp;IMPLEMENTED:&nbsp;?instance&nbsp;filter&nbsp;will&nbsp;optionally&nbsp;return&nbsp;instances&nbsp;of&nbsp;a&nbsp;specified&nbsp;dataobject.<br>
+Route:&nbsp;GET&nbsp;&nbsp;/dataobject&nbsp;returns&nbsp;all&nbsp;dataobjects<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GET&nbsp;&nbsp;/dataobject?instance&nbsp;returns&nbsp;all&nbsp;dataobject&nbsp;instances<br>
+Route:&nbsp;POST&nbsp;/dataobject<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;databody:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{'name':,&nbsp;'description':,'work_uid':,&nbsp;'uri':,&nbsp;'parent_uid':,&nbsp;'uid':&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If&nbsp;'work_uid'&nbsp;is&nbsp;present,&nbsp;create&nbsp;an&nbsp;instance,&nbsp;connect&nbsp;it&nbsp;to&nbsp;the&nbsp;parent&nbsp;in&nbsp;the&nbsp;workflow<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;link&nbsp;instance&nbsp;to&nbsp;the&nbsp;dataobject&nbsp;as&nbsp;determined&nbsp;by&nbsp;the&nbsp;'uri'.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If&nbsp;'work_uid'&nbsp;is&nbsp;NOT&nbsp;present,&nbsp;'parent_uid'&nbsp;must&nbsp;also&nbsp;not&nbsp;be&nbsp;present.&nbsp;A&nbsp;new&nbsp;dataobject&nbsp;is&nbsp;created.<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Dataobject&nbsp;instances&nbsp;in&nbsp;workflows&nbsp;can&nbsp;be&nbsp;created&nbsp;by<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;supplying&nbsp;a&nbsp;URI,&nbsp;DO_UID,&nbsp;or&nbsp;DOI_UID.&nbsp;&nbsp;If&nbsp;a&nbsp;doi_uid&nbsp;is<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;given,&nbsp;it&nbsp;is&nbsp;resolved&nbsp;to&nbsp;the&nbsp;parent&nbsp;do_uid.&nbsp;If&nbsp;both&nbsp;URI&nbsp;and<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UID&nbsp;are&nbsp;provided,&nbsp;the&nbsp;URI&nbsp;takes&nbsp;precedence.</tt></dd></dl>
  <dl><dt><a name="-debug"><strong>debug</strong></a>()</dt></dl>
- <dl><dt><a name="-getWorkflowComments"><strong>getWorkflowComments</strong></a>(id)</dt></dl>
- <dl><dt><a name="-getWorkflowCompositeID"><strong>getWorkflowCompositeID</strong></a>(id)</dt></dl>
- <dl><dt><a name="-getWorkflowGraph"><strong>getWorkflowGraph</strong></a>(id)</dt></dl>
- <dl><dt><a name="-metadata"><strong>metadata</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
- <dl><dt><a name="-onlyone"><strong>onlyone</strong></a>(recordstr)</dt></dl>
- <dl><dt><a name="-ontologyClass"><strong>ontologyClass</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
- <dl><dt><a name="-ontologyInstance"><strong>ontologyInstance</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
- <dl><dt><a name="-ontologyTerm"><strong>ontologyTerm</strong></a>(id<font color="#909090">=None</font>)</dt><dd><tt>Retrieves&nbsp;the&nbsp;record&nbsp;of&nbsp;an&nbsp;ontology&nbsp;term&nbsp;from&nbsp;its&nbsp;&lt;id&gt;&nbsp;or&nbsp;path.<br>
+ <dl><dt><a name="-getWorkflowComments"><strong>getWorkflowComments</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-getWorkflowCompositeID"><strong>getWorkflowCompositeID</strong></a>(*args, **kwargs)</dt><dd><tt>Method&nbsp;to&nbsp;retrieve&nbsp;a&nbsp;workflow&nbsp;composite&nbsp;id&nbsp;in&nbsp;the&nbsp;field&nbsp;'alias'.</tt></dd></dl>
+ <dl><dt><a name="-getWorkflowElement"><strong>getWorkflowElement</strong></a>(*args, **kwargs)</dt><dd><tt>/workflow/:wid/dataobject/:uid&nbsp;-&nbsp;GET&nbsp;dataobjects&nbsp;in&nbsp;workflow&nbsp;specified&nbsp;by&nbsp;:wid<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;:uid&nbsp;supplied,&nbsp;get&nbsp;specific&nbsp;dataobject</tt></dd></dl>
+ <dl><dt><a name="-getWorkflowGraph"><strong>getWorkflowGraph</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-getWorkflowType"><strong>getWorkflowType</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-get_api_version"><strong>get_api_version</strong></a>(url)</dt><dd><tt>Get&nbsp;the&nbsp;API&nbsp;version&nbsp;used&nbsp;in&nbsp;the&nbsp;request.</tt></dd></dl>
+ <dl><dt><a name="-handle_invalid_usage"><strong>handle_invalid_usage</strong></a>(error)</dt></dl>
+ <dl><dt><a name="-item"><strong>item</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-metadata"><strong>metadata</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-not_found"><strong>not_found</strong></a>(error<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-onlyone"><strong>onlyone</strong></a>(record)</dt></dl>
+ <dl><dt><a name="-ontologyClass"><strong>ontologyClass</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-ontologyInstance"><strong>ontologyInstance</strong></a>(*args, **kwargs)</dt></dl>
+ <dl><dt><a name="-ontologyTerm"><strong>ontologyTerm</strong></a>(*args, **kwargs)</dt><dd><tt>Retrieves&nbsp;the&nbsp;record&nbsp;of&nbsp;an&nbsp;ontology&nbsp;term&nbsp;from&nbsp;its&nbsp;&lt;id&gt;&nbsp;or&nbsp;path.<br>
 valid&nbsp;routes:<br>
 ontology/term/&lt;id&gt;<br>
 ontology/term?path=term/term2/termN</tt></dd></dl>
- <dl><dt><a name="-ontologyTermTree"><strong>ontologyTermTree</strong></a>(id<font color="#909090">=None</font>)</dt><dd><tt>This&nbsp;function&nbsp;returns&nbsp;the&nbsp;vocabulary&nbsp;of&nbsp;an&nbsp;ontology&nbsp;term&nbsp;specified&nbsp;by&nbsp;its&nbsp;&lt;id&gt;=parent_id.<br>
+ <dl><dt><a name="-ontologyTermTree"><strong>ontologyTermTree</strong></a>(*args, **kwargs)</dt><dd><tt>This&nbsp;function&nbsp;returns&nbsp;the&nbsp;vocabulary&nbsp;of&nbsp;an&nbsp;ontology&nbsp;term&nbsp;specified&nbsp;by&nbsp;its&nbsp;&lt;id&gt;=parent_id.&nbsp;<br>
 Vocabulary&nbsp;is&nbsp;defined&nbsp;as&nbsp;the&nbsp;next&nbsp;set&nbsp;of&nbsp;terms&nbsp;below&nbsp;it&nbsp;in&nbsp;the&nbsp;ontology&nbsp;term&nbsp;tree.</tt></dd></dl>
- <dl><dt><a name="-ontologyTermVocabulary"><strong>ontologyTermVocabulary</strong></a>(id<font color="#909090">=None</font>)</dt><dd><tt>This&nbsp;function&nbsp;returns&nbsp;the&nbsp;vocabulary&nbsp;of&nbsp;an&nbsp;ontology&nbsp;term&nbsp;specified&nbsp;by&nbsp;its&nbsp;&lt;id&gt;=parent_id.<br>
+ <dl><dt><a name="-ontologyTermVocabulary"><strong>ontologyTermVocabulary</strong></a>(*args, **kwargs)</dt><dd><tt>Resource:&nbsp;ontology&nbsp;vocabulary<br>
+&nbsp;<br>
+Convenience&nbsp;route,&nbsp;equivalent&nbsp;to&nbsp;ontology/term?parent_uid=&lt;id&gt;<br>
+&nbsp;<br>
+&nbsp;<br>
+This&nbsp;function&nbsp;returns&nbsp;the&nbsp;vocabulary&nbsp;of&nbsp;an&nbsp;ontology&nbsp;term&nbsp;specified&nbsp;by&nbsp;its&nbsp;&lt;id&gt;=parent_id.<br>
 Vocabulary&nbsp;is&nbsp;defined&nbsp;as&nbsp;the&nbsp;next&nbsp;set&nbsp;of&nbsp;terms&nbsp;below&nbsp;it&nbsp;in&nbsp;the<br>
 ontology&nbsp;term&nbsp;tree.<br>
 It&nbsp;is&nbsp;a&nbsp;convenience&nbsp;route&nbsp;equivalent&nbsp;to&nbsp;GET&nbsp;ontology_term?parent_uid=uid</tt></dd></dl>
- <dl><dt><a name="-publishEvent"><strong>publishEvent</strong></a>(eventname, eventbody<font color="#909090">=None</font>)</dt><dd><tt>eventbody&nbsp;should&nbsp;be&nbsp;text&nbsp;presently&nbsp;as&nbsp;we&nbsp;do&nbsp;not&nbsp;implement<br>
-deserialization&nbsp;of&nbsp;arbitrary&nbsp;types.</tt></dd></dl>
- <dl><dt><a name="-publishgevent"><strong>publishgevent</strong></a>(msg<font color="#909090">='1409401307.42'</font>)</dt></dl>
- <dl><dt><a name="-scollection"><strong>scollection</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-publishEvent"><strong>publishEvent</strong></a>(eventname, eventbody<font color="#909090">=None</font>)</dt><dd><tt>eventname&nbsp;--&nbsp;name&nbsp;convention&nbsp;for&nbsp;this&nbsp;event.&nbsp;Tag&nbsp;to&nbsp;listen&nbsp;for.<br>
+&nbsp;<br>
+eventbody&nbsp;--&nbsp;should&nbsp;be&nbsp;text&nbsp;presently&nbsp;as&nbsp;we&nbsp;do&nbsp;not&nbsp;implement<br>
+deserialization&nbsp;of&nbsp;arbitrary&nbsp;types.<br>
+&nbsp;<br>
+events&nbsp;are&nbsp;broadcast&nbsp;by&nbsp;Event&nbsp;over&nbsp;UDP</tt></dd></dl>
+ <dl><dt><a name="-publishgevent"><strong>publishgevent</strong></a>(msg<font color="#909090">='1437615049.08'</font>)</dt></dl>
+ <dl><dt><a name="-response_valid"><strong>response_valid</strong></a>(r)</dt><dd><tt>Function&nbsp;to&nbsp;check&nbsp;database&nbsp;replies.&nbsp;Presently&nbsp;a&nbsp;NOOP.</tt></dd></dl>
  <dl><dt><a name="-subscribe"><strong>subscribe</strong></a>(*args, **kwargs)</dt></dl>
- <dl><dt><a name="-user"><strong>user</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
- <dl><dt><a name="-workflow"><strong>workflow</strong></a>(id<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-syntax_error"><strong>syntax_error</strong></a>(error<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-unathorized_error"><strong>unathorized_error</strong></a>(error<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-user"><strong>user</strong></a>(id<font color="#909090">=None</font>, dn<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-workflow"><strong>workflow</strong></a>(*args, **kwargs)</dt><dd><tt>Implementation&nbsp;of&nbsp;the&nbsp;/workflow&nbsp;route<br>
+Enforces&nbsp;ontological&nbsp;constraints&nbsp;on&nbsp;workflows&nbsp;types&nbsp;retrieved&nbsp;from&nbsp;ontology_terms.<br>
+/workflow?do_uri=:uri&nbsp;-&nbsp;GET&nbsp;workflows&nbsp;having&nbsp;dataobject&nbsp;member&nbsp;giving&nbsp;by&nbsp;:uid</tt></dd></dl>
 </td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#55aa55">
@@ -103,11 +329,14 @@ deserialization&nbsp;of&nbsp;arbitrary&nbsp;types.</tt></dd></dl>
     
 <tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><strong>MPO_API_VERSION</strong> = 'v0'<br>
-<strong>apidebug</strong> = True<br>
+<strong>apidebug</strong> = False<br>
 <strong>app</strong> = &lt;Flask 'api_server'&gt;<br>
+<strong>conn_string</strong> = "host='localhost' dbname='mpoDB' user='mpoadmin' password='mpo2013'"<br>
+<strong>e</strong> = KeyError('MPO_DB_CONNECTION',)<br>
 <strong>k</strong> = 'metadata'<br>
+<strong>mount_point</strong> = None<br>
 <strong>request</strong> = &lt;LocalProxy unbound&gt;<br>
-<strong>routes</strong> = {'activity': '/v0/activity', 'collection': '/v0/collection', 'comment': '/v0/comment', 'dataobject': '/v0/dataobject', 'guid': '/v0/uid', 'metadata': '/v0/metadata', 'ontology_class': '/v0/ontology/class', 'ontology_instance': '/v0/ontology/instance', 'ontology_term': '/v0/ontology/term', 'user': '/v0/user', ...}<br>
+<strong>routes</strong> = {'activity': '/v0/activity', 'collection': '/v0/collection', 'comment': '/v0/comment', 'dataobject': '/v0/dataobject', 'guid': '/v0/uid', 'item': '/v0/item', 'metadata': '/v0/metadata', 'ontology_class': '/v0/ontology/class', 'ontology_instance': '/v0/ontology/instance', 'ontology_term': '/v0/ontology/term', ...}<br>
 <strong>subscriptions</strong> = []<br>
 <strong>v</strong> = 'metadata'</td></tr></table>
 </body></html>
