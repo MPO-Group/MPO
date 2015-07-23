@@ -406,7 +406,7 @@ function setWfQuality(wfid,numq) {
 		<div class="span12"><br>
 		{% if results %}
         	<br />
-        	<a href="/mpo/collections"><small>&lt;&lt; Back to list of collections</small></a>
+        	<a href="{{ url_for("collections") }}"><small>&lt;&lt; Back to list of collections</small></a>
         	<h4>MPO Collection: {{ coll_name }} <span class="glyphicon glyphicon-user"></span><small><strong>{{ coll_username }}</strong> - {{ coll_time }}</small></h4>
             <b>Description:</b> {{ coll_desc }}
         	<div id="tbl">

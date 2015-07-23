@@ -519,7 +519,7 @@ ul li input.user_time_wf {
     <div class="row-fluid">  
     	<!-- workflow table list span -->
 		<div class="span12">
-        	<a href="/mpo/collections"><small>&lt;&lt; Back to list of data objects</small></a>
+        	<a href="{{ url_for("dataobject") }}"><small>&lt;&lt; Back to list of data objects</small></a>
         	<h4>MPO Data Object: <font color=#004B82>{{ name }}</font> <span class="icon-user lighter" style="padding-left: 10px"></span> <small><strong>{{ username }}</strong> - {{ time }}</small></h4>
             <b>URI:</b> {{ uri }} <br />
             <b>Description:</b> {{ desc }}
