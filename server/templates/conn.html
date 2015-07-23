@@ -159,9 +159,6 @@ $(document).ready(function () {
 			if(j=="data") {
 				var tmp2=tmp[j];
 				var tmp3=tmp2[0];  
-				console.log("TMP 3 is.... " );
-				console.log(tmp3);
-				
 				
 				dataElements[tmp['name']]="";
 				if(tmp3['description'])
@@ -201,8 +198,6 @@ $(document).ready(function () {
 					var fill=false;
 					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['do_info']['uri']+"</small>";
 					if(tmp3['wf_link']) {
-						console.log('WF_LINK is....');
-						console.log(tmp3['wf_link']);
 							if (tmp3['wf_link']['count'] > 1) {
 								fill=true;
 							}
@@ -421,37 +416,47 @@ $(document).ready(function () {
 		})
 		//callback
 		.done(function(data) {
-			console.log(data);	
-			/*HERE */
-			var appendHtml = '<li>';
-			appendHtml += '<span class="icon-comment lighter"></span> ' + data[0].content+' <em>by '+data[0].username +'  <small>' + data[0].time.substring(0,16)+'</small>';		
-			appendHtml += '</li>';
-
-			var p_uid=data[0].parent_uid;
-			var c_uid=data[0].uid;
-			//if first comment, add comment header list
-			if($("#acc_"+p_uid+" ul li ul.comments").length==0) {
-				commentHtml='<li><font class="bold">Comments:</font>';
-				commentHtml+='<ul class="comments"></ul>';
-				commentHtml+='</li>';
-				$("#acc_"+p_uid+" ul.details-list").append(commentHtml)
+			if (data=="401") {
+				$('#submit_results').html('<div class="alert alert-danger" role="alert">This account is not authorized to submit comments.</div>');
+				$('#submit_results').fadeOut(fadeTime, function() {
+						// Animation complete.
+						$('#comment-content').val("");
+						$('#submit_results').html("");
+						$('div#comment_container').find( ".collapse.in" ).each(function(){
+							$(this).collapse("toggle");
+						});
+				});
 			}
-			$("#acc_"+p_uid+" ul li ul").append(appendHtml)
-			
-			$("tr#detail_"+p_uid).find( ".collapse:not(.in)" ).each(function(){
-                $(this).collapse("toggle");
-			});
-			$('#submit_results').show();
-			$('#submit_results').html('<div class="alert alert-success" role="alert">Comment submitted.</div>');
-			$('#submit_results').fadeOut(fadeTime, function() {
-					// Animation complete.
-					$('#comment-content').val("");
-					$('#submit_results').html("");
-					$('div#comment_container').find( ".collapse.in" ).each(function(){
-						$(this).collapse("toggle");
-					});
-			});
-			
+			else {
+				var appendHtml = '<li>';
+				appendHtml += '<span class="icon-comment lighter"></span> ' + data[0].content+' <em>by '+data[0].username +'  <small>' + data[0].time.substring(0,16)+'</small>';		
+				appendHtml += '</li>';
+	
+				var p_uid=data[0].parent_uid;
+				var c_uid=data[0].uid;
+				//if first comment, add comment header list
+				if($("#acc_"+p_uid+" ul li ul.comments").length==0) {
+					commentHtml='<li><font class="bold">Comments:</font>';
+					commentHtml+='<ul class="comments"></ul>';
+					commentHtml+='</li>';
+					$("#acc_"+p_uid+" ul.details-list").append(commentHtml)
+				}
+				$("#acc_"+p_uid+" ul li ul").append(appendHtml)
+				
+				$("tr#detail_"+p_uid).find( ".collapse:not(.in)" ).each(function(){
+					$(this).collapse("toggle");
+				});
+				$('#submit_results').show();
+				$('#submit_results').html('<div class="alert alert-success" role="alert">Comment submitted.</div>');
+				$('#submit_results').fadeOut(fadeTime, function() {
+						// Animation complete.
+						$('#comment-content').val("");
+						$('#submit_results').html("");
+						$('div#comment_container').find( ".collapse.in" ).each(function(){
+							$(this).collapse("toggle");
+						});
+				});
+			}
 			
          /*   $(this).html("<i class=\"icon-minus-sign\"></i> Collapse All");
        

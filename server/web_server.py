@@ -971,12 +971,15 @@ def submit_comment():
         #wid=form['wf_id']
 
         submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
+	if submit.status_code == 401:
+            return "401"
+
         cid = submit.json()
         result = requests.get("%s/comment/%s"%(API_PREFIX,cid['uid']), **certargs)
         newc = result.text
         if webdebug:
             pprint(newc)
-
+	
     except:
         pass
 
