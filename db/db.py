@@ -81,7 +81,11 @@ def processArgument(a):
     """
     #protect against empty input
     if not a: return a
-
+        
+    if not isinstance(a,str):
+        a=str(a)
+        print('DBERROR: processArgument called with non-string argument. Converting to string.',a)
+        
     if a[0]=='"' and a[-1]=='"':
         qa=a[1:-1]
     else:

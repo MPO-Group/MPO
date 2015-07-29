@@ -457,7 +457,7 @@ class mpo_methods(object):
         name -- name of dataobject
         desc -- description of dataobject
         uri -- uri for the data object added, takes precedence over do_uid
-        uid -- UID of dataobject too add to workflow
+        uid -- UID of dataobject to add to workflow
         source -- source uid for dataobject, provides direction source -> target
         """
 
@@ -488,7 +488,6 @@ class mpo_methods(object):
         parentobj_ID --
         name -- name of activity
         desc -- description
-        uri -- uri for the data object added
         input_objs -- array of additional inputs
         """
 
@@ -499,12 +498,11 @@ class mpo_methods(object):
 
         name=kwargs.get('name')
         desc=kwargs.get('desc')
-        uri=kwargs.get('uri')
         inp=[parentobj_ID]
         if input_objs:
             inp.extend(input_objs)
 
-        payload={"name":name,"description":desc,"uri":uri}
+        payload={"name":name,"description":desc}
         r=self.post(self.ACTIVITY_RT,workflow_ID,inp,payload,**kwargs)
         return r
 

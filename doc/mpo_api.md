@@ -118,7 +118,7 @@ behavior is to return the bare UUID value or an error code.
      `mpo --format=pretty get ontology/term/$term_id/vocabulary`
 
 * Data objects.
-  Dataobjects has both their own entry as well as references to them
+  Dataobjects have both their own entry as well as references to them
   in workflows known as instances. Given one, the other can be
   retrieved. It can be easy to get confused about them, though.
 
@@ -130,6 +130,17 @@ behavior is to return the bare UUID value or an error code.
 
   Will retrieve a formatted list of all dataobject instances in the database.
 
+
+     `mpo add workflow_id parent_id --name=name --desc=desc --uri=uri`
+
+  Is the way to add a dataobject to a workflow. If dataobjects are the
+  first item added to a workflow then the parent_id is the same as the
+  workflow_id. The uri is a resource identifier to retrieve the
+  dataobject for future inspection. The uri may be whatever you want,
+  but must be unique. An archive command which is extensible is
+  provide to store dataobject and create persistent uri's for them.
+
+     
 * Grouping requests.
   Most routes support grouped requests by uid.
 
@@ -173,18 +184,24 @@ behavior is to return the bare UUID value or an error code.
 Some examples for language specific interfaces.
 
 * python interface
+  All command line methods have equivalents in the mpo_methods class found in mpo_arg.py:
 
-  ```python
-  #Setup mpo instance
-  cert='/Users/jwright/Codes/mposvn/trunk/MPO Demo User.pem'
-  api='https://mpo.psfc.mit.edu/api'
-  m=mpo_arg.mpo_methods(api_url=api,cert=cert,debug=True)
-  m.debug=False
-  #Use mpo methods with return object being a python dictionary
-  #Omitting the filter will return Response object,r. Then dict is
-  #gotten with r.json()
-  wf=m.init(name="JCW Test Run",desc="example of using python interface to API.", wtype='EFIT',filter='json')
-  ```
+    ```python
+    #Setup mpo instance
+    cert='/Users/jwright/Codes/mposvn/trunk/MPO Demo User.pem'
+    api='https://mpo.psfc.mit.edu/test-api'
+    m=mpo_arg.mpo_methods(api_url=api,cert=cert,debug=True)
+    m.debug=False
+    m.filter='json'
+    #Use mpo methods with return object being a python dictionary
+    #Omitting the filter will return Response object,r. Then dict is
+    #gotten with r.json()
+    wf=m.init(name="JCW Test Run",desc="example of using python interface to API.", wtype='EFIT')
+    do_uid=m.add(wf['uid'],wf['uid'],name='input.txt', desc='An important input file', uri='file://my/home/dir/input.txt')
+    step_uid=m.step(wf['uid'],do_uid['uid'],name='MonteCarlo',desc='do mc simulation')
+    m.comment(step_uid['uid'],'A very good code')
+    
+    ```
 
 * matlab interface
 

@@ -12,6 +12,6 @@ class mpo_ar_dataobject(object):
         self.mpo = mpo
         self.parser = argparse.ArgumentParser(description='data object creator',
                                          epilog="""Metadata Provenance Ontology project""",
-                                         prog='mpo create --protocol=xxx')
+                                         prog='mpo archive --protocol=xxx')
         self.parser.add_argument('--verbose','-v',action='store_true',help='Turn on debugging info',
                             default=False)

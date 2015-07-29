@@ -95,12 +95,14 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <li><p>Get the controlled vocabulary for a term.<br /> For example, to see valid values for a tracked code input or Status<br /> attribute, or to see what inputs can be tracked for a given code. We<br /> first pass the <code>path</code> argument to the <code>ontology/term</code> route to get<br /> the ID of that term.</p>
 <p>term_id=`mpo get ontology/term -p path=Generic/Status/quality`</p>
 <p><code>mpo --format=pretty get ontology/term/$term_id/vocabulary</code></p></li>
-<li><p>Data objects.<br /> Dataobjects has both their own entry as well as references to them<br /> in workflows known as instances. Given one, the other can be<br /> retrieved. It can be easy to get confused about them, though.</p>
+<li><p>Data objects.<br /> Dataobjects have both their own entry as well as references to them<br /> in workflows known as instances. Given one, the other can be<br /> retrieved. It can be easy to get confused about them, though.</p>
 <p><code>mpo --format=pretty get dataobject</code></p></li>
 </ul>
 <p>Will retrieve a formatted list of all dataobjects in the database.</p>
 <pre><code> `mpo --format=pretty get dataobject?instance`</code></pre>
 <p>Will retrieve a formatted list of all dataobject instances in the database.</p>
+<pre><code> `mpo add workflow_id parent_id --name=name --desc=desc --uri=uri`</code></pre>
+<p>Is the way to add a dataobject to a workflow. If dataobjects are the<br /> first item added to a workflow then the parent_id is the same as the<br /> workflow_id. The uri is a resource identifier to retrieve the<br /> dataobject for future inspection. The uri may be whatever you want,<br /> but must be unique. An archive command which is extensible is<br /> provide to store dataobject and create persistent uri's for them.</p>
 <ul>
 <li><p>Grouping requests.<br /> Most routes support grouped requests by uid.</p>
 <pre><code>mpo --format=pretty get metadata/c87ba801-8c0f-4cdd-bd2c-968849b03d19,a0168813-a75f-4bd7-89c3-358e909d8a15</code></pre>
@@ -133,10 +135,20 @@ code > span.er { color: #ff0000; font-weight: bold; }
 </ul>
 <p>Some examples for language specific interfaces.</p>
 <ul>
-<li>python interface</li>
-</ul>
-<p><code>python   #Setup mpo instance   cert='/Users/jwright/Codes/mposvn/trunk/MPO Demo User.pem'   api='https://mpo.psfc.mit.edu/api'   m=mpo_arg.mpo_methods(api_url=api,cert=cert,debug=True)   m.debug=False   #Use mpo methods with return object being a python dictionary   #Omitting the filter will return Response object,r. Then dict is   #gotten with r.json()   wf=m.init(name=&quot;JCW Test Run&quot;,desc=&quot;example of using python interface to API.&quot;, wtype='EFIT',filter='json')</code></p>
-<ul>
+<li><p>python interface<br /> All command line methods have equivalents in the mpo_methods class found in mpo_arg.py:</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="co">#Setup mpo instance</span>
+cert=<span class="st">&#39;/Users/jwright/Codes/mposvn/trunk/MPO Demo User.pem&#39;</span>
+api=<span class="st">&#39;https://mpo.psfc.mit.edu/test-api&#39;</span>
+m=mpo_arg.mpo_methods(api_url=api,cert=cert,debug=<span class="ot">True</span>)
+m.debug=<span class="ot">False</span>
+m.<span class="dt">filter</span>=<span class="st">&#39;json&#39;</span>
+<span class="co">#Use mpo methods with return object being a python dictionary</span>
+<span class="co">#Omitting the filter will return Response object,r. Then dict is</span>
+<span class="co">#gotten with r.json()</span>
+wf=m.init(name=<span class="st">&quot;JCW Test Run&quot;</span>,desc=<span class="st">&quot;example of using python interface to API.&quot;</span>, wtype=<span class="st">&#39;EFIT&#39;</span>)
+do_uid=m.add(wf[<span class="st">&#39;uid&#39;</span>],wf[<span class="st">&#39;uid&#39;</span>],name=<span class="st">&#39;input.txt&#39;</span>, desc=<span class="st">&#39;An important input file&#39;</span>, uri=<span class="st">&#39;file://my/home/dir/input.txt&#39;</span>)
+step_uid=m.step(wf[<span class="st">&#39;uid&#39;</span>],do_uid[<span class="st">&#39;uid&#39;</span>],name=<span class="st">&#39;MonteCarlo&#39;</span>,desc=<span class="st">&#39;do mc simulation&#39;</span>)
+m.comment(step_uid[<span class="st">&#39;uid&#39;</span>],<span class="st">&#39;A very good code&#39;</span>)</code></pre></li>
 <li><p>matlab interface</p></li>
 <li><p>idl interface</p></li>
 <li><p>c/c++ interface</p></li>

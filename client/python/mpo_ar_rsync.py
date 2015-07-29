@@ -34,7 +34,7 @@ class mpo_ar_rsync(_ar.mpo_ar_dataobject):
                         uri =  "rsync://%s/%s" % (host, filespec, )
                         status = check_call(['rsync', '-a', filespec, "%s:"%(host,)])
                 else:
-                    raise Exception("Direcdtory %s is not readable"%filespec)
+                    raise Exception("Directory %s is not readable"%filespec)
             elif os.path.isfile(filespec):
                 if os.access(filespec, os.R_OK):
                     if destination:
