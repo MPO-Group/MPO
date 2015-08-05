@@ -3,6 +3,7 @@
 --
 
 SET statement_timeout = 0;
+SET lock_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
@@ -215,7 +216,7 @@ ALTER TABLE public.metadata OWNER TO mpoadmin;
 --
 
 CREATE TABLE mpoauth (
-    u_guid uuid NOT NULL,
+    u_guid uuid,
     read boolean,
     write boolean
 );
@@ -443,6 +444,40 @@ d3adff7b-e21e-46bc-b389-4f778785f6dd	Archive data	\N	08d2f5db-97d8-49c9-bd99-853
 54a2e553-2b0f-4ecd-90b4-885ebefaecd1	Fit electron temperature	\N	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	Fit electron temperature	Zipfit	2015-05-12 21:58:21.362822	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
 ea131dc2-7041-4a3c-8936-e2473f824189	Write output files	\N	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	Write output files	Zipfit	2015-05-12 21:58:21.546102	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
 21e43bb3-c648-4a94-8391-2f0cc0e45af4	Archive data	\N	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	Load data to MDSplus	Zipfit	2015-05-12 21:58:22.270776	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N	\N
+8e0df3b2-6364-4d49-9d55-6f67feb8b0de	Process EFIT	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Calculate required averages and derived quantities	\N	2015-07-10 14:17:57.553125	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+eb547ae5-c42a-48fc-84a8-4d07177d24a9	Process TS data	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Remove outliers and fit	\N	2015-07-10 14:18:01.328115	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+5604a288-0768-49f7-a358-f5cee863df9f	Process XICS Ti data	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Remove outliers and fit	\N	2015-07-10 14:18:03.318499	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+86ad6382-9bce-44f6-8257-9326b59d332e	Collect processed data	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Gather up inputs and write to MDSplus transport tree	\N	2015-07-10 14:18:06.792942	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+76819538-b7bf-4bcd-aadc-954d3252866e	Write Normalization Input File	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	extract from MDSplus	\N	2015-07-10 14:18:09.807423	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+37b68207-d8e1-41f1-bb53-55cc1d369531	Write Normalization Batch File	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	extract from MDSplus	\N	2015-07-10 14:18:12.63294	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+a8b01901-6885-4920-a6b0-7a72d064d3da	Submit Normalization Run	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Run to get k range and spacing		2015-07-10 14:18:14.478668	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	Parse Normalization Run	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Read outputs, do simple calcs for k range and write files for production runs	\N	2015-07-10 14:18:17.293079	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+cf1a6e12-fd3d-4e7e-8dce-826db8f4691b	Submit Run 1	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Run submitted to LOKI queue with k for run 1		2015-07-10 14:18:41.608808	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+56df8acc-9dbe-4220-b129-c499064b2bf9	Submit Run 2	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Run submitted to LOKI queue with k for run 1		2015-07-10 14:18:44.602679	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+64166502-f05d-41c9-8f25-f404423801f8	Submit Run 3	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Run submitted to LOKI queue with k for run 1		2015-07-10 14:18:47.278708	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+72cf8812-0ecb-4a90-8509-e2f48fa76d5e	Submit Run 4	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Run submitted to LOKI queue with k for run 1		2015-07-10 14:18:50.028078	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+75ce440b-aae3-410a-b081-cf713680fe41	Submit Run 5	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Run submitted to LOKI queue with k for run 1		2015-07-10 14:18:53.018297	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+109c1665-931a-44dc-adc7-ebbe09613d39	Submit Run 6	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Run submitted to LOKI queue with k for run 1		2015-07-10 14:18:55.842697	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+b42a867d-b357-4725-9fcf-ab59ba71bbfd	Collect production outputs	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Collect output data from all production runs and write into MDSplus tree	\N	2015-07-10 14:18:58.010742	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+9b79c600-3310-4449-acb3-bf76e9130671	Read and Plot	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Read data from MDSplus and plot results	\N	2015-07-10 14:19:01.006529	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+b5bfa6a3-1444-472a-88fc-8bb8bf75370b	Publish	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Write and Publish article	\N	2015-07-10 14:19:08.176575	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+eca9d643-35cd-4ec7-bfb4-948be39db965	Process EFIT	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Calculate required averages and derived quantities	\N	2015-07-10 14:20:32.251922	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+9aa013ca-1865-4adf-a5e1-c357c807bc9d	Process TS data	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Remove outliers and fit	\N	2015-07-10 14:20:35.685208	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+f087e580-95d0-4380-bee6-f1ced1df5c47	Process XICS Ti data	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Remove outliers and fit	\N	2015-07-10 14:20:38.642715	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+433613de-5d0f-43bb-8c89-fa47c8f8906e	Collect processed data	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Gather up inputs and write to MDSplus transport tree	\N	2015-07-10 14:20:42.406291	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+288eaf04-381b-45b3-a159-5229b141d21d	Write Normalization Input File	\N	16285c65-25ea-4445-8506-d583a8a3dcac	extract from MDSplus	\N	2015-07-10 14:20:46.348993	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+23455e90-55a0-415b-a42a-78a9a67d5b61	Write Normalization Batch File	\N	16285c65-25ea-4445-8506-d583a8a3dcac	extract from MDSplus	\N	2015-07-10 14:20:49.388111	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+29165d63-a007-416e-92d3-399aacc3c228	Parse Normalization Run	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Read outputs, do simple calcs for k range and write files for production runs	\N	2015-07-10 14:20:54.161496	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+b6560264-57ce-4eea-bb47-4eb88c197d75	Submit Run 2	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Run submitted to LOKI queue with k for run 2		2015-07-10 14:21:19.548316	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+c5be80b2-d461-40ad-b662-911cc39479e5	Submit Normalization Run	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Run to get k range and spacing		2015-07-10 14:20:51.307627	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+2b1478a7-eb5d-4be0-a8af-7f0c14e9ef0d	Submit Run 1	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Run submitted to LOKI queue with k for run 2		2015-07-10 14:21:16.841857	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+170c15e2-a7e2-49f9-998c-bfd4e1fe16b9	Submit Run 4	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Run submitted to LOKI queue with k for run 2		2015-07-10 14:21:25.717165	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+67152192-014d-4aab-a85c-4ac1877d4bca	Submit Run 5	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Run submitted to LOKI queue with k for run 2		2015-07-10 14:21:28.349453	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+5078c37d-dc01-41a5-9bea-2e944dfaf813	Read and Plot	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Read data from MDSplus and plot results	\N	2015-07-10 14:21:36.591993	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+e1eac56c-b1f4-4815-99b9-ade63f1dc866	Publish	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Write and Publish article	\N	2015-07-10 14:21:45.104728	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+033f96ea-bad4-44f7-940c-eed6740f1647	Submit Run 3	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Run submitted to LOKI queue with k for run 2		2015-07-10 14:21:23.043879	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+ec9ad925-8706-4433-a7ff-3d2b48218c56	Submit Run 6	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Run submitted to LOKI queue with k for run 2		2015-07-10 14:21:31.086077	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
+50d24653-1185-4cd3-baa6-ea93bd43955d	Collect production outputs	\N	16285c65-25ea-4445-8506-d583a8a3dcac	Collect output data from all production runs and write into MDSplus tree	\N	2015-07-10 14:21:33.83362	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	\N	\N	\N
 \.
 
 
@@ -451,8 +486,9 @@ ea131dc2-7041-4a3c-8936-e2473f824189	Write output files	\N	9b18b6e7-8c2e-4db9-99
 --
 
 COPY collection (c_guid, name, description, u_guid, creation_time) FROM stdin;
-bce93ae0-c311-45a6-b7d1-d49bc7b81bad	Shot 160124 collection	Sample workflow collection	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:25:50.62295
-a1a529a7-e7bb-4885-b5fb-92d9003782f5	EFIT input file collection	Sample dataobject collection	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.284817
+55bf00aa-8ad8-40b9-9c11-b0c481475d07	Density Scan	Gyro runs for a density scan,	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-14 08:44:29.748546
+933021f8-fea3-4d23-a24e-70c18a5b50af	EFIT input file collection	Sample dataobject collection	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-15 12:07:01.633919
+1abbc0f8-d0f7-4d17-849c-6a1c4bcc2110	Shot 160124 Collection	Sample workflow collection	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-15 12:07:44.291493
 \.
 
 
@@ -461,13 +497,15 @@ a1a529a7-e7bb-4885-b5fb-92d9003782f5	EFIT input file collection	Sample dataobjec
 --
 
 COPY collection_elements (c_guid, e_guid, u_guid, creation_time) FROM stdin;
-bce93ae0-c311-45a6-b7d1-d49bc7b81bad	0407f11e-fbd9-4509-8fcc-ff452d5daf58	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:25:50.623385
-bce93ae0-c311-45a6-b7d1-d49bc7b81bad	08d2f5db-97d8-49c9-bd99-85303b07f9e2	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:25:50.623689
-bce93ae0-c311-45a6-b7d1-d49bc7b81bad	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:25:50.624043
-a1a529a7-e7bb-4885-b5fb-92d9003782f5	c35c5fa3-af4c-4324-b308-82af8fe007c4	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.285267
-a1a529a7-e7bb-4885-b5fb-92d9003782f5	97eae234-2b92-4bd6-bd0f-2c0544e0630d	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.285541
-a1a529a7-e7bb-4885-b5fb-92d9003782f5	b1cf87eb-5dde-4271-bad2-17be280b6ebc	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.285774
-a1a529a7-e7bb-4885-b5fb-92d9003782f5	73e1eccd-e0a8-402b-be23-27f6e87995aa	f223db41-d1c5-41db-b8af-fde6c0a16f76	2015-07-02 21:37:36.286016
+55bf00aa-8ad8-40b9-9c11-b0c481475d07	16285c65-25ea-4445-8506-d583a8a3dcac	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-14 08:44:29.749561
+55bf00aa-8ad8-40b9-9c11-b0c481475d07	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-14 08:44:29.750242
+933021f8-fea3-4d23-a24e-70c18a5b50af	c35c5fa3-af4c-4324-b308-82af8fe007c4	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-15 12:07:01.634845
+933021f8-fea3-4d23-a24e-70c18a5b50af	97eae234-2b92-4bd6-bd0f-2c0544e0630d	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-15 12:07:01.635455
+933021f8-fea3-4d23-a24e-70c18a5b50af	b1cf87eb-5dde-4271-bad2-17be280b6ebc	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-15 12:07:01.635806
+933021f8-fea3-4d23-a24e-70c18a5b50af	73e1eccd-e0a8-402b-be23-27f6e87995aa	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-15 12:07:01.636152
+1abbc0f8-d0f7-4d17-849c-6a1c4bcc2110	0407f11e-fbd9-4509-8fcc-ff452d5daf58	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-15 12:07:44.291891
+1abbc0f8-d0f7-4d17-849c-6a1c4bcc2110	08d2f5db-97d8-49c9-bd99-85303b07f9e2	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-15 12:07:44.292257
+1abbc0f8-d0f7-4d17-849c-6a1c4bcc2110	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	064b7974-ccf2-4a55-b43c-e65b77626d2c	2015-07-15 12:07:44.2926
 \.
 
 
@@ -481,6 +519,22 @@ e6ec3966-f57f-4b97-b133-9ac9f546bb26	Fitting weights updated 2013-06-01	\N	2015-
 bffecab6-fb3e-4fbc-82af-cf69cf69eeee	Backwards averaging	\N	2015-05-12 21:57:25.215252	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	be3db7c7-f6a5-4453-a936-b279787d91f7	activity
 dd286a8e-bb5c-4be9-8b7b-84fc3b90014f	Fitting weights updated 2013-06-01	\N	2015-05-12 21:57:38.099778	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	8312b0dc-a6ae-48ea-bd4f-24f280da7e7c	dataobject_instance
 4d5601e7-9e71-499d-ad1d-241962b1cc6a	Backwards averaging	\N	2015-05-12 21:57:39.537253	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	359b0ebe-09f9-4ee0-b6a8-5cad74845fce	activity
+d493d0d0-a16d-48f0-8bbd-6e1156ec25a5	I should not be able to add this comment	\N	2015-07-03 07:31:34.159935	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	aea8f004-839a-4250-a537-af5547bc10ca	workflow
+aaf5de3d-7a1a-4b4b-9d1c-566e34edf5d6	This is Josh's comment	\N	2015-07-06 08:17:30.972208	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	08d2f5db-97d8-49c9-bd99-85303b07f9e2	workflow
+d97fbed6-fd9c-4234-a8eb-109ee0e33cfa	This comment added by the holder of Joshua Stillerman's Demo Certificate 	\N	2015-07-06 13:44:53.955872	ef5d5025-c814-4987-ac7b-c8e95a26c954	\N	aea8f004-839a-4250-a537-af5547bc10ca	workflow
+32126a19-99f1-4b32-a94b-6455d75d727e	This comment added as test	\N	2015-07-07 10:37:38.671027	4aaa5964-d51d-4ec9-b88c-f49fa89a7694	\N	aea8f004-839a-4250-a537-af5547bc10ca	workflow
+14066594-d115-4868-ae13-a2a92dd01f3e	A gyro workflow created from IDL for shot=1110215005 at t=1.20000	\N	2015-07-10 14:17:49.384999	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	workflow
+8b44fc5d-845b-4183-b914-b35dda40c4dd	This set of runs is looking at the TEM/ITG boundary during a power scan	\N	2015-07-10 14:17:50.444995	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	workflow
+017bd7c5-c926-4149-bf41-80302becfeff	A comment about the EFIT data processing	\N	2015-07-10 14:17:58.484862	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	8e0df3b2-6364-4d49-9d55-6f67feb8b0de	activity
+8f16e97a-bf77-4098-8c3b-4df7ec0c8d43	A comment about the XICS data processing	\N	2015-07-10 14:18:04.053423	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	5604a288-0768-49f7-a358-f5cee863df9f	activity
+811d1334-7542-4b40-87fa-e24fcb5fcf3d	The normalization run is used to calibrate the k-range for the larger set of productions runs	\N	2015-07-10 14:18:18.32496	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity
+100e9998-2baa-46e1-9f5c-451bff5a6285	This plot certainly shows something important	\N	2015-07-10 14:19:07.314397	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	9d158eb9-ae20-42cb-9799-4f96cb1575a8	dataobject_instance
+0867b15a-31b9-4a03-92d6-05364863dc51	A gyro workflow created from IDL for shot=1110215005 at t=1.20000	\N	2015-07-10 14:20:23.515411	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	16285c65-25ea-4445-8506-d583a8a3dcac	workflow
+23e72b67-8d3e-466b-b19c-cdabb3c4370c	This set of runs is looking at the TEM/ITG boundary during a power scan	\N	2015-07-10 14:20:24.428068	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	16285c65-25ea-4445-8506-d583a8a3dcac	workflow
+71fafc7b-1fc9-4b07-b646-2152c338474e	A comment about the EFIT data processing	\N	2015-07-10 14:20:33.288949	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	eca9d643-35cd-4ec7-bfb4-948be39db965	activity
+2262d5b5-924c-434a-8b9d-482b527f92fa	A comment about the XICS data processing	\N	2015-07-10 14:20:39.55346	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	f087e580-95d0-4380-bee6-f1ced1df5c47	activity
+8e92b52c-a65b-40d3-90c2-6dec8b0ab080	The normalization run is used to calibrate the k-range for the larger set of productions runs	\N	2015-07-10 14:20:55.013732	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	29165d63-a007-416e-92d3-399aacc3c228	activity
+915756db-03ca-427a-b9f5-1c6bb5b0cdf3	This plot certainly shows something important	\N	2015-07-10 14:21:43.975642	064b7974-ccf2-4a55-b43c-e65b77626d2c	\N	d66f9149-5d02-4a3b-9cff-4ace9411cc2f	dataobject_instance
 \.
 
 
@@ -508,6 +562,64 @@ b1cf87eb-5dde-4271-bad2-17be280b6ebc	Snap file	EFIT input file	mdsplus:///efit02
 bddfa88d-0cf5-418e-bbf0-eb9eb78e3184	M File	M file data	mdsplus:///efit02/160124&path=\\efit02::measurements	\N	2015-05-12 21:57:41.52887	f223db41-d1c5-41db-b8af-fde6c0a16f76
 7fc53d4b-7b64-4ea5-878f-6eb62f0e3127	Thomson scattering	Thomson scattering data	mdsplus:///efit01/160124&path=\\electrons::ts.revisions.revision00	\N	2015-05-12 21:58:20.597233	f223db41-d1c5-41db-b8af-fde6c0a16f76
 df863810-e5dc-4ccc-8f59-d5da528adc9d	etemp file data	Electron temperature zipfit output file data	mdsplus:///zipfit01/160124&path=\\zipfit01::profiles:etempfit	\N	2015-05-12 21:58:21.728784	f223db41-d1c5-41db-b8af-fde6c0a16f76
+685e4832-5b7c-4af7-af82-90769375e5f9	EFIT Inputs	Outputs from standard EFIT run	mdsplus://alcdata.psfc.mit.edu/analysis/1110215005&path=\\analysis::top	\N	2015-07-10 14:17:51.464446	064b7974-ccf2-4a55-b43c-e65b77626d2c
+3a591132-752e-453d-b145-fd9ac978bcf3	TS Inputs	Raw Te and ne TS Profiles	mdsplus://alcdata.psfc.mit.edu/electrons/1110215005&path=\\yag_new.results.profiles	\N	2015-07-10 14:17:53.373896	064b7974-ccf2-4a55-b43c-e65b77626d2c
+e9ebd6f8-27d1-4a3f-aec3-8ece0333997a	XICS Inputs	Raw Ti profiles from XICS	mdsplus://alcdata.psfc.mit.edu/spectroscopy/1110215005&path=\\spectroscopy::top.hirexsr	\N	2015-07-10 14:17:55.654704	064b7974-ccf2-4a55-b43c-e65b77626d2c
+931d083c-0ec6-4261-9fbe-56f033469dd9	EFIT Outputs	MDSplus Transport Tree	mdsplus://alcdata.psfc.mit.edu/transport/1110215005&path=\\transport::top.gyro.runs.t1200.scalars	\N	2015-07-10 14:17:59.530311	064b7974-ccf2-4a55-b43c-e65b77626d2c
+19193474-471f-4628-b51a-7f8739a08343	TS Outputs	MDSplus Transport Tree	mdsplus://alcdata.psfc.mit.edu/transport/1110215005&path=\\transport::top.gyro.runs.t1200.inp_profiles:te	\N	2015-07-10 14:18:02.044336	064b7974-ccf2-4a55-b43c-e65b77626d2c
+90d284ec-2b3d-45f1-862b-7cfa94695f85	Ti Outputs	MDSplus Transport Tree	mdsplus://alcdata.psfc.mit.edu/transport/1110215005&path=\\transport::top.gyro.runs.t1200.inp_profiles:ti	\N	2015-07-10 14:18:04.963768	064b7974-ccf2-4a55-b43c-e65b77626d2c
+651f0513-8cec-4957-821b-af9fea21fa78	GYRO Inputs	Inputs collected into MDSplus =  TRANSPORT.gyrot1200	mdsplus://alcdata.psfc.mit.edu/transport/1110215005&path=\\transport::top.gyro.runs.t1200	\N	2015-07-10 14:18:07.691332	064b7974-ccf2-4a55-b43c-e65b77626d2c
+51054a8e-aa1e-4c70-9c38-435bbfe76e75	Input File	File spec for norm input	filesys:////home/g/gyro/1_1.20000/input.gyro	\N	2015-07-10 14:18:09.067287	064b7974-ccf2-4a55-b43c-e65b77626d2c
+b82c889d-bedd-4a81-9711-ac419fe079cc	Batch File	Batch File spec for norm input	filesys:////home/g/gyro/1_1.20000/batch.gyro	\N	2015-07-10 14:18:11.623141	064b7974-ccf2-4a55-b43c-e65b77626d2c
+9b26a5fc-1da3-4e93-8205-7a479f05e91e	Output File	File spec for norm output	filesys:////home/g/gyro/1_1.20000/norm_output.gyro	\N	2015-07-10 14:18:15.383849	064b7974-ccf2-4a55-b43c-e65b77626d2c
+ff4f15ff-03e9-41cc-a0c6-5c569e65cecc	Production Input File 1	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/file_input.gyro_1	\N	2015-07-10 14:18:19.308911	064b7974-ccf2-4a55-b43c-e65b77626d2c
+752e9524-7712-4dae-b403-fbbd1b8be1c2	Production Input File 2	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/file_input.gyro_2	\N	2015-07-10 14:18:21.033654	064b7974-ccf2-4a55-b43c-e65b77626d2c
+2a70bdd5-cab7-4fa7-b7bc-f631bc12f8e1	Production Input File 3	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/file_input.gyro_3	\N	2015-07-10 14:18:22.964207	064b7974-ccf2-4a55-b43c-e65b77626d2c
+c3840e3e-72c3-4d90-84b6-821f884ea6f0	Production Input File 4	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/file_input.gyro_4	\N	2015-07-10 14:18:24.823749	064b7974-ccf2-4a55-b43c-e65b77626d2c
+58259f32-425b-464c-9535-12bdc75158fa	Production Input File 5	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/file_input.gyro_5	\N	2015-07-10 14:18:26.674057	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4bc2b745-53bf-4b15-b5b4-0002eb99e0eb	Production Input File 6	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/file_input.gyro_6	\N	2015-07-10 14:18:28.583545	064b7974-ccf2-4a55-b43c-e65b77626d2c
+3de23b53-b1fe-42a8-81d4-c3e1610ea5a4	Production Batch File 1	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/batch_input.gyro_1	\N	2015-07-10 14:18:30.323505	064b7974-ccf2-4a55-b43c-e65b77626d2c
+9e2acebe-5ed7-4d08-91d6-a5e09e549a12	Production Batch File 2	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/batch_input.gyro_2	\N	2015-07-10 14:18:32.253486	064b7974-ccf2-4a55-b43c-e65b77626d2c
+9af90188-7994-47bf-b8a9-c57a17ed30db	Production Batch File 3	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/batch_input.gyro_3	\N	2015-07-10 14:18:34.113647	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4bad7853-cc0e-4a90-b0f4-c02f07f28afd	Production Batch File 4	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/batch_input.gyro_4	\N	2015-07-10 14:18:36.043564	064b7974-ccf2-4a55-b43c-e65b77626d2c
+dd300d26-e7ae-4e8b-8259-38112bf35080	Production Batch File 5	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/batch_input.gyro_5	\N	2015-07-10 14:18:37.750289	064b7974-ccf2-4a55-b43c-e65b77626d2c
+24e68596-525d-4af2-a396-f88bb18e5e99	Production Batch File 6	File copied from MDSplus data	filesys:////home/g/gyro/1_1.20000/batch_input.gyro_6	\N	2015-07-10 14:18:39.668145	064b7974-ccf2-4a55-b43c-e65b77626d2c
+7a83c953-c3ad-44cd-bf30-1972c1fea2ce	Run 1 Output	Output File	filesys:////home/g/gyro/1_1.20000/output_1.gyro	\N	2015-07-10 14:18:42.643783	064b7974-ccf2-4a55-b43c-e65b77626d2c
+37028e14-707c-4080-aeb0-c96106296e75	Run 2 Output	Output File	filesys:////home/g/gyro/1_1.20000/output_2.gyro	\N	2015-07-10 14:18:45.480872	064b7974-ccf2-4a55-b43c-e65b77626d2c
+5b205f4f-f3d1-4922-9a47-7ef50d4c5231	Run 3 Output	Output File	filesys:////home/g/gyro/1_1.20000/output_3.gyro	\N	2015-07-10 14:18:48.073784	064b7974-ccf2-4a55-b43c-e65b77626d2c
+d49026a4-669a-4a5c-8647-41c4b69393b0	Run 4 Output	Output File	filesys:////home/g/gyro/1_1.20000/output_4.gyro	\N	2015-07-10 14:18:50.983652	064b7974-ccf2-4a55-b43c-e65b77626d2c
+b904829e-429e-4733-8d72-60807f3a5d92	Run 5 Output	Output File	filesys:////home/g/gyro/1_1.20000/output_5.gyro	\N	2015-07-10 14:18:53.928796	064b7974-ccf2-4a55-b43c-e65b77626d2c
+130c8a3a-6793-4c69-93d5-79aaa8c1574a	Run 6 Output	Output File	filesys:////home/g/gyro/1_1.20000/output_6.gyro	\N	2015-07-10 14:18:56.55356	064b7974-ccf2-4a55-b43c-e65b77626d2c
+b5ccd156-6808-47a4-9305-7834e3498172	GYRO Output	Write data to MDSplus transport tree	mdsplus://alcdata.psfc.mit.edu/transport/1110215005&path=\\transport::top.gyro.runs.t1200.code_output	\N	2015-07-10 14:18:58.93465	064b7974-ccf2-4a55-b43c-e65b77626d2c
+221a56dd-dc9c-4b52-9730-d2f8e8c7a96d	Plot File 1	x vs y	filesys:////home/g/gyro/1_1.20000/plot_1.ps	\N	2015-07-10 14:19:02.048618	064b7974-ccf2-4a55-b43c-e65b77626d2c
+b37f3812-c291-4e81-a0af-0357d6e3922c	Plot File 2	y vs x	filesys:////home/g/gyro/1_1.20000/plot_2.ps	\N	2015-07-10 14:19:03.873745	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4bd881a7-7c5c-4743-9d56-ec584f346054	Plot File 3	contour z	filesys:////home/g/gyro/1_1.20000/plot_3.ps	\N	2015-07-10 14:19:05.713845	064b7974-ccf2-4a55-b43c-e65b77626d2c
+160fb889-fc9a-4196-8879-9c730be31dc6	Phys. Plasmas 21, 110501 (2014)	DOI:  http://dx.doi.org/10.1063/1.4901920	filesys:///Manuscript location: /home/g/gyro/1_1.20000/manuscript.pdf	\N	2015-07-10 14:19:08.88332	064b7974-ccf2-4a55-b43c-e65b77626d2c
+ef90feb5-f6e3-4c75-b57d-5c4963092923	Input File	File spec for norm input	filesys:////home/g/gyro/2_1.20000/input.gyro	\N	2015-07-10 14:20:45.265664	064b7974-ccf2-4a55-b43c-e65b77626d2c
+6973d044-18ac-47aa-9fbf-4cf5b9ed408c	Batch File	Batch File spec for norm input	filesys:////home/g/gyro/2_1.20000/batch.gyro	\N	2015-07-10 14:20:48.364459	064b7974-ccf2-4a55-b43c-e65b77626d2c
+c7f8aa38-87eb-4f9c-b0f6-12f96b53a8cd	Output File	File spec for norm output	filesys:////home/g/gyro/2_1.20000/norm_output.gyro	\N	2015-07-10 14:20:52.254076	064b7974-ccf2-4a55-b43c-e65b77626d2c
+86fa5a99-9603-4ca1-bc7c-92169de784c7	Production Input File 1	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/file_input.gyro_1	\N	2015-07-10 14:20:55.913415	064b7974-ccf2-4a55-b43c-e65b77626d2c
+6a22b039-ad06-447b-af6b-5494c1683e22	Production Input File 2	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/file_input.gyro_2	\N	2015-07-10 14:20:57.928132	064b7974-ccf2-4a55-b43c-e65b77626d2c
+406e5b59-9292-4888-9676-9d0217c357a9	Production Input File 3	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/file_input.gyro_3	\N	2015-07-10 14:20:59.882932	064b7974-ccf2-4a55-b43c-e65b77626d2c
+5cd7ad40-005e-40de-a2b4-76760fff2313	Production Input File 4	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/file_input.gyro_4	\N	2015-07-10 14:21:01.19425	064b7974-ccf2-4a55-b43c-e65b77626d2c
+352f572a-7c4b-4f93-82f8-b3cda92d3149	Production Input File 5	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/file_input.gyro_5	\N	2015-07-10 14:21:02.628443	064b7974-ccf2-4a55-b43c-e65b77626d2c
+fb952313-990b-4416-8e5e-84b0f27f87cc	Production Input File 6	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/file_input.gyro_6	\N	2015-07-10 14:21:04.433359	064b7974-ccf2-4a55-b43c-e65b77626d2c
+49cd1bce-d0fc-4ef5-86d5-6feb95892b5a	Production Batch File 1	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/batch_input.gyro_1	\N	2015-07-10 14:21:06.472942	064b7974-ccf2-4a55-b43c-e65b77626d2c
+5100d461-9a11-4c6c-a75a-fa53e8b93627	Production Batch File 2	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/batch_input.gyro_2	\N	2015-07-10 14:21:08.10855	064b7974-ccf2-4a55-b43c-e65b77626d2c
+31e722e9-2cc1-4ad9-9d04-2c3f624099f4	Production Batch File 3	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/batch_input.gyro_3	\N	2015-07-10 14:21:09.782126	064b7974-ccf2-4a55-b43c-e65b77626d2c
+aad587a3-77f0-4334-9893-01e4e96fc287	Production Batch File 4	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/batch_input.gyro_4	\N	2015-07-10 14:21:11.530089	064b7974-ccf2-4a55-b43c-e65b77626d2c
+c5918389-ce8c-4d76-9c2d-3673a66e5bce	Production Batch File 5	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/batch_input.gyro_5	\N	2015-07-10 14:21:13.532934	064b7974-ccf2-4a55-b43c-e65b77626d2c
+c5212b73-e12c-441c-ba87-75b34b297d74	Production Batch File 6	File copied from MDSplus data	filesys:////home/g/gyro/2_1.20000/batch_input.gyro_6	\N	2015-07-10 14:21:15.26288	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4253e3fd-dc8b-40cb-afd8-ef00c95e07b6	Run 1 Output	Output File	filesys:////home/g/gyro/2_1.20000/output_1.gyro	\N	2015-07-10 14:21:17.738992	064b7974-ccf2-4a55-b43c-e65b77626d2c
+f45e4100-3a05-427f-bc0f-6cf117c66690	Run 2 Output	Output File	filesys:////home/g/gyro/2_1.20000/output_2.gyro	\N	2015-07-10 14:21:21.059602	064b7974-ccf2-4a55-b43c-e65b77626d2c
+50202b81-df8f-4662-8a53-3e78fd0ac784	Run 3 Output	Output File	filesys:////home/g/gyro/2_1.20000/output_3.gyro	\N	2015-07-10 14:21:23.905867	064b7974-ccf2-4a55-b43c-e65b77626d2c
+b7e0a461-255e-4b26-a4ee-afbc0607abab	Run 4 Output	Output File	filesys:////home/g/gyro/2_1.20000/output_4.gyro	\N	2015-07-10 14:21:26.648325	064b7974-ccf2-4a55-b43c-e65b77626d2c
+a1004449-b780-4e67-b2c5-b8127d9616c1	Run 5 Output	Output File	filesys:////home/g/gyro/2_1.20000/output_5.gyro	\N	2015-07-10 14:21:29.282099	064b7974-ccf2-4a55-b43c-e65b77626d2c
+a1518093-6f31-41eb-9c48-6a51562317df	Run 6 Output	Output File	filesys:////home/g/gyro/2_1.20000/output_6.gyro	\N	2015-07-10 14:21:32.011437	064b7974-ccf2-4a55-b43c-e65b77626d2c
+bfd7e956-3cc5-4849-89f3-391da83f1625	Plot File 1	x vs y	filesys:////home/g/gyro/2_1.20000/plot_1.ps	\N	2015-07-10 14:21:37.713272	064b7974-ccf2-4a55-b43c-e65b77626d2c
+5d06bf8b-c398-4280-b4db-a0e6c1496819	Plot File 2	y vs x	filesys:////home/g/gyro/2_1.20000/plot_2.ps	\N	2015-07-10 14:21:39.559098	064b7974-ccf2-4a55-b43c-e65b77626d2c
+baffae53-c910-4cc6-bd92-7939bb9c7e63	Plot File 3	contour z	filesys:////home/g/gyro/2_1.20000/plot_3.ps	\N	2015-07-10 14:21:41.831538	064b7974-ccf2-4a55-b43c-e65b77626d2c
+47e5c256-7660-4eac-a267-3514dc8c059f	Phys. Plasmas 21, 110501 (2014)	DOI:  http://dx.doi.org/10.1063/1.4901920	filesys:///Manuscript location: /home/g/gyro/2_1.20000/manuscript.pdf	\N	2015-07-10 14:21:46.06575	064b7974-ccf2-4a55-b43c-e65b77626d2c
 \.
 
 
@@ -544,6 +656,72 @@ f8a9727a-0cda-44bf-b34c-dc3240fb9f66	89e62621-87ee-4858-94ce-4a967a5b1c29	08d2f5
 835adac7-4a89-4472-b403-b6bfa298fdf0	f66fa944-6290-4a62-a561-612643956509	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	2015-05-12 21:58:20.370955	f223db41-d1c5-41db-b8af-fde6c0a16f76
 9c62b1b5-deb8-47a9-9f68-c22beb13d268	7fc53d4b-7b64-4ea5-878f-6eb62f0e3127	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	2015-05-12 21:58:20.988416	f223db41-d1c5-41db-b8af-fde6c0a16f76
 9bac0647-b31a-49bd-9029-ebe6c3529b00	df863810-e5dc-4ccc-8f59-d5da528adc9d	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	2015-05-12 21:58:22.080051	f223db41-d1c5-41db-b8af-fde6c0a16f76
+c63a6ac8-cfd4-4825-a058-2cd535524610	685e4832-5b7c-4af7-af82-90769375e5f9	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:17:52.478333	064b7974-ccf2-4a55-b43c-e65b77626d2c
+8494549e-9680-4d36-841e-2865d9d9451e	3a591132-752e-453d-b145-fd9ac978bcf3	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:17:54.701676	064b7974-ccf2-4a55-b43c-e65b77626d2c
+8979559e-836a-4ef7-9000-3e180d55ac7b	e9ebd6f8-27d1-4a3f-aec3-8ece0333997a	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:17:56.531969	064b7974-ccf2-4a55-b43c-e65b77626d2c
+97e34cc5-13dc-485a-a48d-cf4d0ce6b15a	931d083c-0ec6-4261-9fbe-56f033469dd9	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:00.362712	064b7974-ccf2-4a55-b43c-e65b77626d2c
+04d5506d-eee2-4edb-99b3-91baf58d2a5b	19193474-471f-4628-b51a-7f8739a08343	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:02.694377	064b7974-ccf2-4a55-b43c-e65b77626d2c
+fbd21ea7-3f73-4f42-8b14-928615ca0452	90d284ec-2b3d-45f1-862b-7cfa94695f85	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:05.848549	064b7974-ccf2-4a55-b43c-e65b77626d2c
+52d14893-b33c-47b8-acea-d636d37605e4	651f0513-8cec-4957-821b-af9fea21fa78	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:08.391404	064b7974-ccf2-4a55-b43c-e65b77626d2c
+3e103447-823b-442a-a27a-e6706ccd3887	51054a8e-aa1e-4c70-9c38-435bbfe76e75	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:10.748705	064b7974-ccf2-4a55-b43c-e65b77626d2c
+b04e0b05-1b9b-42ad-92c4-5a340c032000	b82c889d-bedd-4a81-9711-ac419fe079cc	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:13.673863	064b7974-ccf2-4a55-b43c-e65b77626d2c
+6be07767-7d90-4832-9013-3dfb88447edc	9b26a5fc-1da3-4e93-8205-7a479f05e91e	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:16.255515	064b7974-ccf2-4a55-b43c-e65b77626d2c
+28365e81-60c8-43cc-9b8f-17d708d174c4	ff4f15ff-03e9-41cc-a0c6-5c569e65cecc	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:20.209132	064b7974-ccf2-4a55-b43c-e65b77626d2c
+949d2bf4-8930-4656-9aed-27e44420a303	752e9524-7712-4dae-b403-fbbd1b8be1c2	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:22.061114	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4db72d77-4111-490a-9052-5d092559195a	2a70bdd5-cab7-4fa7-b7bc-f631bc12f8e1	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:23.853618	064b7974-ccf2-4a55-b43c-e65b77626d2c
+93390c94-2594-4f20-b209-61f8d7626576	c3840e3e-72c3-4d90-84b6-821f884ea6f0	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:25.674186	064b7974-ccf2-4a55-b43c-e65b77626d2c
+7365d6bc-55bb-4e13-860d-7cc7c73a05df	58259f32-425b-464c-9535-12bdc75158fa	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:27.724106	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4637bbb2-aaf4-4266-8053-8734c93c77d6	4bc2b745-53bf-4b15-b5b4-0002eb99e0eb	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:29.50988	064b7974-ccf2-4a55-b43c-e65b77626d2c
+6ce14228-59c9-4b0a-9811-d4c84dad59eb	3de23b53-b1fe-42a8-81d4-c3e1610ea5a4	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:31.32351	064b7974-ccf2-4a55-b43c-e65b77626d2c
+1cc5146c-ebeb-4a1f-ad67-5424317ea056	9e2acebe-5ed7-4d08-91d6-a5e09e549a12	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:33.289946	064b7974-ccf2-4a55-b43c-e65b77626d2c
+c28f36d3-fb7a-477a-a16f-c9032950a133	9af90188-7994-47bf-b8a9-c57a17ed30db	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:35.143329	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4de20f07-20a4-45ae-8efc-577cfe215f8b	4bad7853-cc0e-4a90-b0f4-c02f07f28afd	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:36.993178	064b7974-ccf2-4a55-b43c-e65b77626d2c
+abf1946d-aa81-4aa0-8266-4fa104261906	dd300d26-e7ae-4e8b-8259-38112bf35080	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:38.652515	064b7974-ccf2-4a55-b43c-e65b77626d2c
+3f118240-42bf-453c-a46b-96e9ae3b0fa5	24e68596-525d-4af2-a396-f88bb18e5e99	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:40.593672	064b7974-ccf2-4a55-b43c-e65b77626d2c
+18f792f2-fa9c-43b1-91fb-19d41bad70c5	7a83c953-c3ad-44cd-bf30-1972c1fea2ce	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:43.673771	064b7974-ccf2-4a55-b43c-e65b77626d2c
+571a26e3-546e-4644-ae25-0b32ab6293bf	37028e14-707c-4080-aeb0-c96106296e75	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:46.434197	064b7974-ccf2-4a55-b43c-e65b77626d2c
+91d9f4d0-e241-4c79-a6a9-9b762fd58601	5b205f4f-f3d1-4922-9a47-7ef50d4c5231	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:49.103877	064b7974-ccf2-4a55-b43c-e65b77626d2c
+02a7bbb4-d6cc-4754-8f60-22025510e930	d49026a4-669a-4a5c-8647-41c4b69393b0	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:52.013463	064b7974-ccf2-4a55-b43c-e65b77626d2c
+8e3c1099-c8e3-4b91-96a9-4ca039bf149b	b904829e-429e-4733-8d72-60807f3a5d92	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:54.840043	064b7974-ccf2-4a55-b43c-e65b77626d2c
+861c70f6-efa3-4a84-bc56-ae719dd18d74	130c8a3a-6793-4c69-93d5-79aaa8c1574a	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:57.443174	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4d0a0c77-bcdc-4161-a615-37cac01c3f8a	b5ccd156-6808-47a4-9305-7834e3498172	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:18:59.928537	064b7974-ccf2-4a55-b43c-e65b77626d2c
+d3468b33-cfe8-41bf-be62-78eaa16ca9f9	221a56dd-dc9c-4b52-9730-d2f8e8c7a96d	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:19:02.977075	064b7974-ccf2-4a55-b43c-e65b77626d2c
+8ba5d58c-c5ca-4811-bb32-a926e7a252d8	b37f3812-c291-4e81-a0af-0357d6e3922c	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:19:04.91391	064b7974-ccf2-4a55-b43c-e65b77626d2c
+9d158eb9-ae20-42cb-9799-4f96cb1575a8	4bd881a7-7c5c-4743-9d56-ec584f346054	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:19:06.620389	064b7974-ccf2-4a55-b43c-e65b77626d2c
+0c2fb393-544b-40ef-85cd-13a99825e90b	160fb889-fc9a-4196-8879-9c730be31dc6	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	2015-07-10 14:19:09.76931	064b7974-ccf2-4a55-b43c-e65b77626d2c
+7afb3c10-e410-4714-b38d-636a7914b6cf	685e4832-5b7c-4af7-af82-90769375e5f9	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:27.303232	064b7974-ccf2-4a55-b43c-e65b77626d2c
+cc9d5b16-6d2a-491d-896d-fba357b1604b	3a591132-752e-453d-b145-fd9ac978bcf3	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:29.24328	064b7974-ccf2-4a55-b43c-e65b77626d2c
+f1c9db87-9102-44d7-bf4b-cea58cfe3ca0	e9ebd6f8-27d1-4a3f-aec3-8ece0333997a	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:31.203108	064b7974-ccf2-4a55-b43c-e65b77626d2c
+2574d5f2-93dc-4091-b64c-fb54eca12568	931d083c-0ec6-4261-9fbe-56f033469dd9	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:35.195088	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4db3c4cf-d07f-4ea2-a8bf-dc6d00e55868	19193474-471f-4628-b51a-7f8739a08343	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:37.77945	064b7974-ccf2-4a55-b43c-e65b77626d2c
+76b444cd-c017-4a05-ab9e-43e178830284	90d284ec-2b3d-45f1-862b-7cfa94695f85	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:41.463431	064b7974-ccf2-4a55-b43c-e65b77626d2c
+08502ddf-1fe5-4c2d-9ea7-e18188e12dc2	651f0513-8cec-4957-821b-af9fea21fa78	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:44.142903	064b7974-ccf2-4a55-b43c-e65b77626d2c
+0f66e8be-5b0e-4b0c-81c1-2abc8bc8c03e	ef90feb5-f6e3-4c75-b57d-5c4963092923	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:47.438511	064b7974-ccf2-4a55-b43c-e65b77626d2c
+c448c1de-da86-4b8e-9e31-caf5107ae6ea	6973d044-18ac-47aa-9fbf-4cf5b9ed408c	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:50.311885	064b7974-ccf2-4a55-b43c-e65b77626d2c
+370d3edd-c46e-40bc-a44a-b076f455473b	c7f8aa38-87eb-4f9c-b0f6-12f96b53a8cd	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:53.281748	064b7974-ccf2-4a55-b43c-e65b77626d2c
+5e840f4a-1645-4681-a58a-9cd016285478	86fa5a99-9603-4ca1-bc7c-92169de784c7	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:56.90311	064b7974-ccf2-4a55-b43c-e65b77626d2c
+01f2c879-15c5-46be-9f68-d00fe4a1cc62	6a22b039-ad06-447b-af6b-5494c1683e22	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:20:58.853328	064b7974-ccf2-4a55-b43c-e65b77626d2c
+6bad50e4-4106-471e-a191-44d3e489ea17	406e5b59-9292-4888-9676-9d0217c357a9	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:00.743113	064b7974-ccf2-4a55-b43c-e65b77626d2c
+9caa6a52-74cc-4bb7-8135-a765971fc64a	5cd7ad40-005e-40de-a2b4-76760fff2313	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:02.11503	064b7974-ccf2-4a55-b43c-e65b77626d2c
+918e4a35-37df-4504-993a-f900a7b9d2ce	352f572a-7c4b-4f93-82f8-b3cda92d3149	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:03.462996	064b7974-ccf2-4a55-b43c-e65b77626d2c
+881e7c59-633c-4f07-afa9-d788f00e4fd7	fb952313-990b-4416-8e5e-84b0f27f87cc	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:05.432773	064b7974-ccf2-4a55-b43c-e65b77626d2c
+0154dbc2-aa7d-45d4-bc9b-1a81d696b3c7	49cd1bce-d0fc-4ef5-86d5-6feb95892b5a	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:07.247197	064b7974-ccf2-4a55-b43c-e65b77626d2c
+713412d8-8f82-4cb6-ba3d-2ebfc60d0c85	5100d461-9a11-4c6c-a75a-fa53e8b93627	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:08.900016	064b7974-ccf2-4a55-b43c-e65b77626d2c
+ac883ac3-6b73-4728-90c2-bb639c89622f	31e722e9-2cc1-4ad9-9d04-2c3f624099f4	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:10.712847	064b7974-ccf2-4a55-b43c-e65b77626d2c
+3bc9c33d-1778-4f0e-91f8-94e706602a62	aad587a3-77f0-4334-9893-01e4e96fc287	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:12.502755	064b7974-ccf2-4a55-b43c-e65b77626d2c
+04d96e6c-b446-44e7-9a1e-1e9e7bb83967	c5918389-ce8c-4d76-9c2d-3673a66e5bce	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:14.469708	064b7974-ccf2-4a55-b43c-e65b77626d2c
+9c52cdb9-624d-4c0c-811f-7c6842f54188	4253e3fd-dc8b-40cb-afd8-ef00c95e07b6	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:18.59337	064b7974-ccf2-4a55-b43c-e65b77626d2c
+d66f9149-5d02-4a3b-9cff-4ace9411cc2f	baffae53-c910-4cc6-bd92-7939bb9c7e63	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:42.84271	064b7974-ccf2-4a55-b43c-e65b77626d2c
+708561b4-ecd0-4fa8-a215-9c89f1f4e7dc	c5212b73-e12c-441c-ba87-75b34b297d74	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:16.056928	064b7974-ccf2-4a55-b43c-e65b77626d2c
+8d448ba1-8d13-40ff-80f6-c5c901411943	50202b81-df8f-4662-8a53-3e78fd0ac784	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:24.791891	064b7974-ccf2-4a55-b43c-e65b77626d2c
+c927f338-e51a-45c9-97a6-c7ec079b4208	a1004449-b780-4e67-b2c5-b8127d9616c1	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:30.209042	064b7974-ccf2-4a55-b43c-e65b77626d2c
+14132c00-e9fc-498b-8b8b-833c5b2124ce	bfd7e956-3cc5-4849-89f3-391da83f1625	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:38.63991	064b7974-ccf2-4a55-b43c-e65b77626d2c
+c5152431-5fbe-41c4-8b22-bbe8c172decd	f45e4100-3a05-427f-bc0f-6cf117c66690	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:22.128207	064b7974-ccf2-4a55-b43c-e65b77626d2c
+797b656f-8b24-4d51-b991-8aa381f970fc	b7e0a461-255e-4b26-a4ee-afbc0607abab	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:27.567153	064b7974-ccf2-4a55-b43c-e65b77626d2c
+1eb94276-22fe-4ead-a558-239548870ffa	a1518093-6f31-41eb-9c48-6a51562317df	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:32.81056	064b7974-ccf2-4a55-b43c-e65b77626d2c
+be235fa4-a023-43c0-9a17-d3a2182acd2f	b5ccd156-6808-47a4-9305-7834e3498172	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:35.663328	064b7974-ccf2-4a55-b43c-e65b77626d2c
+15860ec5-e09b-4aee-aaff-9ec092f6c5bd	5d06bf8b-c398-4280-b4db-a0e6c1496819	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:40.734251	064b7974-ccf2-4a55-b43c-e65b77626d2c
+4477eaea-9ed5-416e-ab5f-23f44da80a1f	47e5c256-7660-4eac-a267-3514dc8c059f	16285c65-25ea-4445-8506-d583a8a3dcac	2015-07-10 14:21:47.187556	064b7974-ccf2-4a55-b43c-e65b77626d2c
 \.
 
 
@@ -572,11 +750,14 @@ a58a8105-6057-4043-808a-98a85bf08f48	compilation_date	2013-06-05	text	\N	0bdd4a6
 --
 
 COPY mpoauth (u_guid, read, write) FROM stdin;
-bc789de3-7484-49dc-a498-3b5a3aad3c80	t	t
-f223db41-d1c5-41db-b8af-fde6c0a16f76	t	t
-d221ada5-7481-484e-998d-f07bf57f6e40	t	t
-d49abda9-2f9b-4945-9011-6b11f998b4a1	t	t
-fb8e5fd4-2a6c-11e5-b345-feff819cdc9f	t	t
+ddc315a1-6310-41e7-a84d-886bc904f3b2	t	t
+f223db41-d1c5-41db-b8af-fde6c0a16f76	t	f
+ef5d5025-c814-4987-ac7b-c8e95a26c954	t	t
+4aaa5964-d51d-4ec9-b88c-f49fa89a7694	t	t
+064b7974-ccf2-4a55-b43c-e65b77626d2c	t	t
+9aa4d3e4-330e-4724-a9f9-412d8f902eba	t	t
+46f13f3d-7f14-4ea8-a822-fe8237c291e7	t	t
+789c3413-0c01-4ba1-8580-c3108aa8348f	t	t
 \.
 
 
@@ -591,6 +772,12 @@ mpoadmin	ddc315a1-6310-41e7-a84d-886bc904f3b2	\N	\N	\N	\N	\N	\N	2015-07-07 14:50
 mpodemo	f223db41-d1c5-41db-b8af-fde6c0a16f76	MPO	Demo User	jas@psfc.mit.edu	MIT		emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US	2015-07-07 14:52:46.743915
 jas@psfc.mit.edu	d49abda9-2f9b-4945-9011-6b11f998b4a1	MPO	Demo User	jas@psfc.mit.edu	c21f969b5f03d33d43e04f8f136e7682	3038	/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu	2015-07-07 15:19:41.587471
 mpoui	fb8e5fd4-2a6c-11e5-b345-feff819cdc9f	MPO	UI	covielloe@fusion.gat.com	General Atomics	\N	/C=US/ST=California/L=LaJolla/O=General Atomics/O=c21f969b5f03d33d43e04f8f136e7682/OU=GAT/CN=MPO-UI-SERVER/emailAddress=abla@fusion.gat.com	\N
+joshtest@psfc.mit.edu	ef5d5025-c814-4987-ac7b-c8e95a26c954	Josh	Test	joshtest@psfc.mit.edu	MIT	3-8176	emailAddress=joshtest@psfc.mit.edu,CN=Josh Test,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US	2015-07-06 13:39:10.173009
+g@psfc.mit.edu	4aaa5964-d51d-4ec9-b88c-f49fa89a7694	Martin	Greenwald	g@psfc.mit.edu	MIT	617-253-6053	emailAddress=g@psfc.mit.edu,CN=Martin Greenwald,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=MA,C=US	2015-07-07 10:22:04.797844
+mjgreen@MIT.EDU	064b7974-ccf2-4a55-b43c-e65b77626d2c	Martin	J Greenwald	mjgreen@MIT.EDU	Massachusetts Institute of Technology	617.253.6053	emailAddress=mjgreen@MIT.EDU,CN=Martin J Greenwald,OU=Client CA v1,O=Massachusetts Institute of Technology,ST=Massachusetts,C=US	2015-07-08 12:56:52.84228
+jas@MIT.EDU	9aa4d3e4-330e-4724-a9f9-412d8f902eba	Joshua	A Stillerman	jas@MIT.EDU	Massachusetts Institute of Technology	3-8176	emailAddress=jas@MIT.EDU,CN=Joshua A Stillerman,OU=Client CA v1,O=Massachusetts Institute of Technology,ST=Massachusetts,C=US	2015-07-14 08:33:19.493436
+leexia@fusion.gat.com	46f13f3d-7f14-4ea8-a822-fe8237c291e7	Xia	Lee	leexia@fusion.gat.com	General Atomics	858-455-4168	emailAddress=leexia@fusion.gat.com,CN=Xia Lee,OU=?,O=c21f969b5f03d33d43e04f8f136e7682,O=General Atomics,L=LaJolla,ST=California,C=US	2015-07-21 10:52:51.512322
+ARomosan@lbl.gov	789c3413-0c01-4ba1-8580-c3108aa8348f	Alex	Romosan	ARomosan@lbl.gov	LBL	510-486-8622	emailAddress=ARomosan@lbl.gov,CN=Alex Romosan,OU=?,O=c21f969b5f03d33d43e04f8f136e7682,O=LBL,L=Berkeley,ST=California,C=US	2015-08-05 10:18:23.179438
 \.
 
 
@@ -612,6 +799,8 @@ abc232cf-4aa3-4fc7-8b78-4329284ef112	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	c9c7e2
 bd9e645a-f56f-4fa8-99a3-63292178d6da	0407f11e-fbd9-4509-8fcc-ff452d5daf58	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	EFIT	2015-05-12 21:57:21.58701	f223db41-d1c5-41db-b8af-fde6c0a16f76
 4b76f1af-98a9-47c1-bc60-ea8a21889a98	08d2f5db-97d8-49c9-bd99-85303b07f9e2	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	EFIT	2015-05-12 21:57:35.966954	f223db41-d1c5-41db-b8af-fde6c0a16f76
 db8329cd-1440-4018-810a-28c3406d0523	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	Zipfit	2015-05-12 21:58:18.82014	f223db41-d1c5-41db-b8af-fde6c0a16f76
+bc386905-d7df-4df3-848d-e4340c556cba	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	Gyro	2015-07-10 14:17:47.613038	064b7974-ccf2-4a55-b43c-e65b77626d2c
+ff671f7d-aea3-474d-92be-f153702e904a	16285c65-25ea-4445-8506-d583a8a3dcac	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	Gyro	2015-07-10 14:20:21.532677	064b7974-ccf2-4a55-b43c-e65b77626d2c
 \.
 
 
@@ -761,6 +950,8 @@ aea8f004-839a-4250-a537-af5547bc10ca	SWIM	\N	29841 : fastran_30001Z2	f223db41-d1
 0407f11e-fbd9-4509-8fcc-ff452d5daf58	EFIT	\N	EFIT01 for 160124	f223db41-d1c5-41db-b8af-fde6c0a16f76	1	2015-05-12 21:57:21.58635	\N	\N	\N	\N
 08d2f5db-97d8-49c9-bd99-85303b07f9e2	EFIT	\N	EFIT02 for 160124	f223db41-d1c5-41db-b8af-fde6c0a16f76	2	2015-05-12 21:57:35.96598	\N	\N	\N	\N
 9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	Zipfit Electron Temperature	\N	Zipfit Electron Temperature for 160124	f223db41-d1c5-41db-b8af-fde6c0a16f76	1	2015-05-12 21:58:18.819529	\N	\N	\N	\N
+589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	Linear Gyro	\N	test idl mpo interface	064b7974-ccf2-4a55-b43c-e65b77626d2c	1	2015-07-10 14:17:47.612287	\N	\N	\N	\N
+16285c65-25ea-4445-8506-d583a8a3dcac	Linear Gyro	\N	test idl mpo interface	064b7974-ccf2-4a55-b43c-e65b77626d2c	2	2015-07-10 14:20:21.532114	\N	\N	\N	\N
 \.
 
 
@@ -917,6 +1108,136 @@ d4de1fea-9c74-4dc3-a947-cb30373093b9	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	ea131d
 0ab2b8aa-1212-43b3-800d-cea9b5aa77d7	08d2f5db-97d8-49c9-bd99-85303b07f9e2	909dc0c7-9abf-49a9-ac15-c592ec9eda8b	activity	9a54f227-a2e6-4492-babd-86161b6b1bc9	dataobject_instance	2015-05-12 21:57:41.708808
 95f7026b-4692-4efa-b890-4cf09a246749	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	workflow	6534884c-4e9d-4476-a84c-c47aab84dbaf	dataobject_instance	2015-05-12 21:58:19.226645
 36bea1a2-9dc0-4804-a202-139d4390169f	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	6d8b871b-ec5c-4093-b7af-231e3ab7cdee	activity	54a2e553-2b0f-4ecd-90b4-885ebefaecd1	activity	2015-05-12 21:58:21.365796
+2d738b8d-66ef-4a97-b194-76f1dda81b0e	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	workflow	c63a6ac8-cfd4-4825-a058-2cd535524610	dataobject_instance	2015-07-10 14:17:52.481456
+8b4f5f2e-486f-41a7-a831-ed25dc8f05fd	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	workflow	8494549e-9680-4d36-841e-2865d9d9451e	dataobject_instance	2015-07-10 14:17:54.704014
+110006a9-dc62-4eb0-ba47-9cf31147fb91	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	workflow	8979559e-836a-4ef7-9000-3e180d55ac7b	dataobject_instance	2015-07-10 14:17:56.534581
+ac269755-b460-4c62-a0cc-1588eaaafaf0	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	c63a6ac8-cfd4-4825-a058-2cd535524610	dataobject_instance	8e0df3b2-6364-4d49-9d55-6f67feb8b0de	activity	2015-07-10 14:17:57.555781
+26f39929-47b5-419d-93ed-0a9f2a4767e8	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	8e0df3b2-6364-4d49-9d55-6f67feb8b0de	activity	97e34cc5-13dc-485a-a48d-cf4d0ce6b15a	dataobject_instance	2015-07-10 14:18:00.365078
+cbb9f02a-be6d-4711-b19c-c3155771f473	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	8494549e-9680-4d36-841e-2865d9d9451e	dataobject_instance	eb547ae5-c42a-48fc-84a8-4d07177d24a9	activity	2015-07-10 14:18:01.33051
+f5f6eb45-60bb-495b-8def-b4f31bf66090	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	eb547ae5-c42a-48fc-84a8-4d07177d24a9	activity	04d5506d-eee2-4edb-99b3-91baf58d2a5b	dataobject_instance	2015-07-10 14:18:02.696913
+c8e88603-17e3-46c4-aa99-20240ebaf218	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	8979559e-836a-4ef7-9000-3e180d55ac7b	dataobject_instance	5604a288-0768-49f7-a358-f5cee863df9f	activity	2015-07-10 14:18:03.320977
+1f653934-c117-4abe-a28e-b973abcf6153	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	5604a288-0768-49f7-a358-f5cee863df9f	activity	fbd21ea7-3f73-4f42-8b14-928615ca0452	dataobject_instance	2015-07-10 14:18:05.850921
+ad26f7ca-fd72-4176-8167-93b92fbe29e5	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	04d5506d-eee2-4edb-99b3-91baf58d2a5b	dataobject_instance	86ad6382-9bce-44f6-8257-9326b59d332e	activity	2015-07-10 14:18:06.795395
+182f8e7d-43a9-48fc-ad97-a5655b67ed26	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	fbd21ea7-3f73-4f42-8b14-928615ca0452	dataobject_instance	86ad6382-9bce-44f6-8257-9326b59d332e	activity	2015-07-10 14:18:06.796942
+184b61e0-222f-41c7-a6a6-2d5f8cda15cf	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	97e34cc5-13dc-485a-a48d-cf4d0ce6b15a	dataobject_instance	86ad6382-9bce-44f6-8257-9326b59d332e	activity	2015-07-10 14:18:06.798443
+3a1dee14-5c71-4e0e-ae6e-8401c54df628	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	86ad6382-9bce-44f6-8257-9326b59d332e	activity	52d14893-b33c-47b8-acea-d636d37605e4	dataobject_instance	2015-07-10 14:18:08.393796
+2cec9a7f-2cbb-4dc5-adad-75c32d1ae740	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	52d14893-b33c-47b8-acea-d636d37605e4	dataobject_instance	76819538-b7bf-4bcd-aadc-954d3252866e	activity	2015-07-10 14:18:09.809806
+e5e7f121-3598-4d8e-9d87-ed73a410b4f9	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	76819538-b7bf-4bcd-aadc-954d3252866e	activity	3e103447-823b-442a-a27a-e6706ccd3887	dataobject_instance	2015-07-10 14:18:10.751104
+da2a5729-70e5-425c-ab9b-f57c6f9c9060	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	52d14893-b33c-47b8-acea-d636d37605e4	dataobject_instance	37b68207-d8e1-41f1-bb53-55cc1d369531	activity	2015-07-10 14:18:12.635305
+713408db-d792-4404-92f2-f107c74150c3	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	37b68207-d8e1-41f1-bb53-55cc1d369531	activity	b04e0b05-1b9b-42ad-92c4-5a340c032000	dataobject_instance	2015-07-10 14:18:13.676258
+0f7fe9c6-6fb5-4b4f-9a5a-e57bcb71aaa5	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	b04e0b05-1b9b-42ad-92c4-5a340c032000	dataobject_instance	a8b01901-6885-4920-a6b0-7a72d064d3da	activity	2015-07-10 14:18:14.481486
+93f45eb9-dfb8-421b-ab0c-e18c9c2f2d6a	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	3e103447-823b-442a-a27a-e6706ccd3887	dataobject_instance	a8b01901-6885-4920-a6b0-7a72d064d3da	activity	2015-07-10 14:18:14.483298
+54aa47ec-5ae5-45a7-9d0c-ef83e53c0445	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	a8b01901-6885-4920-a6b0-7a72d064d3da	activity	6be07767-7d90-4832-9013-3dfb88447edc	dataobject_instance	2015-07-10 14:18:16.257969
+6adfce1a-1da9-42b7-b8ff-0187a8ba96fc	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	6be07767-7d90-4832-9013-3dfb88447edc	dataobject_instance	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	2015-07-10 14:18:17.29584
+cc373ad8-9ef0-41ee-a0da-803eac8f4007	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	28365e81-60c8-43cc-9b8f-17d708d174c4	dataobject_instance	2015-07-10 14:18:20.211566
+6db6bc26-df61-4661-ba47-d86ff750b48d	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	949d2bf4-8930-4656-9aed-27e44420a303	dataobject_instance	2015-07-10 14:18:22.063551
+a67f6f85-bf55-4bbd-8e34-0c4eb2c7226d	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	4db72d77-4111-490a-9052-5d092559195a	dataobject_instance	2015-07-10 14:18:23.856023
+2f0cb3f7-4939-478a-b370-53647b2f3f1c	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	93390c94-2594-4f20-b209-61f8d7626576	dataobject_instance	2015-07-10 14:18:25.676596
+af321e3d-6fcb-4119-a4ac-48bf24d14a68	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	7365d6bc-55bb-4e13-860d-7cc7c73a05df	dataobject_instance	2015-07-10 14:18:27.726612
+60b3c3af-53cd-41b3-82a7-7d8ff15c18b4	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	4637bbb2-aaf4-4266-8053-8734c93c77d6	dataobject_instance	2015-07-10 14:18:29.512205
+3b73c74f-caba-4dcf-82bd-215c33732c7e	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	6ce14228-59c9-4b0a-9811-d4c84dad59eb	dataobject_instance	2015-07-10 14:18:31.32571
+0d3f2a4f-19b3-4195-a187-d99fc94ddbd1	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	1cc5146c-ebeb-4a1f-ad67-5424317ea056	dataobject_instance	2015-07-10 14:18:33.292169
+e1083010-bb39-4218-8656-d402fab8911e	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	c28f36d3-fb7a-477a-a16f-c9032950a133	dataobject_instance	2015-07-10 14:18:35.145973
+e4099ab2-fc1b-4c52-9d13-47fb0a2207c2	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	4de20f07-20a4-45ae-8efc-577cfe215f8b	dataobject_instance	2015-07-10 14:18:36.995402
+10addbf9-2743-4b8b-9491-6ea0304e69a9	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	abf1946d-aa81-4aa0-8266-4fa104261906	dataobject_instance	2015-07-10 14:18:38.654926
+674b4410-73f8-4428-b706-c7a9d9286502	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	922f4799-1bf4-4a58-bd0b-bc3f61f7a1ee	activity	3f118240-42bf-453c-a46b-96e9ae3b0fa5	dataobject_instance	2015-07-10 14:18:40.595881
+34a61c9e-edf1-40f5-96ec-e16efd9d1d36	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	6ce14228-59c9-4b0a-9811-d4c84dad59eb	dataobject_instance	cf1a6e12-fd3d-4e7e-8dce-826db8f4691b	activity	2015-07-10 14:18:41.611486
+d81f76bb-a0d8-4aa0-bae5-1a02aceadb64	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	28365e81-60c8-43cc-9b8f-17d708d174c4	dataobject_instance	cf1a6e12-fd3d-4e7e-8dce-826db8f4691b	activity	2015-07-10 14:18:41.613184
+853c33b6-6317-491f-8e4c-11241d1390c7	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	cf1a6e12-fd3d-4e7e-8dce-826db8f4691b	activity	18f792f2-fa9c-43b1-91fb-19d41bad70c5	dataobject_instance	2015-07-10 14:18:43.676059
+c121fdae-e1e1-4888-96ee-e745fe6e67f4	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	1cc5146c-ebeb-4a1f-ad67-5424317ea056	dataobject_instance	56df8acc-9dbe-4220-b129-c499064b2bf9	activity	2015-07-10 14:18:44.605157
+0d18fe03-7e5d-45d6-a681-3ea1187c1617	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	949d2bf4-8930-4656-9aed-27e44420a303	dataobject_instance	56df8acc-9dbe-4220-b129-c499064b2bf9	activity	2015-07-10 14:18:44.607237
+1cc72199-a19a-4fae-8db0-c19e5cfc2fd2	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	56df8acc-9dbe-4220-b129-c499064b2bf9	activity	571a26e3-546e-4644-ae25-0b32ab6293bf	dataobject_instance	2015-07-10 14:18:46.436533
+1da29241-ee2b-4def-bcb3-7146cb0f6c3e	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	c28f36d3-fb7a-477a-a16f-c9032950a133	dataobject_instance	64166502-f05d-41c9-8f25-f404423801f8	activity	2015-07-10 14:18:47.281398
+c678314f-5430-4a9c-9cca-bb42152854e2	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	4db72d77-4111-490a-9052-5d092559195a	dataobject_instance	64166502-f05d-41c9-8f25-f404423801f8	activity	2015-07-10 14:18:47.283155
+e56fd597-3772-4655-a02a-c47ec01ca9ce	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	64166502-f05d-41c9-8f25-f404423801f8	activity	91d9f4d0-e241-4c79-a6a9-9b762fd58601	dataobject_instance	2015-07-10 14:18:49.106214
+15642040-7023-48cb-b33e-d123855029d9	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	4de20f07-20a4-45ae-8efc-577cfe215f8b	dataobject_instance	72cf8812-0ecb-4a90-8509-e2f48fa76d5e	activity	2015-07-10 14:18:50.030757
+a63f4c5a-533c-4def-8352-4e3fd66fe7f6	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	93390c94-2594-4f20-b209-61f8d7626576	dataobject_instance	72cf8812-0ecb-4a90-8509-e2f48fa76d5e	activity	2015-07-10 14:18:50.032396
+0f21b1ef-28ff-4c5f-a46d-535fce79a92a	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	72cf8812-0ecb-4a90-8509-e2f48fa76d5e	activity	02a7bbb4-d6cc-4754-8f60-22025510e930	dataobject_instance	2015-07-10 14:18:52.015694
+f08b75e8-1f86-4c2d-adfc-e801b69b4d7f	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	abf1946d-aa81-4aa0-8266-4fa104261906	dataobject_instance	75ce440b-aae3-410a-b081-cf713680fe41	activity	2015-07-10 14:18:53.020747
+9da7710f-179c-4e46-a561-3dcdfa1a6234	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	7365d6bc-55bb-4e13-860d-7cc7c73a05df	dataobject_instance	75ce440b-aae3-410a-b081-cf713680fe41	activity	2015-07-10 14:18:53.022467
+a214b40a-39cc-4889-85d2-32fd71aa0543	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	109c1665-931a-44dc-adc7-ebbe09613d39	activity	861c70f6-efa3-4a84-bc56-ae719dd18d74	dataobject_instance	2015-07-10 14:18:57.445443
+01020897-14f0-4f9b-9ec9-f5b5f2060cb6	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	571a26e3-546e-4644-ae25-0b32ab6293bf	dataobject_instance	b42a867d-b357-4725-9fcf-ab59ba71bbfd	activity	2015-07-10 14:18:58.013165
+ab5eb6b7-2c12-4ee0-ae6e-beaad66c64d1	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	91d9f4d0-e241-4c79-a6a9-9b762fd58601	dataobject_instance	b42a867d-b357-4725-9fcf-ab59ba71bbfd	activity	2015-07-10 14:18:58.014784
+b561445b-8235-4d94-ba20-06bb1ab349c3	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	02a7bbb4-d6cc-4754-8f60-22025510e930	dataobject_instance	b42a867d-b357-4725-9fcf-ab59ba71bbfd	activity	2015-07-10 14:18:58.01626
+d4607b41-f015-488c-a24f-476c3a3f511b	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	8e3c1099-c8e3-4b91-96a9-4ca039bf149b	dataobject_instance	b42a867d-b357-4725-9fcf-ab59ba71bbfd	activity	2015-07-10 14:18:58.017725
+f321f196-fa87-412e-935d-9679902b7501	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	861c70f6-efa3-4a84-bc56-ae719dd18d74	dataobject_instance	b42a867d-b357-4725-9fcf-ab59ba71bbfd	activity	2015-07-10 14:18:58.019209
+01fe110a-e922-42e6-8228-cc8219d873af	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	18f792f2-fa9c-43b1-91fb-19d41bad70c5	dataobject_instance	b42a867d-b357-4725-9fcf-ab59ba71bbfd	activity	2015-07-10 14:18:58.020662
+9eefd8b8-82e0-4086-a943-83a2963ed36e	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	9d158eb9-ae20-42cb-9799-4f96cb1575a8	dataobject_instance	b5bfa6a3-1444-472a-88fc-8bb8bf75370b	activity	2015-07-10 14:19:08.179081
+35198d5e-1cd8-43f7-a8ec-334dec63bc28	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	8ba5d58c-c5ca-4811-bb32-a926e7a252d8	dataobject_instance	b5bfa6a3-1444-472a-88fc-8bb8bf75370b	activity	2015-07-10 14:19:08.18069
+c8d06c7e-9792-496b-a099-36030e646936	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	75ce440b-aae3-410a-b081-cf713680fe41	activity	8e3c1099-c8e3-4b91-96a9-4ca039bf149b	dataobject_instance	2015-07-10 14:18:54.842467
+a0f78a3f-31c9-4a1d-90f6-a76280858fbc	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	3f118240-42bf-453c-a46b-96e9ae3b0fa5	dataobject_instance	109c1665-931a-44dc-adc7-ebbe09613d39	activity	2015-07-10 14:18:55.845538
+934809b9-faa3-47d2-9300-f553efbefeda	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	4637bbb2-aaf4-4266-8053-8734c93c77d6	dataobject_instance	109c1665-931a-44dc-adc7-ebbe09613d39	activity	2015-07-10 14:18:55.847255
+f2822f31-bc67-46e4-a1d2-077ea750567d	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	b42a867d-b357-4725-9fcf-ab59ba71bbfd	activity	4d0a0c77-bcdc-4161-a615-37cac01c3f8a	dataobject_instance	2015-07-10 14:18:59.930806
+4950ae78-f2fc-4054-a365-e65907717658	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	4d0a0c77-bcdc-4161-a615-37cac01c3f8a	dataobject_instance	9b79c600-3310-4449-acb3-bf76e9130671	activity	2015-07-10 14:19:01.008871
+0885c252-fb92-45d3-8fc5-5d840695fdef	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	9b79c600-3310-4449-acb3-bf76e9130671	activity	8ba5d58c-c5ca-4811-bb32-a926e7a252d8	dataobject_instance	2015-07-10 14:19:04.916262
+97c017f5-6bef-40a2-baca-8570fafe5081	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	9b79c600-3310-4449-acb3-bf76e9130671	activity	d3468b33-cfe8-41bf-be62-78eaa16ca9f9	dataobject_instance	2015-07-10 14:19:02.979796
+003558f4-d3a7-4f5c-8cba-c16bfe44c8e1	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	9b79c600-3310-4449-acb3-bf76e9130671	activity	9d158eb9-ae20-42cb-9799-4f96cb1575a8	dataobject_instance	2015-07-10 14:19:06.623149
+21b5b2aa-ffed-4435-9d9a-0fb3ad46fd9e	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	b5bfa6a3-1444-472a-88fc-8bb8bf75370b	activity	0c2fb393-544b-40ef-85cd-13a99825e90b	dataobject_instance	2015-07-10 14:19:09.772094
+060a8f4a-c44f-47f9-8f93-9b6b02dee72c	16285c65-25ea-4445-8506-d583a8a3dcac	16285c65-25ea-4445-8506-d583a8a3dcac	workflow	7afb3c10-e410-4714-b38d-636a7914b6cf	dataobject_instance	2015-07-10 14:20:27.305695
+32de33fd-9926-4d0f-9103-e366ec3c200f	16285c65-25ea-4445-8506-d583a8a3dcac	16285c65-25ea-4445-8506-d583a8a3dcac	workflow	cc9d5b16-6d2a-491d-896d-fba357b1604b	dataobject_instance	2015-07-10 14:20:29.246014
+9b685d6b-69a3-4896-b30a-cbb1e5301849	16285c65-25ea-4445-8506-d583a8a3dcac	16285c65-25ea-4445-8506-d583a8a3dcac	workflow	f1c9db87-9102-44d7-bf4b-cea58cfe3ca0	dataobject_instance	2015-07-10 14:20:31.20567
+2819dbad-3cc1-4e2e-a5b8-b736161760a8	16285c65-25ea-4445-8506-d583a8a3dcac	7afb3c10-e410-4714-b38d-636a7914b6cf	dataobject_instance	eca9d643-35cd-4ec7-bfb4-948be39db965	activity	2015-07-10 14:20:32.254585
+1a679daf-8b3f-44c5-b5ee-0abf5722977e	16285c65-25ea-4445-8506-d583a8a3dcac	eca9d643-35cd-4ec7-bfb4-948be39db965	activity	2574d5f2-93dc-4091-b64c-fb54eca12568	dataobject_instance	2015-07-10 14:20:35.197672
+663f2eb9-aeaa-4402-9571-0ed35548a073	16285c65-25ea-4445-8506-d583a8a3dcac	cc9d5b16-6d2a-491d-896d-fba357b1604b	dataobject_instance	9aa013ca-1865-4adf-a5e1-c357c807bc9d	activity	2015-07-10 14:20:35.687626
+52fc6e1b-d8d4-41a5-b3f2-9d5d831a0606	16285c65-25ea-4445-8506-d583a8a3dcac	9aa013ca-1865-4adf-a5e1-c357c807bc9d	activity	4db3c4cf-d07f-4ea2-a8bf-dc6d00e55868	dataobject_instance	2015-07-10 14:20:37.781795
+82c24484-abc6-4854-9893-18b8a3ef21ca	16285c65-25ea-4445-8506-d583a8a3dcac	f1c9db87-9102-44d7-bf4b-cea58cfe3ca0	dataobject_instance	f087e580-95d0-4380-bee6-f1ced1df5c47	activity	2015-07-10 14:20:38.645273
+11118ecb-01b1-470b-b79c-cab7a73d3df1	16285c65-25ea-4445-8506-d583a8a3dcac	f087e580-95d0-4380-bee6-f1ced1df5c47	activity	76b444cd-c017-4a05-ab9e-43e178830284	dataobject_instance	2015-07-10 14:20:41.465817
+be2cb89f-c6b6-4512-ba49-206e63360caa	16285c65-25ea-4445-8506-d583a8a3dcac	4db3c4cf-d07f-4ea2-a8bf-dc6d00e55868	dataobject_instance	433613de-5d0f-43bb-8c89-fa47c8f8906e	activity	2015-07-10 14:20:42.408798
+c4696f14-d07f-4108-9d50-a74a49137317	16285c65-25ea-4445-8506-d583a8a3dcac	76b444cd-c017-4a05-ab9e-43e178830284	dataobject_instance	433613de-5d0f-43bb-8c89-fa47c8f8906e	activity	2015-07-10 14:20:42.410481
+8c7c301c-2327-4df9-ba3c-8d629e5366ef	16285c65-25ea-4445-8506-d583a8a3dcac	2574d5f2-93dc-4091-b64c-fb54eca12568	dataobject_instance	433613de-5d0f-43bb-8c89-fa47c8f8906e	activity	2015-07-10 14:20:42.411997
+00c0debc-d595-4e9b-b752-4104bcf63d38	16285c65-25ea-4445-8506-d583a8a3dcac	433613de-5d0f-43bb-8c89-fa47c8f8906e	activity	08502ddf-1fe5-4c2d-9ea7-e18188e12dc2	dataobject_instance	2015-07-10 14:20:44.145144
+1c48d1a3-05e4-4c30-a633-18fb64bd89b0	16285c65-25ea-4445-8506-d583a8a3dcac	08502ddf-1fe5-4c2d-9ea7-e18188e12dc2	dataobject_instance	288eaf04-381b-45b3-a159-5229b141d21d	activity	2015-07-10 14:20:46.35142
+701710a1-38a1-4a24-adfc-a55804b36693	16285c65-25ea-4445-8506-d583a8a3dcac	288eaf04-381b-45b3-a159-5229b141d21d	activity	0f66e8be-5b0e-4b0c-81c1-2abc8bc8c03e	dataobject_instance	2015-07-10 14:20:47.440803
+3dcc1e47-0ed3-43ce-92da-127f2b347f0a	16285c65-25ea-4445-8506-d583a8a3dcac	08502ddf-1fe5-4c2d-9ea7-e18188e12dc2	dataobject_instance	23455e90-55a0-415b-a42a-78a9a67d5b61	activity	2015-07-10 14:20:49.390394
+1fea2636-1a96-4a5b-8113-aa05c55ede5c	16285c65-25ea-4445-8506-d583a8a3dcac	23455e90-55a0-415b-a42a-78a9a67d5b61	activity	c448c1de-da86-4b8e-9e31-caf5107ae6ea	dataobject_instance	2015-07-10 14:20:50.314083
+79b9c009-aa84-459b-9ad7-26072e18b799	16285c65-25ea-4445-8506-d583a8a3dcac	c448c1de-da86-4b8e-9e31-caf5107ae6ea	dataobject_instance	c5be80b2-d461-40ad-b662-911cc39479e5	activity	2015-07-10 14:20:51.309985
+cc32ea08-f751-4f2e-899a-cc6eceaae94d	16285c65-25ea-4445-8506-d583a8a3dcac	0f66e8be-5b0e-4b0c-81c1-2abc8bc8c03e	dataobject_instance	c5be80b2-d461-40ad-b662-911cc39479e5	activity	2015-07-10 14:20:51.311544
+e2835389-8a4d-4cac-ac50-eea044751e9f	16285c65-25ea-4445-8506-d583a8a3dcac	c5be80b2-d461-40ad-b662-911cc39479e5	activity	370d3edd-c46e-40bc-a44a-b076f455473b	dataobject_instance	2015-07-10 14:20:53.28395
+89d8f871-1e7b-41f0-b867-8abd1a29a7f3	16285c65-25ea-4445-8506-d583a8a3dcac	370d3edd-c46e-40bc-a44a-b076f455473b	dataobject_instance	29165d63-a007-416e-92d3-399aacc3c228	activity	2015-07-10 14:20:54.163886
+c8128c58-c257-4573-add3-842022310b65	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	5e840f4a-1645-4681-a58a-9cd016285478	dataobject_instance	2015-07-10 14:20:56.905387
+37ada332-3f33-40da-a22f-326631d02f7d	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	01f2c879-15c5-46be-9f68-d00fe4a1cc62	dataobject_instance	2015-07-10 14:20:58.855643
+a31ecfd8-5020-4772-ac85-85949358ad61	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	6bad50e4-4106-471e-a191-44d3e489ea17	dataobject_instance	2015-07-10 14:21:00.745359
+4271fa31-fea5-42db-9555-a583a2d8f9d7	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	9caa6a52-74cc-4bb7-8135-a765971fc64a	dataobject_instance	2015-07-10 14:21:02.117329
+8bf15ee8-1694-4cd2-9cce-62d76cf9e07a	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	918e4a35-37df-4504-993a-f900a7b9d2ce	dataobject_instance	2015-07-10 14:21:03.465247
+670fb1d9-6236-445c-90bb-156a9d1771ab	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	881e7c59-633c-4f07-afa9-d788f00e4fd7	dataobject_instance	2015-07-10 14:21:05.435067
+c730b20f-b72a-4016-86be-458bc9132007	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	0154dbc2-aa7d-45d4-bc9b-1a81d696b3c7	dataobject_instance	2015-07-10 14:21:07.249536
+4f6493f4-e502-4160-b2cb-6391e734cf7e	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	713412d8-8f82-4cb6-ba3d-2ebfc60d0c85	dataobject_instance	2015-07-10 14:21:08.902299
+6f44acf8-c4a8-48d0-8684-f9dbca6eeb93	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	ac883ac3-6b73-4728-90c2-bb639c89622f	dataobject_instance	2015-07-10 14:21:10.715148
+fce95016-6a90-40fe-a350-b3c9c305e7e5	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	3bc9c33d-1778-4f0e-91f8-94e706602a62	dataobject_instance	2015-07-10 14:21:12.504945
+2795e36c-6380-481c-885c-0dd7b9330b36	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	04d96e6c-b446-44e7-9a1e-1e9e7bb83967	dataobject_instance	2015-07-10 14:21:14.472214
+896fbbc9-8f4d-4b4d-9243-1205ad34ba67	16285c65-25ea-4445-8506-d583a8a3dcac	29165d63-a007-416e-92d3-399aacc3c228	activity	708561b4-ecd0-4fa8-a215-9c89f1f4e7dc	dataobject_instance	2015-07-10 14:21:16.059316
+319f77b0-ae70-4f68-ad6e-426c4d0887a3	16285c65-25ea-4445-8506-d583a8a3dcac	0154dbc2-aa7d-45d4-bc9b-1a81d696b3c7	dataobject_instance	2b1478a7-eb5d-4be0-a8af-7f0c14e9ef0d	activity	2015-07-10 14:21:16.844243
+b412f402-3202-4b1f-aa94-78e27c0a5398	16285c65-25ea-4445-8506-d583a8a3dcac	5e840f4a-1645-4681-a58a-9cd016285478	dataobject_instance	2b1478a7-eb5d-4be0-a8af-7f0c14e9ef0d	activity	2015-07-10 14:21:16.845771
+203d80e8-777d-4408-9b58-9cf10cdbdd8f	16285c65-25ea-4445-8506-d583a8a3dcac	2b1478a7-eb5d-4be0-a8af-7f0c14e9ef0d	activity	9c52cdb9-624d-4c0c-811f-7c6842f54188	dataobject_instance	2015-07-10 14:21:18.595647
+6510cb03-2c40-4da0-b414-69b5fca1a153	16285c65-25ea-4445-8506-d583a8a3dcac	713412d8-8f82-4cb6-ba3d-2ebfc60d0c85	dataobject_instance	b6560264-57ce-4eea-bb47-4eb88c197d75	activity	2015-07-10 14:21:19.550669
+9bc81eeb-602d-4969-9a90-993a836295af	16285c65-25ea-4445-8506-d583a8a3dcac	01f2c879-15c5-46be-9f68-d00fe4a1cc62	dataobject_instance	b6560264-57ce-4eea-bb47-4eb88c197d75	activity	2015-07-10 14:21:19.552249
+e348746a-a771-45eb-913c-62332b8e0bcc	16285c65-25ea-4445-8506-d583a8a3dcac	b6560264-57ce-4eea-bb47-4eb88c197d75	activity	c5152431-5fbe-41c4-8b22-bbe8c172decd	dataobject_instance	2015-07-10 14:21:22.130694
+11890829-7cbf-4ff6-be69-d216d19bf501	16285c65-25ea-4445-8506-d583a8a3dcac	ac883ac3-6b73-4728-90c2-bb639c89622f	dataobject_instance	033f96ea-bad4-44f7-940c-eed6740f1647	activity	2015-07-10 14:21:23.046412
+fb5eb1ce-68d6-4d0a-bfc6-2c85e904fe3b	16285c65-25ea-4445-8506-d583a8a3dcac	6bad50e4-4106-471e-a191-44d3e489ea17	dataobject_instance	033f96ea-bad4-44f7-940c-eed6740f1647	activity	2015-07-10 14:21:23.048058
+033a61b3-c68b-47ba-aa9c-73c250cfd982	16285c65-25ea-4445-8506-d583a8a3dcac	033f96ea-bad4-44f7-940c-eed6740f1647	activity	8d448ba1-8d13-40ff-80f6-c5c901411943	dataobject_instance	2015-07-10 14:21:24.79413
+fd5395e2-823c-4989-ba30-2aa1e0647616	16285c65-25ea-4445-8506-d583a8a3dcac	3bc9c33d-1778-4f0e-91f8-94e706602a62	dataobject_instance	170c15e2-a7e2-49f9-998c-bfd4e1fe16b9	activity	2015-07-10 14:21:25.71953
+c730c4a4-4ae4-41eb-8aac-e3d774286ae7	16285c65-25ea-4445-8506-d583a8a3dcac	9caa6a52-74cc-4bb7-8135-a765971fc64a	dataobject_instance	170c15e2-a7e2-49f9-998c-bfd4e1fe16b9	activity	2015-07-10 14:21:25.7211
+e47c3f96-01c9-4bd8-87a9-8eb5f2c4da50	16285c65-25ea-4445-8506-d583a8a3dcac	170c15e2-a7e2-49f9-998c-bfd4e1fe16b9	activity	797b656f-8b24-4d51-b991-8aa381f970fc	dataobject_instance	2015-07-10 14:21:27.569496
+8c88141e-5b2b-461d-a9e3-32fcc27b8d4c	16285c65-25ea-4445-8506-d583a8a3dcac	04d96e6c-b446-44e7-9a1e-1e9e7bb83967	dataobject_instance	67152192-014d-4aab-a85c-4ac1877d4bca	activity	2015-07-10 14:21:28.351594
+28bb8aa5-2035-45f4-96b7-137f47927daa	16285c65-25ea-4445-8506-d583a8a3dcac	918e4a35-37df-4504-993a-f900a7b9d2ce	dataobject_instance	67152192-014d-4aab-a85c-4ac1877d4bca	activity	2015-07-10 14:21:28.353152
+318199d6-51e6-48a2-a895-4f86708d778a	16285c65-25ea-4445-8506-d583a8a3dcac	67152192-014d-4aab-a85c-4ac1877d4bca	activity	c927f338-e51a-45c9-97a6-c7ec079b4208	dataobject_instance	2015-07-10 14:21:30.211154
+e88ba6a0-ac08-47b4-97db-4236d46192aa	16285c65-25ea-4445-8506-d583a8a3dcac	708561b4-ecd0-4fa8-a215-9c89f1f4e7dc	dataobject_instance	ec9ad925-8706-4433-a7ff-3d2b48218c56	activity	2015-07-10 14:21:31.08824
+733f4fd2-9fb3-4048-8229-5235df86bb1d	16285c65-25ea-4445-8506-d583a8a3dcac	881e7c59-633c-4f07-afa9-d788f00e4fd7	dataobject_instance	ec9ad925-8706-4433-a7ff-3d2b48218c56	activity	2015-07-10 14:21:31.089788
+2486a626-e066-446b-9e84-bc732486762d	16285c65-25ea-4445-8506-d583a8a3dcac	ec9ad925-8706-4433-a7ff-3d2b48218c56	activity	1eb94276-22fe-4ead-a558-239548870ffa	dataobject_instance	2015-07-10 14:21:32.812756
+085c5dfa-1170-4eba-901f-e23c0f28b542	16285c65-25ea-4445-8506-d583a8a3dcac	c5152431-5fbe-41c4-8b22-bbe8c172decd	dataobject_instance	50d24653-1185-4cd3-baa6-ea93bd43955d	activity	2015-07-10 14:21:33.835745
+4187f95d-701e-4b78-8785-35fbc27d51eb	16285c65-25ea-4445-8506-d583a8a3dcac	8d448ba1-8d13-40ff-80f6-c5c901411943	dataobject_instance	50d24653-1185-4cd3-baa6-ea93bd43955d	activity	2015-07-10 14:21:33.837328
+9f0106fb-481c-4a67-8d09-9354271a4de3	16285c65-25ea-4445-8506-d583a8a3dcac	797b656f-8b24-4d51-b991-8aa381f970fc	dataobject_instance	50d24653-1185-4cd3-baa6-ea93bd43955d	activity	2015-07-10 14:21:33.838827
+7e9b6e24-0a74-4415-801c-1f653106a50f	16285c65-25ea-4445-8506-d583a8a3dcac	c927f338-e51a-45c9-97a6-c7ec079b4208	dataobject_instance	50d24653-1185-4cd3-baa6-ea93bd43955d	activity	2015-07-10 14:21:33.840317
+26a6daa2-b2b7-4e11-b667-5060cda6c89f	16285c65-25ea-4445-8506-d583a8a3dcac	1eb94276-22fe-4ead-a558-239548870ffa	dataobject_instance	50d24653-1185-4cd3-baa6-ea93bd43955d	activity	2015-07-10 14:21:33.841783
+50288dab-9b09-40f4-8e4e-6ddfb66aeb89	16285c65-25ea-4445-8506-d583a8a3dcac	9c52cdb9-624d-4c0c-811f-7c6842f54188	dataobject_instance	50d24653-1185-4cd3-baa6-ea93bd43955d	activity	2015-07-10 14:21:33.843295
+9db4cf17-eefc-4d76-8b43-96fe9279bd95	16285c65-25ea-4445-8506-d583a8a3dcac	50d24653-1185-4cd3-baa6-ea93bd43955d	activity	be235fa4-a023-43c0-9a17-d3a2182acd2f	dataobject_instance	2015-07-10 14:21:35.665617
+41cabce2-f911-4b7b-a8b0-adc4edfd240e	16285c65-25ea-4445-8506-d583a8a3dcac	be235fa4-a023-43c0-9a17-d3a2182acd2f	dataobject_instance	5078c37d-dc01-41a5-9bea-2e944dfaf813	activity	2015-07-10 14:21:36.594332
+447fac50-a952-4530-beb3-c1d0b75de1b7	16285c65-25ea-4445-8506-d583a8a3dcac	5078c37d-dc01-41a5-9bea-2e944dfaf813	activity	14132c00-e9fc-498b-8b8b-833c5b2124ce	dataobject_instance	2015-07-10 14:21:38.643537
+61ed7fcd-a051-4a58-86b4-d7fec45921b6	16285c65-25ea-4445-8506-d583a8a3dcac	d66f9149-5d02-4a3b-9cff-4ace9411cc2f	dataobject_instance	e1eac56c-b1f4-4815-99b9-ade63f1dc866	activity	2015-07-10 14:21:45.106925
+2d7c5368-85b8-4cf4-852d-defcfb2325cb	16285c65-25ea-4445-8506-d583a8a3dcac	15860ec5-e09b-4aee-aaff-9ec092f6c5bd	dataobject_instance	e1eac56c-b1f4-4815-99b9-ade63f1dc866	activity	2015-07-10 14:21:45.108489
+35906b8d-005e-4dd0-b459-1430a81745de	16285c65-25ea-4445-8506-d583a8a3dcac	5078c37d-dc01-41a5-9bea-2e944dfaf813	activity	15860ec5-e09b-4aee-aaff-9ec092f6c5bd	dataobject_instance	2015-07-10 14:21:40.740491
+2ad55dc2-0e8f-4336-a077-ec7e30472b7a	16285c65-25ea-4445-8506-d583a8a3dcac	e1eac56c-b1f4-4815-99b9-ade63f1dc866	activity	4477eaea-9ed5-416e-ab5f-23f44da80a1f	dataobject_instance	2015-07-10 14:21:47.189694
+00248c5d-230b-4524-9319-c7a8e8a6ad07	16285c65-25ea-4445-8506-d583a8a3dcac	5078c37d-dc01-41a5-9bea-2e944dfaf813	activity	d66f9149-5d02-4a3b-9cff-4ace9411cc2f	dataobject_instance	2015-07-10 14:21:42.845027
 \.
 
 
@@ -1110,6 +1431,14 @@ ALTER TABLE ONLY dataobject
 
 ALTER TABLE ONLY metadata
     ADD CONSTRAINT metadata_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
+
+
+--
+-- Name: mpoauth_u_guid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: mpoadmin
+--
+
+ALTER TABLE ONLY mpoauth
+    ADD CONSTRAINT mpoauth_u_guid_fkey FOREIGN KEY (u_guid) REFERENCES mpousers(uuid);
 
 
 --
