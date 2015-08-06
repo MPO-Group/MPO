@@ -140,9 +140,9 @@ def before_request():
     if webdebug:
         print ('USERNAME: ', USERNAME)
         print ("WEBSERVER: db set to ",DB_SERVER)
-        print ('web debug, api_prefix',API_PREFIX)
-        print ('WEBSERVER certargs',certargs)
-        print ('WEBSERVER  request.environ', request.environ)
+        print ('WEBSERVER: api_prefix',API_PREFIX)
+        print ('WEBSERVER: certargs',certargs)
+        print ('WEBSERVER:  request.environ', request.environ)
 
  
     if(request.endpoint != 'register'):
