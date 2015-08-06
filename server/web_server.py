@@ -107,11 +107,11 @@ print('WEBSERVER: timestamp app started',stime.time() )
 def before_request():
     global DB_SERVER
     global API_PREFIX
-    global CONN_TYPE	
+    global CONN_TYP
     global USERNAME
 
     if USING_UWSGI: 
-	CONN_TYPE='' #no sub-path for uwsgi test server
+        CONN_TYPE='' #no sub-path for uwsgi test server
     else:
         if os.environ['MPO_EDITION'] == "PRODUCTION":
             DB_SERVER=request.cookies.get('db_server')
@@ -150,9 +150,9 @@ def before_request():
         is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs).json()
         print ('WEBDEBUG, is user:',request.endpoint,dn,str(is_mpo_user) )
         if(len(is_mpo_user)==0):
-	    parsed_dn=parse_dn(dn)
+            parsed_dn=parse_dn(dn)
             print("BEFORE: dn = %s"%dn)
-	    pprint(parsed_dn)
+            pprint(parsed_dn)
             dn_email=parsed_dn['emailAddress']
             dn_ou=parsed_dn['O']
             dn_name=parsed_dn['CN']
@@ -428,7 +428,7 @@ def workflows():
     wf_type_list=""
 
     if(worktreeroot):
-    	ont_result=ont_tree_req.result().json().get('root').get('children')
+        ont_result=ont_tree_req.result().json().get('root').get('children')
         wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
         
 
@@ -440,7 +440,7 @@ def workflows():
     page_created = "%s" %((str(begin_to_end))[:6])
 
     everything={"username":USERNAME,"db_server":DB_SERVER,"page_created":page_created, 
-		"results":results, "ont_result":ont_result, "wf_type":wf_type,
+                "results":results, "ont_result":ont_result, "wf_type":wf_type,
                 "rpp":rpp, "current_page":current_page, "wf_type_list":wf_type_list,
                 "num_pages":num_pages, "num_wf":num_wf}
     return render_template('workflows_index.html', **everything)
@@ -661,8 +661,8 @@ def connections(wid=""):
 
             #get linked workflows using uri
             if data[0]['do_info']['uri'] and len(data[0]['do_info']['uri']) > 1:
-		wf_links_req=requests.get("%s/workflow?do_uri=%s"%(API_PREFIX,urllib.quote((data[0]['do_info']['uri'])),), **certargs)
-	        if (wf_links_req):
+                wf_links_req=requests.get("%s/workflow?do_uri=%s"%(API_PREFIX,urllib.quote((data[0]['do_info']['uri'])),), **certargs)
+                if (wf_links_req):
                     wf_links=wf_links_req.json()
                     data[0]['wf_link']=wf_links
 
@@ -702,7 +702,7 @@ def connections(wid=""):
     evserver=MPO_EVENT_SERVER
 #    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
     everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info, 
-		  "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname}
+                  "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname}
 
     if memcache_loaded:
         mc.set(cache_id, everything, time=600)
@@ -840,16 +840,16 @@ def search():
                             if(pkey=="mpousers"): #api route is /user and not /mpousers
                                 pkey="user"
                             req=requests.get("%s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,), **certargs)
-	                    if req.status_code == 500:
-				if webdebug:
-				   print "Error in webserver, 500 from search api route: %s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,)
-			    else:
- 			        if req.text != "[]":
+                            if req.status_code == 500:
+                                if webdebug:
+                                   print "Error in webserver, 500 from search api route: %s/%s?%s=%s"%(API_PREFIX,pkey,ckey,search_str,)
+                            else:
+                                if req.text != "[]":
                                    obj_result.extend(req.json())
                                    found=True
                                    if webdebug:
-                                 	print('Searching route - data returned:')
-                                    	print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
+                                        print('Searching route - data returned:')
+                                        print('%s/%s?%s=%s'%(API_PREFIX,pkey,ckey,search_str))
                     if found:
                         results[pkey]=obj_result
 
@@ -860,8 +860,8 @@ def search():
         if webdebug:
             print('WEBDEBUG: user query')
             pprint(form)
-	    print('WEBDEBUG: result')
-	    print results
+            print('WEBDEBUG: result')
+            print results
 
         return render_template('search.html', query=form, results=results, db_server=DB_SERVER, username=USERNAME)
 
@@ -971,7 +971,7 @@ def submit_comment():
         #wid=form['wf_id']
 
         submit = requests.post("%s/comment"%API_PREFIX, r, **certargs)
-	if submit.status_code == 401:
+        if submit.status_code == 401:
             return "401"
 
         cid = submit.json()
@@ -979,7 +979,7 @@ def submit_comment():
         newc = result.text
         if webdebug:
             pprint(newc)
-	
+
     except:
         pass
 
@@ -1050,20 +1050,20 @@ def collections(uid=False):
             results=r_coll.result().json()
             #get name and desc of this specific collection
             this_coll = [ c for c in coll_list if c['uid']==uid ]
-	    if len(this_coll)>0:            
-		coll_name=this_coll[0]['name']
-            	coll_desc=this_coll[0]['description']
-		coll_username=this_coll[0]['username']
-	    	coll_time=this_coll[0]['time'][:19]
+            if len(this_coll)>0:            
+                coll_name=this_coll[0]['name']
+                coll_desc=this_coll[0]['description']
+                coll_username=this_coll[0]['username']
+                coll_time=this_coll[0]['time'][:19]
         else: #get members of first collection
             if len(coll_list)>0:
                 coll_name=coll_list[0]['name']
                 coll_desc=coll_list[0]['description']
                
-    	    everything={ 
-	        "username":USERNAME,"db_server":DB_SERVER, "rpp":rpp, 
-		"coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list}
-  	    return render_template('collections_index.html',  **everything)
+            everything={ 
+                "username":USERNAME,"db_server":DB_SERVER, "rpp":rpp, 
+                "coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list}
+            return render_template('collections_index.html',  **everything)
 
         #Callbacks for use in following loop
         future_list=[]
@@ -1102,11 +1102,11 @@ def collections(uid=False):
             results[index]['num_comments']=len(comments)
             results[index]['comments']=comments
 
-	def collection_item_cb(sess, resp, index):
+        def collection_item_cb(sess, resp, index):
             info=resp.json()
       
-	    if((len(info))>1):
-  	    	info[0]=info
+            if((len(info))>1):
+                info[0]=info
             if len(info)!=0:
                 thetime=info[0]['time'][:19]
                 info[0]['time']=thetime
@@ -1123,9 +1123,9 @@ def collections(uid=False):
         else:
             qterm_uid='0'
             print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
-	if webdebug:
-	        print("WEBDEBUG: collection results sent to index")
-        	pprint(results)
+        if webdebug:
+                print("WEBDEBUG: collection results sent to index")
+                pprint(results)
 
         for index,i in enumerate(results):        #i is dict, loop through list of collection elements
             print('web server collections',i)
@@ -1133,22 +1133,22 @@ def collections(uid=False):
             thetime=results[index]['time'][:19]
             results[index]['time']=thetime
 
-	    #Process workflow items
- 	    if results[index]['type']=="workflow":
-	    	#get workflow info
-            	wf_req=s.get("%s/workflow/%s"%(API_PREFIX,pid),
+            #Process workflow items
+            if results[index]['type']=="workflow":
+                #get workflow info
+                wf_req=s.get("%s/workflow/%s"%(API_PREFIX,pid),
                              background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
-            	future_list.append(wf_req)
-	    	#get comments for each workflow in a collection
-            	c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),
-            	        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
-            	future_list.append(c)
-            	#get workflow alias #JCW this needs to be extended to object names for general collections
-            	cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),
-            	          background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
-            	future_list.append(cid)
+                future_list.append(wf_req)
+                #get comments for each workflow in a collection
+                c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),
+                        background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
+                future_list.append(c)
+                #get workflow alias #JCW this needs to be extended to object names for general collections
+                cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),
+                          background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
+                future_list.append(cid)
 
-	    #Process dataobject
+            #Process dataobject 
             elif results[index]['type']=="dataobject":
                 #get node info
                 wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),
@@ -1158,8 +1158,8 @@ def collections(uid=False):
                 c=s.get("%s/comment?parent_uid=%s"%(API_PREFIX,pid),
                         background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
                 future_list.append(c)
-	
-	    #Process dataobject
+
+            #Process dataobject
             elif results[index]['type']=="dataobject_instance":
                #get node info
                 wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),
@@ -1170,11 +1170,11 @@ def collections(uid=False):
                         background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
                 future_list.append(c)
                 wf_id=wf_req.result().json()[0]['work_uid']
-	        doi_wf=s.get("%s/workflow/%s"%(API_PREFIX,wf_id)).result()
+                doi_wf=s.get("%s/workflow/%s"%(API_PREFIX,wf_id)).result()
                 doi_wf_cid=str(doi_wf.json()[0]['username'])+" / "+str(doi_wf.json()[0]['name'])+" / "+str(doi_wf.json()[0]['composite_seq'])
- 		results[index]['wf_cid']=doi_wf_cid
+                results[index]['wf_cid']=doi_wf_cid
 
-	    elif results[index]['type']=="collection":
+            elif results[index]['type']=="collection":
                 #get node info
                 wf_req=s.get("%s/collection/%s"%(API_PREFIX,pid),
                              background_callback=lambda sess,resp,index=index: collection_item_cb(sess,resp,index) )
@@ -1221,7 +1221,7 @@ def collections(uid=False):
     everything={"username":USERNAME,"db_server":DB_SERVER, "results":results, "ont_result":ont_result,
                 "rpp":rpp, "wf_type_list":wf_type_list,
                 "coll_name":coll_name, "coll_desc":coll_desc,
-		"coll_username":coll_username, "coll_time":coll_time  }
+                "coll_username":coll_username, "coll_time":coll_time  }
 
     return render_template('collections.html',  **everything)
 
@@ -1317,14 +1317,14 @@ def dataobject(uid=False):
                        break
         else:
             #Grab a list of all dataobjects
-	    dataobj_list=""
+            dataobj_list=""
             rc=s.get("%s/dataobject"%(API_PREFIX)).result()
             if(rc):
-            	dataobj_list=rc.json()
-            	for temp in dataobj_list:
+                dataobj_list=rc.json()
+                for temp in dataobj_list:
                     if temp['time']:
-                    	thetime=temp['time'][:19]
-                    	temp['time']=thetime
+                        thetime=temp['time'][:19]
+                        temp['time']=thetime
 
             #close the connection
             s.close()
@@ -1389,30 +1389,30 @@ def get_server_data(uid=False):
     if(search_str):
         for c in columns:
             this_list=[]
-#	    rc=s.get("%s/dataobject?uri=%s"%(API_PREFIX,search_str,), headers={'Real-User-DN':dn}).result()
-	    rc=s.get("%s/dataobject?%s=%s"%(API_PREFIX,c,search_str,)).result()
+#            rc=s.get("%s/dataobject?uri=%s"%(API_PREFIX,search_str,), headers={'Real-User-DN':dn}).result()
+            rc=s.get("%s/dataobject?%s=%s"%(API_PREFIX,c,search_str,)).result()
 
-	    if(rc):
+            if(rc):
                this_list=rc.json()
                if("message" in this_list):
-	           this_list=[]
+                   this_list=[]
                else:
                    data_list+=this_list
 #                   in_data_list=set(data_list)
 #                   in_this_list=set(this_list)
 #                   new_to_add=in_this_list-in_data_list
-#  	           data_list=data_list+list(new_to_add)
-     	    #   data_list=rc.json()
+#                   data_list=data_list+list(new_to_add)
+            #   data_list=rc.json()
     else:
-    	#rc=s.get("%s/dataobject?instance=False"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
-	rc=s.get("%s/dataobject"%(API_PREFIX)).result()
+        #rc=s.get("%s/dataobject?instance=False"%(API_PREFIX), headers={'Real-User-DN':dn}).result()
+        rc=s.get("%s/dataobject"%(API_PREFIX)).result()
         if(rc):
             data_list=rc.json()
             #for i in range(len(data_list)):
             #   data_list[i]['name']=data_list[i]['name']
             #   data_list[i]['uri']=data_list[i]['uri']
             #   data_list[i]['description']=data_list[i]['description']
-	    #   date_list[i]['source_uid']=data_list[i]['source_uid']
+            #   date_list[i]['source_uid']=data_list[i]['source_uid']
 
     if(data_list):
         total=len(data_list)
@@ -1420,12 +1420,12 @@ def get_server_data(uid=False):
 
         if("message" in data_list):
             data_list=[]
-  	if(data_list):
-	    #order list
+        if(data_list):
+            #order list
             if(order_dir=="desc"):
                 data_list.sort(key=lambda e: e[columns[order_by]], reverse=True)
             else: 
-	        data_list.sort(key=lambda e: e[columns[order_by]])
+                data_list.sort(key=lambda e: e[columns[order_by]])
             data_list=data_list[start:end]
             for temp in data_list:  
                if temp['time']:
@@ -1461,19 +1461,19 @@ def register():
                         n+=1
             r = json.dumps(form) #convert to json
 
-	    # check if users already in db, add new users only
-	    in_prod=requests.get("%s/user?dn=%s"%(PRODUCTION_API_PREFIX,dn), **certargs).json()
+            # check if users already in db, add new users only
+            in_prod=requests.get("%s/user?dn=%s"%(PRODUCTION_API_PREFIX,dn), **certargs).json()
             if(len(in_prod)==0):
-		print "ADDING TO PROD"
-		result_post = requests.post("%s/user"%PRODUCTION_API_PREFIX, r, **certargs)
+                print "ADDING TO PROD"
+                result_post = requests.post("%s/user"%PRODUCTION_API_PREFIX, r, **certargs)
             in_test=requests.get("%s/user?dn=%s"%(TEST_API_PREFIX,dn), **certargs).json()
             if(len(in_test)==0): 
- 		print "ADDING TO TEMP"
-            	result_post = requests.post("%s/user"%TEST_API_PREFIX, r, **certargs)
+                print "ADDING TO TEMP"
+                result_post = requests.post("%s/user"%TEST_API_PREFIX, r, **certargs)
             in_demo=requests.get("%s/user?dn=%s"%(DEMO_API_PREFIX,dn), **certargs).json()
             if(len(in_demo)==0):
-		print"ADDING TO DEMO"
-	    	result_post = requests.post("%s/user"%DEMO_API_PREFIX, r, **certargs)
+                print"ADDING TO DEMO"
+                result_post = requests.post("%s/user"%DEMO_API_PREFIX, r, **certargs)
             result=result_post.json() #Convert body Response to json datastructure
             if webdebug:
                 print("WEBDEBUG: get form")
@@ -1518,15 +1518,15 @@ def register():
         if(is_mpo_user):
             is_mpo_user=is_mpo_user.json()
             if(len(is_mpo_user)==0): #Not registered, display form
- 		dn = get_user_dn(request)		
- 		parsed_dn=parse_dn(dn)
-            	dn_email=parsed_dn['emailAddress']
-            	dn_ou=parsed_dn['OU']
-            	dn_name=parsed_dn['CN']
-            	t=parsed_dn['CN'].find(' ')
-            	dn_fname=dn_name[0:t]
-            	dn_lname=dn_name[t+1:len(dn_name)]
-            	everything={'firstname': dn_fname, 'lastname': dn_lname, 'email': dn_email, 'organization': dn_ou, 'username': dn_email}
+                dn = get_user_dn(request)
+                parsed_dn=parse_dn(dn)
+                dn_email=parsed_dn['emailAddress']
+                dn_ou=parsed_dn['OU']
+                dn_name=parsed_dn['CN']
+                t=parsed_dn['CN'].find(' ')
+                dn_fname=dn_name[0:t]
+                dn_lname=dn_name[t+1:len(dn_name)]
+                everything={'firstname': dn_fname, 'lastname': dn_lname, 'email': dn_email, 'organization': dn_ou, 'username': dn_email}
                 return render_template('register.html', **everything)
             else:  #Already registered, disable form from template
                 return render_template('register.html', registered=1)
