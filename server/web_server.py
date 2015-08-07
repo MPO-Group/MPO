@@ -53,7 +53,7 @@ except ImportError:
 http_client.HTTPConnection.debuglevel = httploglevel
 
     # You must initialize logging, otherwise you'll not see debug output.
-logging.basicConfig() 
+logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 
 requests_log = logging.getLogger("requests.packages.urllib3")
@@ -68,7 +68,7 @@ if not MPO_API_SERVER:
     WARNING: MPO_API_SERVER not set, using localhost:8443\n
     """)
     MPO_API_SERVER='https://localhost:8443'
-    
+
 MPO_WEB_CLIENT_CERT=os.environ.get('MPO_WEB_CLIENT_CERT')
 MPO_WEB_CLIENT_KEY=os.environ.get('MPO_WEB_CLIENT_KEY')
 if os.environ.has_key('MPO_EVENT_SERVER'):
@@ -110,7 +110,7 @@ def before_request():
     global CONN_TYP
     global USERNAME
 
-    if USING_UWSGI: 
+    if USING_UWSGI:
         CONN_TYPE='' #no sub-path for uwsgi test server
     else:
         if os.environ['MPO_EDITION'] == "PRODUCTION":
@@ -144,7 +144,7 @@ def before_request():
         print ('WEBSERVER: certargs',certargs)
         print ('WEBSERVER:  request.environ', request.environ)
 
- 
+
     if(request.endpoint != 'register'):
         #Check and redirect to /register if not registered
         is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs).json()
@@ -167,7 +167,8 @@ def before_request():
 
 TEST_API_PREFIX=MPO_API_SERVER+"/"+"test-api"+"/"+MPO_API_VERSION
 DEMO_API_PREFIX=MPO_API_SERVER+"/"+"demo-api"+"/"+MPO_API_VERSION
-PRODUCTION_API_PREFIX=MPO_API_SERVER+"/"+"api"+"/"+MPO_API_VERSION
+PRODUCTION_API_PREFIX=MPO_API_SERVER+"/"+"" if (USING_UWSGI) else "api"
+PRODUCTION_API_PREFIX+="/"+MPO_API_VERSION
 
 @app.route('/')
 def index():
@@ -239,7 +240,7 @@ def workflows():
     r=s.get("%s/workflow"%API_PREFIX).result()
     #JCW may want to provide resource for this when transfer becomes large
     #().result() needed by FuturesSession to block for async response
-    
+
     # need to check the status code
     if r.status_code == 401:
         return redirect(url_for('index', dest_url=request.path))
@@ -355,7 +356,7 @@ def workflows():
     #issue new request for workflow type data
     if(worktreeroot):
         wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']))
-        
+
     #list of workids for grouped requests
     if groupedrequests:
         wids = ','.join([i['uid'] for i in results])
@@ -382,17 +383,17 @@ def workflows():
             c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),
                     background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
             future_list.append(c)
-            
+
         #get alias' for workflow display
             cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),
                       background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
             future_list.append(cid)
-            
+
         #get workflow ontology terms: quality values
             qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid),
                            background_callback=lambda sess,resp,index=index: qual_cb(sess,resp,index) )
             future_list.append(qual_req)
-            
+
 
 
     #process comments, alias'
@@ -430,16 +431,16 @@ def workflows():
     if(worktreeroot):
         ont_result=ont_tree_req.result().json().get('root').get('children')
         wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
-        
 
 
-    
+
+
     #calculate page_created time for display
     time_end = stime.time()
     begin_to_end = time_end - time_begin
     page_created = "%s" %((str(begin_to_end))[:6])
 
-    everything={"username":USERNAME,"db_server":DB_SERVER,"page_created":page_created, 
+    everything={"username":USERNAME,"db_server":DB_SERVER,"page_created":page_created,
                 "results":results, "ont_result":ont_result, "wf_type":wf_type,
                 "rpp":rpp, "current_page":current_page, "wf_type_list":wf_type_list,
                 "num_pages":num_pages, "num_wf":num_wf}
@@ -580,7 +581,7 @@ def getsvgxml(wid):
 @app.route('/connections/<wid>', methods=['GET'])
 def connections(wid=""):
   import lxml.etree as et
-    
+
   dn = get_user_dn(request)
   certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
@@ -623,7 +624,7 @@ def connections(wid=""):
     ns,tag=svgxml.tag[1:].split('}')
     if not tag=='svg':
         print ('WEBDEBUG: connection error, svg tag not found')
-        #render error template or set svg to error svg 
+        #render error template or set svg to error svg
         svg = """
         <svg height="300" width="340">
           <text x="80" y="150" fill="red">Error in graph rendering!</text>
@@ -654,7 +655,7 @@ def connections(wid=""):
             #get data on each workflow element
             req=requests.get("%s/dataobject/%s"%(API_PREFIX,value['uid'],), **certargs)
             data=req.json()
- 
+
             if data[0]['time']:
                 obj_time=data[0]['time']
                 data[0]['time']=obj_time[:19]
@@ -701,7 +702,7 @@ def connections(wid=""):
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
 #    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
-    everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info, 
+    everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info,
                   "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname}
 
     if memcache_loaded:
@@ -1038,7 +1039,7 @@ def collections(uid=False):
 
         coll_name="None"
         coll_desc="No collections found"
-        
+
         ont_result=[]
         wf_type_list=[]
         coll_username=""
@@ -1050,7 +1051,7 @@ def collections(uid=False):
             results=r_coll.result().json()
             #get name and desc of this specific collection
             this_coll = [ c for c in coll_list if c['uid']==uid ]
-            if len(this_coll)>0:            
+            if len(this_coll)>0:
                 coll_name=this_coll[0]['name']
                 coll_desc=this_coll[0]['description']
                 coll_username=this_coll[0]['username']
@@ -1059,9 +1060,9 @@ def collections(uid=False):
             if len(coll_list)>0:
                 coll_name=coll_list[0]['name']
                 coll_desc=coll_list[0]['description']
-               
-            everything={ 
-                "username":USERNAME,"db_server":DB_SERVER, "rpp":rpp, 
+
+            everything={
+                "username":USERNAME,"db_server":DB_SERVER, "rpp":rpp,
                 "coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list}
             return render_template('collections_index.html',  **everything)
 
@@ -1104,7 +1105,7 @@ def collections(uid=False):
 
         def collection_item_cb(sess, resp, index):
             info=resp.json()
-      
+
             if((len(info))>1):
                 info[0]=info
             if len(info)!=0:
@@ -1148,7 +1149,7 @@ def collections(uid=False):
                           background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
                 future_list.append(cid)
 
-            #Process dataobject 
+            #Process dataobject
             elif results[index]['type']=="dataobject":
                 #get node info
                 wf_req=s.get("%s/dataobject/%s"%(API_PREFIX,pid),
@@ -1273,12 +1274,12 @@ def dataobject(uid=False):
                    name=results[0]['name']
                    time=results[0]['time'][:19]
                    desc=results[0]['description']
- 
+
                wf_links_req=requests.get("%s/workflow?do_uri=%s"%(API_PREFIX,urllib.quote(uri)), **certargs)
                if (wf_links_req):
                    wf_links=wf_links_req.json()
                    workflows=wf_links
-                   for item in workflows['result']: 
+                   for item in workflows['result']:
                       #filter milliseconds out (note, could be more robustly done with datetime functions)
                       thetime=item['time'][:19]
                       item['time']=thetime
@@ -1287,7 +1288,7 @@ def dataobject(uid=False):
                       comment=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid)).result().json()
                       item['comments']=comment
                       item['num_comments']=len(comment)
-       
+
                       #get quality info for a workflow
                       qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid))
 
@@ -1297,7 +1298,7 @@ def dataobject(uid=False):
                              item['quality']=qual_data[0]['value']
                       else:
                          item['quality']=''
-   
+
             #Grab a list of collections - first, get parent id
             r=s.get("%s/collection?element_uid=%s"%(API_PREFIX,uid))
             if(r):
@@ -1342,7 +1343,7 @@ def dataobject(uid=False):
     #close the connection
     s.close()
 
-    everything={"username":USERNAME,"db_server":DB_SERVER, "workflows":workflows, 
+    everything={"username":USERNAME,"db_server":DB_SERVER, "workflows":workflows,
                 "rpp":rpp, "coll_list":collections,
                 "name":name, "desc":desc,
                 "username":username, "time":time, "uri":uri  }
@@ -1362,7 +1363,7 @@ def get_server_data(uid=False):
     #Get request values - this should match up with the order of columns in HTML
     columns=["uid", "name", "description", "uri", "source_uid", "username", "time"]
     start=int(request.args.get('start'))
-    length=int(request.args.get('length')) 
+    length=int(request.args.get('length'))
     end=start+length
     draw=int(request.args.get('draw'))
     order_by=int(request.args.get('order[0][column]'))
@@ -1424,10 +1425,10 @@ def get_server_data(uid=False):
             #order list
             if(order_dir=="desc"):
                 data_list.sort(key=lambda e: e[columns[order_by]], reverse=True)
-            else: 
+            else:
                 data_list.sort(key=lambda e: e[columns[order_by]])
             data_list=data_list[start:end]
-            for temp in data_list:  
+            for temp in data_list:
                if temp['time']:
                    thetime=temp['time'][:19]
                    temp['time']=thetime
@@ -1466,14 +1467,16 @@ def register():
             if(len(in_prod)==0):
                 print "ADDING TO PROD"
                 result_post = requests.post("%s/user"%PRODUCTION_API_PREFIX, r, **certargs)
-            in_test=requests.get("%s/user?dn=%s"%(TEST_API_PREFIX,dn), **certargs).json()
-            if(len(in_test)==0): 
-                print "ADDING TO TEMP"
-                result_post = requests.post("%s/user"%TEST_API_PREFIX, r, **certargs)
-            in_demo=requests.get("%s/user?dn=%s"%(DEMO_API_PREFIX,dn), **certargs).json()
-            if(len(in_demo)==0):
-                print"ADDING TO DEMO"
-                result_post = requests.post("%s/user"%DEMO_API_PREFIX, r, **certargs)
+            # if using uwsgi there is only the production db
+            if not USING_UWSGI:
+                in_test=requests.get("%s/user?dn=%s"%(TEST_API_PREFIX,dn), **certargs).json()
+                if(len(in_test)==0):
+                    print "ADDING TO TEMP"
+                    result_post = requests.post("%s/user"%TEST_API_PREFIX, r, **certargs)
+                in_demo=requests.get("%s/user?dn=%s"%(DEMO_API_PREFIX,dn), **certargs).json()
+                if(len(in_demo)==0):
+                    print"ADDING TO DEMO"
+                    result_post = requests.post("%s/user"%DEMO_API_PREFIX, r, **certargs)
             result=result_post.json() #Convert body Response to json datastructure
             if webdebug:
                 print("WEBDEBUG: get form")
