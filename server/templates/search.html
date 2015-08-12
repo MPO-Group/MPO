@@ -39,16 +39,29 @@
                         {% for item in value %}
                         	{% if item %}
                             <div>
-                                {% if key != "workflow" and key != "user" and key != "comment" and key != "metadata" %}
+                                {% if key != "workflow" and key != "user" and key != "comment" and key != "metadata" and key != "dataobject" %}
                                     {% set result_url=url_for("connections", wid=item.work_uid) %}
                                     <a href="{{ url_for("connections", wid=item.work_uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
                                 {% elif key=="user" %}
                                     {% set result_url=url_for("profile", wid=item.uid) %}
                                     <a href="{{ url_for("profile", wid=item.uid) }}" style="text-decoration:underline;">{{ item.username }}: <em>{{ item.lastname }}, {{ item.firstname }} - {{ item.organization }}</em></a>
                                 {% elif key=="comment" %}
-                                    <a href="#" style="text-decoration:underline;">{{ item.content }}: <em>by {{ item.username }}</em></a>
+                                	{% if item.ptype=="workflow" %}
+                                    	<a href="{{ url_for("connections", wid=item.parent_uid) }}" style="text-decoration:underline;">{{ item.content }}: <em>by {{ item.username }}</em></a>
+                                	{% elif item.ptype=="dataobject_instance" %}
+                                    	<a href="{{ url_for("dataobject", uid=item.parent_uid) }}" style="text-decoration:underline;">{{ item.content }}: <em>by {{ item.username }}</em></a>
+                                    {% else %}
+	                                    <a href="#" style="text-decoration:underline;">{{ item.content }}: <em>by {{ item.username }}</em></a>
+                                    {% endif %}
                                 {% elif key=="metadata" %}
-                                    <a href="#" style="text-decoration:underline;">{{ item.key }}: <em>{{ item.value }}</em></a>                                                                
+                                	{% if item.parent_type=="dataobject_instance" %}
+                                    <a href="{{ url_for("dataobject", uid=item.parent_uid) }}" style="text-decoration:underline;">{{ item.key }}: <em>{{ item.value }}</em></a>
+                                    {% else %}  
+                                    <a href="#" style="text-decoration:underline;">{{ item.key }}: <em>{{ item.value }}</em></a> 
+                                    {% endif %} 
+                                    
+                                {% elif key=="dataobject" %}  
+                                    <a href="{{ url_for("dataobject", uid=item.uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>                                                              
                                 {% else %}
                                     {% set result_url=url_for("connections", wid=item.uid) %}
                                     <a href="{{ url_for("connections", wid=item.uid) }}" style="text-decoration:underline;">{{ item.name }}: <em>{{ item.description }}</em></a>
