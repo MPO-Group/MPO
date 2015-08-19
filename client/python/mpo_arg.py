@@ -819,7 +819,6 @@ class mpo_cli(object):
         step_parser.add_argument('--input', '-i', action='append',dest='input_objs')
         step_parser.add_argument('--name', '-n', action='store', default='UnNamed Object')
         step_parser.add_argument('--desc', '-d', action='store', help='Describe the action or process')
-        step_parser.add_argument('--uri', '-u', action='store', help='Pointer to dataobject addded')
         step_parser.set_defaults(func=self.mpo.step)
 
 
