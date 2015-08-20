@@ -74,6 +74,27 @@ var lastUpdate = ""; //store last update time
 var rightScrollHeight='700px';
 var clickedLinkedWorkflows=[];
 
+function formatDate(date) {
+    var d=new Date(date);
+    var month=''+(d.getMonth()+1);
+    var day='' + d.getDate();
+    var year=d.getFullYear();
+    var hh=d.getHours();
+    var mm=d.getMinutes();
+    var ss=d.getSeconds();
+
+    if (month.length<2) month='0'+month;
+    if (day.length <2) day='0'+day;
+    if (hh.length<2) hh+='0'+hh;
+    if (mm.length<2) mm+='0'+mm;
+    if (ss.length<2) ss+='0'+ss;
+	
+    this_date=[year,month,day].join('-');
+	this_time=[hh,mm,ss].join(":");
+	
+	return this_date+" "+this_time;
+}
+
 function closepop(id) {
 	$('#'+id).popover('hide');
 }
@@ -227,9 +248,9 @@ $(document).ready(function () {
 		nodeCount++;
 	  }
 	}
-	
-	$("#last-updated").html(lastUpdate.toLocaleString());
-	$("#td-last-updated").html(lastUpdate.toLocaleString());
+	wf_date=formatDate(lastUpdate);
+	$("#last-updated").html(wf_date);
+	$("#td-last-updated").html(wf_date);
 	
 		
 	var lastPopover='';
@@ -305,16 +326,17 @@ $(document).ready(function () {
 			node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
 			nodeTitle=node.childNodes[4].textContent;
 			//node.childNodes[4].id = "text_" + id;
-			if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
+			if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined')
 				sub_content = dataElements[node.childNodes[4].textContent];
-				popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ nodeTitle +'</strong><br/><small><em>' + sub_content; 
-			}
+			popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ nodeTitle +'</strong><br/><small><em>' + sub_content; 
+
 		}
-		if(key==0)
+		//Process wo
+		/*if(key==0)
 		//if(id=="node1")
 			//popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">Add comments</a></small></div>';
 			popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a data-val="'+wid+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
-		else
+		else*/
 		//popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
 			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a data-val="'+id+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 		
@@ -902,7 +924,7 @@ function buildPageElements(wfID) {
                             {% endif %}
                         	{% if n.data[0] %}
                         		{{ n.data[0].do_info.name }}</td><td>
-                        		{{ n.data[0].time }}
+                        		{{ n.data[0].time[:19] }}
                             {% endif %}
                         {% else %}
                             {% if n.type == "activity" %}
@@ -916,7 +938,7 @@ function buildPageElements(wfID) {
                        		{% endif %}   
                             
                         	{% if n.data %}                                      	
-                             <td>{{ n.time }}
+                             <td>{{ n.time[:19] }}
                             {% endif %}                             
                         {% endif %}
                         </td>
@@ -926,6 +948,10 @@ function buildPageElements(wfID) {
                             <td colspan=2 class="detail">   
                                 <div id="acc_{{ n.uid }}" class="collapse">
                                     <ul class="details-list"> 
+                                    {% if wid_info[0].description  %}
+                                        <li><font class="bold">Description:</font> {{ wid_info[0].description }} </li>
+                                    {% endif %}
+                                    
                                     {% if n.comment %}
                                         <li><font class="bold">Comments:</font>
                                             <ul class="comments">
@@ -934,7 +960,7 @@ function buildPageElements(wfID) {
                                             {% endfor %}
                                             </ul>
                                         </li>
-                                     {% endif %} 
+                                     {% endif %}
                                     <!-- end of if n.comment -->
                                     </ul>
                                 </div>
