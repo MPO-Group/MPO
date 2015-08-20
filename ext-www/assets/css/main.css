@@ -2,7 +2,7 @@
 /* CSS Document */
 
 body {
-padding-top: 60px;
+padding-top: 10px;
 padding-bottom: 40px;
 }
 .nav li {
@@ -178,4 +178,9 @@ padding: 7px 9px;
     padding-right: 10px;
     margin: 0px 0px;
     color: #F60;
+}
+
+.pad {
+	margin: 4px 2px;
+	padding: 5px 10px;
 }
