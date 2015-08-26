@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="mpo_doc.css" type="text/css" />
+</head>
+<body>
+<h1 id="api-server-install">API Server Install</h1>
+<p>Requires postgres 9.3rc1<br />Install and add postgres bin directory to your path.</p>
+<ul>
+<li><p>make virtualenv</p>
+<pre><code>virtualenv -p python2.7 --no-setuptools mpo_env</code></pre></li>
+<li><p>load virtualenv</p>
+<pre><code>source mpo_env/bin/activate</code></pre></li>
+<li><p>check pip</p>
+<pre><code>pip -v</code></pre>
+<p>*install pip reliably, but have to delete pip first</p>
+<pre><code>rm -rf mpo_env/bin/pip* mpo_env/lib/python2.7/site-packages/pip*
+curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python
+#or maybe, this previous one doesn&#39;t work for me on my OSX box. get missing &#39;main&#39; error. 
+easy_install pip
+#if you get error from zipimport and setuptools, try fresh install of setuptools
+pip install -U setuptools
+#or
+wget https://bitbucket.org/pypa/setuptools/raw/0.8/ez_setup.py
+python ez_setup.py</code></pre></li>
+<li><p>install python packages in virtual env</p>
+<pre><code>pip install -r pip_list.txt</code></pre></li>
+<li><p>enjoy<br />```<br />svn co <a href="https://www.psfc.mit.edu/mposvn/trunk">https://www.psfc.mit.edu/mposvn/trunk</a> mpo<br />export MPO_HOME=$PWD/mpo<br />cd $MPO_HOME<br />chmod 600 $MPO_HOME/*.key<br />#below only if you want to run local copy of database<br />export PGDATA=$MPO_HOME/db/data<br />mkdir $PGDATA<br />pg_ctl start -D $PGDATA</p></li>
+</ul>
+<pre><code>#Web Server Install
+Needs pydot. pyparsing dependence broken in 2.x so do</code></pre>
+<p>pip install -Iv <a href="https://pypi.python.org/packages/source/p/pyparsing/pyparsing-1.5.7.tar.gz#md5=9be0fcdcc595199c646ab317c1d9a709">https://pypi.python.org/packages/source/p/pyparsing/pyparsing-1.5.7.tar.gz#md5=9be0fcdcc595199c646ab317c1d9a709</a><br />pip install pydot<br />```</p>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="mpo_doc.css" type="text/css" />
+</head>
+<body>
+<h1 id="client-installation">CLIENT INSTALLATION</h1>
+<p>For commandline and scripting tools, only the mpo_arg.py class<br />is needed. The only non standard python dependencies of this are requests.py and urllib3.py<br />These dependencies are provided in a virtual environment. For installation,<br />the requirements are system installed python2.7 and the virtualenv package for python.<br />To install virtualenv,</p>
+<pre><code>sudo pip install virtualenv</code></pre>
+<p>Alternatively, grab a known working copy from the mpo repo:</p>
+<pre><code>svn export https://www.psfc.mit.edu/mposvn/trunk/virtualenv.py</code></pre>
+<p>Then to install the client:</p>
+<ul>
+<li>setting up python environment</li>
+</ul>
+<pre><code>cd $INSTALL_DIR
+virtualenv mpo_env
+source mpo_env/bin/activate
+rm -rf mpo_env/bin/pip* mpo_env/lib/python2.7/site-packages/pip*
+easy_install pip
+pip install requests urllib3</code></pre>
+<ul>
+<li><p>create user preferences directory</p>
+<pre><code>mkdir $HOME/.mpo
+chown $USER:$USER $HOME/mpo
+chmod 700 $HOME/.mpo
+pushd $HOME/.mpo
+svn export https://www.psfc.mit.edu/mposvn/trunk/mpo.conf</code></pre></li>
+<li><p>add your certificate</p>
+<pre><code>cp path_to_key/my_key.pem .</code></pre></li>
+<li><p>edit mpo.conf to specify your certificate and other preferences:</p>
+<pre><code>vim mpo.conf</code></pre></li>
+<li><p>retrieve client (svn or copy from existing checkout) note, using export below does not create .svn and keep the pointer but allows retrieval of single files.</p>
+<pre><code>svn export https://www.psfc.mit.edu/mposvn/trunk/mpo.py
+svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_arg.py</code></pre></li>
+<li><p>should be done</p>
+<pre><code>alias mpo=&#39;/home/jwright/bin/mpo.py&#39;</code></pre></li>
+<li><p>Change the first line of mpo.py to point to your new python copy<br /> First line eg: #!/usr/local/bin/mpo_env/bin/python<br /> you may also set mpo environment defaults here. Especially the<br /> default MPO api server and your MPO authorization.</p>
+<pre><code>vi mpo.py</code></pre></li>
+</ul>
+</body>
+</html>
