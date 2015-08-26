@@ -38,7 +38,7 @@ then
    echo Critical error, cannot create workflow. Check configuration and server status.
    exit
 fi
-   
+
 
 echo wid is $wid
 oid1=`$MPO add  $wid $wid --name=shot --desc="Plasma shot number" --uri=$shot`
@@ -55,17 +55,17 @@ cid=`$MPO comment $aid1 "This program is the only one in this workflow"`
 oid4=`$MPO add  $wid $wid --uid="$($MPO archive --name="Plasma Current" --desc="Plasma current in MA" -p mdsplus -s $shot -t magnetics -p'\magnetics::ip')"`
 
 oid5=`$MPO add  $wid $wid --name="PTDATA" --desc="Point Data" --uri="file://some/path/to/datafile"`
-aid2=`$MPO step $wid $oid4 --input=$oid5 --name="Read PTDATA" --desc="Read PTDATA and Plasma Current" --uri=EFIT1`
-aid3=`$MPO step $wid $aid2  --name="Calibrate Data" --desc="Calibrate input to EFIT" --uri=EFIT2`
-aid4=`$MPO step $wid $aid3 --input $aid1 --name="EFIT Data averaging" --desc="Average EFIT Data" --uri=EFIT3`
-aid5=`$MPO step $wid $aid4 --name="Run PTDATA" --desc="Run the EFIT code to FIT the equilibria" --uri=EFIT4`
-aid6=`$MPO step $wid $aid5  --name="Write EFIT Outputs" --desc="Write the EFIT output files" --uri=EFIT5`
+aid2=`$MPO step $wid $oid4 --input=$oid5 --name="Read PTDATA" --desc="Read PTDATA and Plasma Current"`
+aid3=`$MPO step $wid $aid2  --name="Calibrate Data" --desc="Calibrate input to EFIT"`
+aid4=`$MPO step $wid $aid3 --input $aid1 --name="EFIT Data averaging" --desc="Average EFIT Data"`
+aid5=`$MPO step $wid $aid4 --name="Run PTDATA" --desc="Run the EFIT code to FIT the equilibria"`
+aid6=`$MPO step $wid $aid5  --name="Write EFIT Outputs" --desc="Write the EFIT output files"`
 
 #You can get the uri separately if you like to simplify the queries
 uri=`$MPO --field=uri archive --name="A File" --desc="A EQDSK File" -p mdsplus -s $shot -t efit01 -p'\efit01::results:aeqdsk'`
 oid6=`$MPO add  $wid $aid6 --source $aid6 --uri=$uri`
 oid7=`$MPO add  $wid $aid6 --source $aid6 --uri="$($MPO --field=uri archive --name="G File" --desc="G EQDSK File" -p mdsplus -s $shot -t efit01 -p'\efit01::results:geqdsk')"`
-#aid7=`$MPO step $wid $oid6  --name="EFIT Complete" --desc="Should this be different than step?" --uri=EFIT6`
+#aid7=`$MPO step $wid $oid6  --name="EFIT Complete" --desc="Should this be different than step?"`
 
 echo Josh test uids: $cid $aid4 $oid7
 echo Last dataobject added is:
