@@ -1,2 +1,5 @@
+@import url("/static/bootstrap/css/bootstrap.css");
+
 img.scenter { display:block; margin-left:auto; margin-right:auto; width: 50% }
 img.sright { float: right; width: 50% }
+body { padding: 10px 10px; }
