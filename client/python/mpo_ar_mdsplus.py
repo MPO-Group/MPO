@@ -3,9 +3,9 @@ import mpo_ar_dataobject as _ar
 class mpo_ar_mdsplus(_ar.mpo_ar_dataobject):
     """
     A class to construct data objects from files in the users file system.
-    No file manipulation is done.  
+    No file manipulation is done.
 
-    This simply creates or returns an existing data object that referes to a 
+    This simply creates or returns an existing data object that referes to a
     particular file.
 
     command line syntax:

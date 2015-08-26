@@ -202,7 +202,11 @@ def checkaccess(f):
         elif request.method == 'PUT':
             print("checking modify access")
         elif request.method == 'DELETE':
-            print("checking delete access")
+            if apidebug:  print("APIDEBUG: checking delete access")
+            dn=get_user_dn(request)
+            if not rdb.validWriter(dn):
+                if apidebug: print ('APIDEBUG: DEMO User does not have delete access')
+                return Response(json.dumps({'error':'No delete access for user', 'dn':dn}), status=401)
         else:
             print("API ERROR: unknown method %s in checkaccess."%request.method)
         return f(*args, dn=dn, **kwargs)
@@ -473,7 +477,7 @@ def workflow(id=None, dn=None):
 
     #Desperately need to add field error checking. Note, we have access to db.query_map
     api_version,root_url,root=get_api_version(request.url)
-    
+
     if apidebug:
         print ('APIDEBUG: You are: %s'% str(dn) )
         print ('APIDEBUG: workflow url request is %s' %request.url)
@@ -539,7 +543,7 @@ def getWorkflowElement(wid,uid=None,dn=None):
                                       if :uid supplied, get specific dataobject
     """
     api_version,root_url,root=get_api_version(request.url)
-    
+
     if uid:
         records = rdb.getRecord('dataobject_instance',{'work_uid':wid,'uid':uid}, dn=dn )
     else:
@@ -548,10 +552,10 @@ def getWorkflowElement(wid,uid=None,dn=None):
     for rr in records:
         do_uid=rr['do_uid']
         rr['do_info']=rdb.getRecord('dataobject',{'uid':do_uid}, dn=dn )[0]
-   
- 
+
+
     r={'result':records,'count':len(records),'link-requested':request.url, 'status':'ok'}
-    
+
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
@@ -559,7 +563,7 @@ def getWorkflowElement(wid,uid=None,dn=None):
 @checkaccess
 def getWorkflowGraph(id,dn=None):
     api_version,root_url,root=get_api_version(request.url)
-    
+
     if request.method == 'GET':
         r = rdb.getWorkflowElements(id,request.args,dn=dn)
         return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
@@ -591,7 +595,7 @@ def getWorkflowComments(id, dn=None):
 @checkaccess
 def getWorkflowType(id, dn=None):
     api_version,root_url,root=get_api_version(request.url)
-    
+
     return Response(json.dumps(rdb.getWorkflowType(id,dn=dn),cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
@@ -602,7 +606,7 @@ def getWorkflowCompositeID(id,dn=None):
     Method to retrieve a workflow composite id in the field 'alias'.
     """
     api_version,root_url,root=get_api_version(request.url)
-    
+
     r={}
     if request.method == 'GET':
         #Add logic to parse id if comma separated
@@ -665,10 +669,10 @@ def dataobject(id=None, dn=None):
             req['name']="None given"
         if req.get('description')==None:
             req['description']="None given"
-            
+
         #find the dataobject with the specified uri (assumed to be unique)
         #or if no URI given, find it by UID. If not found, we make it.
-        
+
         if req.get('uri'):
             do = rdb.getRecord('dataobject',{'uri':req['uri']},dn=dn)
             if req.get('uid'): #check if consistent
@@ -682,7 +686,7 @@ def dataobject(id=None, dn=None):
             popuid=req.pop('uid')
         else:
             do = False
-            
+
         #If the D.O. exists, point to it, if not, make it and point to it
         if do:
             if not (req.get('work_uid') and req.get('parent_uid')):
@@ -701,24 +705,24 @@ def dataobject(id=None, dn=None):
             else:
                 if apidebug: print('do is ',str(do) )
                 req['do_uid']=do[0]['uid']
-            
+
 
         #At this point, we have a dataobject record. Now add it to the workflow since should
         #also have a work_uid and parent_uid
-        
+
         #First check if we already have an instance attached to this parent_uid
         #we only permit one instance per parent of the same object
         #We needs something like get dataobject?instance&do_uid=do_uid&work_uid=wid
         #to get a list of uses in this workflow and then figure out if they have the same parent.
         #perhaps by using rdb.getWorkflowElements. This is really a topological question - we may
         #have more of these.
-        
+
         #check = rdb.getRecord('dataobject_instance',{'do_uid':id},dn=dn)
         r = rdb.addRecord('dataobject_instance',json.dumps(req),dn=dn)
         id = r['uid']
         morer = rdb.getRecord('dataobject_instance',{'uid':id},dn=dn)
         publishEvent('mpo_dataobject',onlyone(morer))
-        
+
     elif request.method == 'GET':
 
         #handling for comma separated UIDs
@@ -769,7 +773,7 @@ def activity(id=None, dn=None):
     istatus=200
 
     api_version,root_url,root=get_api_version(request.url)
-    
+
     if request.method == 'POST':
         r = rdb.addRecord('activity',request.data,dn=dn)
         id = r['uid']
@@ -850,7 +854,7 @@ def comment(id=None, dn=None):
 @checkaccess
 def metadata(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)
-    
+
     if request.method == 'POST':
         r = rdb.addMetadata( request.data, dn=dn)
         id = r['uid']
@@ -882,7 +886,7 @@ def metadata(id=None, dn=None):
 @checkaccess
 def ontologyClass(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)
-    
+
     result = jsonify(json.loads(request.data),user_dn=dn)
     if request.method == 'POST':
         pass
@@ -925,7 +929,7 @@ def ontologyTermVocabulary(id=None, dn=None):
 @checkaccess
 def ontologyTermTree(id=None, dn=None):
     '''
-    This function returns the vocabulary of an ontology term specified by its <id>=parent_id. 
+    This function returns the vocabulary of an ontology term specified by its <id>=parent_id.
     Vocabulary is defined as the next set of terms below it in the ontology term tree.
     '''
     api_version,root_url,root=get_api_version(request.url)
@@ -948,7 +952,7 @@ def ontologyTerm(id=None, dn=None):
     ontology/term/<id>
     ontology/term?path=term/term2/termN
     '''
-    api_version,root_url,root=get_api_version(request.url)    
+    api_version,root_url,root=get_api_version(request.url)
 
     if request.method == 'POST':
         objs = json.loads(request.data)
@@ -975,7 +979,7 @@ def ontologyTerm(id=None, dn=None):
 @app.route(routes['ontology_instance'], methods=['GET', 'POST'])
 @checkaccess
 def ontologyInstance(id=None, dn=None):
-    api_version,root_url,root=get_api_version(request.url)    
+    api_version,root_url,root=get_api_version(request.url)
 
     if request.method == 'POST':
         r = rdb.addOntologyInstance(request.data,dn=dn)
@@ -986,7 +990,7 @@ def ontologyInstance(id=None, dn=None):
             p_uids=request.args.get('parent_uid')
             if p_uids:
                 p_uids=p_uids.strip().split(',')
-                
+
                 r={}
                 rargs=request.args.to_dict() #multidict conversion to dict
                 for pid in p_uids:
@@ -1010,7 +1014,7 @@ def user(id=None, dn=None):
     #Unregistered users need to be able to be registered, hence comment this out for now.
     #A better solution is to have a valid user register unregistered users. This could be
     #the UI itself.
-    
+
     istatus=200
     if request.method == 'POST':
         r = rdb.addUser( request.data, submitter_dn=dn )
@@ -1025,20 +1029,29 @@ def user(id=None, dn=None):
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
 
 
-@app.route(routes['item']+'/<id>', methods=['GET'])
+@app.route(routes['item']+'/<id>', methods=['GET','DELETE'])
 @checkaccess
 def item(id, dn=None):
-    api_version,root_url,root=get_api_version(request.url)    
+    api_version,root_url,root=get_api_version(request.url)
 
-    if id:
-        r = rdb.getRecordTable( id, dn=dn )
-    else:
-        payload={"url":request.url, "body":request.data, "hint":"Must provide an UID", "uid":-1}
-        raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,
-                              payload=payload)
+    if request.method == 'GET':
+        if id:
+            r = rdb.getRecordTable( id, dn=dn )
+        else:
+            payload={"url":request.url, "body":request.data, "hint":"Must provide an UID", "uid":-1}
+            raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,
+                                  payload=payload)
 
-    return Response(json.dumps({'table':r,'uid':id}), mimetype='application/json')
-
+        return Response(json.dumps({'table':r,'uid':id}), mimetype='application/json')
+    elif request.method == 'DELETE':
+        if id:
+            print(id)
+            r = rdb.deleteRecord(id, dn=dn)
+        else:
+            payload={"url":request.url, "body":request.data, "hint":"Must provide an UID", "uid":-1}
+            raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,
+                                  payload=payload)
+        return Response(json.dumps({}),mimetype='application/json')
 
 if __name__ == '__main__':
     #adding debug option here, so we can see what is going on.

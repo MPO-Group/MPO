@@ -135,7 +135,7 @@ class mpo_methods(object):
     WORKID='work_uid'
     PARENTID='parent_uid' #field for object id to which comments and metadata are attached
     RESULT='result'
-    
+
     MPO_VERSION='v0'
     WORKFLOW_RT = 'workflow'
     COMMENT_RT  = 'comment'
@@ -197,7 +197,7 @@ class mpo_methods(object):
         #print('field in format is',field,filter,file=sys.stderr)
         if not field:  field=self.ID
         #print('field in format is',field,filter,file=sys.stderr)
-        
+
         #check that result is a request object or a dictionary
         if not isinstance(result,requests.models.Response):
             if not isinstance(result,dict):
@@ -212,7 +212,7 @@ class mpo_methods(object):
         if self.debug:
             print("MPO_ARG DEBUG format:",field,result,str(type(result)),text,file=sys.stderr)
 
-            
+
         if filter=='id':
             if self.RESULT in rr: #then format is to have record list in result field
                 rr=rr[self.RESULT]
@@ -229,7 +229,7 @@ class mpo_methods(object):
                     output=output[0]
             elif field in rr:
                 output=rr[field]
-                
+
         elif filter=='json' or filter=='dict':
             output=rr
         elif filter=='pretty':
@@ -340,7 +340,7 @@ class mpo_methods(object):
             r=self.format(r,self.filter)
 
         return r
-        
+
 
 
     def post(self,route="",workflow_ID=None,obj_ID=None,data=None,**kwargs):
@@ -390,7 +390,7 @@ class mpo_methods(object):
 
         if kwargs.get('uid'):
             datadict['uid']=kwargs.get('uid')
-            
+
         if self.debug:
             print('MPO.POST to {u} with workflow:{wid}, parent:{pid} and payload of {p}'.format(
                   u=url,wid=workflow_ID,pid=obj_ID,p=json.dumps(datadict) ),file=sys.stderr)
@@ -423,7 +423,7 @@ class mpo_methods(object):
 
         return r
 
-        
+
 ### Main mpo methods
     def init(self,name=None, desc="", wtype='None', **kwargs):
         """
@@ -476,7 +476,7 @@ class mpo_methods(object):
             payload={"name":name,"description":desc,"source_uid":source,"uri":uri}
         else:
             return {"name":name,"description":desc,"source_uid":source,"message":"Must provide either uri or uid.", 'uid':-1, "status":-1}
-            
+
         return self.post(self.DATAOBJECT_RT,workflow_ID,[parentobj_ID],data=payload,**kwargs)
 
 
@@ -627,7 +627,7 @@ class mpo_methods(object):
                 elements=[elements]
         else:
             elements=[]
-        
+
         if collection: #add to existing collection
 
             if remove:
@@ -669,7 +669,7 @@ class mpo_methods(object):
                 return self.add(name=name, desc=desc, uri=uri)
         return uri
 
-        
+
     def get_uri(self, uri=None, do_uid=None):
         if do_uid!=None:
             r = self.get("%s/%s"%(self.DATAOBJECT_RT,do_uid))
@@ -684,7 +684,7 @@ class mpo_methods(object):
             raise Exception("One of uri or do_uid must be specified")
         return uri
 
-    
+
     def restore(self, uri=None, do_uid=None, *arg, **kw):
         import importlib
         uri = self.get_uri(uri=uri, do_uid=do_uid)
@@ -785,6 +785,11 @@ class mpo_cli(object):
         post_parser.add_argument('--params',action='store',
                                  help='Payload arguments as {key:value,key2:value2}')
         post_parser.set_defaults(func=self.mpo.post)
+
+        #delete
+        delete_parser=subparsers.add_parser('delete', help='DELETE to a route')
+        delete_parser.add_argument('route',action='store',help='Route of resource to delete')
+        delete_parser.set_defaults(func=self.mpo.delete)
 
         #init
         init_parser=subparsers.add_parser('init', aliases=( ('start_workflow',)),help='Start a new workflow')

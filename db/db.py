@@ -81,11 +81,11 @@ def processArgument(a):
     """
     #protect against empty input
     if not a: return a
-        
+
     if (not isinstance(a,str)) and (not isinstance(a,unicode)):
         print('DBERROR: processArgument called with non-string argument. Converting to string.',str(a),str(type(a)) )
         a=str(a)
-        
+
     if a[0]=='"' and a[-1]=='"':
         qa=a[1:-1]
     else:
@@ -132,6 +132,26 @@ def getRecordTable(id, dn=None):
 
     return table
 
+def deleteRecord(id, dn=None):
+    '''
+    Given a record id delete the record from the db.
+    '''
+    if not id: return None
+    t=getRecordTable(id)
+    if not t: return None
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    cursor.execute('select * from '+t+' where '+query_map[t]['uid']+'=%s',(id,))
+    # retrieve the records from the database
+    r = cursor.fetchone()
+    print(r)
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+
+    return None
 
 def getRecord(table,queryargs={}, dn=None):
     '''
@@ -436,7 +456,7 @@ def addUser(json_request,submitter_dn):
         print('uid is ', objs['uid'])
         print('adduser records',records)
 
-    
+
     return records
 
 
