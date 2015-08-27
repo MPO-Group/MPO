@@ -38,10 +38,102 @@ svn export https://www.psfc.mit.edu/mposvn/trunk/mpo.conf</code></pre></li>
 <li><p>retrieve client (svn or copy from existing checkout) note, using export below does not create .svn and keep the pointer but allows retrieval of single files.</p>
 <pre><code>svn export https://www.psfc.mit.edu/mposvn/trunk/mpo.py
 svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_arg.py</code></pre></li>
+<li><p>retrieve the python archive classes</p>
+<pre><code>svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_dataobject.py
+svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_filesys.py
+svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_mdsplus.py
+svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_ptdata.py
+svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_rsync.py
+svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_wos.py</code></pre></li>
 <li><p>should be done</p>
 <pre><code>alias mpo=&#39;/home/jwright/bin/mpo.py&#39;</code></pre></li>
 <li><p>Change the first line of mpo.py to point to your new python copy<br /> First line eg: #!/usr/local/bin/mpo_env/bin/python<br /> you may also set mpo environment defaults here. Especially the<br /> default MPO api server and your MPO authorization.</p>
 <pre><code>vi mpo.py</code></pre></li>
+<li>Try it out.<br /></li>
+<li><p>help on the mpo command</p></li>
 </ul>
+<pre><code>\$ mpo --help
+usage: mpo.py [-h] [--user USER] [--pass PASS]
+              [--format {id,raw,text,json,dict,pretty} | --field FIELD]
+              [--verbose] [--host HOST] [--dryrun]
+              {get,post,delete,init,start_workflow,add,add_data,step,add_action,ontology_term,define,ontology_instance,add_metadata,metadata,annotate,archive,collect,ls,restore,comment,add_comment,meta,search}
+              ...
+
+MPO Command line API
+
+positional arguments:
+  {get,post,delete,init,start_workflow,add,add_data,step,add_action,ontology_term,define,ontology_instance,add_metadata,metadata,annotate,archive,collect,ls,restore,comment,add_comment,meta,search}
+                        commands
+    get                 GET from a route
+    post                POST to a route
+    delete              DELETE to a route
+    init (start_workflow)
+                        Start a new workflow
+    add (add_data)      Add a data object to a workflow.
+    step (add_action)   Add an action to a workflow.
+    ontology_term (define)
+                        Add a term to the vocabulary
+    ontology_instance (add_metadata,metadata,annotate)
+                        Add a term to the vocabulary
+    archive             Archive a data object.
+    collect             Create a new collection
+    ls                  list the Archive of a data object.
+    restore             restore the Archive of a data object.
+    comment (add_comment)
+                        Attach a comment an object.
+    meta                Add metadata to a dataobject.
+    search              SEARCH the MPO store
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --user USER, -u USER  Specify user.
+  --pass PASS, -p PASS  Specify password.
+  --format {id,raw,text,json,dict,pretty}, -f {id,raw,text,json,dict,pretty}
+                        Set the format of the response.
+  --field FIELD         Return a specific field to shell. EG &quot;--field=uid&quot; is
+                        the same as &quot;--format=id&quot;.
+  --verbose, -v         Turn on debugging info
+  --host HOST           specify API root URI
+  --dryrun, -d          Show the resulting POST without actually issuing the
+                        request
+
+Metadata Provenance Ontology project
+\$</code></pre>
+<ul>
+<li>get the users in the database</li>
+</ul>
+<pre><code>\# get the uuids of the users
+\#
+\$ mpo get user
+\[&#39;ddc315a1-6310-41e7-a84d-886bc904f3b2&#39;, &#39;f223db41-d1c5-41db-b8af-fde6c0a16f76&#39;\]
+</code></pre>
+<pre><code>\# get the users full records as nicely formatted json
+\#
+\$ mpo --format pretty get user 
+\[
+    \{
+        &quot;username&quot;:&quot;mpoadmin&quot;,
+        &quot;dn&quot;:null,
+        &quot;uid&quot;:&quot;ddc315a1-6310-41e7-a84d-886bc904f3b2&quot;,
+        &quot;firstname&quot;:null,
+        &quot;lastname&quot;:null,
+        &quot;phone&quot;:null,
+        &quot;time&quot;:&quot;2015-06-10 12:17:03.192294&quot;,
+        &quot;organization&quot;:null,
+        &quot;email&quot;:null
+    \},
+    \{
+        &quot;username&quot;:&quot;mpodemo&quot;,
+        &quot;dn&quot;:&quot;emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US&quot;,
+        &quot;uid&quot;:&quot;f223db41-d1c5-41db-b8af-fde6c0a16f76&quot;,
+        &quot;firstname&quot;:&quot;MPO&quot;,
+        &quot;lastname&quot;:&quot;Demo User&quot;,
+        &quot;phone&quot;:null,
+        &quot;time&quot;:&quot;2015-06-10 12:17:03.193528&quot;,
+        &quot;organization&quot;:&quot;MIT&quot;,
+        &quot;email&quot;:&quot;jas@psfc.mit.edu&quot;
+    \},
+\]
+\$ </code></pre>
 </body>
 </html>

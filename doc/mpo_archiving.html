@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+  <link rel="stylesheet" href="mpo_doc.css" type="text/css" />
+</head>
+<body>
+<h1 id="the-mpo-archiving-commands-and-methods">The MPO archiving commands and methods</h1>
+<h2 id="overview">Overview</h2>
+<p>The MPO system provides tools for users to document their scientific workflows. Users<br />record the provenenace of their data products, add annotations, and create groupings of<br />them. Central to this is the concept of a persistent data store. Data objects should<br />refer to retrievable records or files specified by a URI. These records should be imutable.<br />The 'mpo archive'commands create data objects.</p>
+<p>The mpo archive system is extensible, dynamically loaded code. Each archive protocol is<br />implemented as a subclass of the mpo_ar_dataobject class. Each subclass is free to override<br />any of the methods it needs to.</p>
+<p>Some archive protocols simply create URIs for exsiting stored data. These include:</p>
+<ul>
+<li>mdsplus<br /></li>
+<li>filesys<br /></li>
+<li>wos</li>
+</ul>
+<p>Some archive protocols actually store and retrieve files from a persistent store.</p>
+<ul>
+<li>rsync</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="general-form-of-the-command">General form of the command</h3>
+<p>Help is available for the overall command, and the specifics of each protocol</p>
+<pre><code>$ mpo archive --help
+usage: mpo.py archive [-h] [--name NAME] [--desc DESC] [--protocol ...]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --name NAME, -n NAME
+  --desc DESC, -d DESC  Describe the object being archived
+  --protocol ..., -p ...
+$ </code></pre>
+<h3 id="filesys">filesys</h3>
+<p>The filesys protocol creates URIs that describe files that are assumed to be static.</p>
+<pre><code>$ mpo archive --protocol filesys --help
+usage: mpo archive --protocol=xxx [-h] [--verbose] --filespec FILESPEC
+
+data object creator
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --verbose, -v         Turn on debugging info
+  --filespec FILESPEC, -f FILESPEC
+                        Specify file or directory.
+
+Metadata Provenance Ontology project
+None
+$</code></pre>
+<pre><code># get just the UUID of the data object
+$ mpo archive --protocol filesys --filespec /Users/jas/calibrations/my_cal.dat
+c6b2dc66-77ce-4f68-8df0-d67ef859475b</code></pre>
+<pre><code># Get the full record
+$ mpo --format pretty archive --protocol filesys --filespec /Users/jas/calibrations/my_cal.dat
+[
+    {
+        &quot;username&quot;:&quot;jas@MIT.EDU&quot;,
+        &quot;user_uid&quot;:&quot;50ca99dc-29f5-4b86-a147-39e7e7c483a1&quot;,
+        &quot;uid&quot;:&quot;c6b2dc66-77ce-4f68-8df0-d67ef859475b&quot;,
+        &quot;source_uid&quot;:null,
+        &quot;description&quot;:null,
+        &quot;messages&quot;:{
+            &quot;info&quot;:&quot;dataobject found. provide both work_uid and parent_uid to attach to a workflow.&quot;,
+            &quot;api_version&quot;:&quot;v0&quot;
+        },
+        &quot;uri&quot;:&quot;filesys:///Users/jas/calibrations/my_cal.dat&quot;,
+        &quot;time&quot;:&quot;2015-08-27 06:52:45.618291&quot;,
+        &quot;name&quot;:null
+    }
+]
+$</code></pre>
+<h3 id="rsync">rsync</h3>
+<p>The rsync protocol uses rsync to store and retrieve files from a remote system. It currently uses YOUR credentials to rsync</p>
+<pre><code># Help on rsync
+#
+# note the use of the short form of the arguments (-p == --protocol, -h == --help)
+#
+$ mpo archive -p rsync -h
+usage: mpo archive --protocol=xxx [-h] [--verbose] --filespec FILESPEC --host
+                                  HOST [--destination DESTINATION]
+
+data object creator
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --verbose, -v         Turn on debugging info
+  --filespec FILESPEC, -f FILESPEC
+                        Specify file or directory.
+  --host HOST, -H HOST  Specify the rsync host
+  --destination DESTINATION, -d DESTINATION
+                        Specify rsync destination
+
+Metadata Provenance Ontology project
+None
+$ </code></pre>
+<p>Save a file to MY home directory on the remote server psfcstor1.psfc.mit.edu. Note that since I have ssh keys set up, I am not prompted for a password.</p>
+<pre><code># Make a dataobject and return it UUID
+#
+$ mpo archive -p rsync --filespec calibrations/my_cal.dat --host psfcstor1.psfc.mit.edu
+fe94dae9-cb59-4e1e-b18b-6525786d0da0
+$ </code></pre>
+<p>If the databoject already exists the archive command simply returns its data object</p>
+<pre><code># get the full record for the data object returned above
+#
+$ mpo --format pretty archive -p rsync --filespec calibrations/my_cal.dat --host psfcstor1.psfc.mit.edu
+[
+    {
+        &quot;username&quot;:&quot;jas@MIT.EDU&quot;,
+        &quot;user_uid&quot;:&quot;50ca99dc-29f5-4b86-a147-39e7e7c483a1&quot;,
+        &quot;uid&quot;:&quot;fe94dae9-cb59-4e1e-b18b-6525786d0da0&quot;,
+        &quot;source_uid&quot;:null,
+        &quot;description&quot;:null,
+        &quot;messages&quot;:{
+            &quot;info&quot;:&quot;dataobject found. provide both work_uid and parent_uid to attach to a workflow.&quot;,
+            &quot;api_version&quot;:&quot;v0&quot;
+        },
+        &quot;uri&quot;:&quot;rsync://psfcstor1.psfc.mit.edu/calibrations/my_cal.dat&quot;,
+        &quot;time&quot;:&quot;2015-08-27 07:00:43.510985&quot;,
+        &quot;name&quot;:null
+    }
+]
+$</code></pre>
+<p>List a dataobject from a remote server (currently a bug...)</p>
+<pre><code>$ mpo ls --do_uid fe94dae9-cb59-4e1e-b18b-6525786d0da0
+ls protocol=rsync
+ls args = //psfcstor1.psfc.mit.edu/calibrations/my_cal.dat
+[&#39;ssh&#39;, u&#39;psfcstor1.psfc.mit.edu&#39;, &#39;ls&#39;, &#39;-rl&#39;, u&#39;calibrations/my_cal.dat&#39;]
+-rw-r--r-- 1 jas unix_users 0 Aug 27 10:08 calibrations/my_cal.dat
+
+-rw-r--r-- 1 jas unix_users 0 Aug 27 10:08 calibrations/my_cal.dat
+
+(mpo)mdsdev4:~ jas$ </code></pre>
+<p>Retrieve a dataobject from a remote server</p>
+<pre><code>$ mpo restore --do_uid fe94dae9-cb59-4e1e-b18b-6525786d0da0
+receiving file list ... done
+my_cal.dat
+
+sent 42 bytes  received 130 bytes  114.67 bytes/sec
+total size is 0  speedup is 0.00
+1
+$ </code></pre>
+<p>Examples below will quote the command line<br />syntax beginning with <code>mpo</code> and give the full response. The url field indicates the api<br />route used. Note that using the command line option <code>--format=pretty</code> will produce nice<br />json output to the screen. In scripts, this option is generally not used and the default<br />behavior is to return the bare UUID value or an error code.</p>
+<ul>
+<li><p>Getting a workflow UUID from an alias and vice-versa</p>
+<p><code>mpo --format=pretty get workflow -p uid=37d86ba6-d4ad-4437-87a0-c62e3ba0263e</code><br /> The response contains the composite sequence, type, and<br /> user. Together these form the composite id, /user/type/composite_seq</p>
+<pre class="sourceCode json"><code class="sourceCode json"> [
+ {
+    <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;john&quot;</span>,
+    <span class="dt">&quot;description&quot;</span>:<span class="st">&quot;EFIT equilbrium. Testing mode coupling for COMSOL.  Resolving singular behavior near edges&quot;</span>,
+    <span class="dt">&quot;composite_seq&quot;</span>:<span class="dv">1</span>,
+    <span class="dt">&quot;user&quot;</span>:{
+        <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;john&quot;</span>,
+        <span class="dt">&quot;lastname&quot;</span>:<span class="st">&quot;Wright&quot;</span>,
+        <span class="dt">&quot;userid&quot;</span>:<span class="st">&quot;6f0b016c-2952-4d8c-9876-a86f73a04808&quot;</span>,
+        <span class="dt">&quot;firstname&quot;</span>:<span class="st">&quot;John&quot;</span>
+    },
+    <span class="dt">&quot;time&quot;</span>:<span class="st">&quot;2014-11-07 16:19:27.646942&quot;</span>,
+    <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;37d86ba6-d4ad-4437-87a0-c62e3ba0263e&quot;</span>,
+    <span class="dt">&quot;type&quot;</span>:<span class="st">&quot;TORIC&quot;</span>,
+    <span class="dt">&quot;name&quot;</span>:<span class="st">&quot;r505&quot;</span>
+ }
+ ]</code></pre>
+<p>The user does not have to construct the composite sequence (or alias)<br />themselves though; the <code>alias</code> subroute of <code>workflow</code> will do that.<br /><code>mpo --format=pretty get workflow/37d86ba6-d4ad-4437-87a0-c62e3ba0263e/alias</code></p>
+<pre class="sourceCode json"><code class="sourceCode json">{
+<span class="dt">&quot;alias&quot;</span>:<span class="st">&quot;john/TORIC/1&quot;</span>,
+<span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;37d86ba6-d4ad-4437-87a0-c62e3ba0263e&quot;</span>
+}</code></pre>
+<p>Finally, if your friend told you the alias, you can use that to<br />retrieve the workflow id.<br /> <code>mpo --format=pretty get workflow -p alias=john/TORIC/1</code></p></li>
+<li><p>Adding a type to the ontology for use in a creating a workflow for a new code.</p>
+<p>GET uuid of workflow types in the ontology.<br />term_id=`mpo get ontology/term -p path=Workflow/Type`</p>
+<pre class="sourceCode json"><code class="sourceCode json">{
+ <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;mpodemo&quot;</span>,
+ <span class="dt">&quot;user_uid&quot;</span>:<span class="st">&quot;f223db41-d1c5-41db-b8af-fde6c0a16f76&quot;</span>,
+ <span class="dt">&quot;description&quot;</span>:<span class="st">&quot;Terms that describe the workflow types&quot;</span>,
+ <span class="dt">&quot;name&quot;</span>:<span class="st">&quot;Type&quot;</span>,
+ <span class="dt">&quot;specified&quot;</span>:<span class="dv">true</span>,
+ <span class="dt">&quot;units&quot;</span>:<span class="dv">null</span>,
+ <span class="dt">&quot;date_added&quot;</span>:<span class="st">&quot;2014-07-09 17:38:26.506827&quot;</span>,
+ <span class="dt">&quot;type&quot;</span>:<span class="st">&quot;string&quot;</span>,
+ <span class="dt">&quot;parent_uid&quot;</span>:<span class="st">&quot;58c19102-b1b7-4f8d-8202-18fde0a88bad&quot;</span>,
+ <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;ee39ae67-139e-433e-b666-441437faa413&quot;</span>,
+ <span class="dt">&quot;url&quot;</span>:<span class="st">&quot;https://mpo.psfc.mit.edu/api/v0/ontology/term?path=Workflow/Type&quot;</span>
+}</code></pre>
+<p>POST a new type of workflow<br /><code>mpo define TORLH -p $term_id -s -d &quot;code for fullwave lower hybrid simulations&quot; -t string</code></p></li>
+<li><p>Setting the 'ratings' quality of a work flow.</p>
+<p>GET uuid of quality status.<br />term_id=`mpo get ontology/term -p path=Generic/Status/quality`</p>
+<p>Result:</p>
+<pre class="sourceCode json"><code class="sourceCode json">{
+ <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;mpodemo&quot;</span>,
+ <span class="dt">&quot;user_uid&quot;</span>:<span class="st">&quot;f223db41-d1c5-41db-b8af-fde6c0a16f76&quot;</span>,
+ <span class="dt">&quot;description&quot;</span>:<span class="st">&quot;Fitness of an object for a particular purpose&quot;</span>,
+ <span class="dt">&quot;name&quot;</span>:<span class="st">&quot;quality&quot;</span>,
+ <span class="dt">&quot;specified&quot;</span>:<span class="dv">true</span>,
+ <span class="dt">&quot;units&quot;</span>:<span class="dv">null</span>,
+ <span class="dt">&quot;date_added&quot;</span>:<span class="st">&quot;2014-09-04 14:22:44.350747&quot;</span>,
+ <span class="dt">&quot;type&quot;</span>:<span class="st">&quot;string&quot;</span>,
+ <span class="dt">&quot;parent_uid&quot;</span>:<span class="st">&quot;34f6f31b-45d2-460e-b557-7363107d8e93&quot;</span>,
+ <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;29a8a81a-a7f8-45ea-ac55-c960786ed5d6&quot;</span>,
+ <span class="dt">&quot;url&quot;</span>:<span class="st">&quot;https://mpo.psfc.mit.edu/api/v0/ontology/term?path=Generic/Status/quality&quot;</span>
+}</code></pre>
+<p>Previous step shows the entry, but is not needed to actually set<br />the value, you can just use the path. You do need the uuid of the<br />workflow.</p>
+<p>wid=`mpo get workflow -p alias=jwright/EFIT/4`</p>
+<p>POST a rating<br /> <code>mpo --format=pretty ontology_instance $wid -p vocabulary=/Generic/Status/quality 1</code></p></li>
+<li><p>Get the controlled vocabulary for a term.<br /> For example, to see valid values for a tracked code input or Status<br /> attribute, or to see what inputs can be tracked for a given code. We<br /> first pass the <code>path</code> argument to the <code>ontology/term</code> route to get<br /> the ID of that term.</p>
+<p>term_id=`mpo get ontology/term -p path=Generic/Status/quality`</p>
+<p><code>mpo --format=pretty get ontology/term/$term_id/vocabulary</code></p></li>
+<li><p>Data objects.<br /> Dataobjects have both their own entry as well as references to them<br /> in workflows known as instances. Given one, the other can be<br /> retrieved. It can be easy to get confused about them, though.</p>
+<p><code>mpo --format=pretty get dataobject</code></p></li>
+</ul>
+<p>Will retrieve a formatted list of all dataobjects in the database.</p>
+<pre><code> `mpo --format=pretty get dataobject?instance`</code></pre>
+<p>Will retrieve a formatted list of all dataobject instances in the database.</p>
+<pre><code> `mpo add workflow_id parent_id --name=name --desc=desc --uri=uri`</code></pre>
+<p>Is the way to add a dataobject to a workflow. If dataobjects are the<br /> first item added to a workflow then the parent_id is the same as the<br /> workflow_id. The uri is a resource identifier to retrieve the<br /> dataobject for future inspection. The uri may be whatever you want,<br /> but must be unique. An archive command which is extensible is<br /> provide to store dataobject and create persistent uri's for them.</p>
+<ul>
+<li><p>Grouping requests.<br /> Most routes support grouped requests by uid.</p>
+<pre><code>mpo --format=pretty get metadata/c87ba801-8c0f-4cdd-bd2c-968849b03d19,a0168813-a75f-4bd7-89c3-358e909d8a15</code></pre>
+<p>rather than two separate requests. The response is a dictionary of dictionaries keyed by <code>uuid</code>:</p>
+<pre class="sourceCode json"><code class="sourceCode json">{
+  <span class="dt">&quot;a0168813-a75f-4bd7-89c3-358e909d8a15&quot;</span>:{
+    <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;d3dauto&quot;</span>,
+    <span class="dt">&quot;key_uid&quot;</span>:<span class="st">&quot;text&quot;</span>,
+    <span class="dt">&quot;user_uid&quot;</span>:<span class="st">&quot;84dd4463-23e0-4f85-b1d4-06d7aa7b36a9&quot;</span>,
+    <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;a0168813-a75f-4bd7-89c3-358e909d8a15&quot;</span>,
+    <span class="dt">&quot;parent_type&quot;</span>:<span class="st">&quot;activity&quot;</span>,
+    <span class="dt">&quot;value&quot;</span>:<span class="st">&quot;2013-06-05&quot;</span>,
+    <span class="dt">&quot;key&quot;</span>:<span class="st">&quot;compilation_date&quot;</span>,
+    <span class="dt">&quot;time&quot;</span>:<span class="st">&quot;2014-07-31 11:01:19.320238&quot;</span>,
+    <span class="dt">&quot;parent_uid&quot;</span>:<span class="st">&quot;8cca7ccd-bdd9-4df5-8bf1-1976a61b8db2&quot;</span>
+},
+  <span class="dt">&quot;c87ba801-8c0f-4cdd-bd2c-968849b03d19&quot;</span>:{
+    <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;d3dauto&quot;</span>,
+    <span class="dt">&quot;key_uid&quot;</span>:<span class="st">&quot;text&quot;</span>,
+    <span class="dt">&quot;user_uid&quot;</span>:<span class="st">&quot;84dd4463-23e0-4f85-b1d4-06d7aa7b36a9&quot;</span>,
+    <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;c87ba801-8c0f-4cdd-bd2c-968849b03d19&quot;</span>,
+    <span class="dt">&quot;parent_type&quot;</span>:<span class="st">&quot;dataobject&quot;</span>,
+    <span class="dt">&quot;value&quot;</span>:<span class="st">&quot;/link/efit/fitweight.dat&quot;</span>,
+    <span class="dt">&quot;key&quot;</span>:<span class="st">&quot;Fitting weight data&quot;</span>,
+    <span class="dt">&quot;time&quot;</span>:<span class="st">&quot;2014-07-31 11:01:16.925728&quot;</span>,
+    <span class="dt">&quot;parent_uid&quot;</span>:<span class="st">&quot;3be0813a-5f89-47d0-8f1b-4b932b824534&quot;</span>
+ }
+}</code></pre>
+<p>The ontology/instance route instead groups along the parent_uid query argument so that one may get a group<br /> of ontology instances attached to different objects.</p></li>
+</ul>
+<p>Some examples for language specific interfaces.</p>
+<ul>
+<li><p>python interface<br /> All command line methods have equivalents in the mpo_methods class found in mpo_arg.py:</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="co">#Setup mpo instance</span>
+cert=<span class="st">&#39;/Users/jwright/Codes/mposvn/trunk/MPO Demo User.pem&#39;</span>
+api=<span class="st">&#39;https://mpo.psfc.mit.edu/test-api&#39;</span>
+m=mpo_arg.mpo_methods(api_url=api,cert=cert,debug=<span class="ot">True</span>)
+m.debug=<span class="ot">False</span>
+m.<span class="dt">filter</span>=<span class="st">&#39;json&#39;</span>
+<span class="co">#Use mpo methods with return object being a python dictionary</span>
+<span class="co">#Omitting the filter will return Response object,r. Then dict is</span>
+<span class="co">#gotten with r.json()</span>
+wf=m.init(name=<span class="st">&quot;JCW Test Run&quot;</span>,desc=<span class="st">&quot;example of using python interface to API.&quot;</span>, wtype=<span class="st">&#39;EFIT&#39;</span>)
+do_uid=m.add(wf[<span class="st">&#39;uid&#39;</span>],wf[<span class="st">&#39;uid&#39;</span>],name=<span class="st">&#39;input.txt&#39;</span>, desc=<span class="st">&#39;An important input file&#39;</span>, uri=<span class="st">&#39;file://my/home/dir/input.txt&#39;</span>)
+step_uid=m.step(wf[<span class="st">&#39;uid&#39;</span>],do_uid[<span class="st">&#39;uid&#39;</span>],name=<span class="st">&#39;MonteCarlo&#39;</span>,desc=<span class="st">&#39;do mc simulation&#39;</span>)
+m.comment(step_uid[<span class="st">&#39;uid&#39;</span>],<span class="st">&#39;A very good code&#39;</span>)</code></pre></li>
+<li><p>matlab interface</p></li>
+<li><p>idl interface</p></li>
+<li><p>c/c++ interface</p></li>
+<li><p>fortran interface</p></li>
+</ul>
+</body>
+</html>

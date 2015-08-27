@@ -4,6 +4,8 @@ On this page may be found documentation for the Metadata Provenance and Ontology
 * [Client Install](./mpo_client_install.html)
 * [API](./mpo_api.html)
   This describes typical use cases for the API routes includes examples using the commandline `mpo` utility.
+* [Archiving](./mpo_archiving.html)
+  A persistent store is a central idea in MPO.  Data objects should point to imutable data storage.
 
 ##Demos
 * [Demo iPython Notebook - static html](./MPO demo.html)
