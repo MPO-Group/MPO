@@ -307,6 +307,7 @@ class mpo_methods(object):
 
 
     def delete(self,route="",params={},verbose=False,**kwargs):
+        import re
         """
         Delete a resource.
         Keyword arguments:
@@ -789,6 +790,8 @@ class mpo_cli(object):
         #delete
         delete_parser=subparsers.add_parser('delete', help='DELETE to a route')
         delete_parser.add_argument('route',action='store',help='Route of resource to delete')
+        delete_parser.add_argument('-p','--params',action='store',nargs='*',
+                                help='Query arguments as key=value')
         delete_parser.set_defaults(func=self.mpo.delete)
 
         #init
