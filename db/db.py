@@ -132,26 +132,30 @@ def getRecordTable(id, dn=None):
 
     return table
 
-def deleteRecord(id, dn=None):
+def deleteOntologyTerms(queryargs={}, dn=None):
     '''
     Given a record id delete the record from the db.
     '''
-    if not id: return None
-    t=getRecordTable(id)
-    if not t: return None
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
-    cursor.execute('select * from '+t+' where '+query_map[t]['uid']+'=%s',(id,))
-    # retrieve the records from the database
-    r = cursor.fetchone()
-    print(r)
+    if queryargs.has_key('uid'):
+        cursor.execute('select * from ontology_terms where '+query_map['ontology_terms']['uid']+'=%s',(queryargs['uid'],))
+    else:
+        if queryargs.has_key('path'):
+            cursor.execute('select * from ontology_terms where '+query_map['ontology_terms']['uid']+"=getTermUidByPath('"+processArgument(queryargs['path'])+"')")
+    if cursor.rowcount and cursor.rowcount != -1:
+        # retrieve the records from the database
+        r = cursor.fetchone()
+        print(r)
+    else:
+        r=[]
     # Close communication with the database
     cursor.close()
     conn.close()
 
-    return None
+    return r
 
 def getRecord(table,queryargs={}, dn=None):
     '''

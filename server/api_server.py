@@ -921,8 +921,6 @@ def ontologyTermVocabulary(id=None, dn=None):
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
-
-
 @app.route(routes['ontology_term']+'/<id>/tree', methods=['GET'])
 @app.route(routes['ontology_term']+'/tree', methods=['GET'])
 @cross_origin()
@@ -942,8 +940,8 @@ def ontologyTermTree(id=None, dn=None):
     return jsonify(**r)
 
 
-@app.route(routes['ontology_term']+'/<id>', methods=['GET'])
-@app.route(routes['ontology_term'], methods=['GET', 'POST'])
+@app.route(routes['ontology_term']+'/<id>', methods=['GET','DELETE'])
+@app.route(routes['ontology_term'], methods=['GET', 'POST','DELETE'])
 @checkaccess
 def ontologyTerm(id=None, dn=None):
     '''
@@ -966,6 +964,11 @@ def ontologyTerm(id=None, dn=None):
                 return Response(json.dumps({'uid':x['uid']}),mimetype='application/json')
 
         r = rdb.addRecord('ontology_terms',json.dumps(objs),dn=dn)
+    elif request.method == 'DELETE':
+        if id:
+            r = rdb.deleteOntologyTerms({'uid':id}, dn=dn )
+        else:
+            r = rdb.deleteOntologyTerms(request.args, dn=dn )
     else:
         if id:
             r = rdb.getRecord('ontology_terms', {'uid':id}, dn=dn )
@@ -1029,29 +1032,19 @@ def user(id=None, dn=None):
     return Response(json.dumps(r,cls=MPOSetEncoder), mimetype='application/json',status=istatus)
 
 
-@app.route(routes['item']+'/<id>', methods=['GET','DELETE'])
+@app.route(routes['item']+'/<id>', methods=['GET'])
 @checkaccess
 def item(id, dn=None):
     api_version,root_url,root=get_api_version(request.url)
 
-    if request.method == 'GET':
-        if id:
-            r = rdb.getRecordTable( id, dn=dn )
-        else:
-            payload={"url":request.url, "body":request.data, "hint":"Must provide an UID", "uid":-1}
-            raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,
-                                  payload=payload)
+    if id:
+        r = rdb.getRecordTable( id, dn=dn )
+    else:
+        payload={"url":request.url, "body":request.data, "hint":"Must provide an UID", "uid":-1}
+        raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,
+                              payload=payload)
 
-        return Response(json.dumps({'table':r,'uid':id}), mimetype='application/json')
-    elif request.method == 'DELETE':
-        if id:
-            print(id)
-            r = rdb.deleteRecord(id, dn=dn)
-        else:
-            payload={"url":request.url, "body":request.data, "hint":"Must provide an UID", "uid":-1}
-            raise InvalidAPIUsage(message='Unsupported route specified',status_code=400,
-                                  payload=payload)
-        return Response(json.dumps({}),mimetype='application/json')
+    return Response(json.dumps({'table':r,'uid':id}), mimetype='application/json')
 
 if __name__ == '__main__':
     #adding debug option here, so we can see what is going on.
