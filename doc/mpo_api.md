@@ -103,7 +103,7 @@ behavior is to return the bare UUID value or an error code.
      wid=\`mpo get workflow -p alias=jwright/EFIT/4\`
 
     POST a rating
-     `mpo --format=pretty ontology_instance $wid -p vocabulary=/Generic/Status/quality 1`
+     `mpo --format=pretty ontology_instance $wid /Generic/Status/quality 1`
 
 
 * Get the controlled vocabulary for a term.
