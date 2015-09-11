@@ -174,3 +174,58 @@ padding: 7px 9px;
 .lighter{
 	opacity: 0.5;
 }
+
+/* States */
+font.state-label {
+	font-weight: bold;
+	font-size: 9px;
+}
+
+font.complete {
+	color: #255625;
+}	
+font.in-progress {
+	color: #333333;
+}					
+font.non-standard-completion {
+	color: #A94442;
+}
+font.ready-for-review {
+	color: #EEA236;
+}
+font.review-complete {
+	color: #00497E;
+}	
+
+.table tbody tr.complete > td {
+  background-color: #dff0d8;
+}
+.table tbody tr.in-progress > td {
+  background-color: #dddddd;
+}		
+.table tbody tr.non-standard-completion > td {
+  background-color: #F2DEDE;
+}
+.table tbody tr.ready-for-review > td {
+  background-color: #FCF8E3;
+}
+.table tbody tr.review-complete > td {
+  background-color: #D9EDF7;
+}
+
+.table-hover tbody tr.complete:hover > td {
+  background-color: #d0e9c6;
+}
+.table-hover tbody tr.in-progress:hover > td {
+  background-color: #c6c6c6;
+}
+.table-hover tbody tr.non-standard-completion:hover > td {
+  background-color: #EBCCD1;
+}
+.table-hover tbody tr.ready-for-review:hover > td {
+  background-color: #faf2cc;
+}
+.table-hover tbody tr.review-complete:hover > td {
+  background-color: #c4e3f3;
+}
+

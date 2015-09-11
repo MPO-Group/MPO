@@ -575,14 +575,24 @@ ul li input.user_time_wf {
                 <tbody>
     		{% for item in results %}
                 <div id="accordion2" class="accordion">
-                	<tr>
+                
+                        {% if item.state %}
+                            <tr class="{{ item.state|lower|replace(" ","-") }}">
+                        {% else %}                                
+                            <tr>
+                        {% endif %}
+                    
                         {% set wf_number=loop.index+(current_page-1)*rpp %}
                         <td><span class="muted"><em><small>{{ wf_number }}</small></em></td>
                         <td>
                         <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.type }} / {{ item.composite_seq }}</a>
                         <br /><small><strong>UID: </strong><input type="text" value="{{ item.uid }}" class="small copy" readonly /></small>
                         </td>
-                        <td>{{ item.description }}</a></td>
+                        <td>{{ item.description }}
+                        {% if item.state != None %}
+                        <br /><font class="state-label {{ item.state|lower|replace(" ","-") }}">{{ item.state }}</font>
+						{% endif %}                        
+                         </td>
                         <td class="xsmall">{{ item.time }}</td>
                         <!-- <td>{{ item.username }}</td> -->
                         <td>

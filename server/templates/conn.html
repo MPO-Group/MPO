@@ -72,7 +72,7 @@ var nodeUIDs = new Array(); //store node UIDs for comparison with new node UIDs 
 var wid = ""; //store workflow wid
 var lastUpdate = ""; //store last update time
 var rightScrollHeight='700px';
-var clickedLinkedWorkflows=[];
+//var clickedLinkedWorkflows=[];
 
 function formatDate(date) {
     var d=new Date(date);
@@ -82,12 +82,12 @@ function formatDate(date) {
     var hh=d.getHours();
     var mm=d.getMinutes();
     var ss=d.getSeconds();
-
-    if (month.length<2) month='0'+month;
-    if (day.length <2) day='0'+day;
-    if (hh.length<2) hh+='0'+hh;
-    if (mm.length<2) mm+='0'+mm;
-    if (ss.length<2) ss+='0'+ss;
+	
+    if (month.toString().length<2) month='0'+month;
+    if (day.toString().length <2) day='0'+day;
+    if (hh.toString().length<2) hh='0'+hh;
+    if (mm.toString().length<2) mm='0'+mm;
+    if (ss.toString().length<2) ss='0'+ss;
 	
     this_date=[year,month,day].join('-');
 	this_time=[hh,mm,ss].join(":");
@@ -153,6 +153,7 @@ $(document).ready(function () {
 	var $window = $(window);
 	//Process SVG
 	$("#svg_loading").hide();
+	var wf_state = '{{ wf_state }}';
 	var wid_info = '{{ wid_info|tojson }}';  //single quote issue
 	wf_desc= '{{ wid_info[0].description }}' ;	 
 	var jsondata = '{{ nodes|tojson }}';  //single quote issue
@@ -210,7 +211,7 @@ $(document).ready(function () {
 							}
 						}
 						if(fill)
-							fillSVGElement(tmp['uid']);
+							fillSVGElement(tmp['uid'],"linked");
 					}
 					dataElements[tmp['name']]+="</li>";
 					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
@@ -223,7 +224,7 @@ $(document).ready(function () {
 								fill=true;
 							}
 						if(fill)
-							fillSVGElement(tmp['uid']);
+							fillSVGElement(tmp['uid'],"linked");
 					}
 					dataElements[tmp['name']]+="</li>";
 					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
@@ -321,22 +322,34 @@ $(document).ready(function () {
 		
 		//create new ID attribute for <text>
 		if (typeof(node.childNodes) !== "undefined") {
-			node.childNodes[2].setAttribute("fill","white"); //shapes fill color
+			if(key==0) {
+				if(wf_state=="Complete")
+					node.childNodes[2].setAttribute("fill","#dff0d8"); //shapes fill color
+				else if(wf_state=="In Progress")
+					node.childNodes[2].setAttribute("fill","#dddddd"); //shapes fill color
+				else if(wf_state=="Non Standard Completion")
+					node.childNodes[2].setAttribute("fill","#F2DEDE"); //shapes fill color
+				else if(wf_state=="Ready for Review")
+					node.childNodes[2].setAttribute("fill","#FCF8E3"); //shapes fill color
+				else if(wf_state=="Review Complete")
+					node.childNodes[2].setAttribute("fill","#D9EDF7"); //shapes fill color
+			}
+			else
+				node.childNodes[2].setAttribute("fill","white"); //shapes fill color
 			node.childNodes[4].setAttribute("style",'fill:rgb(0,76,153);cursor:pointer;'); //text styles
 			node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
 			nodeTitle=node.childNodes[4].textContent;
 			//node.childNodes[4].id = "text_" + id;
-			if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined')
+			if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
 				sub_content = dataElements[node.childNodes[4].textContent];
-			popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ nodeTitle +'</strong><br/><small><em>' + sub_content; 
-
+				popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ nodeTitle +'</strong><br/><small><em>' + sub_content; 
+			}
 		}
-		//Process wo
-		/*if(key==0)
+		if(key==0)
 		//if(id=="node1")
 			//popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">Add comments</a></small></div>';
 			popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a data-val="'+wid+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
-		else*/
+		else
 		//popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
 			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a data-val="'+id+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 		
@@ -391,8 +404,8 @@ $(document).ready(function () {
 	//when [+]linked workflows is clicked, convert Workflow IDs to composite names / descriptions
 	$('.wf_links li').click(function () {
 		var thisID=$(this).attr("id");
-		if(clickedLinkedWorkflows.indexOf(thisID) == -1) {
-			clickedLinkedWorkflows.push(thisID);
+		//if(clickedLinkedWorkflows.indexOf(thisID) == -1) {
+			//clickedLinkedWorkflows.push(thisID);
 			var wfID_list = $(this).find('li');
 			
 			//var numWfLinks=wfID_list.length;
@@ -401,16 +414,17 @@ $(document).ready(function () {
 			wfID_list.each(function(index) {
 				var current=$(this);
 				var wfID=$( this ).text();
-				var url="{{ url_for("workflow") }}/"+wfID;
+				var url="{{ url_for('workflow') }}/"+wfID;
+				console.log (url);
 				var jqxhr = $.getJSON( url, function( data ) {
 					var text=data[0]["username"]+"/"+data[0]["name"]+"/"+data[0]["composite_seq"]+" - "+data[0]["description"];
-					var linked_text="<a href=\"{{ url_for("connections") }}/"+data[0]["uid"]+"\"><span class='icon-workflow'></span> <em>"+text+"</em></a>"
+					var linked_text="<a href=\"{{ url_for('connections') }}/"+data[0]["uid"]+"\"><span class='icon-workflow'></span> <em>"+text+"</em></a>"
 					current.html(linked_text);
 				})
 				/*if((index+1)==numWfLinks)
 					$("#"+thisID.substring(3)+"_loader").hide();*/
 			});
-		}			
+		//}			
     });
 
 
@@ -450,6 +464,19 @@ $(document).ready(function () {
 				});
 			}
 			else {
+				var appendHtml = '<li>';
+				appendHtml += '<span class="icon-comment lighter"></span> ' + data[0].content+' <em>by '+data[0].username +'  <small>' + data[0].time.substring(0,16)+'</small>';		
+				appendHtml += '</li>';
+	
+				var p_uid=data[0].parent_uid;
+				var c_uid=data[0].uid;
+				//if first comment, add comment header list
+				if($("#acc_"+p_uid+" ul li ul.comments").length==0) {
+					commentHtml='<li><font class="bold">Comments:</font>';
+					commentHtml+='<ul class="comments"></ul>';
+					commentHtml+='</li>';
+					$("#acc_"+p_uid+" ul.details-list").append(commentHtml)
+				}
 				var appendHtml = '<li>';
 				appendHtml += '<span class="icon-comment lighter"></span> ' + data[0].content+' <em>by '+data[0].username +'  <small>' + data[0].time.substring(0,16)+'</small>';		
 				appendHtml += '</li>';
@@ -520,11 +547,11 @@ function hideLinkedWfLoader() {
 	$("span[id$='_loader']").hide();
 }
 
-function fillSVGElement(uid) {
+function fillSVGElement(uid, type) {
 	var svgElement = document.getElementById(uid);
 	if(svgElement) {
 		var childs = svgElement.childNodes;
-		childs[2].style.fill="#ccffff";
+		if (type=="linked") childs[2].style.fill="#ccffff";
 	}
 }
 
@@ -763,9 +790,15 @@ function buildPageElements(wfID) {
 		<div class="span12">  
         	<!-- Begin title and desc -->      
             <h4><span class="icon-workflow"></span>  <font color="#004B82">{{ wid_info[0].username }} / <font color="#00A33B">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }} </font>
-                <small style="padding-left: 10px"> <font color="#87A6B9"><em>{{ wid_info[0].username }} </em></font><span id="last-updated"></span></small> 
+                <small style="padding-left: 10px"> <i class="icon-user"></i> <font color="#87A6B9"><em>{{ wid_info[0].username }} </em></font><span id="last-updated"></span></small> 
             </h4>
-            <strong>Description:</strong> {{ wid_info[0].description }} <br /><strong>UID: </strong><input type="text" value="{{ wid }}" class="small copy" readonly /> 
+            <strong>Description:</strong> {{ wid_info[0].description }} <br />
+            {% if wf_state %}
+            <strong>Workflow State:</strong> 
+            <font class="{{ wf_state|lower|replace(" ","-") }}"> {{ wf_state }}</font> &nbsp;&nbsp;
+            {% endif %}
+            <strong>UID: </strong><input type="text" value="{{ wid }}" class="small copy" readonly /> 
+            
             <!-- End title and desc -->
         </div><!-- end of span12 -->
 	</div><!-- end of row-fluid-->
@@ -931,9 +964,20 @@ function buildPageElements(wfID) {
                      			<tr data-toggle="collapse" data-target="#acc_{{ n.uid }}" class="clickable node">
                                 <td><span class="icon-activity"></span> {{ n.name }}</td>                            
                             {% elif n.type == "workflow" %}
+                            	{% if wf_state %}
+                     			<tr data-toggle="collapse" data-target="#acc_{{ n.uid }}" class="clickable node {{ wf_state|lower|replace(" ","-") }}">
+								{% else %}
                      			<tr data-toggle="collapse" data-target="#acc_{{ n.uid }}" class="clickable node">
+                                {% endif %}
                                 <td><span class="icon-workflow"></span> 
                                 <font color="#004B82">{{ wid_info[0].username }} / <font color="#00A33B">{{ wid_info[0].type }}</font> / {{ wid_info[0].composite_seq }} </font>
+                               	
+                                {% if wf_state != None %}
+                                	<font class="state-label {{ wf_state|lower|replace(" ","-") }}">
+                                	- {{ wf_state }}</small></font>
+                                {% endif %}
+                                
+                                
                                 </td><td><span id="td-last-updated"></span></td>
                        		{% endif %}   
                             

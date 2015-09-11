@@ -372,6 +372,8 @@ def workflows():
                 results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
         else:
             results[index]['show_comments'] = ''
+        this_state=getwfstate(i['uid'])
+        results[index]['state']=this_state
 
         #filter milliseconds out (note, could be more robustly done with datetime functions)
         thetime=results[index]['time'][:19]
@@ -576,6 +578,21 @@ def getsvgxml(wid):
                                                                          '%Y-%m-%d %H:%M:%S.%f')))
     return ans
 
+def getwfstate(wid):
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    #get term_uid for State
+    r=requests.get("%s/ontology/term?path=/Workflow/Status/State"%(API_PREFIX,), **certargs)
+    r=r.json()
+    if r:
+        state_uid = r[0]['uid']
+        #get instances for state
+        r=requests.get("%s/ontology/instance?term_uid=%s"%(API_PREFIX,state_uid,), **certargs)
+        result = r.json()
+        for item in result:
+            if item['parent_uid'] == wid:
+                return item['value']
 
 @app.route('/connections', methods=['GET'])
 @app.route('/connections/<wid>', methods=['GET'])
@@ -608,6 +625,7 @@ def connections(wid=""):
   else:
     #cache missed or memcache not loaded
     getsvg=getsvgxml(wid)
+    wfstate=getwfstate(wid)
 
     svgdoc=getsvg[0]
 
@@ -702,7 +720,7 @@ def connections(wid=""):
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
 #    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
-    everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info,
+    everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info, "wf_state":wfstate,
                   "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname}
 
     if memcache_loaded:
