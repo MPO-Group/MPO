@@ -216,7 +216,7 @@ ALTER TABLE public.metadata OWNER TO mpoadmin;
 --
 
 CREATE TABLE mpoauth (
-    u_guid uuid,
+    u_guid uuid NOT NULL,
     read boolean,
     write boolean
 );
@@ -751,13 +751,13 @@ a58a8105-6057-4043-808a-98a85bf08f48	compilation_date	2013-06-05	text	\N	0bdd4a6
 
 COPY mpoauth (u_guid, read, write) FROM stdin;
 ddc315a1-6310-41e7-a84d-886bc904f3b2	t	t
-f223db41-d1c5-41db-b8af-fde6c0a16f76	t	f
 ef5d5025-c814-4987-ac7b-c8e95a26c954	t	t
 4aaa5964-d51d-4ec9-b88c-f49fa89a7694	t	t
 064b7974-ccf2-4a55-b43c-e65b77626d2c	t	t
 9aa4d3e4-330e-4724-a9f9-412d8f902eba	t	t
 46f13f3d-7f14-4ea8-a822-fe8237c291e7	t	t
 789c3413-0c01-4ba1-8580-c3108aa8348f	t	t
+f223db41-d1c5-41db-b8af-fde6c0a16f76	t	t
 \.
 
 
@@ -793,13 +793,20 @@ COPY ontology_classes (oc_guid, name, description, parent_guid, added_by, date_a
 --
 
 COPY ontology_instances (oi_guid, target_guid, term_guid, value, creation_time, u_guid) FROM stdin;
-339e4fc4-aa70-42cd-bca4-4248d4e02fab	aea8f004-839a-4250-a537-af5547bc10ca	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	SWIM	2014-07-09 18:03:47.601387	f223db41-d1c5-41db-b8af-fde6c0a16f76
-abc232cf-4aa3-4fc7-8b78-4329284ef112	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	OMFIT	2015-02-02 19:43:51.497891	f223db41-d1c5-41db-b8af-fde6c0a16f76
-bd9e645a-f56f-4fa8-99a3-63292178d6da	0407f11e-fbd9-4509-8fcc-ff452d5daf58	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	EFIT	2015-05-12 21:57:21.58701	f223db41-d1c5-41db-b8af-fde6c0a16f76
-4b76f1af-98a9-47c1-bc60-ea8a21889a98	08d2f5db-97d8-49c9-bd99-85303b07f9e2	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	EFIT	2015-05-12 21:57:35.966954	f223db41-d1c5-41db-b8af-fde6c0a16f76
-db8329cd-1440-4018-810a-28c3406d0523	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	Zipfit	2015-05-12 21:58:18.82014	f223db41-d1c5-41db-b8af-fde6c0a16f76
-bc386905-d7df-4df3-848d-e4340c556cba	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	Gyro	2015-07-10 14:17:47.613038	064b7974-ccf2-4a55-b43c-e65b77626d2c
-ff671f7d-aea3-474d-92be-f153702e904a	16285c65-25ea-4445-8506-d583a8a3dcac	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	Gyro	2015-07-10 14:20:21.532677	064b7974-ccf2-4a55-b43c-e65b77626d2c
+339e4fc4-aa70-42cd-bca4-4248d4e02fab	aea8f004-839a-4250-a537-af5547bc10ca	754f4894-c7d5-4ed2-8206-477a865c9729	SWIM	2014-07-09 18:03:47.601387	f223db41-d1c5-41db-b8af-fde6c0a16f76
+abc232cf-4aa3-4fc7-8b78-4329284ef112	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	754f4894-c7d5-4ed2-8206-477a865c9729	OMFIT	2015-02-02 19:43:51.497891	f223db41-d1c5-41db-b8af-fde6c0a16f76
+bd9e645a-f56f-4fa8-99a3-63292178d6da	0407f11e-fbd9-4509-8fcc-ff452d5daf58	754f4894-c7d5-4ed2-8206-477a865c9729	EFIT	2015-05-12 21:57:21.58701	f223db41-d1c5-41db-b8af-fde6c0a16f76
+4b76f1af-98a9-47c1-bc60-ea8a21889a98	08d2f5db-97d8-49c9-bd99-85303b07f9e2	754f4894-c7d5-4ed2-8206-477a865c9729	EFIT	2015-05-12 21:57:35.966954	f223db41-d1c5-41db-b8af-fde6c0a16f76
+db8329cd-1440-4018-810a-28c3406d0523	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	754f4894-c7d5-4ed2-8206-477a865c9729	Zipfit	2015-05-12 21:58:18.82014	f223db41-d1c5-41db-b8af-fde6c0a16f76
+bc386905-d7df-4df3-848d-e4340c556cba	589a4ee3-ed9f-4f90-bad4-c7f8e6c5de6f	754f4894-c7d5-4ed2-8206-477a865c9729	Gyro	2015-07-10 14:17:47.613038	064b7974-ccf2-4a55-b43c-e65b77626d2c
+ff671f7d-aea3-474d-92be-f153702e904a	16285c65-25ea-4445-8506-d583a8a3dcac	754f4894-c7d5-4ed2-8206-477a865c9729	Gyro	2015-07-10 14:20:21.532677	064b7974-ccf2-4a55-b43c-e65b77626d2c
+56fd3616-030f-4797-8959-5fc027fa6d83	aea8f004-839a-4250-a537-af5547bc10ca	1f6f6797-a715-45ff-952f-fbee1ace72c8	Non Standard Completion	2015-09-10 17:37:58.010345	f223db41-d1c5-41db-b8af-fde6c0a16f76
+86d35e4f-2740-4368-9cb5-1d7f85deed4b	0407f11e-fbd9-4509-8fcc-ff452d5daf58	1f6f6797-a715-45ff-952f-fbee1ace72c8	Ready for Review	2015-09-10 17:39:06.526937	f223db41-d1c5-41db-b8af-fde6c0a16f76
+067fa4e0-eb83-4438-8046-c209728429f5	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	1f6f6797-a715-45ff-952f-fbee1ace72c8	Review Complete	2015-09-10 17:39:54.697237	f223db41-d1c5-41db-b8af-fde6c0a16f76
+d63f4e7f-2aab-4e60-8ab8-3ad2a1758800	7ffdefd5-0d28-4ff3-99ac-8f81a1f77453	1f6f6797-a715-45ff-952f-fbee1ace72c8	In Progress	2015-09-10 17:42:03.620718	f223db41-d1c5-41db-b8af-fde6c0a16f76
+ca382e99-95f7-4367-8d20-efda28d11220	08d2f5db-97d8-49c9-bd99-85303b07f9e2	1f6f6797-a715-45ff-952f-fbee1ace72c8	Complete	2015-09-10 17:42:54.395402	f223db41-d1c5-41db-b8af-fde6c0a16f76
+938aebc3-31a6-4819-a880-b1209888a38b	08d2f5db-97d8-49c9-bd99-85303b07f9e2	21b5b6c2-2f74-4068-bd2e-2cc763ecba06	2	2015-09-10 17:50:05.012031	f223db41-d1c5-41db-b8af-fde6c0a16f76
+a82c8e45-0379-483e-818e-d34d769238c6	9b18b6e7-8c2e-4db9-99fe-b64ddab052b5	21b5b6c2-2f74-4068-bd2e-2cc763ecba06	4	2015-09-10 17:50:43.305593	f223db41-d1c5-41db-b8af-fde6c0a16f76
 \.
 
 
@@ -808,134 +815,144 @@ ff671f7d-aea3-474d-92be-f153702e904a	16285c65-25ea-4445-8506-d583a8a3dcac	c9c7e2
 --
 
 COPY ontology_terms (ot_guid, class, name, description, parent_guid, value_type, units, specified, added_by, date_added, reviewed_by, date_reviewed) FROM stdin;
-f9a50453-ea1b-4845-bb0e-f80ae6eb16d6	\N	Workflow	Ontology terms for workflow entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-9282d6f1-72b1-4e27-a0d8-873d48c46843	\N	Activity	Ontology terms for activity entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-9c3d8704-58c5-4d09-9fc2-71674ee659aa	\N	Generic	Ontology terms for generic entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	Type	Terms that describe the workflow types	f9a50453-ea1b-4845-bb0e-f80ae6eb16d6	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-5bad691d-4806-4159-a004-e09054059aea	\N	EFIT	Ontology terms for workflows of type EFIT	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-c9d814d4-2b2f-4aa3-b40b-5a19c84915b1	\N	SWIM	Ontology terms for workflows of type SWIM	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-7ab7517a-1252-4d06-b9f6-125b255d89c6	\N	Zipfit	Ontology terms for workflows of type Zipfit	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-8b86a082-e8d9-414e-922d-bd07fda89ae3	\N	OMFIT	Ontology terms for workflows of type OMFIT	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-f5eb7d4e-3972-4efc-a1b0-c24fbb3ab730	\N	Gyro	Ontology terms for workflows of type Gyro	c9c7e2db-5034-4531-8cb3-b88d19ba23f4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	Code Characteristics	Terms that describe the code type	f5eb7d4e-3972-4efc-a1b0-c24fbb3ab730	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-81a40702-271c-4fa6-9622-38012261c38f	\N	Run Characteristics	Terms that describe the run type	f5eb7d4e-3972-4efc-a1b0-c24fbb3ab730	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	Run Metadata	Metadata terms associated with the run	f5eb7d4e-3972-4efc-a1b0-c24fbb3ab730	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-00c13dfe-4ce9-4f2c-a607-5f741497013b	\N	turbulence code	turbulence code type	98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-c9523e4a-2ea3-4b2f-a010-8f8135184533	\N	version	code version, e.g. git version release (written as out.gyro.version when code is run)	98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-69813215-7e53-42ae-a317-fcf5a982a7bb	\N	documentation	link to code documentation, e.g. https://fusion.gat.com/theory/Gyrooverview	98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-4f81cd60-0238-4476-9542-5527db8f7e59	\N	source	link to code download, e.g. https://fusion.gat.com/theory/Gacode_announce	98c7de61-e58e-472f-b6fa-33ddcc9e7f80	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-83175f6f-bb62-415d-8ab9-a5ea828e6ef0	\N	linear plasma turbulence	Fortran code for linear plasma turbulence	00c13dfe-4ce9-4f2c-a607-5f741497013b	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-e0668563-1963-45cb-acfe-7e20d3b11dcf	\N	nonlinear plasma turbulence	Fortran code for nonlinear plasma turbulence	00c13dfe-4ce9-4f2c-a607-5f741497013b	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-e7a5e575-a0f2-44d9-a951-8ec4c45e8f7a	\N	operational mode	operational mode	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-1f0296f1-0e20-4702-b79b-d5609c424bbd	\N	boundary conditions	boundary conditions	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-8bffdb39-10ca-4c35-a0e8-38312ed6ed55	\N	profiles	origin of profiles	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-a0a6f8fb-030d-450d-817e-c69ff78932d9	\N	fluctuations	electrostatic or electromagnetic	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-73063e27-e46a-4c99-9cb8-318c9778924d	\N	electron dynamical method	electron dynamical method	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-f772839a-2e2b-4d6c-bd31-2890f61f4122	\N	nonlinear dynamic model	nonlinear dynamics	81a40702-271c-4fa6-9622-38012261c38f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-bfea012a-4fc9-49dc-ac48-06845c18d408	\N	initial value	\N	e7a5e575-a0f2-44d9-a951-8ec4c45e8f7a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-f0465200-4dfb-42f4-8170-cb1e691fb38e	\N	eigenvalue	\N	e7a5e575-a0f2-44d9-a951-8ec4c45e8f7a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-617cc1bb-53cf-40f1-b3c0-dafa85e42e4a	\N	periodic (flux tube)	\N	1f0296f1-0e20-4702-b79b-d5609c424bbd	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-44ac69ea-89bf-4d4f-a86b-1c522ac59b90	\N	nonperiodic (global or fixed profile)	\N	1f0296f1-0e20-4702-b79b-d5609c424bbd	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-9e8c3110-a0de-497a-82ae-0fcbc31d6ad6	\N	experimental	\N	8bffdb39-10ca-4c35-a0e8-38312ed6ed55	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-495b82e4-4e05-4874-8aec-fb1cf523d33a	\N	user-defined	\N	8bffdb39-10ca-4c35-a0e8-38312ed6ed55	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-91d1a474-faa7-423c-9b15-ae04d83aea44	\N	electrostatic	\N	a0a6f8fb-030d-450d-817e-c69ff78932d9	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-c811d8f2-7cca-4979-ab37-ee4aa8a53b99	\N	electromagnetic	\N	a0a6f8fb-030d-450d-817e-c69ff78932d9	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-4ec04729-728f-4973-83c3-8ce9c2c20704	\N	adiabatic	\N	73063e27-e46a-4c99-9cb8-318c9778924d	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-baca1ec7-4703-42dd-8bc8-a116bf48e375	\N	drift kinetic	\N	73063e27-e46a-4c99-9cb8-318c9778924d	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-a23087ca-da10-4a96-9d81-c27a3a6c3117	\N	gyrokinetic	\N	73063e27-e46a-4c99-9cb8-318c9778924d	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-3af245c4-7bb8-4d2d-a5cc-0481461c4c8b	\N	on	\N	f772839a-2e2b-4d6c-bd31-2890f61f4122	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-47980fc3-8bb2-485f-9fa5-50e449e411bb	\N	off	\N	f772839a-2e2b-4d6c-bd31-2890f61f4122	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-ce66c12e-3a40-4352-91ee-68d7d28b7e00	\N	m_ref	mass of main ions	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-ee489e2c-2695-4a5f-9c1a-71ad187b6e39	\N	B_unit	toroidal magnetic field	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-ea840112-97c0-4359-b149-360ac70f4ed4	\N	a	plasma minor radius	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-b6dd589c-4619-4472-a040-381db50b755e	\N	CsD/a	normalization for all time or frequency variables	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-6a60ccf8-ca97-4d2d-a68e-29466095d8be	\N	CsD	plasma sound speed	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-4d03d822-9ec6-4339-a903-2f5a41ecc4e7	\N	Te	central electron temperature	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-1c503f97-c991-4caa-9a52-fd0bf653249e	\N	ne	central electron density	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-410cad1d-6137-4956-b20e-55898616ece0	\N	rho_SD	gyroradius calculated using B_unit and CsD	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-7832f4f5-2977-4dd6-94ff-c1ab5c85dfd2	\N	chi_gBD	heat diffusivity (chi) normalized to gyroBohm (see technical manual	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-792b437e-4651-4f04-bf53-f8dfe7c1fa93	\N	Gamma_gBD	particle flux [Gamma] normalized to gyroBohm	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-0803ac9a-2032-4388-86b1-02518ae1ad47	\N	Q_gBD	heat flux [Q] normalized to gyroBohm (see technical manual)	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-63a8ce81-b1fd-427d-81e9-6663ed0771f6	\N	Pi_gBD	toroidal momentum flux [Pi] normalized to gyroBohm	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-e39f969d-ca39-4579-b1f8-d521d7d2bce7	\N	S_qBD	turbulent energy exchange between ions and electrons normalized to gyroBohm (see technical manual)	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-0d05460c-a9c3-4096-b3d1-1e6f591924d3	\N	radius	r/a using geometric average of postion of flux surface at point of maximum plasma horizontal extent	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-f8572580-815c-4ff7-be17-002206d5f532	\N	dlntdr	local logarithmic derivative of ion temperature= 1/Ti  *  dTi/dr	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-8f67ecc6-1765-47fc-908f-6dac853ae8eb	\N	dlnndr_electron	local logarithmic derivative of electron density = 1/ne  *  dbe/dr	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-a8c7d9a9-2d8d-4325-83e2-8b1220292101	\N	dlntdr_electron	local logarithmic derivative of electron temperature = 1/Te  *  dTe/dr	ad6d0d8c-e973-425f-b919-7941d6b48d5a	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	Code Characteristics	Terms that describe the code type	5bad691d-4806-4159-a004-e09054059aea	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-cc0d63bb-0b3b-486d-970c-4361f61e9cf2	\N	Run Characteristics	Terms that describe the run type	5bad691d-4806-4159-a004-e09054059aea	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	Run Metadata	Metadata terms associated with the run	5bad691d-4806-4159-a004-e09054059aea	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-8ecd02ab-20bd-4a0f-b236-dac72e95930b	\N	purpose	Fortran code purpose, e.g. Equilibrium and Reconstruction Fitting	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-3ff39914-8308-483d-856b-553117ed93ba	\N	version	code version, e.g. 05/14/2013	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-68a78045-3b22-4216-a198-834a9941adf3	\N	documentation	link to code documentation, e.g. https://fusion.gat.com/theory/Efit	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-20f475b0-77f0-4a85-adc5-6c1849f0c2a4	\N	bit_size	code bit-size version, e.g. 32 or 64	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-dc6486f0-1fd5-4057-95c9-5349ac684706	\N	source	link to code download, e.g. https://fusion.gat.com/theory/Efitsource	d864d6a1-5e21-4c3c-8e84-744f88b2f348	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-335b0692-72df-48fc-a29f-53bbfd0927c9	\N	2	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-bf238299-6498-4f0c-99d1-8f94e5cd5af9	\N	7	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-d216a376-1f74-4909-bb84-ec8d0cc41222	\N	tree	Name of MDSplus tree into which the EFIT data was loaded	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-84863ca8-ad30-4dbd-8fda-c94616e83016	\N	wtotmax	Maximum stored energy	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-ec4e6805-a2a6-48c2-9542-3536925aa84d	\N	rsurf	The geometric center of the limiting flux surface at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-5a6ba27e-aecb-4411-90bb-7b1de18fc75f	\N	Run Characteristics	Terms that describe the run type	c9d814d4-2b2f-4aa3-b40b-5a19c84915b1	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-8aee1125-6d1e-4274-b8a8-36ef1212df36	\N	source	link to code download, e.g. http://cswim.org	9f949b47-3a75-414a-b0b2-13f234ff4544	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-6600e0f2-38b1-436d-b814-98df18a74cc9	\N	sim_name	Simulation name, e.g. ss31615_1	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-54b0b30e-283f-4c6a-88a9-d33e74a91311	\N	date_run	Time when SWIMM run started	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-49d6b431-1184-4c0a-8b46-c3cd29b76a82	\N	max_ti_0	Maximum value of Ti at rho=0	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	quality	Fitness of an object for a particular purpose	afc6898e-250f-47cd-9c29-b0a224bf6a95	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-41d6b079-ce61-4252-a42a-709beafecdfe	\N	In Progress	Workflow or specific activity has started but has not completed	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-0d85e8cd-ba0c-4479-9821-f561987cd83a	\N	32	32-bit code	20f475b0-77f0-4a85-adc5-6c1849f0c2a4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-afee1b69-04ed-4921-96f2-8d8e0d494cdf	\N	4	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-4bd90627-574e-4eac-9138-e327528b7f4b	\N	run_id	ID of run; usually based on the shot number	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-8ef0eaa0-c52d-4669-ba00-db721d04e1ae	\N	run_by	User who started EFIT run	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-f52dbef1-0696-4e1e-8d10-81196531d73a	\N	a	Minor radius at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-161cecff-7e50-42c8-bf1f-9accd63e79ef	\N	delta_l	Lower triangularity at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-9adf7672-f7cc-42b6-bfbd-a02ebf21732a	\N	purpose	Fortran code purpose, e.g. Simulation of RF Wave Interactions with Magnetohydrodynamics	9f949b47-3a75-414a-b0b2-13f234ff4544	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-fd83d0d6-2c41-4aa8-9b53-da75a01fc563	\N	complete	Status	caf5d7aa-974f-4fd3-a171-12b4bc3df101	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-7eba82d7-f37f-4393-b184-497016c8e47f	\N	tokamak	Tokamak name, e.g. ITER	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-b100bf73-fd4f-4ed2-9e23-8b8904f1aa5a	\N	run_comment	Description of run	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-bffa6315-479e-4e24-8ba1-6c53f478c137	\N	max_q_0	Maximum value of q at rho=0	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-d2a01f9f-43dc-4ee1-9d75-558df87bdfd3	\N	2	Medium quality: Object may be useful for some purposes	c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-2bc03793-5185-4606-80b0-d107588a1c0d	\N	Non Standard Completion	Workflow or activity has failed or completed with errors	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-aa5f3428-ac1e-46fc-91c5-4347a50857a4	\N	64	64-bit code	20f475b0-77f0-4a85-adc5-6c1849f0c2a4	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-bdd878d5-c3e5-4538-a02f-b3718ce53a9c	\N	5	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-5aca8347-c2e3-4a5b-a6db-2df3e1d65bb3	\N	experiment	Name of the responsible experimental facility	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-31f6d285-a77e-4b13-9245-de534d12b2c2	\N	runtag	Arbitrary name used to quickly identify a run or set of runs	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-b2c85afd-1602-499a-aa9c-2e1cc422ae6f	\N	kappa	Elongation at plasma boundary at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-b38d7452-4289-4762-b971-261646870244	\N	topology	Descriptive name for shape of plasma at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-a2877af1-56fa-42bd-bb83-fb1d5e90babf	\N	version	code version, e.g. 2.20	9f949b47-3a75-414a-b0b2-13f234ff4544	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-2f6f6200-76be-4858-a134-f9508c18c069	\N	nonstandard completion	Status	caf5d7aa-974f-4fd3-a171-12b4bc3df101	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-2bc146d3-9755-46bc-bb02-f8674abe21fa	\N	host	Host name of computer/cluster running simulation, e.g. hopper	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-27f7fcda-22a2-4d12-b254-290bae92c40b	\N	visualisation_url	URL of visualisation, e.g. http://swim.gat.com:8080/media/plot/all.php?run_id=30124	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-00cce28d-0444-43d9-a5ce-7aedea41aae1	\N	max_q_95	Maximum value of q_95	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-1cc149ff-0854-413c-9f1f-5fd32074b2ee	\N	3	High quality: Object is broadly useful	c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-52f25011-b6a4-4a98-aec6-cc502683fce8	\N	Ready for Review	Workflow or specific data object is ready for review	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	mode	The type of input used to run EFIT	cc0d63bb-0b3b-486d-970c-4361f61e9cf2	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-28ef0e69-fcf3-4ef8-a97d-9c7ecbbf5f8f	\N	6	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-482751b2-41be-4c48-9493-600d8f9c7085	\N	run_type	Type of run, e.g. btshot	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-47bfa49a-80b7-4c09-be04-b52dd847308f	\N	run_comment	Description of run, e.g. Automatic EFIT	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-7abc24e3-49a6-4881-804d-ab507cc977a2	\N	r	Major radius at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-bdea9fe0-788c-49dd-a388-f58d425c6106	\N	zmaxis	Height of magnetic axis at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-9f949b47-3a75-414a-b0b2-13f234ff4544	\N	Code Characteristics	Terms that describe the code type	c9d814d4-2b2f-4aa3-b40b-5a19c84915b1	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-11b39af5-c1ad-4d0d-8158-5dfd063a0ef3	\N	documentation	link to code documentation, e.g. http://cswim.org	9f949b47-3a75-414a-b0b2-13f234ff4544	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-c28fcb1c-cb36-4cbd-bf57-43c49f305d76	\N	shot	Shot number for run, e.g. 111203	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-4e1d1810-c856-4dae-b2f4-5d4bf430a813	\N	tree	Name of MDSplus tree into which the monitor data was loaded	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-095d74eb-4662-4b5d-a00d-393dd2f59744	\N	max_te_0	Maximum value of Te at rho=0	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-875e1e91-4c0e-42a8-b390-dc7498100b59	\N	max_i_plasma	Maximum value of plasma current	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-afc6898e-250f-47cd-9c29-b0a224bf6a95	\N	Status	Generic status terms	9c3d8704-58c5-4d09-9fc2-71674ee659aa	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-5879c192-280d-4551-afc0-9dfa064fec6b	\N	4	Notable quality: Object is of special importance or interest	c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	State	Indicate state of progress on a object	afc6898e-250f-47cd-9c29-b0a224bf6a95	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-15ad0aff-b66f-4e22-a5e7-f926dfdbddda	\N	Review Complete	Workflow or specific data object review is complete	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-322e34a8-1b3b-45e7-8f07-fe1959936749	\N	3	Input used to run EFIT	6fed12ad-6a46-436b-8471-767fd2fb68c7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-f27423ec-cb6c-41fd-858d-ee391848c4e8	\N	shot	Shot number for run	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-ad6fc2cb-9e1a-462e-96a1-fc9f3011c89a	\N	date_run	Time when EFIT run started	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-103b69b5-39cb-49b9-9ba9-67e40fdb2b4f	\N	t_efit	Time of EFIT at wtotmax	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-e2ca03e1-da74-4adf-9746-cc93aebc50c0	\N	delta_u	Upper triangularity at t_efit	be53d801-d091-47d9-b6b0-8c7a5723c5e5	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-3b35ab70-245a-4681-bc43-491bbd925522	\N	Run Metadata	Metadata terms associated with the run	c9d814d4-2b2f-4aa3-b40b-5a19c84915b1	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-caf5d7aa-974f-4fd3-a171-12b4bc3df101	\N	status	Status of run	5a6ba27e-aecb-4411-90bb-7b1de18fc75f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-1d2a247e-b8e2-4124-92b9-91813d8840e3	\N	portal_run_id	ID used on swim portal website, e.g. 30124	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-55a035c2-d66c-4c87-98d9-67d5863afb6e	\N	run_by	User who started SWIM run	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-02d6b8fe-833f-45cd-a72d-b1e05f284260	\N	max_ne_0	Maximum value of ne at rho=0	3b35ab70-245a-4681-bc43-491bbd925522	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-0b90178d-2c56-4eff-87c4-0f18094b77ea	\N	1	Low quality: Object should not be used for additional purposes	c5b5f945-68c6-46f0-b98b-9420b6b58951	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
-e233d740-ba7c-4161-9ef3-3d37e9c674ce	\N	Complete	Workflow or specific activity has completed	7d10b6f0-ae86-4f56-b208-ae6194a5545a	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+fdfd7b58-c908-41f4-b3f5-5ac9f68cebc3	\N	mode	The type of input used to run EFIT	d862dff7-a3b4-44e2-b2bf-e0a2a1eae944	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d93f6cec-12f2-4bd6-be0c-3782defae5c0	\N	5	Input used to run EFIT	fdfd7b58-c908-41f4-b3f5-5ac9f68cebc3	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+0fdffa79-024a-4818-a365-0231e6589d84	\N	6	Input used to run EFIT	fdfd7b58-c908-41f4-b3f5-5ac9f68cebc3	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e41aaa1e-c099-44dd-b771-de1f7d491a89	\N	experiment	Name of the responsible experimental facility	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+23f99a16-9063-44cd-8c5d-7209fe4a2183	\N	run_type	Type of run, e.g. btshot	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+2b4e60a2-fb5d-406b-8997-3a197d787218	\N	runtag	Arbitrary name used to quickly identify a run or set of runs	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+3b6e724e-ef65-4d8b-a671-1bcb7dab79b7	\N	run_comment	Description of run, e.g. Automatic EFIT	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+6e4250bf-e494-441a-a7c8-d78a3ac437de	\N	kappa	Elongation at plasma boundary at t_efit	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+558cfac9-14c6-44fd-bf1a-57e8934726ad	\N	r	Major radius at t_efit	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d8a6cae9-52a5-4606-bfc3-79edfd6b2f2f	\N	topology	Descriptive name for shape of plasma at t_efit	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+0ba67b50-b12d-40b7-9031-9abac934abbf	\N	zmaxis	Height of magnetic axis at t_efit	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f965ef7b-0aca-4d68-a84e-33edbe34c572	\N	Code Characteristics	Terms that describe the code type	0a32b2ba-95c3-41eb-bd7c-1fbb6c224ed2	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+0121872d-6588-43a0-b5e3-a4e74149a9a8	\N	version	code version, e.g. 2.20	f965ef7b-0aca-4d68-a84e-33edbe34c572	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+bfb7916b-6340-4c43-bd70-12d9d6af0a41	\N	documentation	link to code documentation, e.g. http://cswim.org	f965ef7b-0aca-4d68-a84e-33edbe34c572	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b1fafb67-d5de-448c-9ff3-2e08f111e262	\N	nonstandard completion	Status	7b5d56a6-ee04-414f-a949-2a8b69e7487c	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+3089db3a-460b-4a2f-839c-0f181165987f	\N	shot	Shot number for run, e.g. 111203	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+5a9b04f0-5348-4ed4-9534-76eb2f49ac6f	\N	host	Host name of computer/cluster running simulation, e.g. hopper	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+62fe0bc5-e12c-4291-b948-c9a6af75a8f0	\N	tree	Name of MDSplus tree into which the monitor data was loaded	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+1381502e-f1f1-4a92-a012-108efdfaa57d	\N	visualisation_url	URL of visualisation, e.g. http://swim.gat.com:8080/media/plot/all.php?run_id=30124	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+85c5111e-237c-4dc7-b2a2-43164e1c0409	\N	max_te_0	Maximum value of Te at rho=0	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+08ad70ef-34ac-41ba-ab70-ee39eaf33a8a	\N	max_q_95	Maximum value of q_95	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+90c18537-01cd-4b70-bdc0-162432bd0ea2	\N	max_i_plasma	Maximum value of plasma current	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+cd5bb165-a745-4ca5-86a4-0dbbe1212a60	\N	Status	Generic status terms	b9d400c5-ad86-486e-8f2f-56386ed76431	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e91628e0-c6aa-4677-80db-ff69b67930ee	\N	3	High quality: Object is broadly useful	21b5b6c2-2f74-4068-bd2e-2cc763ecba06	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c21d0123-e47c-49f2-95c4-c06af38e2643	\N	4	Notable quality: Object is of special importance or interest	21b5b6c2-2f74-4068-bd2e-2cc763ecba06	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+21a5333b-01e2-49ef-af7c-5c8b648aeb6d	\N	Status	Indicate status of a workflow	e252ea48-479e-4a50-9606-209527dd0cdc	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+bbc85807-028e-48b3-b664-c25ae925e1e8	\N	Non Standard Completion	Workflow has failed or completed with errors	1f6f6797-a715-45ff-952f-fbee1ace72c8	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+0d5498d1-9165-4db0-bbd1-2097a9fa37d1	\N	Ready for Review	Workflow is ready for review	1f6f6797-a715-45ff-952f-fbee1ace72c8	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c75a9bbe-2a0f-49c8-9b06-b7a6e70d6652	\N	Complete	Activity has completed	2718a1ed-16e9-46b5-994f-648184cc2ff1	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c97fd43e-7791-41c3-a9f7-c8c0448588ed	\N	Non Standard Completion	Activity has failed or completed with errors	2718a1ed-16e9-46b5-994f-648184cc2ff1	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+73828567-8345-4272-b22a-48942b827672	\N	Ready for Review	Data object is ready for review	93e294e7-41a6-4ec1-9f63-2c89eec9acc4	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+52742526-6f22-413b-ab30-1d79d9f51528	\N	Review Complete	Data object review is complete	93e294e7-41a6-4ec1-9f63-2c89eec9acc4	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+059f422e-87b2-4a7f-bd39-4decefae85da	\N	2	Input used to run EFIT	fdfd7b58-c908-41f4-b3f5-5ac9f68cebc3	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+ef04c2a3-c440-4f6d-8140-cb3715724072	\N	7	Input used to run EFIT	fdfd7b58-c908-41f4-b3f5-5ac9f68cebc3	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+6c52a277-bd14-4919-83b4-ab7eba433081	\N	tree	Name of MDSplus tree into which the EFIT data was loaded	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+6341815c-927c-44ff-b7dc-b6d4ad9aa79d	\N	wtotmax	Maximum stored energy	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c858e365-0172-4570-9754-96be787d171c	\N	rsurf	The geometric center of the limiting flux surface at t_efit	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+413d9b44-bc82-4689-a3a9-86d22b06e2fc	\N	Run Characteristics	Terms that describe the run type	0a32b2ba-95c3-41eb-bd7c-1fbb6c224ed2	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+87561ad3-2211-45c0-94fb-c850c8dc8f11	\N	source	link to code download, e.g. http://cswim.org	f965ef7b-0aca-4d68-a84e-33edbe34c572	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d6e6ef90-2fcd-44cc-b511-91553d71a5a4	\N	sim_name	Simulation name, e.g. ss31615_1	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+5f0e1495-ccad-4d25-8fd1-4ee707f91b22	\N	date_run	Time when SWIMM run started	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+1dc0de99-7445-4561-b19a-4652a5bfc3e9	\N	max_ti_0	Maximum value of Ti at rho=0	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+21b5b6c2-2f74-4068-bd2e-2cc763ecba06	\N	quality	Fitness of an object for a particular purpose	cd5bb165-a745-4ca5-86a4-0dbbe1212a60	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+1f6f6797-a715-45ff-952f-fbee1ace72c8	\N	State	Indicate state of progress of a workflow	21a5333b-01e2-49ef-af7c-5c8b648aeb6d	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b6ba32d7-0435-45cf-a1aa-97a5532924cd	\N	Review Complete	Workflow review is complete	1f6f6797-a715-45ff-952f-fbee1ace72c8	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+7623d486-efe3-4fa0-bd2b-931339906885	\N	Status	Indicate status of an activity	bbcab763-6e70-415f-86d4-7a60b086e319	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+411d724d-fa96-4f0d-871a-5474a94e24f5	\N	Dataobject	Ontology terms for dataobject entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e252ea48-479e-4a50-9606-209527dd0cdc	\N	Workflow	Ontology terms for workflow entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+bbcab763-6e70-415f-86d4-7a60b086e319	\N	Activity	Ontology terms for activity entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b9d400c5-ad86-486e-8f2f-56386ed76431	\N	Generic	Ontology terms for generic entries	\N	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+754f4894-c7d5-4ed2-8206-477a865c9729	\N	Type	Terms that describe the workflow types	e252ea48-479e-4a50-9606-209527dd0cdc	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+dba83c4e-07e6-45f2-a1b9-5e2883c4ce4f	\N	EFIT	Ontology terms for workflows of type EFIT	754f4894-c7d5-4ed2-8206-477a865c9729	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+0a32b2ba-95c3-41eb-bd7c-1fbb6c224ed2	\N	SWIM	Ontology terms for workflows of type SWIM	754f4894-c7d5-4ed2-8206-477a865c9729	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+8e09ebbf-40a7-488e-b57a-238d6a4df732	\N	Zipfit	Ontology terms for workflows of type Zipfit	754f4894-c7d5-4ed2-8206-477a865c9729	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c13596ba-b151-4b0c-81c6-5b52f0942d63	\N	Gyro	Ontology terms for workflows of type Gyro	754f4894-c7d5-4ed2-8206-477a865c9729	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b0f2dbc9-23a5-418f-864a-73210a49827c	\N	Code Characteristics	Terms that describe the code type	c13596ba-b151-4b0c-81c6-5b52f0942d63	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f501ddd3-7735-4b47-8ecc-a18dba0e269a	\N	Run Characteristics	Terms that describe the run type	c13596ba-b151-4b0c-81c6-5b52f0942d63	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+6b4340c2-5703-48cd-9e78-d7790230dca3	\N	Run Metadata	Metadata terms associated with the run	c13596ba-b151-4b0c-81c6-5b52f0942d63	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+029e7ba8-73a9-453d-939e-8ea53920f19a	\N	turbulence code	turbulence code type	b0f2dbc9-23a5-418f-864a-73210a49827c	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e17b8975-0b35-4fe2-ab40-6b3796fda701	\N	version	code version, e.g. git version release (written as out.gyro.version when code is run)	b0f2dbc9-23a5-418f-864a-73210a49827c	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c8962a36-88ef-424b-8e18-c5a62b3c5a9a	\N	documentation	link to code documentation, e.g. https://fusion.gat.com/theory/Gyrooverview	b0f2dbc9-23a5-418f-864a-73210a49827c	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+a7bf7bb3-9439-4465-b8d0-f17f0847e872	\N	source	link to code download, e.g. https://fusion.gat.com/theory/Gacode_announce	b0f2dbc9-23a5-418f-864a-73210a49827c	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e1effb94-7d78-4ac3-bc94-824a285d0c7d	\N	linear plasma turbulence	Fortran code for linear plasma turbulence	029e7ba8-73a9-453d-939e-8ea53920f19a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f852e724-1e03-4cb5-b6e8-c7678f5a8bc4	\N	nonlinear plasma turbulence	Fortran code for nonlinear plasma turbulence	029e7ba8-73a9-453d-939e-8ea53920f19a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+82875b3d-4972-4445-8c59-86abdf0c44b7	\N	operational mode	operational mode	f501ddd3-7735-4b47-8ecc-a18dba0e269a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b120ce49-d8a1-4cbb-af0f-535de670145f	\N	boundary conditions	boundary conditions	f501ddd3-7735-4b47-8ecc-a18dba0e269a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+a8ce6735-8ef1-4960-bf5c-f369566b09ce	\N	profiles	origin of profiles	f501ddd3-7735-4b47-8ecc-a18dba0e269a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+122de713-c1f4-49bf-82ed-0e3c8a497312	\N	fluctuations	electrostatic or electromagnetic	f501ddd3-7735-4b47-8ecc-a18dba0e269a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c7ca3838-9f3a-4f60-8483-b14760ea9cba	\N	electron dynamical method	electron dynamical method	f501ddd3-7735-4b47-8ecc-a18dba0e269a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+ae23b07a-5a46-4d1f-90e9-bdba15d6f71f	\N	nonlinear dynamic model	nonlinear dynamics	f501ddd3-7735-4b47-8ecc-a18dba0e269a	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+74fc9570-481a-416f-8591-b139c3b2f5cc	\N	initial value	\N	82875b3d-4972-4445-8c59-86abdf0c44b7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+635e993b-b7cf-4040-938a-9d3f3fd49fbf	\N	eigenvalue	\N	82875b3d-4972-4445-8c59-86abdf0c44b7	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b91257f9-e51b-4f9d-9b99-aee8fb311f48	\N	periodic (flux tube)	\N	b120ce49-d8a1-4cbb-af0f-535de670145f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+a7d918d9-3be3-48f3-96cb-ef740f5b00f7	\N	nonperiodic (global or fixed profile)	\N	b120ce49-d8a1-4cbb-af0f-535de670145f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+26e1de2d-e73c-4947-8aa6-9b8c6ffe27db	\N	experimental	\N	a8ce6735-8ef1-4960-bf5c-f369566b09ce	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+1d17a488-1943-462b-8e32-3eb10406639d	\N	user-defined	\N	a8ce6735-8ef1-4960-bf5c-f369566b09ce	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+230b6abe-9896-4edd-850a-9aa4cfc0fee1	\N	electrostatic	\N	122de713-c1f4-49bf-82ed-0e3c8a497312	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+86f658b1-4a31-4362-b9fd-7472089bbd69	\N	electromagnetic	\N	122de713-c1f4-49bf-82ed-0e3c8a497312	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+df2be551-d35c-4a52-a33d-2c50eb6a86bb	\N	adiabatic	\N	c7ca3838-9f3a-4f60-8483-b14760ea9cba	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+34a137a3-63d8-41d2-a6d5-bd693ab5271a	\N	drift kinetic	\N	c7ca3838-9f3a-4f60-8483-b14760ea9cba	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+180c7e24-43f6-483f-a4ec-cfb0a3d023a4	\N	gyrokinetic	\N	c7ca3838-9f3a-4f60-8483-b14760ea9cba	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+11a8b642-b8e3-4dc6-a8ef-9408827b8f89	\N	on	\N	ae23b07a-5a46-4d1f-90e9-bdba15d6f71f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+4db5a1a1-4442-411d-a976-effa0311c0b7	\N	off	\N	ae23b07a-5a46-4d1f-90e9-bdba15d6f71f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+7f599b4a-7cdb-4833-85ed-2bb7b2167edb	\N	m_ref	mass of main ions	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e36ab10f-9454-46ea-93ab-ea0924df0c7a	\N	B_unit	toroidal magnetic field	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b2ec7992-20e6-438e-9cfb-460063ee846f	\N	a	plasma minor radius	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+53bcb215-7e2b-49e7-9ae3-e69c7506d91d	\N	CsD/a	normalization for all time or frequency variables	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+16ee0c5d-b613-42c5-ac06-6f03f1401cd1	\N	CsD	plasma sound speed	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+4e429de4-044d-442c-838c-da02b0bf577c	\N	Te	central electron temperature	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+daaf0b7d-4da1-4731-9f13-93da53756b4e	\N	ne	central electron density	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+9b816425-c5ca-49cb-a894-5f0ea3ef910f	\N	rho_SD	gyroradius calculated using B_unit and CsD	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+92ab7aa9-7659-4dc0-bee8-b09ee5ef0bb2	\N	chi_gBD	heat diffusivity (chi) normalized to gyroBohm (see technical manual	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+79455679-2b98-477c-adcc-2500348c3289	\N	Gamma_gBD	particle flux [Gamma] normalized to gyroBohm	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+055c6172-dacb-41db-b403-317f3914d2d1	\N	Q_gBD	heat flux [Q] normalized to gyroBohm (see technical manual)	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+37133c03-a688-45bd-bbf0-14481d9cd40d	\N	Pi_gBD	toroidal momentum flux [Pi] normalized to gyroBohm	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+6ced721e-3a53-4a2c-b2c6-4337a48f6d3b	\N	S_qBD	turbulent energy exchange between ions and electrons normalized to gyroBohm (see technical manual)	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f17d9eec-c79f-4ad3-bdd2-4b860525bade	\N	radius	r/a using geometric average of postion of flux surface at point of maximum plasma horizontal extent	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+96d0e79a-09af-4dd2-8498-fad3ae7c7349	\N	dlntdr	local logarithmic derivative of ion temperature= 1/Ti  *  dTi/dr	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+9acd91ef-7293-4269-bad2-7c08096d1228	\N	dlnndr_electron	local logarithmic derivative of electron density = 1/ne  *  dbe/dr	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b107f8b4-9b67-417c-ad5e-742139b5978d	\N	dlntdr_electron	local logarithmic derivative of electron temperature = 1/Te  *  dTe/dr	6b4340c2-5703-48cd-9e78-d7790230dca3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+bb8f81a8-24ae-4e88-9c72-5a9006a1fa35	\N	Code Characteristics	Terms that describe the code type	dba83c4e-07e6-45f2-a1b9-5e2883c4ce4f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d862dff7-a3b4-44e2-b2bf-e0a2a1eae944	\N	Run Characteristics	Terms that describe the run type	dba83c4e-07e6-45f2-a1b9-5e2883c4ce4f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	Run Metadata	Metadata terms associated with the run	dba83c4e-07e6-45f2-a1b9-5e2883c4ce4f	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+4e77d6af-4e12-482c-a9e3-c054fc152422	\N	purpose	Fortran code purpose, e.g. Equilibrium and Reconstruction Fitting	bb8f81a8-24ae-4e88-9c72-5a9006a1fa35	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+a21f4652-2cab-416e-a0af-a462ead1469b	\N	version	code version, e.g. 05/14/2013	bb8f81a8-24ae-4e88-9c72-5a9006a1fa35	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+8d2b4418-4c68-4297-abff-0dc6e3e7d6be	\N	documentation	link to code documentation, e.g. https://fusion.gat.com/theory/Efit	bb8f81a8-24ae-4e88-9c72-5a9006a1fa35	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+8fb40624-f885-486a-b940-b5d8d9091210	\N	source	link to code download, e.g. https://fusion.gat.com/theory/Efitsource	bb8f81a8-24ae-4e88-9c72-5a9006a1fa35	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+70df6777-cad0-4500-9a58-0dfabe37b437	\N	32	32-bit code	2044a3ee-620f-43be-a541-1d92a1832bde	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+2044a3ee-620f-43be-a541-1d92a1832bde	\N	bit_size	code bit-size version, e.g. 32 or 64	bb8f81a8-24ae-4e88-9c72-5a9006a1fa35	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+909340dd-5062-41c7-9bd3-a58096c4b154	\N	3	Input used to run EFIT	fdfd7b58-c908-41f4-b3f5-5ac9f68cebc3	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d879d865-dd39-40b2-bacf-f2f0d5371cfb	\N	shot	Shot number for run	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c43adc9b-b194-42b3-8ba6-be9d6894cf37	\N	date_run	Time when EFIT run started	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+3eee81fd-232b-4685-ba19-dea473741740	\N	t_efit	Time of EFIT at wtotmax	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d24185a6-2200-4f51-aa2e-7481749b0bd4	\N	delta_u	Upper triangularity at t_efit	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	Run Metadata	Metadata terms associated with the run	0a32b2ba-95c3-41eb-bd7c-1fbb6c224ed2	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+7b5d56a6-ee04-414f-a949-2a8b69e7487c	\N	status	Status of run	413d9b44-bc82-4689-a3a9-86d22b06e2fc	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+fdfb4edc-bf44-47fb-80a8-8304b2df1234	\N	portal_run_id	ID used on swim portal website, e.g. 30124	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+85d0d764-f889-41d5-8bfc-f92d62cda0f7	\N	run_by	User who started SWIM run	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+30877635-9927-4bdb-8c0c-882c068b4b36	\N	max_ne_0	Maximum value of ne at rho=0	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+f7718cc8-f167-4d2e-b057-26cffa52c8cc	\N	1	Low quality: Object should not be used for additional purposes	21b5b6c2-2f74-4068-bd2e-2cc763ecba06	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+a5bacd73-c67e-4262-b409-43b807874001	\N	In Progress	Workflow has started but has not completed	1f6f6797-a715-45ff-952f-fbee1ace72c8	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+2718a1ed-16e9-46b5-994f-648184cc2ff1	\N	State	Indicate state of progress of an activity	7623d486-efe3-4fa0-bd2b-931339906885	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+9003b0d7-815a-4c3a-899a-c416122b86ca	\N	Status	Indicate status of a dataobject	411d724d-fa96-4f0d-871a-5474a94e24f5	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e865fe23-cee0-4c37-b4d7-99aafcbd07b4	\N	64	64-bit code	2044a3ee-620f-43be-a541-1d92a1832bde	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d6d8a6f1-7a03-4c61-bf96-601a5a642cc2	\N	4	Input used to run EFIT	fdfd7b58-c908-41f4-b3f5-5ac9f68cebc3	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b010f02c-ec8e-486a-9c43-09a076cbbab5	\N	run_id	ID of run; usually based on the shot number	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+63d50c9b-5332-4e86-876d-2fb2fe3363a1	\N	run_by	User who started EFIT run	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+abaf826c-bd32-4477-b74c-deb03ab987f2	\N	a	Minor radius at t_efit	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+b51fe8f3-d7c6-40cb-9480-2f656d5980b1	\N	delta_l	Lower triangularity at t_efit	e1f45de0-e8d6-487b-9a61-9c815f41bda3	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+2396fc17-c81d-4ab1-817b-8bb837187849	\N	purpose	Fortran code purpose, e.g. Simulation of RF Wave Interactions with Magnetohydrodynamics	f965ef7b-0aca-4d68-a84e-33edbe34c572	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d6433b8b-cbc4-4ffa-a817-93eeecc95c83	\N	complete	Status	7b5d56a6-ee04-414f-a949-2a8b69e7487c	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+e3dfe3e9-6859-40ac-a5b4-15d45f71e394	\N	tokamak	Tokamak name, e.g. ITER	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+d2f6846c-fb78-4cee-834a-eaddaa71982d	\N	run_comment	Description of run	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+3ca8999e-41b0-4e24-b956-5a4c079c212c	\N	max_q_0	Maximum value of q at rho=0	5f1c57df-6d6b-451a-8f00-5dcf0492b0e4	\N	\N	f	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+c2ae6955-fb95-4bd4-aec5-84a27c899038	\N	2	Medium quality: Object may be useful for some purposes	21b5b6c2-2f74-4068-bd2e-2cc763ecba06	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+644df789-8868-4b92-9220-ce786f0b8478	\N	Complete	Workflowhas completed	1f6f6797-a715-45ff-952f-fbee1ace72c8	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+280b374a-4c58-4d12-92ea-31ad7f9d6c6d	\N	In Progress	Activity has started but has not completed	2718a1ed-16e9-46b5-994f-648184cc2ff1	\N	\N	\N	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
+93e294e7-41a6-4ec1-9f63-2c89eec9acc4	\N	State	Indicate state of progress of a dataobject	9003b0d7-815a-4c3a-899a-c416122b86ca	\N	\N	t	f223db41-d1c5-41db-b8af-fde6c0a16f76	\N	\N	\N
 \.
 
 
