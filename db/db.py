@@ -937,3 +937,17 @@ def addOntologyInstance(json_request,dn):
     conn.close()
 
     return records
+
+
+def getTreePath(bottom,top):
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+
+    cursor.execute("with recursive tree_depth(child_guid,parent_guid,path) as (select child_guid,parent_guid,child_guid||'.'||parent_guid as path from workflow_connectivity where child_guid=%s union all select td.child_guid, c.parent_guid, td.path || c.parent_guid || '.' as path from workflow_connectivity as c join tree_depth as td on c.child_guid=td.parent_guid) select path from tree_depth where parent_guid=top",(bottom,top))
+    records = cursor.fetchall()
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+
+    return records
