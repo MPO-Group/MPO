@@ -2,7 +2,7 @@
 import time as stime
 print('WEBSERVER: timestamp start',stime.time() )
 from flask import Flask, render_template, request, jsonify
-from flask import redirect, url_for, make_response
+from flask import redirect, url_for, make_response, flash, session, g
 from flask.ext.cors import cross_origin
 import json
 import requests
@@ -17,20 +17,11 @@ from authentication import get_user_dn, parse_dn
 import urllib
 from collections import OrderedDict
 
+from models import User, ROLE_USER, ROLE_ADMIN
+from flask.ext.login import LoginManager
+from flask.ext.login import login_user, logout_user, current_user, login_required
 
-try:
-    import memcache   #for efficient viewing of pages a second time
-    memcache_loaded=True
-except ImportError:
-    print("MPO Web server error, could not import memcache, page loads may be slower.")
-    memcache_loaded=False
-
-
-
-if memcache_loaded:
-    mc = memcache.Client(['127.0.0.1:11211'], debug=0)
-else:
-    mc = False
+login_manager = LoginManager()
 
 #debug logging
 webdebug = False  #our inline print statements
@@ -39,7 +30,7 @@ if webdebug:
 else:
     httploglevel=0
 
-import logging #python module for handling of log messages and levels
+import logging
 
     # These two lines enable debugging at httplib level (requests->urllib3->http.client)
     # You will see the REQUEST, including HEADERS and DATA, and RESPONSE with HEADERS but without DATA.
@@ -53,12 +44,26 @@ except ImportError:
 http_client.HTTPConnection.debuglevel = httploglevel
 
     # You must initialize logging, otherwise you'll not see debug output.
-logging.basicConfig()
+logging.basicConfig(filename='mpo.log')
 logging.getLogger().setLevel(logging.DEBUG)
 
 requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(logging.WARN)  #logging.DEBUG , logging.WARN, logging.FATAL
 requests_log.propagate = True
+
+
+try:
+    import memcache   #for efficient viewing of pages a second time
+    memcache_loaded=True
+except ImportError:
+    logging.warning("MPO Web server error, could not import memcache, page loads may be slower.")
+    memcache_loaded=False
+
+if memcache_loaded:
+    mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+else:
+    mc = False
+
 
 
 #Setup from process environment
@@ -97,11 +102,19 @@ s.mount('https://', a)
 s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
 s.verify=False
 
+User.requests=s
 
 #Begin the application
 app = Flask(__name__)
 app.debug = True
-print('WEBSERVER: timestamp app started',stime.time() )
+logging.info('WEBSERVER: timestamp app started',stime.time() )
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(user_id)
+
 
 @app.before_request
 def before_request():
@@ -115,9 +128,9 @@ def before_request():
     else:
         if os.environ['MPO_EDITION'] == "PRODUCTION":
             DB_SERVER=request.cookies.get('db_server')
-            if webdebug:
-                print ("WEBSERVER: db selected ", DB_SERVER)
-                print ("WEBSERVER: COOKIES: ",request.cookies)
+
+            logging.info("WEBSERVER: db selected ", DB_SERVER)
+            logging.info("WEBSERVER: COOKIES: ",request.cookies)
 
             if DB_SERVER=='prod':
                 CONN_TYPE='api'
@@ -129,40 +142,42 @@ def before_request():
         else:
             CONN_TYPE='demo-api'
             DB_SERVER='demo'
+
     API_PREFIX=MPO_API_SERVER+"/"+CONN_TYPE+"/"+MPO_API_VERSION
-    if webdebug: print("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)
-    print("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)
+    logging.info("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)
+    g.user = current_user
 
-    dn = get_user_dn(request)
-    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
-              'verify':False, 'headers':{'Real-User-DN':dn}}
+# ##    dn = get_user_dn(request)
+# ##    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+# ##              'verify':False, 'headers':{'Real-User-DN':dn}}
 
-    if webdebug:
-        print ('USERNAME: ', USERNAME)
-        print ("WEBSERVER: db set to ",DB_SERVER)
-        print ('WEBSERVER: api_prefix',API_PREFIX)
-        print ('WEBSERVER: certargs',certargs)
-        print ('WEBSERVER:  request.environ', request.environ)
+    
+#     logging.info ('WEBSERVER: USERNAME: ', USERNAME)
+#     logging.info ("WEBSERVER: db set to ",DB_SERVER)
+#     logging.info ('WEBSERVER: api_prefix',API_PREFIX)
+#     logging.info ('WEBSERVER: certargs',certargs)
+#     logging.info ('WEBSERVER:  request.environ', request.environ)
 
 
-    if(request.endpoint != 'register'):
-        #Check and redirect to /register if not registered
-        is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs).json()
-        print ('WEBDEBUG, is user:',request.endpoint,dn,str(is_mpo_user) )
-        if(len(is_mpo_user)==0):
-            parsed_dn=parse_dn(dn)
-            print("BEFORE: dn = %s"%dn)
-            pprint(parsed_dn)
-            dn_email=parsed_dn['emailAddress']
-            dn_ou=parsed_dn['O']
-            dn_name=parsed_dn['CN']
-            t=parsed_dn['CN'].find(' ')
-            dn_fname=dn_name[0:t]
-            dn_lname=dn_name[t+1:len(dn_name)]
-            everything={'firstname': dn_fname, 'lastname': dn_lname, 'email': dn_email, 'organization': dn_ou, 'username': dn_email}
-        #if is_mpo_user.status_code == 401:
-            return render_template('register.html', **everything)
-        USERNAME=is_mpo_user[0]['username']
+#     if(request.endpoint != 'register'):
+#         #Check and redirect to /register if not registered
+#         is_mpo_user=requests.get("%s/user?dn=%s"%(API_PREFIX,dn), **certargs).json()
+#         logging.info('WEBDEBUG, is user:',request.endpoint,dn,str(is_mpo_user) )
+#         if(len(is_mpo_user)==0):
+#             parsed_dn=parse_dn(dn)
+#             logging.info("BEFORE: dn = %s"%dn)
+#             logging.info(parsed_dn)
+#             dn_email=parsed_dn['emailAddress']
+#             dn_ou=parsed_dn['O']
+#             dn_name=parsed_dn['CN']
+#             t=parsed_dn['CN'].find(' ')
+#             dn_fname=dn_name[0:t]
+#             dn_lname=dn_name[t+1:len(dn_name)]
+#             everything={'firstname': dn_fname, 'lastname': dn_lname, 'email': dn_email, 
+#                         'organization': dn_ou, 'username': dn_email}
+#         #if is_mpo_user.status_code == 401:
+#             return render_template('register.html', **everything)
+#         USERNAME=is_mpo_user[0]['username']
 
 
 TEST_API_PREFIX=MPO_API_SERVER+"/"+"test-api"+"/"+MPO_API_VERSION
@@ -170,12 +185,38 @@ DEMO_API_PREFIX=MPO_API_SERVER+"/"+"demo-api"+"/"+MPO_API_VERSION
 PRODUCTION_API_PREFIX=MPO_API_SERVER+"/"+"" if (USING_UWSGI) else "api"
 PRODUCTION_API_PREFIX+="/"+MPO_API_VERSION
 
+
+
+@app.route('/login')
+def login_route():
+    #check if registered and if not redirect to registration page
+    return
+
+
+@app.route('/discovery')
+def discovery_route():
+    """
+    Returns a 
+    """
+    return
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect('https://mpo-test/')
+
+
 @app.route('/')
+@login_required
 def index():
     everything={"username":USERNAME,"db_server":DB_SERVER}
     return render_template('index.html', **everything)
 
+
 @app.route('/workflows')
+@login_required
 def workflows():
     #using asynchronous requests now
     global s

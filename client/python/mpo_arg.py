@@ -22,11 +22,13 @@ help
 # Non-standard dependencies: requests.py, argparse.py
 
 from __future__ import print_function
+import ast
+import sys
+import json
+import warnings
+
 import requests
-import ast, textwrap
-import unittest
-import sys,os,datetime
-import json,warnings
+
 try:
     from urllib.parse import urlparse
 except ImportError:
@@ -468,7 +470,7 @@ class mpo_methods(object):
         name = kwargs.get('name')
         source = kwargs.get('source')
 
-        if (self.debug):
+        if self.debug:
             print('MPO.ADD', workflow_ID, parentobj_ID, name, desc,uri,uid,source,kwargs, file=sys.stderr)
 
         if uid:
@@ -965,7 +967,6 @@ class mpo_cli(object):
 ####Application main routine. Instance of commandline application class using mpo methods class
 if __name__ == '__main__':
     import os
-    import pprint
 
     mpo_version    = os.getenv('MPO_VERSION','v0')
     mpo_api_url    = os.getenv('MPO_HOST', 'https://localhost:8080/') #API_URL
