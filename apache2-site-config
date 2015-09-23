@@ -31,16 +31,30 @@ Alias /mpo/doc /var/www/mposvn/doc/
         WSGIDaemonProcess mpowww user=jas group=jas threads=5
         WSGIScriptAlias /mpo /var/www/mposvn/web_server.wsgi process-group=mpowww application-group=%{GLOBAL}
 
+        WSGIDaemonProcess demo-mpowww user=mpo group=mpo threads=5
+        WSGIScriptAlias /demo /var/www/demo-mposvn/web_server.wsgi process-group=demo-mpowww application-group=%{GLOBAL}
+
         SSLInsecureRenegotiation ON
         <Directory /var/www/mposvn>
+                WSGIApplicationGroup %{GLOBAL}
                 Order deny,allow
                 Allow from all
                 SSLVerifyClient require
                 SSLOptions StdEnvVars
         </Directory>
 
+        <Directory /var/www/demo-mposvn>
+                Order deny,allow
+                Allow from all
+                SSLVerifyClient none
+                SSLOptions StdEnvVars
+        </Directory>
+
         WSGIDaemonProcess mpoev user=jas group=jas threads=5
 	WSGIScriptAlias /mdsplusWsgi /var/www/mposvn/mdsplus.wsgi process-group=mpoev application-group=%{GLOBAL}
 	Redirect /mdsplusEvents /mdsplusWsgi/event
+
+
+	ErrorLog ${APACHE_LOG_DIR}/ssl_error.log
 
 #Second argument to WSGIScriptAlias gets set back apache to env SCRIPT_FILENAME
