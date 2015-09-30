@@ -215,3 +215,34 @@ Check the output of
 pip list
 
 and compare to the list in DEPENDENCIES
+
+
+# Using git on mpo project
+
+We are going to use 'git flow' as a workflow when working on MPO.  What this means is:
+
+* the branch master is the current working directory
+** Never work directly on master
+* to work on a feature, make sure you are on master and up to date:
+  $ git status
+  # On branch master
+  nothing to commit (working directory clean)
+  $ git pull origin master
+  From github.com:MPO-Group/MPO
+   * branch            master     -> FETCH_HEAD
+  Already up-to-date.
+* create a branch
+ $ git branch add-git-flow-directions
+* check it out
+ $ git checkout add-git-flow-directions
+  Switched to branch 'add-git-flow-directions'
+
+* now make whatever changes you like (like editing this README)
+* add the changed files
+  git add README
+* commit the changes
+  git commit -m "Added git flow to the README"
+* push the branch
+  git push
+* create a pull request (using the github web site)
+* have someonelse merge your pull request using the github website
