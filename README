@@ -245,4 +245,16 @@ We are going to use 'git flow' as a workflow when working on MPO.  What this mea
 * push the branch
   git push
 * create a pull request (using the github web site)
+  on github.com select the new branch in the branch menu.
+  Click yellow button <> Comare & pull request
+  on next screen click 'Create pull request'
 * have someonelse merge your pull request using the github website
+**  to test someone's pull request click the 'command line instructions' next to the 'Merge Pull Request' button.
+    git branch master
+    git fetch origin
+    git checkout -b add-git-flow-directions origin/add-git-flow-directions
+    git merge master
+** do whatever local testing you like.  If you are happy click the green button 'Merge Pull Request'
+** If you want to propose changes, then put them in a text block in the next section of the page
+** If you want make changes to your local copy and push them, which effectively modifies the pull request
+
