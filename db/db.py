@@ -132,6 +132,52 @@ def getRecordTable(id, dn=None):
 
     return table
 
+def deleteCollection(queryargs={}, dn=None):
+    '''
+    Given a collection id delete it and its associated elements from the db
+    '''
+     # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    #delete the collection elements (could be none)
+    cursor.execute('delete from collection_elements where '+query_map['collection_elements']['parent_uid']+'=%s',(queryargs['uid'],))
+    #delete the collection
+    cursor.execute('delete from collection where '+query_map['collection']['uid']+'=%s',(queryargs['uid'],))
+    rc = cursor.rowcount
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    if rc and rc != -1:
+        return {'uid':queryargs['uid']}
+    else:
+        return {}
+
+
+def deleteCollectionElement(queryargs={}, dn=None):
+    '''
+    Given a collection element id delete it from the db
+    '''
+     # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    #delete the collection element
+    cursor.execute('delete from collection_elements where '+query_map['collection_elements']['parent_uid']+'=%s and '+query_map['collection_elements']['uid']+'=%s',(queryargs['parent_uid'],queryargs['uid']))
+    rc = cursor.rowcount
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    if rc and rc != -1:
+        return {'uid':queryargs['uid']}
+    else:
+        return {}
+
+
 def deleteOntologyTerms(queryargs={}, dn=None):
     '''
     Given a record id delete the record from the db.
@@ -156,6 +202,7 @@ def deleteOntologyTerms(queryargs={}, dn=None):
     conn.close()
 
     return r
+
 
 def getRecord(table,queryargs={}, dn=None):
     '''

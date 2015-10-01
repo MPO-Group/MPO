@@ -333,7 +333,7 @@ else:
                 routes[k] = '/' + routes[k]
 
 
-@app.route(routes['collection']+'/<id>', methods=['GET'])
+@app.route(routes['collection']+'/<id>', methods=['GET', 'DELETE'])
 @app.route(routes['collection'],  methods=['GET', 'POST'])
 @checkaccess
 def collection(id=None,dn=None):
@@ -343,6 +343,7 @@ def collection(id=None,dn=None):
     /collection - GET a list of all (or filtered) collections
                 - POST a new collection
     /collection/<id> - GET collection information, including list of member UUIDs
+                     - DELETE a collection and the associated elements
     /collection/?element_uid=:uid - GET collections having element member giving by :uid
     """
     api_version,root_url,root=get_api_version(request.url)
@@ -362,13 +363,18 @@ def collection(id=None,dn=None):
             #general searches
             else:
                 r = rdb.getRecord('collection',request.args, dn=dn)
+    elif request.method == 'DELETE':
+        if id:
+            r = rdb.deleteCollection({'uid':id}, dn=dn )
+        else:
+            r=[]
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 
 @app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
-@app.route(routes['collection']+'/<id>/element/<oid>', methods=['GET'])
+@app.route(routes['collection']+'/<id>/element/<oid>', methods=['GET','DELETE'])
 @checkaccess
 def collectionElement(id=None, oid=None, dn=None):
     """
@@ -408,6 +414,11 @@ def collectionElement(id=None, oid=None, dn=None):
             r.append(rr)
             morer = rdb.getRecord('collection_elements',{'uid':rr['uid']},dn=dn)
             publishEvent('mpo_collection_elements',onlyone(morer))
+    elif request.method == 'DELETE':
+        if oid:
+            r = rdb.deleteCollectionElement({'parent_uid':id,'uid':oid}, dn=None)
+        else:
+            r = []
     elif request.method == 'GET':
         if oid:
             r = rdb.getRecord('collection_elements',{'uid':oid}, dn=dn)
