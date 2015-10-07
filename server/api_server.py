@@ -421,7 +421,7 @@ def collectionElement(id=None, oid=None, dn=None):
             r = []
     elif request.method == 'GET':
         if oid:
-            r = rdb.getRecord('collection_elements',{'uid':oid}, dn=dn)
+            r = rdb.getRecord('collection_elements',{'parent_uid':id,'uid':oid}, dn=dn)
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id}, dn=dn)
 
