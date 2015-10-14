@@ -8,13 +8,14 @@ var wfAttrib = [];
 var ontTreeMenu = "";
 var ont_selections = [];
 var subTree="";
-
+var this_uid="{{ uid }}";
+	
 $(document).ready(function () {
 
 	$("#query_tbl").hide();
-
 	$("input.user_entry:text").val("");
 	$("input.user_entry_wf:text").val("");
+	loadCollectionDropdown();	
 	
 	$('.user_entry_wf').on('keydown', function ( evt ) {
 		//user presses enter key
@@ -66,9 +67,90 @@ $(document).ready(function () {
 			});
 		}
 		
+	});	
+	
+	/**
+	*
+	/*function handles collection addition
+	*/
+	$('#coll_dropdown').change(function(event) {
+		var coll_id=$(this).val();
+		//ajax call to add to collection
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('add_to_collection') }}', // the url where we want to POST
+			data 		:  { cid: coll_id, oid: this_uid }, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			if (data=="200") {
+				//remove used from dropdown
+				loadCollectionDropdown();  
+				coll_url="https://mpo-new.gat.com/api/v0/collection/"+coll_id; 
+				
+				$.getJSON(coll_url,{},function(data)
+				{
+					obj=data[0];		
+					if($("#collection_table").length == 0) {
+						//if collection list table does not exist, create one
+						$( "div#collection_tbl" ).html( '<table class="main table table-hover table-striped" id="collection_table">'+
+						'<tr>'+
+						'	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th><th></th>'+
+						'</tr>'+
+						'</table>' );
+					}		
+					//add new collection to the table
+					$('#collection_table > tbody:last-child').append('<tr id="collection_'+coll_id+'">\n'+					 
+					'<td><a href="{{ url_for("collections") }}/'+coll_id+'">'+obj['name']+'</a></td>\n'+
+					'<td>'+obj['description']+'</td>\n'+
+					'<td>'+obj['username']+'</td>\n'+
+					'<td>'+obj['time']+'</td>\n'+
+					'<td><a href="" id="coll-delete_'+coll_id+'" class="" id="remove" title="Remove from Collection">'+
+					'[-]</a></td>\n</tr>\n');
+					$( "#coll-delete_"+coll_id ).addClass( "coll-delete-btn btn btn-mini btn-warning" );					
+				});				
+			}
+			else {
+				//process error
+			}
+		}); 
 	});
-
-	/*function handles comment submit event for each workflow in the list
+	
+	/**
+	*
+	/*function handles collection deletion
+	*/
+	$(document.body).on('click', '.coll-delete-btn' ,function(event){	
+		var coll_id=(this).id.substring(12); //remove "coll-delete_" from id
+		var fadeTime = 5000;
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('delete_from_collection') }}', // the url where we want to POST
+			data 		:  { cid: coll_id, oid: this_uid }, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			if (data=="200") {
+				//add removed collection to dropdown
+				loadCollectionDropdown();
+				//remove entry from collection_table
+				$('table#collection_table tr#collection_'+coll_id).remove();
+			}
+			else {
+				//process error
+			}
+		});
+		event.preventDefault();
+	});
+		
+	/**		
+	/*	
+	*function handles comment submit event for each workflow in the list
 	*/
 	$('[id^=submit_comment_]').submit(function(event) {
 		var this_id=(this).id;
@@ -126,6 +208,60 @@ $(document).ready(function () {
 		event.preventDefault();
 	});
 });
+
+/**		
+/*	
+ *function created list of available collections as a dropdown options
+ */
+function loadCollectionDropdown() {
+	url="https://mpo-new.gat.com/api/v0/collection";
+	this_coll_list="https://mpo-new.gat.com/test-api/v0/collection?element_uid="+this_uid;		
+	var used_coll_ids = [];
+	$.getJSON(this_coll_list,{},function(data)
+    {
+		obj=data[0];
+		coll_used_ctr=data.length
+        $.each(data, function(i,obj)
+        {
+			used_coll_ids.push(obj['parent_uid']);	
+        });
+    }).then(function() {
+		//clear the dropdown except for default value
+		//attach current values to dropdown
+		$.getJSON(url,{},function(data)
+		{
+			obj=data[0];
+			coll_all_ctr=data.length
+			//all collections used
+			if(coll_used_ctr==coll_all_ctr) {
+				$('#coll_dropdown')
+					.find('option')
+					.remove()
+					.end()
+					.append('<option value="">No collections available</option>');
+			}
+			else {
+				$('#coll_dropdown')
+				.find('option')
+				.remove()
+				.end()
+				.append('<option value="">Add to selected collection</option>');
+				
+				$.each(data, function(i,obj)
+				{
+					/* if not in coll_list, append as an option */
+					if(jQuery.inArray(obj['uid'], used_coll_ids) == -1)
+					{
+						$('#coll_dropdown').append(
+							 $('<option></option>')
+									.val(obj['uid'])
+							 .html(obj['name']));
+					}
+				});
+			}
+		});
+	});	
+}
 
 function addOntPath(parent,subparent,child) {
 	tmppath="";
@@ -534,7 +670,6 @@ ul li input.user_time_wf {
         	<h4>MPO Data Object: <font color=#004B82>{{ name }}</font> <span class="icon-user lighter" style="padding-left: 10px"></span> <small><strong>{{ username }}</strong> - {{ time }}</small></h4>
             <b>URI:</b> {{ uri }} <br />
             <b>Description:</b> {{ desc }}
-            
     		<hr />
         	<div id="workflow_tbl">
             <h5><img src="/static/img/images/_icon_workflow.png"/> Associated Workflows</h5>
@@ -643,23 +778,31 @@ ul li input.user_time_wf {
         {% endif %} <!-- end if workflows-->
     </div> <!--end workflow table div -->
     <hr />
-    <!-- begin  collection list-->           
-        	<div id="workflow_tbl"> 
-            <h5><span class="icon-list-alt"></span> Associated Collections</h5>
+    <!-- begin  collection list-->   
+            <h5><span class="icon-list-alt"></span> Associated Collections
+             <div class="dropdown" style="float:right">
+              <select id="coll_dropdown" class="btn btn-info" >
+              <option value="">Add to selected collection</option>
+              </select>
+              <br />
+            </div>
+              
+              </h5>
             <!-- workflow list table -->
+        	<div id="collection_tbl">
             {% if coll_list %}
-        	<div id="workflow_tbl">
             <!-- workflow list table -->
-            <table class="main table table-hover table-striped" id="workflow_table">
+            <table class="main table table-hover table-striped" id="collection_table">
             	<tr>
-                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th>
+                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th><th></th>
               	</tr>
             	{% for item in coll_list %}
-                	<tr>
+                	<tr id="collection_{{ item.collection_uid }}">
                 	<td><a href="{{ url_for("collections", uid=item.collection_uid) }}">{{ item.name }}</a></td>
                     <td>{{ item.description }} </td>
                     <td>{{ item.username }} </td>
                     <td>{{ item.time }} </td>
+                    <td><a href="" id="coll-delete_{{ item.collection_uid }} " class="coll-delete-btn btn btn-mini btn-warning" id="remove"  title="Remove from Collection">[-]</a></td>
                     </tr>
                 {% endfor %}
                </table>
