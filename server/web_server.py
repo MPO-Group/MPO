@@ -164,11 +164,13 @@ def before_request():
             return render_template('register.html', **everything)
         USERNAME=is_mpo_user[0]['username']
 
-
 TEST_API_PREFIX=MPO_API_SERVER+"/"+"test-api"+"/"+MPO_API_VERSION
 DEMO_API_PREFIX=MPO_API_SERVER+"/"+"demo-api"+"/"+MPO_API_VERSION
-PRODUCTION_API_PREFIX=MPO_API_SERVER+"/"+"" if (USING_UWSGI) else "api"
+PRODUCTION_API_PREFIX=MPO_API_SERVER+"/"
+if not USING_UWSGI:
+    PRODUCTION_API_PREFIX+="api"
 PRODUCTION_API_PREFIX+="/"+MPO_API_VERSION
+
 
 @app.route('/')
 def index():
@@ -719,9 +721,29 @@ def connections(wid=""):
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
-#    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
+
+    #Grab a list of collections - first, get parent id
+    r=requests.get("%s/collection?element_uid=%s"%(API_PREFIX,wid), **certargs)
+    if(r):
+      # grab all collections for now
+      collections=r.json()
+      rc=requests.get("%s/collection"%(API_PREFIX), **certargs)
+      if(rc):
+         coll_list=rc.json()
+      # loop through parents
+      for item in collections:
+         coll_uid=item['parent_uid']
+         for citem in coll_list:
+            if(citem['uid']==coll_uid):
+               item['name']=citem['name']
+               item['description']=citem['description']
+               item['collection_uid']=citem['uid']
+               break
+
+    nodes=wf_objects
+    evserver=MPO_EVENT_SERVER
     everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info, "wf_state":wfstate,
-                  "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname}
+                  "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname, "coll_list":collections}
 
     if memcache_loaded:
         mc.set(cache_id, everything, time=600)
@@ -1027,6 +1049,47 @@ def ontology_instance():
     response.headers['Content-Type'] = 'text/plain'
     return response
 
+@app.route('/add_to_collection', methods=['GET','POST'])
+def add_to_collection():
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    try:
+        data = request.form.to_dict()
+        data['dn']=dn
+        data['elements']=data['oid']
+        r=json.dumps(data)
+        cid=data['cid']
+        oid=data['oid']
+        response=requests.post("%s/collection/%s/element"%(API_PREFIX,cid), r, **certargs)
+        if response.status_code == 401:
+            return "401"
+        return "200"
+
+    except:
+        pass
+
+@app.route('/delete_from_collection', methods=['GET','POST'])
+def delete_from_collection():
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    try:
+        data = request.form.to_dict()
+        data['dn']=dn
+        data['elements']=data['oid']
+        r=json.dumps(data)
+        cid=data['cid'].strip()
+        oid=data['oid'].strip()
+        response=requests.delete("%s/collection/%s/element/%s"%(API_PREFIX,cid,oid), **certargs)
+        if response.status_code == 401:
+            return "401"
+        return "200"
+
+    except:
+        pass
+
+
 @app.route('/collections')
 @app.route('/collections/<uid>', methods=['GET'])
 def collections(uid=False):
@@ -1240,7 +1303,7 @@ def collections(uid=False):
     everything={"username":USERNAME,"db_server":DB_SERVER, "results":results, "ont_result":ont_result,
                 "rpp":rpp, "wf_type_list":wf_type_list,
                 "coll_name":coll_name, "coll_desc":coll_desc,
-                "coll_username":coll_username, "coll_time":coll_time  }
+                "coll_username":coll_username, "coll_time":coll_time, "uid":uid  }
 
     return render_template('collections.html',  **everything)
 
@@ -1364,7 +1427,7 @@ def dataobject(uid=False):
     everything={"username":USERNAME,"db_server":DB_SERVER, "workflows":workflows,
                 "rpp":rpp, "coll_list":collections,
                 "name":name, "desc":desc,
-                "username":username, "time":time, "uri":uri  }
+                "username":username, "time":time, "uri":uri, "uid":uid  }
 
     return render_template('dataobject.html',  **everything)
 
