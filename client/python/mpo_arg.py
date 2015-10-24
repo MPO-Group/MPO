@@ -7,7 +7,7 @@ argument layout for mpo:
 post
 get
 delete
-not implemented: put
+put
 add
 step
 init
@@ -131,6 +131,7 @@ class mpo_methods(object):
     POSTheaders = {'content-type': 'application/json'}
     GETheaders= {'ACCEPT': 'application/json'}
     DELETEheaders= {'ACCEPT': 'application/json'}
+    PUTheaders= {'ACCEPT': 'application/json'}
     ID='uid'
     WORKID='work_uid'
     PARENTID='parent_uid' #field for object id to which comments and metadata are attached
@@ -342,6 +343,43 @@ class mpo_methods(object):
 
         return r
 
+
+
+    def put(self,route="",params={},verbose=False,**kwargs):
+        import re
+        """
+        Modify a resource.
+        Keyword arguments:
+        params -- python dictionary or a list of tuples
+        route -- API route for resource
+        """
+        url=self.api_url+route
+
+        if isinstance(params,str): #string repr of a dict
+            datadict=ast.literal_eval(params)
+        elif isinstance(params,dict):
+            datadict=params
+        elif isinstance(params,list): #list of key=value strings
+            datadict=dict(re.findall(r'(\S+)=(".*?"|\S+)', ' '.join(params) ))
+        else:
+            #throw error
+            datadict={}
+
+        if self.debug or verbose or self.dryrun:
+            print('MPO.PUT from {u} with headers of {h}, request options, {ra}, and arguments of {a}'.format(
+                  u=url,h=self.PUTheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
+            return
+
+        r = self.session.put(url,params=datadict,headers=self.PUTheaders)
+        if self.debug or verbose:
+            print('MPO.PUT response',r.url,r.status_code,file=sys.stderr)
+
+        r.raise_for_status()
+
+        if self.filter:
+            r=self.format(r,self.filter)
+
+        return r
 
 
     def post(self,route="",workflow_ID=None,obj_ID=None,data=None,**kwargs):
@@ -793,6 +831,13 @@ class mpo_cli(object):
         delete_parser.add_argument('-p','--params',action='store',nargs='*',
                                 help='Query arguments as key=value')
         delete_parser.set_defaults(func=self.mpo.delete)
+
+        #put
+        put_parser=subparsers.add_parser('put', help='PUT to a route')
+        put_parser.add_argument('route',action='store',help='Route of resource to modify')
+        put_parser.add_argument('-p','--params',action='store',nargs='*',
+                                help='Query arguments as key=value')
+        put_parser.set_defaults(func=self.mpo.put)
 
         #init
         init_parser=subparsers.add_parser('init', aliases=( ('start_workflow',)),help='Start a new workflow')
