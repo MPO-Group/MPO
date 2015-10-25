@@ -997,7 +997,9 @@ def ontologyInstance(id=None, dn=None):
 
     if request.method == 'POST':
         r = rdb.addOntologyInstance(request.data,dn=dn)
-    else:
+    elif request.method == 'PUT':
+        r = rdb.modifyOntologyInstance(request.data,dn=dn)
+    elif request.method == 'GET':
         if id:
             r = rdb.getRecord('ontology_instances', {'uid':id}, dn=dn )
         else:

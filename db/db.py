@@ -986,6 +986,38 @@ def addOntologyInstance(json_request,dn):
     return records
 
 
+def modifyOntologyInstance(json_request,dn):
+    objs = json.loads(json_request)
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    #get the user id
+    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    user_id = cursor.fetchone()['uuid']
+
+    # get the ontology term
+    term = getRecord('ontology_terms', {'path':processArgument(objs['path'])}, dn )[0]
+    # make sure the instance exists already.
+    cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
+                   "target_guid=%s",(term['uid'],objs['parent_uid']))
+    oi_guid=cursor.fetchone()['oi_guid']
+    if not oi_guid:
+        return None
+
+    q=("update ontology_instances set value=%s, creation_time=%s, u_guid=%s where oi_guid=%s and target_guid=%s and term_guid=%s")
+    v=(objs['value'],datetime.datetime.now(),user_id,oi_guid,objs['parent_uid'],term['uid'])
+    cursor.execute(q,v)
+    # Make the changes to the database persistent
+    conn.commit()
+    records = {}
+    records['uid'] = oi_guid
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+
+    return records
+
+
 def getTreePath(bottom,top):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
