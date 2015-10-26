@@ -200,7 +200,11 @@ def checkaccess(f):
                 if apidebug: print ('APIDEBUG: DEMO User does not have write access')
                 return Response(json.dumps({'error':'No write access for user', 'dn':dn}), status=401)
         elif request.method == 'PUT':
-            print("checking modify access")
+            if apidebug: print("APIDEBUG: checking put access")
+            dn=get_user_dn(request)
+            if not rdb.validWriter(dn):
+                if apidebug: print ('APIDEBUG: DEMO User does not have delete access')
+                return Response(json.dumps({'error':'No delete access for user', 'dn':dn}), status=401)
         elif request.method == 'DELETE':
             if apidebug:  print("APIDEBUG: checking delete access")
             dn=get_user_dn(request)
@@ -948,7 +952,8 @@ def ontologyTermTree(id=None, dn=None):
 
     r = rdb.getOntologyTermTree(id, dn=dn )
 
-    return jsonify(**r)
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
+    #return jsonify(**r)
 
 
 @app.route(routes['ontology_term']+'/<id>', methods=['GET','DELETE'])
@@ -990,7 +995,7 @@ def ontologyTerm(id=None, dn=None):
 
 
 @app.route(routes['ontology_instance']+'/<id>', methods=['GET'])
-@app.route(routes['ontology_instance'], methods=['GET', 'POST'])
+@app.route(routes['ontology_instance'], methods=['GET', 'POST', 'PUT'])
 @checkaccess
 def ontologyInstance(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)

@@ -969,7 +969,7 @@ def addOntologyInstance(json_request,dn):
     cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
                    "target_guid=%s",(term['uid'],objs['parent_uid']))
     if cursor.fetchone():
-        return None
+        return {}
 
     q=("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
        "values(%s,%s,%s,%s,%s,%s)")
@@ -987,6 +987,7 @@ def addOntologyInstance(json_request,dn):
 
 
 def modifyOntologyInstance(json_request,dn):
+    print json_request
     objs = json.loads(json_request)
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()

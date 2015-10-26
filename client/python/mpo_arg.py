@@ -345,7 +345,7 @@ class mpo_methods(object):
 
 
 
-    def put(self,route="",params={},verbose=False,**kwargs):
+    def put(self,route="",target=None,params={},verbose=False,**kwargs):
         import re
         """
         Modify a resource.
@@ -572,7 +572,7 @@ class mpo_methods(object):
         Add terms to the ontology instance
           target      ID of annotated object
           path        Path of ontology term type
-          value       Value of the term, must conform to ontology contraint
+          value       Value of the term, must conform to ontology constraint
         """
 
         if target == None or path == None or value == None:
@@ -581,6 +581,23 @@ class mpo_methods(object):
 
         payload={"path":path,"value":value}
         r=self.post(self.ONTOLOGY_INSTANCE_RT,None,target,payload,**kwargs)
+        return r
+
+
+    def modify_ontology_instance(self,target=None,path=None,value=None,**kwargs):
+        """
+        Add terms to the ontology instance
+          target      ID of annotated object
+          path        Path of ontology term type
+          value       Value of the term, must conform to ontology constraint
+        """
+
+        if target == None or path == None or value == None:
+            print("Usage: modify_ontology_instance target path value",file=sys.stderr)
+            sys.exit(2)
+
+        payload={"path":path,"value":value}
+        r=self.put(self.ONTOLOGY_INSTANCE_RT,target,payload,**kwargs)
         return r
 
 
@@ -900,6 +917,15 @@ class mpo_cli(object):
         ontologyInstance_parser.add_argument('value', action='store',
                                              help='Value of the term, must conform to ontology contraint,')
         ontologyInstance_parser.set_defaults(func=self.mpo.ontology_instance)
+
+        #modify_ontology_instance
+        modifyOntologyInstance_parser=subparsers.add_parser('modify_ontology_instance', aliases=( ('add_metadata','metadata','annotate') ),
+                                                  help='Add a term to the vocabulary')
+        modifyOntologyInstance_parser.add_argument('target', action='store', help='ID of annotated object')
+        modifyOntologyInstance_parser.add_argument('path', action='store', help='Path of ntology term type')
+        modifyOntologyInstance_parser.add_argument('value', action='store',
+                                             help='Value of the term, must conform to ontology contraint,')
+        modifyOntologyInstance_parser.set_defaults(func=self.mpo.modify_ontology_instance)
 
         #archive, note all arguments must be processed by the protocol
         archive_parser=subparsers.add_parser('archive',help='Archive a data object.')
