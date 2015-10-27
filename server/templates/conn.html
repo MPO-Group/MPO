@@ -188,7 +188,6 @@ $(document).ready(function () {
 	var nodeCount=0;
 	var dataElements = {}; //for name - desc in popover
 	loadCollectionDropdown();
-	
 	for (var key in dataObjs) 
 	{
 	  if (dataObjs.hasOwnProperty(key)) {
@@ -197,8 +196,9 @@ $(document).ready(function () {
 		nodeUIDs[nodeCount]=tmp['uid'];
 		for(var j in tmp) {
 			if(j=="data") {
+				
 				var tmp2=tmp[j];
-				var tmp3=tmp2[0];  
+				var tmp3=tmp2[0]; 
 				
 				dataElements[tmp['name']]="";
 				if(tmp3['description'])
@@ -232,7 +232,6 @@ $(document).ready(function () {
 							fillSVGElement(tmp['uid'],"linked");
 					}
 					dataElements[tmp['name']]+="</li>";
-					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
 				}
 				else if('do_info' in tmp3 && tmp3['do_info']['uri']) {
 					var fill=false;
@@ -245,8 +244,9 @@ $(document).ready(function () {
 							fillSVGElement(tmp['uid'],"linked");
 					}
 					dataElements[tmp['name']]+="</li>";
-					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
 				}
+				if(tmp3 && tmp3['uid']) 
+					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+" AND "+j+"</small></li>"; 
 			}
 			else if(j=="metadata") {
 				var tmp2=tmp[j];
