@@ -365,12 +365,15 @@ class mpo_methods(object):
             #throw error
             datadict={}
 
+        if target:
+            datadict['parent_uid']=target
+
         if self.debug or verbose or self.dryrun:
             print('MPO.PUT from {u} with headers of {h}, request options, {ra}, and arguments of {a}'.format(
                   u=url,h=self.PUTheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
             return
 
-        r = self.session.put(url,params=datadict,headers=self.PUTheaders)
+        r = self.session.put(url,json.dumps(datadict),headers=self.PUTheaders)
         if self.debug or verbose:
             print('MPO.PUT response',r.url,r.status_code,file=sys.stderr)
 
