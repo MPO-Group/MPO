@@ -969,11 +969,46 @@ def addOntologyInstance(json_request,dn):
     cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
                    "target_guid=%s",(term['uid'],objs['parent_uid']))
     if cursor.fetchone():
-        return None
+        return {}
 
     q=("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
        "values(%s,%s,%s,%s,%s,%s)")
     v=(oi_guid,objs['parent_uid'],term['uid'],objs['value'],datetime.datetime.now(),user_id)
+    cursor.execute(q,v)
+    # Make the changes to the database persistent
+    conn.commit()
+    records = {}
+    records['uid'] = oi_guid
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+
+    return records
+
+
+def modifyOntologyInstance(json_request,dn):
+    objs = json.loads(json_request)
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    #get the user id
+    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    user_id = cursor.fetchone()['uuid']
+
+    # get the ontology term
+    term = getRecord('ontology_terms', {'path':processArgument(objs['path'])}, dn )
+    if not term:
+        return {}
+
+    # make sure the instance exists already.
+    cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
+                   "target_guid=%s",(term[0]['uid'],objs['parent_uid']))
+    oi_guid=cursor.fetchone()['oi_guid']
+    if not oi_guid:
+        return {}
+
+    q=("update ontology_instances set value=%s, creation_time=%s, u_guid=%s where oi_guid=%s and target_guid=%s and term_guid=%s")
+    v=(objs['value'],datetime.datetime.now(),user_id,oi_guid,objs['parent_uid'],term[0]['uid'])
     cursor.execute(q,v)
     # Make the changes to the database persistent
     conn.commit()
