@@ -953,7 +953,6 @@ def ontologyTermTree(id=None, dn=None):
     r = rdb.getOntologyTermTree(id, dn=dn )
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
-    #return jsonify(**r)
 
 
 @app.route(routes['ontology_term']+'/<id>', methods=['GET','DELETE'])
