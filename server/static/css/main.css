@@ -17,7 +17,7 @@ padding-top: 5px;
 .leaderboard {
 padding: 60px;
 margin-bottom: 30px;
-background-image: url('/static/img/gridbg.gif');
+background-image: url('/img/gridbg.gif');
 background-repeat:repeat;
 -webkit-border-radius: 6px;
 -moz-border-radius: 6px;
@@ -154,21 +154,21 @@ padding: 7px 9px;
 
 /* Icons */
 .icon-workflow {
-    background-image: url("https://mpo.gat.com/static/img/images/_icon_workflow.png");
+    background-image: url("/img/images/_icon_workflow.png");
     background-position: center center;
 }
 
 .icon-activity {
-    background-image: url("https://mpo.gat.com/static/img/images/_icon_activity.png");
+    background-image: url("/img/images/_icon_activity.png");
     background-position: center center;
 }
 
 .icon-dataobject {
-    background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject.png");
+    background-image: url("/img/images/_icon_dataobject.png");
     background-position: center center;
 }
 .icon-dataobject-blue {
-    background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject_blue.png");
+    background-image: url("/img/images/_icon_dataobject_blue.png");
     background-position: center center;
 }
 .lighter{
