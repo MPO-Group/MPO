@@ -33,7 +33,7 @@ else:
     mc = False
 
 #debug logging
-webdebug = False  #our inline print statements
+webdebug = True  #our inline print statements
 if webdebug:
     httploglevel=1
 else:
@@ -222,10 +222,16 @@ def workflows():
     wf_type=request.args.get('wf_type')
 
     wf_name=request.args.get('wf_name')
-    wf_desc=request.args.get('wf_desc')
+    wf_desc=request.args.get('wf_description')
     wf_lname=request.args.get('wf_lname')
     wf_fname=request.args.get('wf_fname')
     wf_username=request.args.get('wf_username')
+    wf_date_val1=request.args.get('wf_date1')
+    wf_date_val2=request.args.get('wf_date2')
+
+    wf_ont_id=request.args.get('ont_id')
+    wf_ont_pid=request.args.get('ont_pid')
+    wf_ont_value=request.args.get('ont_value')
 
     if wf_page:
         current_page=int(wf_page)
@@ -272,9 +278,38 @@ def workflows():
             num_wf=len(rjson) # number of workflows of specified type
             #get range of workflows of specified type
             #r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
-    #else:
-        #wf_type=""
-        #r=s.get("%s/workflow?range=(%s,%s)"%(API_PREFIX,rmin,rmax), headers={'Real-User-DN':dn})
+    if wf_desc:
+        rjson = [item for item in rjson if wf_desc.lower() in item['description'].lower()]
+    if wf_name:
+        rjson = [item for item in rjson if wf_name.lower() in item['name'].lower()]
+    if wf_username:
+        rjson = [item for item in rjson if wf_username.lower() in item['user']['username'].lower()]
+    if wf_lname:
+        rjson = [item for item in rjson if wf_lname.lower() in item['user']['lastname'].lower()]
+    if wf_fname:
+        rjson = [item for item in rjson if wf_fname.lower() in item['user']['firstname'].lower()]
+
+    if wf_ont_id and wf_ont_pid:
+        ont_filter=[]
+        r=requests.get("%s/ontology/instance?term_uid=%s"%(API_PREFIX,wf_ont_pid,), **certargs)
+        ont_result = r.json()
+        for item in ont_result:
+            if item['value'] == wf_ont_value:
+                ont_filter.append(item['parent_uid'])
+        rjson = [item for item in rjson if item['uid'] in ont_filter]
+
+
+    df='%Y-%m-%d %H:%M:%S' 
+    df='%Y-%m-%d'
+
+    if wf_date_val1:
+        #rjson = [item for item in rjson if datetime.strptime(wf_date_val1,df) <= datetime.strptime(item['time'][:10],df)] 
+        rjson = [item for item in rjson if datetime.datetime.strptime(wf_date_val1,df) <= datetime.datetime.strptime(item['time'][:10],df)]
+
+    if wf_date_val2:
+        #rjson = [item for item in rjson if datetime.strptime(wf_date_val2,df) >= datetime.strptime(item['time'][:10],df)] 
+        rjson = [item for item in rjson if datetime.datetime.strptime(wf_date_val2,df) >= datetime.datetime.strptime(item['time'][:10],df)]
+
 
     if webdebug: print('web debug rjson',rjson, rmin, rmax)
     rjson=rjson[rmin-1:rmax]
@@ -558,14 +593,16 @@ def getsvgxml(wid):
     object_order[0]={ 'uid':wid, 'name':str(nodes[wid].get('name')), 'type':nodes[wid]['type'], 'time':nodes[wid]['time'] }
     count=1
     prev_name=""
+    prev_cid=""
     for item in r['connectivity']:
         pid=item['parent_uid']
         cid=item['child_uid']
         name=str(nodes[cid].get('name'))
-        if prev_name != name:
+        if prev_cid != cid:
             object_order[count]={ 'uid':cid, 'name':name, 'type':nodes[cid]['type'], 'time':nodes[cid]['time'] }
             prev_name=name
-            count+=1
+            prev_cid=cid
+        count+=1
 
         theshape=nodeshape[nodes[cid]['type']]
 #        graph.add_node( pydot.Node(cid, label=name, shape=theshape, URL='javascript:postcomment("\N")') )
@@ -589,10 +626,11 @@ def getwfstate(wid):
     r=r.json()
     if r:
         state_uid = r[0]['uid']
-        #get instances for state
+        #get all instances with assigned state value
         r=requests.get("%s/ontology/instance?term_uid=%s"%(API_PREFIX,state_uid,), **certargs)
         result = r.json()
         for item in result:
+            #matches workflow id
             if item['parent_uid'] == wid:
                 return item['value']
 
@@ -744,7 +782,6 @@ def connections(wid=""):
     evserver=MPO_EVENT_SERVER
     everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info, "wf_state":wfstate,
                   "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname, "coll_list":collections}
-
     if memcache_loaded:
         mc.set(cache_id, everything, time=600)
 

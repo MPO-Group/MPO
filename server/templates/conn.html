@@ -186,9 +186,8 @@ $(document).ready(function () {
 	//lastUpdate=new Date(); //GET CURRENT DATE ON PAGE LOAD for newest added element comparison
 
 	var nodeCount=0;
-	var dataElements = {}; //for name - desc in popover
+	var dataElements = {}; //for name - desc in popover, key by uid
 	loadCollectionDropdown();
-	
 	for (var key in dataObjs) 
 	{
 	  if (dataObjs.hasOwnProperty(key)) {
@@ -196,24 +195,24 @@ $(document).ready(function () {
 		console.logtmp
 		nodeUIDs[nodeCount]=tmp['uid'];
 		for(var j in tmp) {
-			if(j=="data") {
+			if(j=="data") {				
 				var tmp2=tmp[j];
-				var tmp3=tmp2[0];  
+				var tmp3=tmp2[0]; 
 				
-				dataElements[tmp['name']]="";
+				dataElements[tmp['uid']]="";
 				if(tmp3['description'])
-					dataElements[tmp['name']]+=tmp3['description'];
+					dataElements[tmp['uid']]+=tmp3['description'];
 				else if(tmp3['do_info']['description'])
-					dataElements[tmp['name']]+=tmp3['do_info']['description'];
+					dataElements[tmp['uid']]+=tmp3['do_info']['description'];
 				if(tmp3['time']) {
-					dataElements[tmp['name']]+= "<div><small>"+tmp3['time']+"</small></div>";
+					dataElements[tmp['uid']]+= "<div><small>"+tmp3['time']+"</small></div>";
 					//store latest workflow update time
 					tmpDateTime=new Date(tmp3['time'].replace(" ","T"));
 					if(tmpDateTime > lastUpdate)
 						lastUpdate=tmpDateTime
 				}
 				else if(tmp3['do_info']['time']) {
-					dataElements[tmp['name']]+= "<div><small>"+tmp3['do_info']['time']+"</small></div>";
+					dataElements[tmp['uid']]+= "<div><small>"+tmp3['do_info']['time']+"</small></div>";
 					//store latest workflow update time
 					tmpDateTime=new Date(tmp3['do_info']['time'].replace(" ","T"));
 					if(tmpDateTime > lastUpdate)
@@ -221,7 +220,7 @@ $(document).ready(function () {
 				}
 				if(tmp3['uri']) {
 					var fill=false;
-					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['uri']+"</small>";
+					dataElements[tmp['uid']]+="<ul><li><small>uri: "+tmp3['uri']+"</small>";
 					if(tmp3['wf_link']) {
 						for (var cnt in tmp3['wf_link']) {
 							if (tmp3['wf_link']['count'] > 1) {
@@ -231,12 +230,11 @@ $(document).ready(function () {
 						if(fill)
 							fillSVGElement(tmp['uid'],"linked");
 					}
-					dataElements[tmp['name']]+="</li>";
-					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
+					dataElements[tmp['uid']]+="</li>";
 				}
 				else if('do_info' in tmp3 && tmp3['do_info']['uri']) {
 					var fill=false;
-					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['do_info']['uri']+"</small>";
+					dataElements[tmp['uid']]+="<ul><li><small>uri: "+tmp3['do_info']['uri']+"</small>";
 					if(tmp3['wf_link']) {
 							if (tmp3['wf_link']['count'] > 1) {
 								fill=true;
@@ -244,24 +242,25 @@ $(document).ready(function () {
 						if(fill)
 							fillSVGElement(tmp['uid'],"linked");
 					}
-					dataElements[tmp['name']]+="</li>";
-					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
+					dataElements[tmp['uid']]+="</li>";
 				}
+				if(tmp3 && tmp3['uid']) 
+					dataElements[tmp['uid']]+="<li><small>uid: "+tmp3['uid']+" AND "+j+"</small></li>"; 
 			}
 			else if(j=="metadata") {
 				var tmp2=tmp[j];
-				if(dataElements[tmp['name']])
-					dataElements[tmp['name']]=dataElements[tmp['name']]+"<li><small>metadata:</small><ul>";
+				if(dataElements[tmp['uid']])
+					dataElements[tmp['uid']]=dataElements[tmp['uid']]+"<li><small>metadata:</small><ul>";
 				else
-					dataElements[tmp['name']]="<ul><li><small>metadata:</small><ul>";
+					dataElements[tmp['uid']]="<ul><li><small>metadata:</small><ul>";
 				for (var z in tmp2)
 				{
 					var tmp3=tmp2[z];
 					if(tmp3['key']) {
-						dataElements[tmp['name']]=dataElements[tmp['name']] + "<li><small>" + tmp3['key'] + ': ' + tmp3['value'] + "</small></li>";
+						dataElements[tmp['uid']]=dataElements[tmp['uid']] + "<li><small>" + tmp3['key'] + ': ' + tmp3['value'] + "</small></li>";
 					}
 				}
-				dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></li></ul>";
+				dataElements[tmp['uid']]=dataElements[tmp['uid']]+"</ul></li></ul>";
 			}
 		}
 		nodeCount++;
@@ -358,17 +357,15 @@ $(document).ready(function () {
 			node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
 			nodeTitle=node.childNodes[4].textContent;
 			//node.childNodes[4].id = "text_" + id;
-			if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
-				sub_content = dataElements[node.childNodes[4].textContent];
+			//alert(node.childNodes[3]);
+			if(typeof(dataElements[node.childNodes[0].textContent]) !== 'undefined') {
+				sub_content = dataElements[node.childNodes[0].textContent];
 				popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ nodeTitle +'</strong><br/><small><em>' + sub_content; 
 			}
 		}
 		if(key==0)
-		//if(id=="node1")
-			//popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">Add comments</a></small></div>';
 			popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a data-val="'+wid+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 		else
-		//popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
 			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a data-val="'+id+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 		
 		$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
@@ -433,7 +430,6 @@ $(document).ready(function () {
 				var current=$(this);
 				var wfID=$( this ).text();
 				var url="{{ url_for('workflow') }}/"+wfID;
-				console.log (url);
 				var jqxhr = $.getJSON( url, function( data ) {
 					var text=data[0]["username"]+"/"+data[0]["name"]+"/"+data[0]["composite_seq"]+" - "+data[0]["description"];
 					var linked_text="<a href=\"{{ url_for('connections') }}/"+data[0]["uid"]+"\"><span class='icon-workflow'></span> <em>"+text+"</em></a>"
@@ -801,11 +797,11 @@ function buildPageElements(wfID) {
 					if(j=="data") {
 						var tmp2=tmp[j];
 						var tmp3=tmp2[0];
-						dataElements[tmp['name']]="";
+						dataElements[tmp['uid']]="";
 						if(tmp3['description'])
-							dataElements[tmp['name']]+=tmp3['description'];
+							dataElements[tmp['uid']]+=tmp3['description'];
 						if(tmp3['time']) {
-							dataElements[tmp['name']]+= ' - ' + tmp3['time'];
+							dataElements[tmp['uid']]+= ' - ' + tmp3['time'];
 							//store latest workflow update time
 							tmpDateTime=new Date(tmp3['time'].replace(" ","T"));
 							if(tmpDateTime > lastUpdate) {
@@ -816,22 +812,22 @@ function buildPageElements(wfID) {
 							}
 						}
 						if(tmp3['uri'])
-							dataElements[tmp['name']]+= '<br/><em>uri</em>: ' + tmp3['uri'];
+							dataElements[tmp['uid']]+= '<br/><em>uri</em>: ' + tmp3['uri'];
 					}
 					else if(j=="metadata") {
 						var tmp2=tmp[j];
-						if(dataElements[tmp['name']])
-							dataElements[tmp['name']]=dataElements[tmp['name']]+"<div>metadata:<ul>";
+						if(dataElements[tmp['uid']])
+							dataElements[tmp['uid']]=dataElements[tmp['uid']]+"<div>metadata:<ul>";
 						else
-							dataElements[tmp['name']]="<div>metadata:<ul>";
+							dataElements[tmp['uid']]="<div>metadata:<ul>";
 						for (var z in tmp2)
 						{
 							var tmp3=tmp2[z];
 							if(tmp3['key']) {
-								dataElements[tmp['name']]=dataElements[tmp['name']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
+								dataElements[tmp['uid']]=dataElements[tmp['uid']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
 							}
 						}
-						dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></div>";
+						dataElements[tmp['uid']]=dataElements[tmp['uid']]+"</ul></div>";
 					}
 				}//end for
 				
@@ -897,9 +893,9 @@ function buildPageElements(wfID) {
 					node.childNodes[4].setAttribute("style",'fill:rgb(0,76,153);cursor:pointer;'); //text styles
 					node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
 					//node.childNodes[4].id = "text_" + id;
-					if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
-						sub_content = dataElements[node.childNodes[4].textContent];
-						popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;
+					if(typeof(dataElements[node.childNodes[0].textContent]) !== 'undefined') {
+						sub_content = dataElements[node.childNodes[0].textContent];
+						popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[0].textContent +'</strong><br/><small><em>' + sub_content;
 					}
 				}
 				if(key==0)
