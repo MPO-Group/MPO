@@ -33,7 +33,7 @@ else:
     mc = False
 
 #debug logging
-webdebug = True  #our inline print statements
+webdebug = False  #our inline print statements
 if webdebug:
     httploglevel=1
 else:
