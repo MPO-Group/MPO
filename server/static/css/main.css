@@ -91,11 +91,6 @@ table .main {
 	font-weight: normal;
 }
 
-.main th,td,caption { 
-	padding: 7px; 
-	border-bottom: 1px solid #e1e1e1;	
-}
-
 .accordion-group {
     border: 0px;
 
