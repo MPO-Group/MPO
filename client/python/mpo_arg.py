@@ -914,6 +914,14 @@ class mpo_cli(object):
         ontologyInstance_parser.add_argument('--force','-f',action='store_true', help='Force overwrite existing value',default=False)
 
 
+        #archive, note all arguments must be processed by the protocol
+        archive_parser=subparsers.add_parser('archive',help='Archive a data object.')
+        archive_parser.add_argument('--name', '-n', action='store')
+        archive_parser.add_argument('--desc', '-d', action='store', help='Describe the object being archived')
+        archive_parser.add_argument('--protocol', '-p', action='store',metavar='protocol',
+                                   nargs=argparse.REMAINDER)
+        archive_parser.set_defaults(func=self.mpo.archive)
+
         #collect
         collect_parser=subparsers.add_parser('collect',help='Create a new collection')
         collect_parser.add_argument('-n','--name',action='store',help='Name of the collection')
