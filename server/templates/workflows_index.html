@@ -309,7 +309,7 @@ function getMenuChildren(obj,parent_id) {
 	$("#"+parent_id).append(subTree);
 }
 
-function getSubLevel(uid, pid=None, name=None) {
+function getSubLevel(uid, pid, name) {
 	
 	if(ont_selections.indexOf(uid) > -1) {
 		$("#"+uid).find('>ul').slideToggle();
