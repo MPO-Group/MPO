@@ -83,6 +83,8 @@ create table dataobject
   name text,
   description text,
   URI text,
+/* guid of the activity that generated the data object. if not null
+ then it's an output file. */
   source_guid uuid,
   creation_time timestamp,
   U_GUID  uuid references mpousers
