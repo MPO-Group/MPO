@@ -1,0 +1,297 @@
+
+{% block hscripts %}
+<script>
+var debug=0;
+var userPaths = [];
+var wfAttrib = [];
+var ontTreeMenu = "";
+var ont_selections = [];
+var subTree="";
+
+$(document).ready(function () {	
+	/**
+	*function handles comment submit event for each workflow in the list
+	*/
+	
+	var jsonstr = '{{ result }}';
+	//var jsondata = jQuery.parseJSON(jsonstr);
+	console.log(jsonstr);
+	$('[id^=submit_comment_]').submit(function(event) {
+		var this_id=(this).id;
+		var fadeTime = 5000;
+		var formData = $(this).serialize();
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('submit_comment') }}', // the url where we want to POST
+			data 		: formData, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {		
+			if (data=="401") {
+				result_id=(this_id).replace("comment","results");
+				$('#'+result_id).show();
+				$("#"+result_id).css({"color": "red", "font-weight": "bold"});
+				$('#'+result_id).html("This account is not authorized to submit comments.");
+				$('#'+result_id).fadeOut(fadeTime, function() {
+						$('#'+result_id).html("");
+				});
+			}
+			else {	
+				var prependHtml = '<blockquote id="block_' + data[0].uid  + '" >';
+				prependHtml += '<p style="font-size: 12px">' + data[0].content + '</p>';
+				prependHtml += '<small>by <cite title="Source Title"> '+ data[0].username +' - ' + data[0].time.substring(0,16) + ' </cite></small>';
+				prependHtml += '</blockquote><hr>';
+								
+				var p_uid=data[0].parent_uid;
+				var c_uid=data[0].uid;	
+				$("a#commentCtr"+p_uid).text(parseInt($("a#commentCtr"+p_uid).text())+1);
+				
+				$("#commentDrop"+p_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
+				
+				//drop comment section if it is not already dropped
+				if(!($('#commentDrop'+p_uid).hasClass('in'))) {
+					$('#commentDrop'+p_uid).addClass('in');
+					$('#commentDrop'+p_uid).css('height','auto');
+				}
+	
+				$('#submit_results_'+p_uid).show();
+				$('#submit_results_'+p_uid).html("Comment submitted.");
+				$('#submit_results_'+p_uid).fadeOut(fadeTime, function() {
+						// Animation complete.
+						$('#submit_results_'+data[0].parent_uid).html("");
+					});
+				$('#block_' + c_uid).css('background-color', '#ddffdd');
+				$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);
+				//clear submitted comment text	
+				$('#content_'+p_uid).val('');	
+			}
+		});
+		// stop the form from submitting the normal way and refreshing the page
+		event.preventDefault();
+	});
+});
+
+//workflow id, numq => quality value (1-4)
+function setWfQuality(wfid,numq) {
+	//ajax.post --> serialized json
+
+	//star images info
+	var numstars=4;
+	var img=["star_empty.png","star.png"];
+	var imgpath = "static/img/";
+	var imgstr="_img";
+
+	//POST data to API route
+	var url="{{ url_for('ontology_instance') }}";
+	var ont_path='/Generic/Status/quality';
+	var parent_uid=wfid;
+	var user="None";
+	var postData = {'parent_uid': parent_uid, 'value': numq.toString(), 'path': ont_path, 'user': user };
+
+	var jqxhr = $.ajax({
+		type: "POST",
+		url: url,
+		data : JSON.stringify(postData),
+		contentType: 'application/json'
+	});
+	
+	//remove pointer cursor class
+	$('#'+wfid+'_quality').removeClass('set_quality');	
+
+	//ajax request returns uid of 'quality' instance
+	jqxhr.done(function(data) {
+		console.log(data);
+	});
+
+	//set star image src according to star clicked
+	for(i=1;i<=numstars;i++) {
+		var img_element='#'+wfid+imgstr+i;
+		if(i<=numq)
+			$(img_element).attr('src', imgpath+img[1]); //star on
+		else
+			$(img_element).attr('src', imgpath+img[0]); //star off
+	}
+}
+
+</script>
+<style>
+.set_quality {
+	cursor: pointer;
+}
+</style>
+{% endblock %}
+{% block container %} 
+		{% if results %}
+            <!-- workflow list table -->
+            <table class="main table table-hover" id="mpoTable">
+	            <thead>
+      	        	<tr>
+                		<th width="2%">&nbsp;</th><th width="25%">CompositeID</th><th width="42%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th>
+	              	</tr>
+				</thead>
+                <tbody>
+    		{% for item in results %}
+                <div id="accordion2" class="accordion">
+                
+                        {% if item.state %}
+                            <tr class="{{ item.state|lower|replace(" ","-") }}">
+                        {% else %}                                
+                            <tr>
+                        {% endif %}
+                    
+                        {% set wf_number=loop.index+(current_page-1)*rpp %}
+                        <td><span class="muted"><em><small>{{ wf_number }}</small></em></td>
+                        <td>
+                        <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.type }} / {{ item.composite_seq }}</a>
+                        <br /><small><strong>UID: </strong><input type="text" value="{{ item.uid }}" class="small copy" readonly /></small>
+                        </td>
+                        <td>{{ item.description }}
+                        {% if item.state != None %}
+                        <br /><font class="state-label {{ item.state|lower|replace(" ","-") }}">{{ item.state }}</font>
+						{% endif %}                        
+                         </td>
+                        <td class="xsmall">{{ item.time }}</td>
+                        <!-- <td>{{ item.username }}</td> -->
+                        <td>
+                            <div class="accordion-group">
+                              <div class="accordion-heading">
+                            <a href="#commentDrop{{ item.uid }}" id="commentCtr{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
+                              {% if item.num_comments %}
+                                {{ item.num_comments }}
+                              {% else %}
+                                0
+                              {% endif %}
+                            </a>
+                        &nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
+                          </div>
+                        </div>
+                   	 	</td>
+                        <td>
+                        {% if item.quality %}
+                             {% if item.quality == "1" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            {% elif item.quality == "2" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            {% elif item.quality == "3" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            {% elif item.quality == "4" %}
+                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            {% endif %}
+                        {% else %}
+                            <span id="{{ item.uid }}_quality" class="set_quality">
+                                <img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                            </span>
+                        {% endif %}
+                        </td>
+              		</tr>
+              		<tr>
+                        <td colspan="8" class="comments"> 
+                          <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
+                            <div class="accordion-inner no-border bot-border light-box">
+                              <form id="submit_comment_{{ item.uid }}">
+                                <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
+                                <div><textarea rows="2" class="span12" name="content" id="content_{{ item.uid }}"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button>&nbsp;&nbsp;<span id="submit_results_{{ item.uid }}"></span></div>
+                              </form>
+                            </div>
+                          </div>
+                        </td>
+              		</tr>	      
+              		<!-- Comment Drop -->
+              		<tr>
+                          <td colspan="8" class="comments"> 
+                        <div class="accordion-body collapse {{ item.show_comments }}" id="commentDrop{{ item.uid }}">
+                          <div class="accordion-inner no-border bot-border">
+                          {% for i in item.comments %}
+                        <blockquote>
+                          <p style="font-size: 12px">{{ i.content }}</p>
+                          <small>by <cite title="Source Title">{{i.username}} {% if i.time %} - {{i.time}} {% endif %}</cite></small>
+                        </blockquote>
+                        <hr>
+                          {% endfor %}
+                          </div>
+                        </div>
+                      </td>
+              		</tr>
+              <!-- END Comment Drop -->
+            </div> <!-- end accordian -->
+			</tbody>
+     	{% endfor %}
+		</table>
+<ul id="contextMenu" class="dropdown-menu" role="menu" style="display:none" >
+    <li><a tabindex="-1" href="#">View details in new tab</a></li>
+    <li><a tabindex="-1" href="#">Copy UID</a></li>
+    <!-- <li class="divider"></li>
+    <li><a tabindex="-1" href="#">Separated link</a></li> -->
+</ul>
+
+            <div style="padding-top:3px;"> <!-- sort menu -->
+                <span class="muted"><small>show:</small>
+                </span>
+                <span class="btn-group">
+                    <a class="btn btn-mini dropdown-toggle" data-toggle="dropdown" href="#">
+                    {{ rpp }}
+                    <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>&nbsp;<a href="{{ url_for("workflows", wf_type=wf_type,r=15) }}">15</a></li>
+                        <li>&nbsp;<a href="{{ url_for("workflows", wf_type=wf_type,r=30) }}">30</a></li>
+                        <li>&nbsp;<a href="{{ url_for("workflows", wf_type=wf_type,r=90) }}">90</a></li>
+                    </ul>
+                </span>
+            </div> <!-- /sort menu -->  
+            <div class="pagination pagination-mini text-center">
+            <div id="pages2"> </div>
+            <script type='text/javascript'>
+                var options = {
+                    currentPage: {{ current_page }},
+                    totalPages: {{ num_pages }},
+                    pageUrl: function(type, page, current){
+                        //build URL here ==> /home?p=4&range=91%2C120&r=30
+                        var range1=1;
+                        var range2=15;
+                        if(page!=1) {
+                            range2=page*{{ rpp }};
+                            range1=range2-{{ rpp }}+1;
+                        }
+                        else {
+                            range1=1;
+                            range2={{ rpp }};			
+                        }
+                        return "{{ url_for("workflows") }}"+"?p="+page+"&range="+range1+","+range2+"&r={{ rpp }}"{% if wf_type %}+"&wf_type={{ wf_type }}"{% endif %};
+                    }
+                }
+                $('#pages2').bootstrapPaginator(options);
+            </script>
+            {% set range2=current_page*rpp %}
+            {% set range1=range2-rpp+1 %}
+            {% if range2>num_wf %}
+            {% set range2=num_wf %}
+            {% endif %}
+            <span class="muted"><em><small>Showing <span id="range1">{{ range1 }}</span> to <span id="range2">{{ range2 }}</span> of {{ num_wf }}</small></em></span>
+            <div class="pull-right"><em><small>Page created in: {{ page_created }} seconds. </em></small></div>
+            </div> <!-- /pagination -->
+    	</div> <!-- /table list span --> 
+        
+    	</div> <!-- end of inner fluid -->
+{% else %}
+<p>No results found.</p>
+{% endif %}  
+{% endblock %}
