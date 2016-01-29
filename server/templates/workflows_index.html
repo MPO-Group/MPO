@@ -4,414 +4,210 @@
 <script>
 var debug=0;
 var userPaths = [];
+var parentOntWithWf = {};
 var wfAttrib = [];
 var ontTreeMenu = "";
 var ont_selections = [];
 var subTree="";
 
 $(document).ready(function () {
+	
+	//wf filter - set up datepicker
 	$( "#wf_date_val1" ).datepicker({ dateFormat: 'yy-mm-dd' }).val();
 	$( "#wf_date_val2" ).datepicker({ dateFormat: 'yy-mm-dd' }).val();
-		 
-	$("input.user_entry:text").val("");
-	$("input.user_entry_wf:text").val("");
 	
-	//$('#wf_date_val1').val(getURLQueryString('wf_date1').html());
-	$('#wf_date_val1').val(htmlDecode(getURLQueryString('wf_date1')));
-	$('#wf_date_val2').val(htmlDecode(getURLQueryString('wf_date2')));
-	$('#wf_name_val').val(htmlDecode(getURLQueryString('wf_name')));
-	$('#wf_desc_val').val(htmlDecode(getURLQueryString('wf_description')));
-	$('#wf_ln_val').val(htmlDecode(getURLQueryString('wf_lname')));
-	$('#wf_fn_val').val(htmlDecode(getURLQueryString('wf_fname')));
-	$('#wf_user_val').val(htmlDecode(getURLQueryString('wf_username')));
+	//parse ontology result data
+	var ont_jsonstr = '{{ ont_list|tojson }}';
+	var ont_jsondata = jQuery.parseJSON(ont_jsonstr);
 	
-	var filter_ont_uid=htmlDecode(getURLQueryString('ont_id'));
-	var jsonstr = '{{ ont_result|tojson }}';
-	var jsondata = jQuery.parseJSON(jsonstr);
-	
-	$('#wf_filter_clear').on('click', function() {
-		window.location.href = "{{ url_for("workflows") }}";
+	// onclick - clear, go back to all wf list view
+	$('.wf_filter_clear').on('click', function() {
+		//display all workflows
+		loadWorkflowTable("{{ url_for("get_workflows",display="table") }}");
+		//clear workflow filter input fields
+		clearWfFilterFields();
+		//collapse ontology filter tree
+		//get list of levels with children entry count greater than 0
+		getOntFilterOptions(ont_jsondata);
+		$("#ont_listing").html(ontTreeMenu);
 	});
-	
-	$('#wf_filter_submit').on('click', function () {
-		var url="";
 		
-		var wftype=$('#wf_type_sel').val();	
-		if(wftype!="None") url= wftype;
-		else url="{{ url_for("workflows") }}" + "?r=" + "{{ rpp }}";
-		var wf_date_val1=$('#wf_date_val1').val();		
-	 	if(wf_date_val1!="") url+="&wf_date1=" + wf_date_val1
-		var wf_date_val2=$('#wf_date_val2').val();		
-	 	if(wf_date_val2!="") url+="&wf_date2=" + wf_date_val2
-		var wf_name_val=$('#wf_name_val').val();		
-	 	if(wf_name_val!="") url+="&wf_name=" + wf_name_val
-		var wf_desc_val=$('#wf_desc_val').val();		
-	 	if(wf_desc_val!="") url+="&wf_description=" + wf_desc_val
-		var wf_ln_val=$('#wf_ln_val').val();		
-	 	if(wf_ln_val!="") url+="&wf_lname=" + wf_ln_val
-		var wf_fn_val=$('#wf_fn_val').val();		
-	 	if(wf_fn_val!="") url+="&wf_fname=" + wf_fn_val
-		var wf_user_val=$('#wf_user_val').val();	
-	 	if(wf_user_val!="") url+="&wf_username=" + wf_user_val		
-
-		window.location=url;
-	});
-	
-	/**
-	*function handles comment submit event for each workflow in the list
-	*/
-	$('[id^=submit_comment_]').submit(function(event) {
-		var this_id=(this).id;
-		var fadeTime = 5000;
-		var formData = $(this).serialize();
-		//process the form
-		$.ajax({
-			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
-			url 		: '{{ url_for('submit_comment') }}', // the url where we want to POST
-			data 		: formData, // our data object
-			dataType 	: 'json', // what type of data do we expect back from the server
-            encode      : true
-		})
-		//callback
-		.done(function(data) {		
-			if (data=="401") {
-				result_id=(this_id).replace("comment","results");
-				$('#'+result_id).show();
-				$("#"+result_id).css({"color": "red", "font-weight": "bold"});
-				$('#'+result_id).html("This account is not authorized to submit comments.");
-				$('#'+result_id).fadeOut(fadeTime, function() {
-						$('#'+result_id).html("");
-				});
-			}
-			else {	
-				var prependHtml = '<blockquote id="block_' + data[0].uid  + '" >';
-				prependHtml += '<p style="font-size: 12px">' + data[0].content + '</p>';
-				prependHtml += '<small>by <cite title="Source Title"> '+ data[0].username +' - ' + data[0].time.substring(0,16) + ' </cite></small>';
-				prependHtml += '</blockquote><hr>';
-								
-				var p_uid=data[0].parent_uid;
-				var c_uid=data[0].uid;	
-				$("a#commentCtr"+p_uid).text(parseInt($("a#commentCtr"+p_uid).text())+1);
-				
-				$("#commentDrop"+p_uid+" div[class='accordion-inner no-border bot-border']").prepend(prependHtml);
-				
-				//drop comment section if it is not already dropped
-				if(!($('#commentDrop'+p_uid).hasClass('in'))) {
-					$('#commentDrop'+p_uid).addClass('in');
-					$('#commentDrop'+p_uid).css('height','auto');
-				}
-	
-				$('#submit_results_'+p_uid).show();
-				$('#submit_results_'+p_uid).html("Comment submitted.");
-				$('#submit_results_'+p_uid).fadeOut(fadeTime, function() {
-						// Animation complete.
-						$('#submit_results_'+data[0].parent_uid).html("");
-					});
-				$('#block_' + c_uid).css('background-color', '#ddffdd');
-				$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);
-				//clear submitted comment text	
-				$('#content_'+p_uid).val('');	
-			}
+	// onclick - filter, reload data 
+	$('#wf_filter_submit').on('click', function () {		
+		//check for ontology selection:
+		var url="{{ url_for("get_workflows",display="table") }}"
+		
+		var ont_filter_selected=[];
+		console.log("CHECKED ont filter values........ ");
+		console.log($('input[name="ont_filter_selection"]:checked'))
+		$('input[name=ont_filter_selection]:checked').map(function() {
+            console.log($(this).attr('id'));
+			ont_filter_selected.push($(this).attr('id'));
 		});
-		// stop the form from submitting the normal way and refreshing the page
-		event.preventDefault();
+		url_query="&wf_ont_id="+ont_filter_selected;
+	
+		var wf_date_val1=$('#wf_date_val1').val();		
+	 	if(wf_date_val1!="") url_query+="&wf_date1=" + wf_date_val1
+		var wf_date_val2=$('#wf_date_val2').val();		
+	 	if(wf_date_val2!="") url_query+="&wf_date2=" + wf_date_val2
+		var wf_name_val=$('#wf_name_val').val();		
+	 	if(wf_name_val!="") url_query+="&wf_name=" + wf_name_val
+		var wf_desc_val=$('#wf_desc_val').val();		
+	 	if(wf_desc_val!="") url_query+="&wf_description=" + wf_desc_val
+		var wf_ln_val=$('#wf_ln_val').val();		
+	 	if(wf_ln_val!="") url_query+="&wf_lname=" + wf_ln_val
+		var wf_fn_val=$('#wf_fn_val').val();		
+	 	if(wf_fn_val!="") url_query+="&wf_fname=" + wf_fn_val
+		var wf_user_val=$('#wf_user_val').val();	
+	 	if(wf_user_val!="") url_query+="&wf_username=" + wf_user_val	
+		url+=url_query
+		
+		//FXIME UPADTE ONT FILTER HERE	
+		getOntFilterOptions(ont_jsondata,url_query);
+		$("#ont_listing").html(ontTreeMenu);
+		loadWorkflowTable(url);		
 	});
 
-	//traverse(jsondata,process);
-	// grab url query and pass here!
-	getMenuTopLevel(jsondata, filter_ont_uid);
-	$("#ont_listing").append(ontTreeMenu);
+	getOntFilterOptions(ont_jsondata);
+	$("#ont_listing").html(ontTreeMenu);
+	clearWfFilterFields(); //clear wf filter fields
+	loadWorkflowTable( "{{ url_for("get_workflows",display="table") }}" ); 	// display list of workflows
 });
 
-function htmlDecode(value) {
-    return decodeURI($("<div/>").html(value).text());
+function clearWfFilterFields(){	
+	$("input.user_entry:text").val("");
+	$("input.user_entry_wf:text").val("");
+	$("#wf_type_sel").val("");
 }
 
-function htmlEncode(value) {
-    return $('<div/>').text(value).html();
+function loadWorkflowTable(url) {
+    $.ajax({
+    	type: "GET",
+    	url: url,
+    	dataType: 'html',
+		success: function(html){
+        	$("#wf_table").html(html);
+    	}
+    });
 }
 
-function getURLQueryString(label)
-{
-    var currUrl = window.location.search.substring(1);
-    var labels = currUrl.split('&');
-    for (var i = 0; i < labels.length; i++) 
-    {
-        var currLabel = labels[i].split('=');
-        if (currLabel[0] == label)
-            return currLabel[1];
-    }
-}
 
-function addOntPath(parent,subparent,child) {
-	tmppath="";
-	
-	if(parent) {
-		var foundp=false;
-		for(var i=0;i<userPaths.length;i++) {
-			if(userPaths[i].match(parent)) {
-				foundp=true;
-			}
-			else
-				foundp=false;
+function updateOntLink(pid,uid,name,this_id,query){
+	url="{{ url_for("get_workflows") }}" + "?ont_pid="+pid+"&ont_id=" + uid+"&ont_value="+name+"&display=count";
+	if(query) 
+		url+=query;
+	$.ajax({
+		type: "GET",
+		url: url,
+		dataType: 'html',
+		success: function(html){
+			num_wf = (jQuery.parseJSON(html)).num_wf;
+			$("#num_wf_ont_"+this_id).html(" ("+num_wf+") ");
 		}
-		if(!foundp)
-			userPaths.push(parent);
-	}
-	if(subparent) {
-		var foundsp=false;
+	});
+}
+			
+//populate a list of ontology list including terms with children to filter by
+function getOntFilterOptions(obj,query){
+	parentOntWithWf = {};
+	var count=0;
+	for (var key = obj.length-1; key >= 0; key--) {
+		name=obj[key].name
+		uid=obj[key].uid
+		pid=obj[key].parent_uid
+		if(uid in parentOntWithWf) {
+			parentOntWithWf[uid]['name']=name;	
+		}
 		
-		for(var i=0;i<userPaths.length;i++) {
-			if (userPaths[i]===parent) {
-				userPaths.splice(i,1);				
-			}
-			else {
-				if(userPaths[i].indexOf(parent+","+subparent) != -1) {
-					foundsp=true;
-				}
-				else
-					foundsp=false;
-			}
-		}
-		if(!foundsp)
-			userPaths.push(parent+","+subparent);
-	}	
-	if(child) {
-		var foundc=false;
-		var index="";
-		tmpp=parent+","+subparent;
-		for(var i=0;i<userPaths.length;i++) {
-			if (userPaths[i]===tmpp) {
-				userPaths.splice(i,1);
-			}			
-			else if (userPaths[i].indexOf(tmpp+",") != -1) {
-				index=i;
-				if(userPaths[i].indexOf(child) != -1)
-					foundc=true;
-				else {
-					foundc=false;
-				}
-			}				
-		}
-		if(!foundc) {
-			if (index!=="") {
-				userPaths[index]=userPaths[index].concat(" &amp; "+child);
-			}
-			else
-				userPaths.push(parent+","+subparent+","+child);
-		}
-	}
-	
-	if(debug) console.log(userPaths);
-	
-	$("#ont_path").empty();
-	$("#nav_split").show();
-	$("#ont_search_header").show();
-	for (var x=0;x<userPaths.length;x++) {
-		tmpArr=userPaths[x].split(",");
-		$("#ont_path").append('<div>');
-		for(k=0;k<tmpArr.length;k++) {
-			if((k+1)===tmpArr.length)
-				$("#ont_path").append(tmpArr[k]);
-			else
-				$("#ont_path").append(tmpArr[k] + " > ");
-		}
-		$("#ont_path").append('</div>');
-	}
-}
-
-function getSpecifiedValue(e,ot_guidv,parent,subparent,child) {
-	//check for enter key pressed
-    if (e.keyCode == 13) {
-		var value=$("#"+ot_guidv).val(); //get user input value
-		addOntPath(parent,subparent,child + "=" + value);		
-    }
-}
-
-function addWfAttrib(eleID,value) {
-	if(eleID == "wf_type_val")
-		wfAttrib["type"]=value;
-	else if(eleID == "wf_name_val")
-		wfAttrib["name"]=value;
-	else if(eleID == "wf_desc_val")
-		wfAttrib["desc"]=value;
-	else if(eleID == "wf_user_val")
-		wfAttrib["user"]=value;
-	else if(eleID == "wf_ln_val")
-		wfAttrib["lastname"]=value;
-	else if(eleID == "wf_fn_val")
-		wfAttrib["firstname"]=value;				
-	else if(eleID == "wf_time_val")
-		wfAttrib["time"]=value;
-	
-	$("#wf_path").empty();
-	$("#nav_split").show();
-	$("#wf_search_header").show();
-	var output="";
-	for(var key in wfAttrib) {
-		if (wfAttrib.hasOwnProperty(key)) {
-			output += key+"="+wfAttrib[key] + " & ";
-		}
-	}
-	output=output.substring(0, output.length - 2)
-	$("#wf_path").html(output);
-}
-
-//called with every property and it's value
-function process(key,value) {
-    if(debug) console.log(key + " : "+value);
-}
-//recursive loop through json tree
-function traverse(obj,func) {
-    for (var i in obj) {
-        func.apply(this,[i,obj[i]]);
-        if (obj[i] !== null && typeof(obj[i])=="object") {
-			traverse(obj[i],func);
-        }
-    }
-}
-
-//build first level of ontology tree menu
-function getMenuTopLevel(obj, filter_ont_uid) {
-	for (var key in obj) {
-		if(obj.hasOwnProperty(key)) {
-			ontTreeMenu+="<ul>";
-			for(var x in obj[key]) {
-				if(obj[key][x].hasOwnProperty("data")) {
-					var onclickStr = 'onClick="getSubLevel(\''+obj[key][x]["data"].uid+'\', \'None\', \'None\');"';
-					ontTreeMenu+="<li id=\""+obj[key][x]["data"].uid+"\"><a "+onclickStr+">"+obj[key][x]["data"].name;
-					if(obj[key][x].hasOwnProperty("children")) {
-						ontTreeMenu+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>"; //add down arrow
+		url="{{ url_for("get_workflows") }}" + "?ont_id=" + uid+"&display=id";	
+		if(query)
+			url+=query;	
+		$.ajax({
+			type: "GET",
+			url: url,
+			async: 0,
+			dataType: 'html',
+			success: function(html){
+				result = (jQuery.parseJSON(html).results);
+				if(result.length>0){
+					if(pid in parentOntWithWf) {
+						console.log(typeof(parentOntWithWf[pid]));
+						console.log(parentOntWithWf[pid]);
+						if('children' in parentOntWithWf[pid]) {
+							parentOntWithWf[pid]['children'].push({id: uid,name: name});
+						}
+						else 
+							parentOntWithWf[pid]={'children':[{id: uid,name: name}]};	
 					}
-					ontTreeMenu+="</a></li>";
+					else {
+						parentOntWithWf[pid]={'children':[{id: uid,name: name}]};							
+						console.log("ADDED first time");
+						console.log(parentOntWithWf);
+					}
 				}
-			}
-			ontTreeMenu+="</ul>";
-		}
-	}
-}
-
-//append list to parent
-function getMenuChildren(obj,parent_id) {
-	//Object {"Type": {"name": "Type", "parent_uid": "58c19102-b1b7-4f8d-8202-18fde0a88bad", "uid": "ee39ae67-139e-433e-b666-441437faa413"}}
-	subTree="<ul>";
-	for (var key in obj) {
-		if(obj.hasOwnProperty(key)) {
-			var onclickStr = 'onClick="getSubLevel(\''+obj[key].uid+'\',\''+parent_id+'\', \''+obj[key].name+'\');"';
-			subTree+="<li id=\""+obj[key].uid+"\"><a "+onclickStr+">"+obj[key].name;
-			if(checkSubLevel(obj[key].uid)) {
-				subTree+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>"; //add down arrow
-			}
-			subTree+="</a></li>";
-		}
-	}
-	subTree+="</ul>";
-	$("#"+parent_id).append(subTree);
-}
-
-function getSubLevel(uid, pid, name) {
-	
-	if(ont_selections.indexOf(uid) > -1) {
-		$("#"+uid).find('>ul').slideToggle();
-	}
-	else {
-		ont_selections.push(uid);
-		url="{{ url_for("ont_children") }}" + "/" + uid;
-		var jqxhr = $.ajax(url)
-		.done(function(data) {
-			if(!$.isEmptyObject(data)) {
-				getMenuChildren(data,uid);
-			}
-			else {
-				//show attributes
-				//FIXME - carry over wf filter to onotlogy filter
-			   	var url = window.location.search;
-				url = url.replace("?", ''); // remove the ?
-				//alert(url); 
-				url="{{ url_for("workflows") }}" + "?ont_pid="+pid+"&ont_id=" + uid+"&ont_value="+name;
-				window.location.href = url;
-				//window.location.href = "{{ url_for("workflows") }}";				
+			},
+			error: function() {
+				alert('Error occured');
 			}
 		});
+		//}
+		count=count+1;
 	}
+	displayOntFilterOptions(query);
 }
-
-function getAttrib(uid) {
-	if(ont_selections.indexOf(uid) > -1) {
-		//$("#"+uid).slideToggle();
-		$("#"+uid).find('>ul').slideToggle();
-	}
-	else {
-		ont_selections.push(uid);
-		//url="/mpo/ontology/children/"+uid;
-		url="{{ url_for("ont_children") }}" + "/" + uid;
-		var jqxhr = $.ajax(url)
-		.done(function(data) {
-			getMenuChildren(data,uid);
-		});
-	}
-}
-
-function checkSubLevel(uid) {
-	url="{{ url_for("ont_children") }}" + "/" + uid;
-	var tmp1=0;
 	
-	var jqxhr = $.ajax({
-		url: url,
-		async: false
-	});
-	
-	jqxhr.done(function(data) {
-		if(!$.isEmptyObject(data)) {
-			subTree+=" <span style=\"font-size:x-small;color:#CCC\">&#9660;</span>";
+function displayOntFilterOptions(query) {
+	for (var index in parentOntWithWf) {
+		name=parentOntWithWf[index].name;
+		uid=index;
+		children=parentOntWithWf[index].children; //with associated workflow<br>
+		console.log("Processing parent: "+parentOntWithWf[index]);
+		ontTreeMenu+="<li id=\""+uid+"\">"+name+"<ul>";
+		for (c in children) {
+			this_id=children[c]['id'];
+			this_name=children[c]['name'];			
+			onselectStr =  'onClick="ontFilterSelection(\''+this_id+'\');"';
+			ontTreeMenu +="<li><input type=\"checkbox\" class=\"ont_filter_selection\" name=\"ont_filter_selection\" ";
+			if (query && query.indexOf(this_id)>0) {
+				ontTreeMenu +="checked ";
+			}
+			ontTreeMenu +="id=\""+this_id+"\"> ";
+			ontTreeMenu +=this_name+"<span class=\"muted\" id=\"num_wf_ont_"+this_id+"\"></span></li>";
+			updateOntLink(uid,this_id,this_name,this_id,query);			
 		}
-	});	
-}
-
-//workflow id, numq => quality value (1-4)
-function setWfQuality(wfid,numq) {
-	//ajax.post --> serialized json
-
-	//star images info
-	var numstars=4;
-	var img=["star_empty.png","star.png"];
-	var imgpath = "static/img/";
-	var imgstr="_img";
-
-	//POST data to API route
-	var url="{{ url_for('ontology_instance') }}";
-	var ont_path='/Generic/Status/quality';
-	var parent_uid=wfid;
-	var user="None";
-	var postData = {'parent_uid': parent_uid, 'value': numq.toString(), 'path': ont_path, 'user': user };
-
-	var jqxhr = $.ajax({
-		type: "POST",
-		url: url,
-		data : JSON.stringify(postData),
-		contentType: 'application/json'
-	});
-	
-	//remove pointer cursor class
-	$('#'+wfid+'_quality').removeClass('set_quality');	
-
-	//ajax request returns uid of 'quality' instance
-	jqxhr.done(function(data) {
-		console.log(data);
-	});
-
-	//set star image src according to star clicked
-	for(i=1;i<=numstars;i++) {
-		var img_element='#'+wfid+imgstr+i;
-		if(i<=numq)
-			$(img_element).attr('src', imgpath+img[1]); //star on
-		else
-			$(img_element).attr('src', imgpath+img[0]); //star off
+		ontTreeMenu+="</ul></li>";
 	}
 }
 
+//function ontFilterSelection(uid, pid, name) {
+function ontFilterSelection(uid) {	
+	console.log("Filtering by: "+uid+ ", "+pid + ", "+name);
+	url="{{ url_for("get_workflows") }}" + "?wf_ont_id=" + uid+"&display=table";
+	clearWfFilterFields();
+	loadWorkflowTable(url);
+}
 </script>
 <style>
+.nav-header{
+	color: #000000 !important;
+}
+.accordion {
+    margin-bottom: 0px !important;
+}
+.nav-list, .nav-list ul, .nav-list ol {
+    padding-left: 0px !important;
+ 	margin: 0px 0px 0px 0px;
+}
+#ont_listing ul{
+	margin: 0px 0px 0px 10px;
+}
+#ont_listing li, #ont_listing ul li{
+	list-style: none ;
+}
+input[type="radio"].ont_filter_selection,
+input[type="checkbox"].ont_filter_selection  {
+	margin: 0px 2px 5px 0px; !important;
+}
 #nav_split, #ont_search_header, #wf_search_header, #wf_attrib, #wf_hide {
 	display: none;
 }
@@ -419,19 +215,6 @@ function setWfQuality(wfid,numq) {
  	font-size: small;
 	color: #999;
 	font-style: italic;	
-}
-ul ul {
-    /*display:none;   */
-}
-ul li:hover > ul {
-    /*display:block;   */
-}
-.attrib {
-	font-size: small;
-	font-weight: normal;
-	font-style: normal;
-	text-decoration: none;
-	text-transform: none;
 }
 .user_sel {
 	font-size:12px;
@@ -449,27 +232,23 @@ ul li:hover > ul {
     -moz-border-radius: 0px;
     border-radius: 0px;		
 }
-.wf_more {
-	font-style: italic;
-	text-transform:none;
-	font-weight: 200;
-	list-style-type: none;
-}
-#clear_ont_path {
-	background-color: #F90;
-	height: 10px;
-	font-size: 9px;
-	color: #fff;
-	padding: 2px;
-  	-webkit-border-radius: 0px;
-    -moz-border-radius: 0px;
-    border-radius: 0px;	
+.sidebar-nav-title{
+    color: #999;
+    font-size: 17px;
+    padding-bottom: 10px;
+    padding-top: 6px;
 }
 table.sidebar-nav-table {
 	font-size: 11px;
 }
 table.sidebar-nav-table tr{
-	vertical-align: middle;
+	vertical-align: top;
+}
+
+table.sidebar-nav-table tr td {
+	font-weight: bold;
+	text-transform: uppercase;
+	padding-right: 5px;
 }
 table.sidebar-nav-table input.user_entry {
 	border: 1px thin #ddd;
@@ -493,16 +272,8 @@ table.sidebar-nav-table  input.user_entry_wf {
     -moz-border-radius: 0px;
     border-radius: 0px;	
 }
-table.sidebar-nav-table  input.user_time_wf {
-	border: 1px thin #ddd;
-	height: 10px;
-	line-height: 11px;
-	width: 125px;
-	font-size:12px;
-	vertical-align: middle;
-  	-webkit-border-radius: 0px;
-    -moz-border-radius: 0px;
-    border-radius: 0px;	
+input.user_entry_wf_sm{
+	width: 60px !important;
 }
 #ont_listing ul li {
 	font-size: 12px;
@@ -517,39 +288,33 @@ table.sidebar-nav-table  input.user_time_wf {
 #ont_listing ul li ul li ul li {
 	font-size: 12px;
 }
-.set_quality {
-	cursor: pointer;
-}
 </style>
 {% endblock %}
 {% block workflows_active %} class="active" {% endblock %}
 {% block container %}
     <div class="row-fluid">
-   	<div class="span12">
-    <h4>MPO Workflows</h4>
+   	<div class="span12" >
+    <h4>MPO Workflows <input type="button" value="View all Workflows" class="btn btn-mini btn-info wf_filter_clear" /></h4>
     	<div class="row-fluid">
 		<!-- left navigation menu span -->
         <div class="span3">
           <div class="well sidebar-nav">
-          	<!-- workflow nav menu -->
-           		<strong>Workflow Filter</strong>
+                                          
+                <!-- ontology list menu -->
+           		<span class="sidebar-nav-title">Filter workflows: </span> 
+                <span class="pull-right"><input type="button" value="Reset Filter" class="btn btn-mini btn-info wf_filter_clear" /></span><br />
+                <ul class="nav-list">
+                	<li id="ont_listing" class="nav-header" style="cursor:pointer;">
+
+                    </li>
+				</ul>                
+          		<!-- workflow nav menu -->
                 <table class="sidebar-nav-table">
-                    <tr>
-                    <td>Type</td>
-                    <td><select id="wf_type_sel" class="type_sel">
-                        	<option value="{{ url_for("workflows",wf_type="all",r=rpp) }}">ALL</option>
-                            {% if wf_type_list %}
-                            	{% for t in wf_type_list %} 
-                                	<option value="{{ url_for("workflows", wf_type=t,r=rpp) }}" {% if wf_type==t %} selected="selected" {% endif %}>{{ t }}</option>
-                            	{% endfor %}
-                            {% endif %}
-                        </select></td>
-                    </tr>
                     <tr>
                     	<td>Time</td>
                         <td>
-                        <input type="text" class="user_time_wf" id="wf_date_val1" name="wf_date1" /> to 
-                        <input type="text" class="user_time_wf" id="wf_date_val2" name="wf_date2" /></td>
+                        <input type="text" class="user_entry_wf user_entry_wf_sm" id="wf_date_val1" name="wf_date1" /> &macr;
+                        <input type="text" class="user_entry_wf user_entry_wf_sm" id="wf_date_val2" name="wf_date2" /></td>
                     </tr>
                     <tr>
                     	<td>Name</td>
@@ -573,211 +338,18 @@ table.sidebar-nav-table  input.user_time_wf {
                     </tr>
                     <tr><td colspan=2>
                     <div style="display:inline">
-                    <input type="button" value="Clear" class="btn btn-mini btn-warning" style="width: 47%" id="wf_filter_clear" />
-                    <input type="submit" value="Filter" class="btn btn-mini btn-success" style="width: 47%" id="wf_filter_submit" /></td></tr>
+                    <input type="submit" value="Filter Workflow" class="btn btn-mini btn-success" style="width: 100%" id="wf_filter_submit" /></td></tr>
                     </div>
                 </table>
-                <br />
-                <!-- ontology nav menu -->
-           		<strong>Ontology Filter</strong>
-                <ul class="nav nav-list">
-                	<li id="ont_listing" class="nav-header" style="cursor:pointer;">
 
-                    </li>
-				</ul>
           </div><!--/.well -->
         </div><!--/span left navigation-->    
         
    	<!-- workflow table list span -->
-		<div class="span9">       
-		{% if results %}
-            <!-- workflow list table -->
-            <table class="main table table-hover" id="mpoTable">
-	            <thead>
-      	        	<tr>
-                		<th width="2%">&nbsp;</th><th width="25%">CompositeID</th><th width="42%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th style="width:70px">Quality</th>
-	              	</tr>
-				</thead>
-                <tbody>
-    		{% for item in results %}
-                <div id="accordion2" class="accordion">
-                
-                        {% if item.state %}
-                            <tr class="{{ item.state|lower|replace(" ","-") }}">
-                        {% else %}                                
-                            <tr>
-                        {% endif %}
-                    
-                        {% set wf_number=loop.index+(current_page-1)*rpp %}
-                        <td><span class="muted"><em><small>{{ wf_number }}</small></em></td>
-                        <td>
-                        <a href="{{ url_for("connections", wid=item.uid) }}">{{ item.username }} / {{ item.type }} / {{ item.composite_seq }}</a>
-                        <br /><small><strong>UID: </strong><input type="text" value="{{ item.uid }}" class="small copy" readonly /></small>
-                        </td>
-                        <td>{{ item.description }}
-                        {% if item.state != None %}
-                        <br /><font class="state-label {{ item.state|lower|replace(" ","-") }}">{{ item.state }}</font>
-						{% endif %}                        
-                         </td>
-                        <td class="xsmall">{{ item.time }}</td>
-                        <!-- <td>{{ item.username }}</td> -->
-                        <td>
-                            <div class="accordion-group">
-                              <div class="accordion-heading">
-                            <a href="#commentDrop{{ item.uid }}" id="commentCtr{{ item.uid }}" class="btn btn-mini btn-info" data-parent="#accordion2" data-toggle="collapse">
-                              {% if item.num_comments %}
-                                {{ item.num_comments }}
-                              {% else %}
-                                0
-                              {% endif %}
-                            </a>
-                        &nbsp;<a href="#submitComment_{{ item.uid }}" class="btn btn-mini btn-success" data-parent="#accordion2" data-toggle="collapse">+</a>
-                          </div>
-                        </div>
-                   	 	</td>
-                        <td>
-                        {% if item.quality %}
-                             {% if item.quality == "1" %}
-                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
-                            {% elif item.quality == "2" %}
-                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
-                            {% elif item.quality == "3" %}
-                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
-                            {% elif item.quality == "4" %}
-                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',4)">
-                            {% endif %}
-                        {% else %}
-                            <span id="{{ item.uid }}_quality" class="set_quality">
-                                <img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
-                            </span>
-                        {% endif %}
-                        </td>
-              		</tr>
-              		<tr>
-                        <td colspan="8" class="comments"> 
-                          <div class="accordion-body collapse" id="submitComment_{{ item.uid }}">
-                            <div class="accordion-inner no-border bot-border light-box">
-                              <form id="submit_comment_{{ item.uid }}">
-                                <div><input type="hidden" name="parent_uid" value="{{ item.uid }}" /></div> 
-                                <div><textarea rows="2" class="span12" name="content" id="content_{{ item.uid }}"></textarea>&nbsp;&nbsp;<button type="submit" class="btn btn-mini">Submit</button>&nbsp;&nbsp;<span id="submit_results_{{ item.uid }}"></span></div>
-                              </form>
-                            </div>
-                          </div>
-                        </td>
-              		</tr>	      
-              		<!-- Comment Drop -->
-              		<tr>
-                          <td colspan="8" class="comments"> 
-                        <div class="accordion-body collapse {{ item.show_comments }}" id="commentDrop{{ item.uid }}">
-                          <div class="accordion-inner no-border bot-border">
-                          {% for i in item.comments %}
-                        <blockquote>
-                          <p style="font-size: 12px">{{ i.content }}</p>
-                          <small>by <cite title="Source Title">{{i.username}} {% if i.time %} - {{i.time}} {% endif %}</cite></small>
-                        </blockquote>
-                        <hr>
-                          {% endfor %}
-                          </div>
-                        </div>
-                      </td>
-              		</tr>
-              <!-- END Comment Drop -->
-            </div> <!-- end accordian -->
-			</tbody>
-     	{% endfor %}
-		</table>
-<ul id="contextMenu" class="dropdown-menu" role="menu" style="display:none" >
-    <li><a tabindex="-1" href="#">View details in new tab</a></li>
-    <li><a tabindex="-1" href="#">Copy UID</a></li>
-    <!-- <li class="divider"></li>
-    <li><a tabindex="-1" href="#">Separated link</a></li> -->
-</ul>
+		<div id="wf_table" class="span9">       
 
-            <div style="padding-top:3px;"> <!-- sort menu -->
-                <span class="muted"><small>show:</small>
-                </span>
-                <span class="btn-group">
-                    <a class="btn btn-mini dropdown-toggle" data-toggle="dropdown" href="#">
-                    {{ rpp }}
-                    <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li>&nbsp;<a href="{{ url_for("workflows", wf_type=wf_type,r=15) }}">15</a></li>
-                        <li>&nbsp;<a href="{{ url_for("workflows", wf_type=wf_type,r=30) }}">30</a></li>
-                        <li>&nbsp;<a href="{{ url_for("workflows", wf_type=wf_type,r=90) }}">90</a></li>
-                    </ul>
-                </span>
-               <!-- <span class="btn-group">
-                    <a class="btn btn-mini dropdown-toggle" data-toggle="dropdown" href="#">
-                    {% if wf_type %}
-                        {{ wf_type }}
-                    {% else %}
-                        all
-                    {% endif %}
-                    <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li>&nbsp;<a href="{{ url_for("index", wf_type="EFIT",r=rpp) }}">EFIT</a></li>
-                        <li>&nbsp;<a href="{{ url_for("index", wf_type="SWIM",r=rpp) }}">SWIM</a></li>
-                        <li>&nbsp;<a href="{{ url_for("index", r=rpp) }}">all</a></li>
-                    </ul>
-                </span> -->
-                <!-- <span class="pull-right"><a href="search" role="button" class="btn btn-mini btn-success"><i class="icon-search icon-white"></i>&nbsp;Search</a></span> -->
-            </div> <!-- /sort menu -->  
-            <div class="pagination pagination-mini text-center">
-            <div id="pages2"> </div>
-            <script type='text/javascript'>
-                var options = {
-                    currentPage: {{ current_page }},
-                    totalPages: {{ num_pages }},
-                    pageUrl: function(type, page, current){
-                        //build URL here ==> /home?p=4&range=91%2C120&r=30
-                        var range1=1;
-                        var range2=15;
-                        if(page!=1) {
-                            range2=page*{{ rpp }};
-                            range1=range2-{{ rpp }}+1;
-                        }
-                        else {
-                            range1=1;
-                            range2={{ rpp }};			
-                        }
-                        return "{{ url_for("workflows") }}"+"?p="+page+"&range="+range1+","+range2+"&r={{ rpp }}"{% if wf_type %}+"&wf_type={{ wf_type }}"{% endif %};
-                    }
-                }
-                $('#pages2').bootstrapPaginator(options);
-            </script>
-            {% set range2=current_page*rpp %}
-            {% set range1=range2-rpp+1 %}
-            {% if range2>num_wf %}
-            {% set range2=num_wf %}
-            {% endif %}
-            <span class="muted"><em><small>showing <span id="range1">{{ range1 }}</span> to <span id="range2">{{ range2 }}</span> of {{ num_wf }} workflows</small></em></span>
-            </div> <!-- /pagination -->
-    	</div> <!-- /table list span --> 
-        
-    	</div> <!-- end of inner fluid -->
-{% else %}
-<p>No results found.</p>
-{% endif %}  
-    </div> <!-- end of span12 -->
+    	</div> <!-- end of span9 -->
     
     
     </div> <!-- end row fluid -->  
- <em> Page created in: {{ page_created }} seconds. </em>
 {% endblock %}
