@@ -6,39 +6,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Prototype Implementation of MPO Project">
     <meta name="author" content="">
-    <!-- Le styles -->
-    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-    <link href="/static/css/main.css" rel="stylesheet">
-    <link href="/static/css/jquery-ui.min.css" rel="stylesheet">
-    <link href="/static/css/jquery.contextMenu.css" rel="stylesheet" type="text/css" /> 
-	<link href="/static/css/jquery.dataTables.css" rel="stylesheet" type="text/css" >   
+
+      <!-- Le styles -->
+    <link href="{{ url_for('static', filename = 'bootstrap/css/bootstrap.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename = 'bootstrap/css/bootstrap-responsive.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename = 'css/main.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename = 'css/jquery-ui.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename = 'css/jquery.contextMenu.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ url_for('static', filename = 'css/jquery.dataTables.css') }}" rel="stylesheet" type="text/css" > 
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <!-- <script src="{{ url_for('static', filename = 'js/jquery.min.js') }}"></script> -->
 
-    <!-- <script src="/static/js/jquery.min.js"></script> -->
-    <script src="/static/bootstrap/js/jquery.js"></script>
-    <script src="/static/js/jquery-ui.min.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-transition.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-alert.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-modal.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-dropdown.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-scrollspy.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-tab.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-tooltip.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-popover.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-button.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-collapse.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-carousel.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-typeahead.js"></script>
-    <script src="/static/bootstrap/js/bootstrap-paginator.min.js"></script>
-    <script src="/static/bootstrap/js/holder.js"></script>
-    
-    <script src="/static/js/jquery.ui.position.js" type="text/javascript"></script>
-    <script src="/static/js/jquery.contextMenu.js" type="text/javascript"></script> 
-	<script src="/static/js/jquery.dataTables.js" type="text/javascript"></script>   
+    <script src="{{ url_for('static', filename = 'bootstrap/js/jquery.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'js/jquery-ui.min.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-transition.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-alert.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-modal.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-dropdown.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-scrollspy.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-tab.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-tooltip.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-popover.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-button.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-collapse.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-carousel.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-typeahead.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap-paginator.min.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/holder.js') }}"></script>
+   
+    <script src="{{ url_for('static', filename = 'js/jquery.ui.position.js') }}" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename = 'js/jquery.contextMenu.js') }}" type="text/javascript"></script> 
+    <script src="{{ url_for('static', filename = 'js/jquery.dataTables.js') }}" type="text/javascript"></script>   
 
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -267,7 +268,6 @@ input.copy{
     {% block container %}
     {% endblock %}
       <hr>
-      
       <footer>
         <div><span class="pull-left muted"><font class="muted">&copy; MPO Team 2015</a></span></div> 
       </footer>

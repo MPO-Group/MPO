@@ -10,7 +10,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=False
+dbdebug=True
 
 
 #  list of valid query fields and their mapped name in the table, Use
@@ -68,7 +68,6 @@ def init(conn_str):
     mypool  = pool.QueuePool(get_conn, max_overflow=10, pool_size=25)#,echo='debug')
 
 
-
 def get_conn():
     c = psycopg.connect(conn_string)
     return c
@@ -103,6 +102,7 @@ def echo(table,queryargs={}, dn=None):
     queryargs['table']=table
     return json.dumps(queryargs)
 
+
 def getRecordTable(id, dn=None):
     '''
     Given a record id return the table that record is in.
@@ -131,6 +131,7 @@ def getRecordTable(id, dn=None):
     conn.close()
 
     return table
+
 
 def deleteOntologyTerms(queryargs={}, dn=None):
     '''
@@ -201,7 +202,7 @@ def getRecord(table,queryargs={}, dn=None):
             if qa == 'None':
                 s+=" and "+ "CAST(%s as text) is Null" % (qm[key],)
             else:
-                s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
+                s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % ('a.'+qm[key],qa)
 
     ##ONTOLOGY/TERMS handling
     ontology_terms = []
@@ -377,7 +378,7 @@ def getUser(queryargs={},dn=None):
             else:
                 s+=" where "+ "CAST(%s as text) iLIKE '%%%s%%'" % (query_map['mpousers'][key],qa)
 
-    if (s): q+=s
+    if s: q+=s
     # execute our Query
     if dbdebug:
         print('get query for route '+'user'+': '+q)
@@ -465,10 +466,14 @@ def addUser(json_request,submitter_dn):
 
 
 def validReader(dn):
-    return checkAccess(dn, read=True)
+#    return checkAccess(dn, read=True)
+    return True #JCW shortcircuit till email=dn is implemented
+
 
 def validWriter(dn):
-    return checkAccess(dn, read=True, write=True)
+#    return checkAccess(dn, read=True, write=True)
+    return True #JCW shortcircuit till email=dn is implemented
+
 
 def checkAccess(dn, read=False, write=False):
     #make sure the user exists in the db and is a reader return true/false
@@ -477,7 +482,7 @@ def checkAccess(dn, read=False, write=False):
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
-    cursor.execute("select b.read,b.write from mpousers a, mpoauth b where a.dn=%s and a.uuid=b.u_guid",(dn,))
+    cursor.execute("select b.read,b.write from mpousers a, mpoauth b where a.email=%s and a.uuid=b.u_guid",(dn,))
     records = cursor.fetchone()
 
     if dbdebug:
@@ -492,6 +497,7 @@ def checkAccess(dn, read=False, write=False):
     except:
 	return False
 
+
 def validUser(dn):
     #make sure the user exists in the db. return true/false
     conn = mypool.connect()
@@ -499,7 +505,7 @@ def validUser(dn):
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
 
-    cursor.execute("select username from mpousers where dn=%s",(dn,))
+    cursor.execute("select username from mpousers where email=%s",(dn,))
     records = cursor.fetchone()
     if dbdebug:
         print('DBDEBUG:: validuser','conn string', conn_string, 'dn',str(type(dn)),dn,'records',records)
@@ -715,9 +721,11 @@ def addRecord(table,request,dn):
     conn = mypool.connect()
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
-    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    cursor.execute("select uuid from mpousers where email=%s", (dn,))
 
-    objs['user_uid'] = cursor.fetchone()['uuid']
+    ans = cursor.fetchone()
+    print('addRecord', ans,dn)
+    objs['user_uid'] = ans['uuid']
     objkeys= [x.lower() for x in query_map[table] if x in objs.keys() ]
     if dbdebug: print('APIDEBUG: addrecord', objs,objkeys)
 
@@ -761,7 +769,7 @@ def addCollection(request,dn):
 
     #get the user id
 
-    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    cursor.execute("select uuid from mpousers where email=%s", (dn,))
     user_id = cursor.fetchone()['uuid']
 
     p = json.loads(request)
@@ -796,7 +804,7 @@ def addWorkflow(request,dn):
     w_guid = str(uuid.uuid4())
 
     #get the user id
-    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    cursor.execute("select uuid from mpousers where email=%s", (dn,))
     user_id = cursor.fetchone()['uuid']
 
     #determine max composite sequence for incrementing.
@@ -842,7 +850,7 @@ def addMetadata(json_request,dn):
     conn = mypool.connect()
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
-    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    cursor.execute("select uuid from mpousers where email=%s", (dn,))
     user_id = cursor.fetchone()['uuid']
 
     #get parent object type
@@ -880,7 +888,7 @@ def addOntologyClass(json_request,dn):
     conn = mypool.connect()
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
-    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    cursor.execute("select uuid from mpousers where email=%s", (dn,))
     user_id = cursor.fetchone()['uuid']
 
     oc_uid = str(uuid.uuid4())
@@ -905,7 +913,7 @@ def addOntologyInstance(json_request,dn):
     conn = mypool.connect()
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #get the user id
-    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    cursor.execute("select uuid from mpousers where email=%s", (dn,))
     user_id = cursor.fetchone()['uuid']
 
     oi_guid = str(uuid.uuid4())

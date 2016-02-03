@@ -20,31 +20,37 @@ server_dict = parse_dn(server_dn)
 # and rely on it being set.
 def get_user_dn(request):
 #        import getpass
-        try:
-                ans = request.environ['HTTPS_DN']
-        except:
-                try:
-                        ans =  request.environ['SSL_CLIENT_S_DN']
-                except:
-                        try:
-                                ans = os.environ['DEMO_AUTH']
-                        except:
-                                ans = ''
+    try:
+            ans = request.environ['HTTPS_DN'] #from uwsgi ssl request
+    except:
+            try:
+                    ans =  request.environ['SSL_CLIENT_S_DN'] #apache ssl request
+            except:
+                    try:
+                            ans = os.environ['DEMO_AUTH']
+                    except:
+                            ans = ''
 
-        #If DN is that of the UI cert to API (MPO-UI-SERVER.crt), grab our special header for the user DN
-	dn_dict = parse_dn(ans)
-        #if cmp(dn_dict, server_dict) == 0:
-	#	ans = request.headers.get('Real-User-DN')
+    #If DN is that of the UI cert to API (MPO-UI-SERVER.crt), grab our special header for the user DN
+    dn_dict = parse_dn(ans)
+    #if cmp(dn_dict, server_dict) == 0:
+    #    ans = request.headers.get('Real-User-DN')
 
-        if dn_dict['CN']=='MPO-UI-SERVER':
-		ans = request.headers.get('Real-User-DN')
+#    if dn_dict.get('CN')=='MPO-UI-SERVER':
+#    print('request-headers',str(request.headers))
+    ans = request.headers.get('Real-User-DN')
+        #JCW in authentication development branch, Real-User-DN is now email address/username
+        #dn_dict=parse_dn(ans)
 
-        #JCW
-        #if dn_dict is empty, this fails. IE if DEMO_AUTH not set, SSL_CLIENT_S_DN and HTTPS_DN not present
-        #for DEMO user, api requests from UI have Real-User-DN set
-        #print('AUTHDEBUG: in get_user_dn: cmp: ',str(dn_dict), str(server_dict), str(cmp(dn_dict, server_dict))  )
-        #print('AUTHDEBUG: in get_user_dn ', ans, str(type(ans)),str(dn_dict),request.environ, os.environ )
-        if ans=='':
-            print('AUTHDEBUG: in get_user_dn FATAL, no user DN found in request:',request.environ,'headers',request.headers, request.headers['Real-User-DN'],str(type(request.headers)))
+    if not ans:
+        ans = dn_dict.get('emailAddress') #make case insensitive? Using email address as more robust and universal DN
 
-        return ans
+    #JCW
+    #if dn_dict is empty, this fails. IE if DEMO_AUTH not set, SSL_CLIENT_S_DN and HTTPS_DN not present
+    #for DEMO user, api requests from UI have Real-User-DN set
+    #print('AUTHDEBUG: in get_user_dn: cmp: ',str(dn_dict), str(server_dict), str(cmp(dn_dict, server_dict))  )
+    print('AUTHDEBUG: in get_user_dn ', ans, str(type(ans)),str(dn_dict),request.environ, request.headers, os.environ )
+    if ans=='':
+        print('AUTHDEBUG: in get_user_dn FATAL, no user DN found in request:',request.environ,'headers',request.headers, request.headers['Real-User-DN'],str(type(request.headers)))
+
+    return ans

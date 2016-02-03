@@ -396,7 +396,7 @@ class mpo_methods(object):
 
         if self.debug:
             print('MPO.POST to {u} with workflow:{wid}, parent:{pid} and payload of {p}'.format(
-                  u=url,wid=workflow_ID,pid=obj_ID,p=json.dumps(datadict) ),file=sys.stderr)
+                  u=url,wid=workflow_ID,pid=obj_ID,p=json.dumps(datadict) )+'\n',file=sys.stderr)
 
         if self.dryrun:
             if not self.debug:

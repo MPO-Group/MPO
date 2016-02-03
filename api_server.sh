@@ -72,7 +72,7 @@ VIRTPATH="-H $VIRTUAL_ENV"
 fi
 
 #uwsgi $GEVENT_OPT $THREAD_OPT $VIRTPATH --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --mount $MPO_API_MOUNT=$mydir/server/api_server.py  --callable app
-uwsgi $GEVENT_OPT $THREAD_OPT $VIRTPATH --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/api_server.py  --callable app 
+uwsgi --buffer-size 32768 $GEVENT_OPT $THREAD_OPT $VIRTPATH --https "0.0.0.0:$MPO_API_SERVER_PORT,$MPO_API_SERVER_CERT,$MPO_API_SERVER_KEY,HIGH,$MPO_CA_CERT" --wsgi-file $mydir/server/api_server.py  --callable app 
 
 #add this above to redirect logging
 #--logto /tmp/mylog.log

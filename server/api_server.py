@@ -2,6 +2,7 @@
 import sys
 print('API python path',sys.path)
 from flask import Flask, render_template, request, jsonify
+from flask_admin import Admin
 #from flask.ext.jsonpify import jsonify #uncomment to support JSONP CORS access
 from flask import redirect, Response, make_response
 import json
@@ -37,7 +38,11 @@ rdb.init(conn_string)
 
 app = Flask(__name__)
 app.debug=True
-apidebug=False
+apidebug=True
+
+#admin handling
+admin = Admin(app, name='MPO', template_mode='bootstrap2')
+
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',

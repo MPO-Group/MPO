@@ -3,21 +3,30 @@ CLIENT INSTALLATION
 For commandline and scripting tools, only the mpo_arg.py class
 is needed. The only non standard python dependencies of this are
    requests.py and urllib3.py
-These dependencies are provided in a virtual environment. For installation, 
-the requirements are system installed python2.7 and the virtualenv package for python.
+
+These dependencies are installed in a virtual environment. For installation, 
+the requirements are system installed python2.7, pip,  and the virtualenv package for python.
 To install virtualenv, 
 
    sudo pip install virtualenv
-Alternatively, grab a known working copy from the mpo repo:
-   svn export https://www.psfc.mit.edu/mposvn/trunk/virtualenv.py
+
+Alternatively, there is a known working copy of virtualenv.py in the mpo repo.
+Clone a copy of the repo:
+
+   git clone https://github.com/MPO-Group/MPO.git
 
 Then to install the client:
 #setting up python environment
+mkdir  $INSTALL_DIR
 cd $INSTALL_DIR
 virtualenv mpo_env
 source mpo_env/bin/activate
+
+#If you have trouble with pip, try this:
 rm -rf mpo_env/bin/pip* mpo_env/lib/python2.7/site-packages/pip*
 easy_install pip
+#
+
 pip install requests urllib3
  
 #create user preferences directory

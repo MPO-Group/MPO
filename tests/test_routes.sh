@@ -59,7 +59,7 @@ export MPO="$MPO -v" #remove/add -v for quiet/verbose output
 export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem'
 echo env is
 env
-
+cat "$MPO_AUTH"
 #start our own database
 test_db=mpo_demo
 test_db=mpoDB
@@ -76,20 +76,20 @@ $MPO_HOME/web_server.sh $web_port https://localhost:$api_port/$CONN_TYPE &> web_
 
 echo %TESTING first create the ontology terms %%%%%%%%%%%%
 #JCW note, make this a script, maybe move them to $MPO_HOME/db
-$MPO_HOME/client/python/tests/ontology_terms_gyro.load
-$MPO_HOME/client/python/tests/ontology_terms_swim.load
-$MPO_HOME/client/python/tests/ontology_terms_efit.load
-$MPO_HOME/client/python/tests/ontology_terms_quality.load
-$MPO_HOME/client/python/tests/ontology_terms_status.load
+$MPO_HOME/tests/mpo_arg/ontology_terms_gyro.load
+$MPO_HOME/tests/mpo_arg/ontology_terms_swim.load
+$MPO_HOME/tests/mpo_arg/ontology_terms_efit.load
+$MPO_HOME/tests/mpo_arg/ontology_terms_quality.load
+$MPO_HOME/tests/mpo_arg/ontology_terms_status.load
 
 
 echo %TESTING retrieving ontology tree
-$MPO_HOME/client/python/tests/make_ont_tree.py
+$MPO_HOME/tests/mpo_arg/make_ont_tree.py
 
 echo %TESTING postings with commandline api %%%%%%%%%%%%%%
-$MPO_HOME/client/python/tests/josh.test
-$MPO_HOME/client/python/tests/api_test.sh
-$MPO_HOME/client/python/tests/gyro_out_parse.sh $MPO_HOME/client/python/tests/run1 'Testing api scripts'
+$MPO_HOME/tests/mpo_arg/josh.test
+$MPO_HOME/tests/mpo_arg/api_test.sh
+$MPO_HOME/tests/mpo_arg/gyro_out_parse.sh $MPO_HOME/tests/mpo_arg/run1 'Testing api scripts'
 
 
 echo %TESTING retrievals %%%%%%%%%%%%%%

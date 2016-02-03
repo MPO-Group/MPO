@@ -2,11 +2,13 @@
 {% block title %}MPO Workflow Detail{% endblock %}
 {% block hscripts %}
 
-<script type="text/javascript" src="/static/js/svg-pan-zoom.js"></script> 
-<script type="text/javascript" src="/static/js/jquery.slimscroll.min.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename = 
+				    'js/svg-pan-zoom.js') }}"></script> 
+<script type="text/javascript" src="{{ url_for('static', filename =
+				    'js/jquery.slimscroll.min.js') }}"></script>
 <style>
 #svg_loading {
-	background:url(/static/img/ajax-loader.gif) no-repeat center center;
+	background:url( {{ url_for('static', filename =	'img/ajax-loader.gif') }} ) no-repeat center center;
 	height:60px;
 }
 #svg {

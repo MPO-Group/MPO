@@ -14,6 +14,9 @@ $HOME/mposvn/db
 simplejson >2.2 #provides namedtuple->json in db.py
 Flask >= 1.0 #for requests > 2.0 as well
 flask-cors . Flask CORS extension. 
+flask-login : authentication
+flask-admin : administration
+
 requests >= 2.0  #bug in 1.1 when using max_retries , current latest version is 2.3 which is recommended
 psycopg2 #for postgres, requires postgres to be installed
 dateutil #pip install python-dateutil #used for timestamp processing of queries

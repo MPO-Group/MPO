@@ -2,8 +2,10 @@
 import time as stime
 print('WEBSERVER: timestamp start',stime.time() )
 from flask import Flask, render_template, request, jsonify
-from flask import redirect, url_for, make_response, flash, session, g
+from flask import redirect, url_for, make_response, flash, session, g, get_flashed_messages
 from flask.ext.cors import cross_origin
+from flask_admin import Admin
+
 import json
 import requests
 from requests_futures.sessions import FuturesSession #asynch support for performance
@@ -17,11 +19,12 @@ from authentication import get_user_dn, parse_dn
 import urllib
 from collections import OrderedDict
 
-from models import User, ROLE_USER, ROLE_ADMIN
+from models import User, ROLE_USER, ROLE_ADMIN, UserNotFoundError
 from flask.ext.login import LoginManager
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
-login_manager = LoginManager()
+
+
 
 #debug logging
 webdebug = False  #our inline print statements
@@ -44,7 +47,7 @@ except ImportError:
 http_client.HTTPConnection.debuglevel = httploglevel
 
     # You must initialize logging, otherwise you'll not see debug output.
-logging.basicConfig(filename='mpo.log')
+logging.basicConfig(format='[%(filename)s:%(lineno)s - %(funcName)20s() ]   %(levelname)s: %(message)s',filename='mpo.log')
 logging.getLogger().setLevel(logging.DEBUG)
 
 requests_log = logging.getLogger("requests.packages.urllib3")
@@ -90,9 +93,13 @@ MPO_API_VERSION = 'v0'
 API_PREFIX = ''
 DB_SERVER = ''
 CONN_TYPE = ''
-USERNAME = ''
 
 USING_UWSGI = os.environ.get('UWSGI_ORIGINAL_PROC_NAME')
+
+TEST_API_PREFIX=MPO_API_SERVER+"/"+"test-api"+"/"+MPO_API_VERSION
+DEMO_API_PREFIX=MPO_API_SERVER+"/"+"demo-api"+"/"+MPO_API_VERSION
+PRODUCTION_API_PREFIX=MPO_API_SERVER+"/"+"" if (USING_UWSGI) else "api"
+PRODUCTION_API_PREFIX+="/"+MPO_API_VERSION
 
 
 #Establish some asychronous request workers
@@ -102,17 +109,28 @@ s.mount('https://', a)
 s.cert=(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY)
 s.verify=False
 
-User.requests=s
+User.set_global_query_requests(s)
 
 #Begin the application
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='') #static_url_path as empty string makes default path include 'static'
 app.debug = True
-logging.info('WEBSERVER: timestamp app started',stime.time() )
+
+app.config.from_object('config_webserver')
+
+logging.info('WEBSERVER: timestamp app started: {}'.format(stime.time()) )
+
+#admin handling
+admin = Admin(app, name='MPO', template_mode='bootstrap2')
+
+#Setup login handling
+login_manager = LoginManager()
+login_manager.login_view = '/login'
 login_manager.init_app(app)
 
 
 @login_manager.user_loader
 def load_user(user_id):
+    logging.info('loading user '+user_id+' '+str(User.get(user_id)))
     return User.get(user_id)
 
 
@@ -121,7 +139,6 @@ def before_request():
     global DB_SERVER
     global API_PREFIX
     global CONN_TYP
-    global USERNAME
 
     if USING_UWSGI:
         CONN_TYPE='' #no sub-path for uwsgi test server
@@ -129,22 +146,22 @@ def before_request():
         if os.environ['MPO_EDITION'] == "PRODUCTION":
             DB_SERVER=request.cookies.get('db_server')
 
-            logging.info("WEBSERVER: db selected ", DB_SERVER)
-            logging.info("WEBSERVER: COOKIES: ",request.cookies)
+            logging.info("WEBSERVER: db selected %s", DB_SERVER)
+            logging.info("WEBSERVER: COOKIES: %s",request.cookies)
 
             if DB_SERVER=='prod':
                 CONN_TYPE='api'
             elif DB_SERVER=='test':
-               CONN_TYPE='test-api'  #remove 'test-api' to use with uwsgi api server
+               CONN_TYPE='test-api'
             else:
                CONN_TYPE='test-api' #default to allow initial connection, but
-           #cookie should be set.
+                                    #cookie should be set.
         else:
             CONN_TYPE='demo-api'
             DB_SERVER='demo'
 
     API_PREFIX=MPO_API_SERVER+"/"+CONN_TYPE+"/"+MPO_API_VERSION
-    logging.info("WEBSERVER: prefix",MPO_API_SERVER,API_PREFIX)
+    logging.debug("WEBSERVER: server is {} and prefix is {}".format(MPO_API_SERVER,API_PREFIX) )
     g.user = current_user
 
 # ##    dn = get_user_dn(request)
@@ -152,7 +169,7 @@ def before_request():
 # ##              'verify':False, 'headers':{'Real-User-DN':dn}}
 
     
-#     logging.info ('WEBSERVER: USERNAME: ', USERNAME)
+#     logging.info ('WEBSERVER: g.user.username: ', g.user.username)
 #     logging.info ("WEBSERVER: db set to ",DB_SERVER)
 #     logging.info ('WEBSERVER: api_prefix',API_PREFIX)
 #     logging.info ('WEBSERVER: certargs',certargs)
@@ -177,20 +194,63 @@ def before_request():
 #                         'organization': dn_ou, 'username': dn_email}
 #         #if is_mpo_user.status_code == 401:
 #             return render_template('register.html', **everything)
-#         USERNAME=is_mpo_user[0]['username']
+#         g.user.username=is_mpo_user[0]['username']
 
 
-TEST_API_PREFIX=MPO_API_SERVER+"/"+"test-api"+"/"+MPO_API_VERSION
-DEMO_API_PREFIX=MPO_API_SERVER+"/"+"demo-api"+"/"+MPO_API_VERSION
-PRODUCTION_API_PREFIX=MPO_API_SERVER+"/"+"" if (USING_UWSGI) else "api"
-PRODUCTION_API_PREFIX+="/"+MPO_API_VERSION
+@app.route('/')
+def root():
+        '''This route is mainly to provide an access to static pages for the uWSGI server. Apache would normally server it.'''
+        return app.send_static_file('index.html')
 
 
+@app.route('/leave')
+def index2():
+    return ('''
+           <h1> Hello {1}</h1
+            <p style="color: #f00;">{0}</p>
+            <p>{2}</p>
+        '''.format(
+            # flash message
+            ', '.join([ str(m) for m in get_flashed_messages() ]),
+            current_user.get_id() or 'Guest',
+            ('<a href="/logout">Logout</a>' if current_user.is_authenticated()
+                else '<a href="/login">Login</a>')           
+           ) )
 
-@app.route('/login')
+
+@app.route('/login', methods=['GET','POST'])
 def login_route():
-    #check if registered and if not redirect to registration page
-    return
+    '''check if registered and if not redirect to registration page'''
+    if request.method == 'GET':
+        return '''
+               <form action="/login" method="post">
+                <p>Username: <input name="username" id='username' type="text"></p>
+                <p>Password: <input name="password" id='password' type="password"></p>
+                <input type="submit">
+               </form>
+               '''
+
+    user = User.get(request.form['username'])
+    if (user and user.password == request.form['password']):
+        login_user(user)
+        logging.info('Logged in user '+str(current_user))
+        return redirect(request.args.get('next') or url_for('index'))
+    else:
+        flash('Username or password incorrect')
+        return redirect( url_for('login_route') )
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('root'))
+
+
+
+#@login_manager.unauthorized_handler
+#def unauthorized_handler():
+#    '''Handler for invalid logins to do additional tasks'''
+#    return redirect(url_for('login_route'))
 
 
 @app.route('/discovery')
@@ -201,18 +261,11 @@ def discovery_route():
     return
 
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect('https://mpo-test/')
-
-
-@app.route('/')
+@app.route('/welcome')
 @login_required
 def index():
-    everything={"username":USERNAME,"db_server":DB_SERVER}
-    return render_template('index.html', **everything)
+    everything={"username":g.user.username,"db_server":DB_SERVER}
+    return render_template('home.html', **everything)
 
 
 @app.route('/workflows')
@@ -226,8 +279,8 @@ def workflows():
     print('WEBSERVER: workflows timestamp start index',stime.time() )
     if webdebug: print('WEBSERVER: workflows thread count START : ', threading.active_count() )
     #Need to get the latest information from MPO database here
-    #and pass it to index.html template
-    dn = get_user_dn(request)
+    #and pass it to workflows_index.html template
+    dn = g.user.username #get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
     if webdebug:
@@ -327,8 +380,8 @@ def workflows():
         #JCW optimize, ask for just workflow types leaf in ontology tree
         #that's all we are using here
         #its best really to use two queries here.
-        #Actually, ont_result is used in index.html to display the whole ontology tree, so this should
-        #really be right in index.html: req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
+        #Actually, ont_result is used in workflows_index.html to display the whole ontology tree, so this should
+        #really be right in workflows_index.html: req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
         #get workflow types
         #maybe this if we change nodes to be generic worknames=[item['node']['data']['name'] for item in worktree ]
         #JCW JAN 2015, ont request moved to delayed request below
@@ -360,7 +413,7 @@ def workflows():
             results[index]['alias']=cid['alias']
 
         if resp.status_code != 200:
-            print("Error in index.html in retrieving alias for %s."%(str(results[index])) )
+            print("Error in workflows_index.html in retrieving alias for %s."%(str(results[index])) )
             results[index]['alias']='alias/not/found'
 
 
@@ -481,7 +534,7 @@ def workflows():
     begin_to_end = time_end - time_begin
     page_created = "%s" %((str(begin_to_end))[:6])
 
-    everything={"username":USERNAME,"db_server":DB_SERVER,"page_created":page_created,
+    everything={"username":g.user.username,"db_server":DB_SERVER,"page_created":page_created,
                 "results":results, "ont_result":ont_result, "wf_type":wf_type,
                 "rpp":rpp, "current_page":current_page, "wf_type_list":wf_type_list,
                 "num_pages":num_pages, "num_wf":num_wf}
@@ -493,9 +546,10 @@ def workflows():
 @app.route('/ontology/children', methods=['GET'])
 @app.route('/ontology/children/<uid>', methods=['GET'])
 def ont_children(uid=""):
+    '''Helper route for use in templates to access API ontology routes w/o CORS'''
     #Need to get the latest information from MPO database here
-    #and pass it to index.html template
-    dn = get_user_dn(request)
+    #and return it
+    dn = g.user.username #    dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -521,7 +575,7 @@ def ont_children(uid=""):
 def graph(wid="", format="svg"):
     time_begin = stime.time()
 
-    dn = get_user_dn(request)
+    dn = g.user.username #dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -577,7 +631,7 @@ def graph(wid="", format="svg"):
 
 
 def getsvgxml(wid):
-    dn = get_user_dn(request)
+    dn = g.user.username  # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -623,7 +677,7 @@ def getsvgxml(wid):
 def connections(wid=""):
   import lxml.etree as et
 
-  dn = get_user_dn(request)
+  dn = g.user.username  # dn = get_user_dn(request)
   certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -743,7 +797,7 @@ def connections(wid=""):
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
 #    everything = {"db_server":DB_SERVER, "wid_info":wid_info, "nodes": nodes, "wid": wid, "svg": svg, "num_comment": num_comment, "evserver": evserver }
-    everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info,
+    everything = {"username":g.user.username, "db_server":DB_SERVER, "wid_info":wid_info,
                   "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname}
 
     if memcache_loaded:
@@ -762,7 +816,7 @@ def connections(wid=""):
 @app.route('/workflow', methods=['GET'])
 @app.route('/workflow/<wid>', methods=['GET'])
 def workflow(wid=""):
-    dn = get_user_dn(request)
+    dn = g.user.username # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -776,7 +830,7 @@ def workflow(wid=""):
 @app.route('/nodes', methods=['GET'])
 @app.route('/nodes/<wid>', methods=['GET'])
 def nodes(wid=""):
-    dn = get_user_dn(request)
+    dn = g.user.username # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -833,9 +887,10 @@ def nodes(wid=""):
     response.headers['Content-Type'] = 'text/plain'
     return response
 
+
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    dn = get_user_dn(request)
+    dn = g.user.username # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -895,7 +950,8 @@ def search():
                     if found:
                         results[pkey]=obj_result
 
-        except:
+        except Exception, err:
+            print('/search exception', Exception, err) #JCW should redirect to an error handling template here
             pass
 
 
@@ -905,16 +961,16 @@ def search():
             print('WEBDEBUG: result')
             print results
 
-        return render_template('search.html', query=form, results=results, db_server=DB_SERVER, username=USERNAME)
+        return render_template('search.html', query=form, results=results, db_server=DB_SERVER, username=g.user.username)
 
     if request.method == 'GET':
-        return render_template('search.html', db_server=DB_SERVER, username=USERNAME)
+        return render_template('search.html', db_server=DB_SERVER, username=g.user.username)
 
 
 @app.route('/ontology')
 @app.route('/ontology/<uid>', methods=['GET'])
 def ontology(uid=False):
-    dn = get_user_dn(request)
+    dn = g.user.username  # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 #    if request.method == 'GET':
@@ -964,9 +1020,10 @@ def ontology(uid=False):
 
     return render_template('ontology.html')
 
+
 @app.route('/submit_db', methods=['POST'])
 def submit_db():
-    dn = get_user_dn(request)
+    dn = g.user.username # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
     newc=''
@@ -984,7 +1041,8 @@ def submit_db():
         response.set_cookie('db_server',value=form['db'])
         return redirect_to_index
 
-    except:
+    except Exception, err:
+        print('/submit_db exception', Exception, err) #JCW should redirect to an error handling template here        
         pass
 
     return redirect_to_index
@@ -998,7 +1056,7 @@ def submit_db():
 
 @app.route('/submit_comment', methods=['POST'])
 def submit_comment():
-    dn = get_user_dn(request)
+    dn = g.user.username # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
     newc=''
@@ -1022,7 +1080,8 @@ def submit_comment():
         if webdebug:
             pprint(newc)
 
-    except:
+    except Exception, err:
+        print('/submit_comment exception', Exception, err) #JCW should redirect to an error handling template here        
         pass
 
     return newc
@@ -1034,7 +1093,7 @@ def submit_comment():
 
 @app.route('/ontology_instance', methods=['POST'])
 def ontology_instance():
-    dn = get_user_dn(request)
+    dn = g.user.username  # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
     data=request.get_json() #dict
@@ -1054,7 +1113,7 @@ def ontology_instance():
 @app.route('/collections/<uid>', methods=['GET'])
 def collections(uid=False):
     global s
-    dn = get_user_dn(request)
+    dn = g.user.username # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -1103,7 +1162,7 @@ def collections(uid=False):
                 coll_desc=coll_list[0]['description']
 
             everything={
-                "username":USERNAME,"db_server":DB_SERVER, "rpp":rpp,
+                "username":g.user.username,"db_server":DB_SERVER, "rpp":rpp,
                 "coll_name":coll_name, "coll_desc":coll_desc, "coll_list":coll_list}
             return render_template('collections_index.html',  **everything)
 
@@ -1260,7 +1319,7 @@ def collections(uid=False):
         print("WEBDEBUG: collection results sent to index")
         pprint(results)
 
-    everything={"username":USERNAME,"db_server":DB_SERVER, "results":results, "ont_result":ont_result,
+    everything={"username":g.user.username,"db_server":DB_SERVER, "results":results, "ont_result":ont_result,
                 "rpp":rpp, "wf_type_list":wf_type_list,
                 "coll_name":coll_name, "coll_desc":coll_desc,
                 "coll_username":coll_username, "coll_time":coll_time  }
@@ -1272,7 +1331,7 @@ def collections(uid=False):
 @app.route('/dataobjects/<uid>', methods=['GET'])
 def dataobject(uid=False):
     global s
-    dn = get_user_dn(request)
+    dn = g.user.username # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -1370,7 +1429,7 @@ def dataobject(uid=False):
 
             #close the connection
             s.close()
-            everything={"username":USERNAME,"db_server":DB_SERVER,"rpp":rpp, "coll_list":dataobj_list }
+            everything={"username":g.user.username,"db_server":DB_SERVER,"rpp":rpp, "coll_list":dataobj_list }
 
             return render_template('dataobject_index.html',  **everything)
 
@@ -1384,7 +1443,7 @@ def dataobject(uid=False):
     #close the connection
     s.close()
 
-    everything={"username":USERNAME,"db_server":DB_SERVER, "workflows":workflows,
+    everything={"username":g.user.username,"db_server":DB_SERVER, "workflows":workflows,
                 "rpp":rpp, "coll_list":collections,
                 "name":name, "desc":desc,
                 "username":username, "time":time, "uri":uri  }
@@ -1395,7 +1454,7 @@ def dataobject(uid=False):
 @app.route('/get_server_data', methods=['GET'])
 def get_server_data(uid=False):
     global s
-    dn = get_user_dn(request)
+    dn = g.user.username  # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 
@@ -1403,13 +1462,14 @@ def get_server_data(uid=False):
 
     #Get request values - this should match up with the order of columns in HTML
     columns=["uid", "name", "description", "uri", "source_uid", "username", "time"]
-    start=int(request.args.get('start'))
-    length=int(request.args.get('length'))
+    start = int( request.args.get('start') or 0 )
+    length= int( request.args.get('length') or 0 )
     end=start+length
-    draw=int(request.args.get('draw'))
-    order_by=int(request.args.get('order[0][column]'))
+    draw=int(request.args.get('draw') or 0 )
+    order_by=int( request.args.get('order[0][column]') or 0 )
+
     order_dir=request.args.get('order[0][dir]')
-    #overall serach value
+    #overall search value
     search_str=request.args.get('search[value]')
     i=0;
 
@@ -1476,9 +1536,10 @@ def get_server_data(uid=False):
 
     return jsonify(draw=draw, recordsTotal=total, recordsFiltered=total, data=data_list)
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    dn = get_user_dn(request)
+    dn = g.user.username # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
     if webdebug: print('register dn',dn, certargs)
@@ -1538,7 +1599,7 @@ def register():
                         msg="Thank you for registering."
                         if webdebug:
                             print (msg)
-                        return render_template('index.html', msg=msg, result=result)
+                        return render_template('home.html', msg=msg, result=result)
                 else:
                     if webdebug:
                         print('WEBDEBUG: WARNING: in /register no status field in reply')
@@ -1547,7 +1608,7 @@ def register():
                     msg="Thank you for registering."
                     if webdebug:
                         print (msg)
-                    return render_template('index.html', msg=msg, result=result)
+                    return render_template('home.html', msg=msg, result=result)
             else:
                 return render_template('register.html', msg=check, form=form)
 
@@ -1562,7 +1623,7 @@ def register():
         if(is_mpo_user):
             is_mpo_user=is_mpo_user.json()
             if(len(is_mpo_user)==0): #Not registered, display form
-                dn = get_user_dn(request)
+                dn = g.user.username # dn = get_user_dn(request)
                 parsed_dn=parse_dn(dn)
                 dn_email=parsed_dn['emailAddress']
                 dn_ou=parsed_dn['OU']
@@ -1618,7 +1679,7 @@ def testfeed():
 
 
 def get_child_terms(uid):
-    dn = get_user_dn(request)
+    dn = g.user.username # dn = get_user_dn(request)
     certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
               'verify':False, 'headers':{'Real-User-DN':dn}}
 

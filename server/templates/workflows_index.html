@@ -385,9 +385,11 @@ function setWfQuality(wfid,numq) {
 	for(i=1;i<=numstars;i++) {
 		var img_element='#'+wfid+imgstr+i;
 		if(i<=numq)
-			$(img_element).attr('src', imgpath+img[1]); //star on
+			$(img_element).attr('src', 
+	{{ url_for('static', filename='img/star.png') }} ); //star on
 		else
-			$(img_element).attr('src', imgpath+img[0]); //star off
+		       $(img_element).attr('src',
+        {{ url_for('static', filename='img/star_empty.png') }} ); //star off
 	//	$(img_element).removeAttr('onclick'); //remove onclick functionality
 	}
 }
@@ -602,32 +604,32 @@ ul li input.user_time_wf {
                         <td>
                         {% if item.quality %}
                              {% if item.quality == "1" %}
-                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                                <img id="{{item.uid}}_img1" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',4)">
                             {% elif item.quality == "2" %}
-                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                                <img id="{{item.uid}}_img1" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',4)">
                             {% elif item.quality == "3" %}
-                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                                <img id="{{item.uid}}_img1" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',4)">
                             {% elif item.quality == "4" %}
-                                <img id="{{item.uid}}_img1" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star.png" onClick="setWfQuality('{{item.uid}}',4)">
+                                <img id="{{item.uid}}_img1" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="{{ url_for('static', filename='img/star.png')}}" onClick="setWfQuality('{{item.uid}}',4)">
                             {% endif %}
                         {% else %}
                             <span id="{{ item.uid }}_quality" class="set_quality">
-                                <img id="{{item.uid}}_img1" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',1)"> 
-                                <img id="{{item.uid}}_img2" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',2)"> 
-                                <img id="{{item.uid}}_img3" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',3)"> 
-                                <img id="{{item.uid}}_img4" src="/static/img/star_empty.png" onClick="setWfQuality('{{item.uid}}',4)">
+                                <img id="{{item.uid}}_img1" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',1)"> 
+                                <img id="{{item.uid}}_img2" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',2)"> 
+                                <img id="{{item.uid}}_img3" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',3)"> 
+                                <img id="{{item.uid}}_img4" src="{{ url_for('static', filename='img/star_empty.png')}}" onClick="setWfQuality('{{item.uid}}',4)">
                             </span>
                         {% endif %}
                         </td>

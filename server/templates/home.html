@@ -19,14 +19,14 @@
             <font class="big">Welcome to the MPO Demo Website!</font><br>
 			<p> To make the concepts and the tools associated with the MPO more concrete, this demonstration area has been constructed that does not require any authentication or authorization. 
             It is possible to navigate real workflows and their associated metadata but the ability to add information or add comments is not included. </p>          
-            <p>To get started, please <a href="/static/MPO-Demo-Guide.pdf" target="_blank">review these instructions on <strong>how to use the MPO Demo Website</strong></a>.</p>
+            <p>To get started, please <a href="/MPO-Demo-Guide.pdf" target="_blank">review these instructions on <strong>how to use the MPO Demo Website</strong></a>.</p>
             {% endif %}            
             <p>
             Here is a list of available views:  
             
            	<ul style="list-style: none">
             	<li>
-                    <img src="/static/img/images/_icon_workflow.png"/> 
+                    <img src="/img/images/_icon_workflow.png"/> 
                     <a href="{{ url_for("workflows") }}"><strong>Workflows</strong></a>: view all available workflows 
                 </li>
             	<li>
@@ -34,7 +34,7 @@
                     <a href="{{ url_for("collections") }}"><strong>Collections</strong></a>: a custom group of workflows, activities, data objects and other collections
                 </li>
             	<li>
-                	<img src="/static/img/images/_icon_dataobject.png"> 
+                	<img src="/img/images/_icon_dataobject.png"> 
                     <a href="{{ url_for("dataobject") }}"><strong>Data Objects</strong></a>: view all available data objects
                	</li>
             	<li>

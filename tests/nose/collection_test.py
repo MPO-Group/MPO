@@ -34,6 +34,7 @@ class CollectionTest(unittest.TestCase):
         assert ce.get('uid')==c.get('uid')
 
 
+    @attr(only='this')
     def test_collection1(self):
         "Create a collection with an element"
         #note use of search route which is formatted, get always returns raw response
@@ -61,7 +62,7 @@ class CollectionTest(unittest.TestCase):
         "Verify GET collection returns correct fields."
         assert 1==1
 
-    @attr(only='this')
+
     def test_collection4(self):
         "Collection of workflows. Also tests adding elements to existing collection."
         c1=self.m.collection(name="Nose_collection-workflows",
@@ -93,7 +94,6 @@ class CollectionTest(unittest.TestCase):
         assert ce[1].get('uid')==c2.get('uid')
 
 
-    @attr(only='this')
     def test_collection6(self):
         "Create a collection with an dataobject element not in a workflow"
         #note use of search route which is formatted, get always returns raw response

@@ -29,7 +29,9 @@ def setup():
         parser = SafeConfigParser()
         parser.read(userconfdir+'/mpo.conf')
         mpo_api_url = parser.get('api','MPO_HOST')
-        mpo_cert = userconfdir+parser.get('api','MPO_AUTH')
+        mpo_cert = parser.get('api','MPO_AUTH')
+        if not os.path.isabs(mpo_cert):
+            mpo_cert = userconfdir+mpo_cert
 
     ### Establish a session to mpo
     print('mpo_setup env',mpo_cert,mpo_api_url)
