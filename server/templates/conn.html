@@ -277,6 +277,7 @@ $(document).ready(function () {
 	//checks and adjusts svg width/height if needed
 	var workflowWidth=$("#svg").width();
 
+	document.getElementsByTagName("svg").item(0).setAttribute("width","100%");
 	var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
 	var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
 	var width=parseInt(w.replace("pt",""));
