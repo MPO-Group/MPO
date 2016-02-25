@@ -565,7 +565,7 @@ class mpo_methods(object):
         if specified:
             specified=str2bool(specified)
 
-        payload={"name":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
+        payload={"name":term,"description":desc,"type":vtype,"specified":specified,"units":units}
         r=self.post(self.ONTOLOGY_TERM_RT,None,parent_ID,payload,**kwargs)
         return r
 

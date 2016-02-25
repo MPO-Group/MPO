@@ -52,7 +52,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
              'ontology_terms' : {'uid':'ot_guid','name':'name', 'description':'description',
                                  'parent_uid':'parent_guid', 'type':'value_type',
                                  'units':'units','specified':'specified',
-                                 'user_uid':'added_by','date_added':'date_added'},
+                                 'user_uid':'added_by','time':'date_added'},
              'ontology_instances' : {'uid':'oi_guid','parent_uid':'target_guid','value':'value',
                                      'term_uid':'term_guid','time':'creation_time','user_uid':'u_guid'}
          }
