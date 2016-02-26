@@ -307,6 +307,37 @@ def getWorkflowType(id,queryargs={},dn=None):
     return records['value']
 
 
+def getOntologyTermCount(id='0',dn=None):
+    """
+    Returns the count of ontology terms by instance values.
+    """
+
+    #Construct query for database
+    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid group by uid, parent_uid, name, c.term_guid,value'
+
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    # execute our Query
+    cursor.execute(q)
+    # retrieve the records from the database
+    records = cursor.fetchall()
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+
+    #cursor.fetchall always returns a list
+    if isinstance(records,list):
+        if len(records)==0: #throw error
+            print('query error in getOntologyTermCount, no records returned')
+            r={"status"    : "error",
+               "error_mesg": "query error in getOntologyTermCount, no records returned"}
+            return r
+
+    return records
+
+
 def getOntologyTermTree(id='0',dn=None):
     """
     Constructs a tree from the ontology terms and returns
