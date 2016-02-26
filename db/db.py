@@ -313,7 +313,7 @@ def getOntologyTermCount(id='0',dn=None):
     """
 
     #Construct query for database
-    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid group by uid, parent_uid, name, c.term_guid,value'
+    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid group by uid, parent_uid, name, c.term_guid,value order by name,value'
 
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
