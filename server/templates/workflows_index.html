@@ -120,7 +120,7 @@ function getOntFilterOptions(obj,query){
 		if(currentParent!=this_name) {
 			parentOntWithWf[this_pid]={}
 			parentOntWithWf[this_pid]['name']=this_name;	
-			parentOntWithWf[this_pid]={'children':[{id: this_uid,name: this_value,count:this_count}]};	
+			parentOntWithWf[this_pid]['children']=[{id: this_uid,name: this_value,count:this_count}];	
 			parentCount++;
 		}
 		else {
