@@ -924,7 +924,7 @@ def ontologyTermCount(id=None, dn=None):
     if not id:
         id='0' #root parent_uid
 
-    r = rdb.getOntologyTermCount(id, dn=dn )
+    r = rdb.getOntologyTermCount(id, request.args, dn=dn )
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 

@@ -10,7 +10,7 @@ import datetime
 import os
 import textwrap
 
-dbdebug=False
+dbdebug=True
 
 
 #  list of valid query fields and their mapped name in the table, Use
@@ -307,20 +307,29 @@ def getWorkflowType(id,queryargs={},dn=None):
     return records['value']
 
 
-def getOntologyTermCount(id='0',dn=None):
+def getOntologyTermCount(id='0',queryargs={},dn=None):
     """
     Returns the count of ontology terms by instance values.
     """
 
     #Construct query for database
-    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid group by uid, parent_uid, name, c.term_guid,value order by name,value'
+    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid'
 
+    if queryargs.has_key('term'):
+        q+=' and target_guid in (select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
+        v=()
+        for key in json.loads(queryargs['term']):
+            q+='('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
+            v+=(key['uid'],key['value'])
+        q=q[:-4]+'))'
+
+    q+=' group by uid, parent_uid, name, c.term_guid,value order by name,value'
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     # execute our Query
-    cursor.execute(q)
+    cursor.execute(q,v)
     # retrieve the records from the database
     records = cursor.fetchall()
     # Close communication with the database
