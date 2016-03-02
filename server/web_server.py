@@ -207,7 +207,7 @@ def workflows():
 
     #get full ontology
     ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,))
-    ont_list_req=req=s.get("%s/ontology/term"%(API_PREFIX,))
+    ont_list_req=s.get("%s/ontology/term/count"%(API_PREFIX,))
 
         ### ontology tree
         #req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
@@ -368,12 +368,26 @@ def get_workflows():
         rjson = [item for item in rjson if wf_fname.lower() in item['user']['firstname'].lower()]
 
     if wf_ont_id:
+        print "+++++++++++++++++++++++++++++++++++++++"
+        print "+++++++++++++++++++++++++++++++++++++++"
+        print "+++++++++++++++++++++++++++++++++++++++"
         ont_filter=[]
         wf_ont_id_list=wf_ont_id.split(",")
         for ont in wf_ont_id_list:
-            ont_info=s.get("%s/ontology/term/%s"%(API_PREFIX,ont,), **certargs).result().json()
-            wf_ont_value=ont_info[0]['name']
-            wf_ont_pid=ont_info[0]['parent_uid']
+            print ""
+            print ""
+            print ""
+            print "Processing ont... ",ont
+            ont_info=[]
+            ont_info=ont.split("@@@")
+            wf_ont_value=ont_info[1]
+            wf_ont_pid=ont_info[0]
+            
+#            ont_info=s.get("%s/ontology/term/%s"%(API_PREFIX,ont,), **certargs).result().json()
+#            wf_ont_value=ont_info[0]['name']
+#            wf_ont_pid=ont_info[0]['parent_uid']
+            print "VALUE: ",wf_ont_value
+            print "PID: ",wf_ont_pid
             r=requests.get("%s/ontology/instance?term_uid=%s"%(API_PREFIX,wf_ont_pid,), **certargs)
             ont_result = r.json()
     
