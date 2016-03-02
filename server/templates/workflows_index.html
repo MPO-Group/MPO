@@ -19,7 +19,7 @@ $(document).ready(function () {
 	//parse ontology result data
 	var ont_jsonstr = '{{ ont_list|tojson }}';
 	var ont_jsondata = jQuery.parseJSON(ont_jsonstr);
-	
+	console.log(ont_jsondata);
 	// onclick - clear, go back to all wf list view
 	$('.wf_filter_clear').on('click', function() {
 		//display all workflows
