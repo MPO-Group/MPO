@@ -315,9 +315,9 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
     #Construct query for database
     q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid'
 
+    v=()
     if queryargs.has_key('term'):
         q+=' and target_guid in (select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
-        v=()
         for key in json.loads(queryargs['term']):
             q+='('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
             v+=(key['uid'],key['value'])
