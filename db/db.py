@@ -9,6 +9,7 @@ import uuid
 import datetime
 import os
 import textwrap
+from collections import defaultdict
 
 dbdebug=True
 
@@ -333,11 +334,19 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
     if queryargs.has_key('firstname'):
         q+=' and b.firstname ilike \'%%'+queryargs['firstname']+'%%\''
     if queryargs.has_key('term'):
-        q+=' and target_guid in (select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
+        q+=' and target_guid in ('
+        d = defaultdict(list)
         for key in json.loads(queryargs['term']):
-            q+='('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
-            v+=(key['uid'],key['value'])
-        q=q[:-4]+'))'
+            d[key['uid']].append(key['value'])
+        for k,l in d.iteritems():
+            s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
+            for m in l:
+                s+= '('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
+                v+=(k,m)
+            q+=s[:-4]+') intersect '
+            #q+='('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
+            #v+=(key['uid'],key['value'])
+        q=q[:-11]+')'
 
     q+=' group by uid, parent_uid, a.name, c.term_guid,value order by a.name,c.value'
     # get a connection, if a connect cannot be made an exception will be raised here
