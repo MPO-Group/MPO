@@ -313,9 +313,25 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
     """
 
     #Construct query for database
-    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid'
+    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, mpousers b, ontology_instances c, workflow d where c.term_guid=a.ot_guid and c.target_guid=d.w_guid and d.u_guid=b.uuid'
 
     v=()
+    if queryargs.has_key('wf_start_time'):
+        q+=' and d.creation_time >= %s'
+        v+=(queryargs['wf_start_time'],)
+    if queryargs.has_key('wf_end_time'):
+        q+=' and d.creation_time <= %s'
+        v+=(queryargs['wf_end_time'],)
+    if queryargs.has_key('wf_name'):
+        q+=' and d.name ilike \'%%'+queryargs['wf_name']+'%%\''
+    if queryargs.has_key('wf_desc'):
+        q+=' and d.description ilike \'%%'+queryargs['wf_desc']+'%%\''
+    if queryargs.has_key('username'):
+        q+=' and b.username ilike \'%%'+queryargs['username']+'%%\''
+    if queryargs.has_key('lastname'):
+        q+=' and b.lastname ilike \'%%'+queryargs['lastname']+'%%\''
+    if queryargs.has_key('firstname'):
+        q+=' and b.firstname ilike \'%%'+queryargs['firstname']+'%%\''
     if queryargs.has_key('term'):
         q+=' and target_guid in (select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
         for key in json.loads(queryargs['term']):
@@ -323,7 +339,7 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
             v+=(key['uid'],key['value'])
         q=q[:-4]+'))'
 
-    q+=' group by uid, parent_uid, name, c.term_guid,value order by name,value'
+    q+=' group by uid, parent_uid, a.name, c.term_guid,value order by a.name,c.value'
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = mypool.connect()
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
