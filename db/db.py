@@ -335,13 +335,23 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
         q+=' and b.firstname ilike \'%%'+queryargs['firstname']+'%%\''
     if queryargs.has_key('term'):
         q+=' and target_guid in ('
-        d = defaultdict(list)
+        du = defaultdict(list)
+        dp = defaultdict(list)
         for key in json.loads(queryargs['term']):
-            d[key['uid']].append(key['value'])
-        for k,l in d.iteritems():
+            if key.has_key('uid'):
+                du[key['uid']].append(key['value'])
+            else:
+                dp[key['path']].append(key['value'])
+        for k,l in du.iteritems():
             s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
             for m in l:
                 s+= '('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
+                v+=(k,m)
+            q+=s[:-4]+') intersect '
+        for k,l in dp.iteritems():
+            s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
+            for m in l:
+                s+= '('+query_map['ontology_terms']['uid']+'=getTermUidByPath(%s)'+' and '+query_map['ontology_instances']['value']+'=%s) or '
                 v+=(k,m)
             q+=s[:-4]+') intersect '
         q=q[:-11]+')'
@@ -673,13 +683,23 @@ def getWorkflow(queryargs={},dn=None):
 
     if queryargs.has_key('term'):
         q+=' and w_guid in ('
-        d = defaultdict(list)
+        du = defaultdict(list)
+        dp = defaultdict(list)
         for key in json.loads(queryargs['term']):
-            d[key['uid']].append(key['value'])
-        for k,l in d.iteritems():
+            if key.has_key('uid'):
+                du[key['uid']].append(key['value'])
+            else:
+                dp[key['path']].append(key['value'])
+        for k,l in du.iteritems():
             s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
             for m in l:
                 s+= '('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
+                v+=(k,m)
+            q+=s[:-4]+') intersect '
+        for k,l in dp.iteritems():
+            s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
+            for m in l:
+                s+= '('+query_map['ontology_terms']['uid']+'=getTermUidByPath(%s)'+' and '+query_map['ontology_instances']['value']+'=%s) or '
                 v+=(k,m)
             q+=s[:-4]+') intersect '
         q=q[:-11]+')'
