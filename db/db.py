@@ -348,15 +348,20 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
         q+=' and d.creation_time <= %s'
         v+=(queryargs['wf_end_time'],)
     if queryargs.has_key('wf_name'):
-        q+=' and d.name ilike \'%%'+queryargs['wf_name']+'%%\''
+        q+=' and d.name ilike %s'
+        v+=('%'+queryargs['wf_name']+'%',)
     if queryargs.has_key('wf_desc'):
-        q+=' and d.description ilike \'%%'+queryargs['wf_desc']+'%%\''
+        q+=' and d.description ilike %s'
+        v+=('%'+queryargs['wf_desc']+'%',)
     if queryargs.has_key('username'):
-        q+=' and b.username ilike \'%%'+queryargs['username']+'%%\''
+        q+=' and b.username ilike %s'
+        v+=('%'+queryargs['username']+'%',)
     if queryargs.has_key('lastname'):
-        q+=' and b.lastname ilike \'%%'+queryargs['lastname']+'%%\''
+        q+=' and b.lastname ilike %s'
+        v+=('%'+queryargs['lastname']+'%',)
     if queryargs.has_key('firstname'):
-        q+=' and b.firstname ilike \'%%'+queryargs['firstname']+'%%\''
+        q+=' and b.firstname ilike %s'
+        v+=('%'+queryargs['firstname']+'%',)
     if queryargs.has_key('term'):
         (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
         q+=' and target_guid in '+s
@@ -666,7 +671,8 @@ def getWorkflow(queryargs={},dn=None):
             print ('DBDEBUG workflow key',key,queryargs.has_key(key),queryargs.keys())
         if queryargs.has_key(key):
             qa=processArgument(queryargs[key])
-            q+=" and CAST(a.%s as text) iLIKE '%%%%%s%%%%'" % (query_map['workflow'][key],qa)
+            q+=' and CAST(a.'+query_map['workflow'][key]+' as text) iLIKE %s'
+            v+= ('%'+qa+'%',)
 
     if queryargs.has_key('alias'):  #handle composite id queries
     #logic here to extract composite_seq,user, and workflow name from composite ID
