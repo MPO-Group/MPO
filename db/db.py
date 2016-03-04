@@ -308,15 +308,35 @@ def getWorkflowType(id,queryargs={},dn=None):
     return records['value']
 
 
+def getSelectionByTerms(terms):
+    conn = mypool.connect()
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    v=()
+    q='('
+    d = defaultdict(list)
+    for key in terms:
+        if key.has_key('uid'):
+            d[key['uid']].append(key['value'])
+        elif key.has_key('path'):
+            cursor.execute('select getTermUidByPath(%s) as uid',(key['path'],))
+            d[cursor.fetchone()['uid']].append(key['value'])
+    for k,l in d.iteritems():
+        s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
+        for m in l:
+            s+= '('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
+            v+=(k,m)
+        q+=s[:-4]+') intersect '
+    q=q[:-11]+')'
+    cursor.close()
+    conn.close()
+
+    return (q,v)
+
 def getOntologyTermCount(id='0',queryargs={},dn=None):
     """
     Returns the count of ontology terms by instance values.
     """
 
-    # get a connection, if a connect cannot be made an exception will be raised here
-    conn = mypool.connect()
-    # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     #Construct query for database
     q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, mpousers b, ontology_instances c, workflow d where c.term_guid=a.ot_guid and c.target_guid=d.w_guid and d.u_guid=b.uuid'
 
@@ -338,23 +358,15 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
     if queryargs.has_key('firstname'):
         q+=' and b.firstname ilike \'%%'+queryargs['firstname']+'%%\''
     if queryargs.has_key('term'):
-        q+=' and target_guid in ('
-        d = defaultdict(list)
-        for key in json.loads(queryargs['term']):
-            if key.has_key('uid'):
-                d[key['uid']].append(key['value'])
-            elif key.has_key('path'):
-                cursor.execute('select getTermUidByPath(%s) as uid',(key['path'],))
-                d[cursor.fetchone()['uid']].append(key['value'])
-        for k,l in d.iteritems():
-            s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
-            for m in l:
-                s+= '('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
-                v+=(k,m)
-            q+=s[:-4]+') intersect '
-        q=q[:-11]+')'
+        (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
+        q+=' and target_guid in '+s
+        v+=t
 
     q+=' group by uid, parent_uid, a.name, c.term_guid,value order by a.name,c.value'
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     # execute our Query
     cursor.execute(q,v)
     # retrieve the records from the database
@@ -629,12 +641,6 @@ def getWorkflow(queryargs={},dn=None):
             qa= tuple(map(int, therange[1:-1].split(',')))
             print('DDEBUG tuple range is',qa)
 
-    # get a connection, if a connect cannot be made an exception will be raised here
-    conn = mypool.connect()
-
-    # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
-
     #build our Query, base query is a join between the workflow and user tables to get the username
     q = textwrap.dedent("""\
                 SELECT a.w_guid as uid, a.name, a.description, a.creation_time as time,
@@ -676,21 +682,9 @@ def getWorkflow(queryargs={},dn=None):
 #        q+=" and b.username='%s'" % queryargs['username']
 
     if queryargs.has_key('term'):
-        q+=' and w_guid in ('
-        d = defaultdict(list)
-        for key in json.loads(queryargs['term']):
-            if key.has_key('uid'):
-                d[key['uid']].append(key['value'])
-            elif key.has_key('path'):
-                cursor.execute('select getTermUidByPath(%s) as uid',(key['path'],))
-                d[cursor.fetchone()['uid']].append(key['value'])
-        for k,l in d.iteritems():
-            s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
-            for m in l:
-                s+= '('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
-                v+=(k,m)
-            q+=s[:-4]+') intersect '
-        q=q[:-11]+')'
+        (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
+        q+=' and w_guid in '+s
+        v+=t
 
     # order by date
     q+=" order by time desc"
@@ -704,6 +698,12 @@ def getWorkflow(queryargs={},dn=None):
     # execute our Query
     if dbdebug:
         print('workflows q',q)
+
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+
     cursor.execute(q,v)
 
     # retrieve the records from the database and rearrange
