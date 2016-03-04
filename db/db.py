@@ -340,7 +340,7 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
         for key in json.loads(queryargs['term']):
             if key.has_key('uid'):
                 du[key['uid']].append(key['value'])
-            else:
+            elif key.has_key('path'):
                 dp[key['path']].append(key['value'])
         for k,l in du.iteritems():
             s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
@@ -688,7 +688,7 @@ def getWorkflow(queryargs={},dn=None):
         for key in json.loads(queryargs['term']):
             if key.has_key('uid'):
                 du[key['uid']].append(key['value'])
-            else:
+            elif key.has_key('path'):
                 dp[key['path']].append(key['value'])
         for k,l in du.iteritems():
             s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
