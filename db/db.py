@@ -344,8 +344,6 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
                 s+= '('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
                 v+=(k,m)
             q+=s[:-4]+') intersect '
-            #q+='('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
-            #v+=(key['uid'],key['value'])
         q=q[:-11]+')'
 
     q+=' group by uid, parent_uid, a.name, c.term_guid,value order by a.name,c.value'
@@ -672,6 +670,20 @@ def getWorkflow(queryargs={},dn=None):
     if queryargs.has_key('username'): #handle username queries
         q+=" and b.username='%s'" % queryargs['username']
 
+    v=()
+    if queryargs.has_key('term'):
+        q+=' and w_guid in ('
+        d = defaultdict(list)
+        for key in json.loads(queryargs['term']):
+            d[key['uid']].append(key['value'])
+        for k,l in d.iteritems():
+            s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
+            for m in l:
+                s+= '('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
+                v+=(k,m)
+            q+=s[:-4]+') intersect '
+        q=q[:-11]+')'
+
     # order by date
     q+=" order by time desc"
 
@@ -684,7 +696,7 @@ def getWorkflow(queryargs={},dn=None):
     # execute our Query
     if dbdebug:
         print('workflows q',q)
-    cursor.execute(q)
+    cursor.execute(q,v)
 
     # retrieve the records from the database and rearrange
     records = cursor.fetchall()
