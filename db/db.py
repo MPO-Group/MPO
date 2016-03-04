@@ -665,9 +665,8 @@ def getWorkflow(queryargs={},dn=None):
         if dbdebug:
             print('compid: username/workflow_type/seq:',compid,compid.split('/'))
         compid = compid.split('/')
-        q+=" and b.username     ='%s'" % compid[0]
-        q+=" and c.value     ='%s'" % compid[1]
-        q+=" and a.comp_seq='%s'" % compid[2]
+        q+=" and b.username=%s and c.value=%s and a.comp_seq=%s"
+        v+=tuple(compid)
 
 #    if queryargs.has_key('username'): #handle username queries
 #        q+=" and b.username='%s'" % queryargs['username']
@@ -691,8 +690,8 @@ def getWorkflow(queryargs={},dn=None):
     if queryargs.has_key('range'): # return a range
         therange=queryargs['range']
         qa= tuple(map(int, therange[1:-1].split(',')))
-        q+=" limit %s" % (qa[1]-qa[0]+1)
-        q+=" offset %s" % (qa[0]-1)
+        q+=" limit %s offset %s"
+        v+=((qa[1]-qa[0]+1),(qa[0]-1),)
 
     # execute our Query
     if dbdebug:
