@@ -639,10 +639,12 @@ def getWorkflow(queryargs={},dn=None):
 
     #join with ontology_instance table to get workflow type
     q += " WHERE a.u_guid=b.uuid and a.w_guid=c.target_guid and c.term_guid=getTermUidByPath('/Workflow/Type')"
+    v=()
     # add extra query filter on workflow type (which is stored in a separate table)
     if queryargs.has_key('type'):
         #q+= " and a.w_guid=c.target_guid and c.value='"+processArgument(queryargs['type'])+"'"
-        q+= " and c.value='"+processArgument(queryargs['type'])+"'"
+        q+= " and c.value=%s"
+        v+=(processArgument(queryargs['type']),)
 
 
     #logic here to convert queryargs to additional WHERE constraints
@@ -667,10 +669,9 @@ def getWorkflow(queryargs={},dn=None):
         q+=" and c.value     ='%s'" % compid[1]
         q+=" and a.comp_seq='%s'" % compid[2]
 
-    if queryargs.has_key('username'): #handle username queries
-        q+=" and b.username='%s'" % queryargs['username']
+#    if queryargs.has_key('username'): #handle username queries
+#        q+=" and b.username='%s'" % queryargs['username']
 
-    v=()
     if queryargs.has_key('term'):
         q+=' and w_guid in ('
         d = defaultdict(list)
