@@ -666,7 +666,7 @@ def getWorkflow(queryargs={},dn=None):
             print ('DBDEBUG workflow key',key,queryargs.has_key(key),queryargs.keys())
         if queryargs.has_key(key):
             qa=processArgument(queryargs[key])
-            q+=" and CAST(a.%s as text) iLIKE '%%%s%%'" % (query_map['workflow'][key],qa)
+            q+=" and CAST(a.%s as text) iLIKE '%%%%%s%%%%'" % (query_map['workflow'][key],qa)
 
     if queryargs.has_key('alias'):  #handle composite id queries
     #logic here to extract composite_seq,user, and workflow name from composite ID
