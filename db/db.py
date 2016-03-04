@@ -361,14 +361,6 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
     cursor.close()
     conn.close()
 
-    #cursor.fetchall always returns a list
-    if isinstance(records,list):
-        if len(records)==0: #throw error
-            print('query error in getOntologyTermCount, no records returned')
-            r={"status"    : "error",
-               "error_mesg": "query error in getOntologyTermCount, no records returned"}
-            return r
-
     return records
 
 
