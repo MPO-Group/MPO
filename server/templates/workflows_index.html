@@ -15,11 +15,7 @@ $(document).ready(function () {
 	//wf filter - set up datepicker
 	$( "#wf_date_val1" ).datepicker({ dateFormat: 'yy-mm-dd' }).val();
 	$( "#wf_date_val2" ).datepicker({ dateFormat: 'yy-mm-dd' }).val();
-	
-	//parse ontology result data
-	var ont_jsonstr = '{{ ont_list|tojson }}';
-	var ont_jsondata = jQuery.parseJSON(ont_jsonstr);
-	
+		
 	// onclick - clear, go back to all wf list view
 	$('.wf_filter_clear').on('click', function() {
 		//display all workflows
@@ -27,9 +23,7 @@ $(document).ready(function () {
 		//clear workflow filter input fields
 		clearWfFilterFields();
 		//collapse ontology filter tree
-		//get list of levels with children entry count greater than 0
-		getOntFilterOptions(ont_jsondata);
-		$("#ont_listing").html(ontTreeMenu);
+		loadOntFilterOptions();
 	});
 		
 	// onclick - filter, reload data 
@@ -41,6 +35,7 @@ $(document).ready(function () {
 		$('input[name=ont_filter_selection]:checked').map(function() {
 			ont_filter_selected.push($(this).attr('id'));
 		});
+		ont_filter_selected = escape(JSON.stringify(ont_filter_selected));
 		url_query="&wf_ont_id="+ont_filter_selected;
 	
 		var wf_date_val1=$('#wf_date_val1').val();		
@@ -59,13 +54,11 @@ $(document).ready(function () {
 	 	if(wf_user_val!="") url_query+="&wf_username=" + wf_user_val	
 		url+=url_query
 		
-		getOntFilterOptions(ont_jsondata,url_query);
-		$("#ont_listing").html(ontTreeMenu);
+		loadOntFilterOptions(url_query);
 		loadWorkflowTable(url);	
 	});
 
-	getOntFilterOptions(ont_jsondata);
-	$("#ont_listing").html(ontTreeMenu);
+	loadOntFilterOptions(); //display wf ontology filter options
 	clearWfFilterFields(); //clear wf filter fields
 	loadWorkflowTable( "{{ url_for("get_workflows",display="table") }}" ); 	// display list of workflows
 });
@@ -87,117 +80,66 @@ function loadWorkflowTable(url) {
     });
 }
 
-
-/*function updateOntLink(pid,uid,name,this_id,query){
-	url="{{ url_for("get_workflows") }}" + "?ont_pid="+pid+"&ont_id=" + uid+"&ont_value="+name+"&display=count";
-	if(query) 
-		url+=query;
-	$.ajax({
-		type: "GET",
-		url: url,
-		dataType: 'html',
-		success: function(html){
-			num_wf = (jQuery.parseJSON(html)).num_wf;
-			$("#num_wf_ont_"+this_id).html(" ("+num_wf+") ");
-		}
-	});
-}*/
-			
 //populate a list of ontology list including terms with children to filter by
-function getOntFilterOptions(obj,query){
-		
+function loadOntFilterOptions(query){	
 	parentOntWithWf = {};
 	var parentCount=1;
-	var currentParent="";
-	for (var key = 0; key < obj.length; key++) {
-		this_count=obj[key].count	  //counter
-		this_name=obj[key].name		  //parent name str 
-		this_pid=obj[key].parent_uid  //pid (parent ont)
-		this_uid=obj[key].uid		  //uid (ont)
-		this_value=obj[key].value	 	  //ont value str
-		
-		//1st time processing parent, add metadata and child array
-		if(currentParent!=this_name) {
-			parentOntWithWf[this_pid]={}
-			parentOntWithWf[this_pid]['name']=this_name;	
-			parentOntWithWf[this_pid]['children']=[{id: this_uid,name: this_value,count:this_count}];	
-			parentCount++;
-		}
-		else {
-			parentOntWithWf[this_pid]['name']=this_name;	
-			parentOntWithWf[this_pid]['children'].push({id: this_uid,name: this_value, count:this_count});	
-		}
-				
-		currentParent=this_name;
-		
-		/*if(this_uid in parentOntWithWf) {
-			parentOntWithWf[this_uid]['name']=this_value;	
-		}		
-		url="{{ url_for("get_workflows") }}" + "?ont_id=" + this_uid+"&display=id";	
-		if(query)
-			url+=query;	
-		$.ajax({
-			type: "GET",
-			url: url,
-			async: 0,
-			dataType: 'html',
-			success: function(html){
-				result = (jQuery.parseJSON(html).results);
-				if(result.length>0){
-					if(pid in parentOntWithWf) {
-						console.log(typeof(parentOntWithWf[pid]));
-						console.log(parentOntWithWf[pid]);
-						if('children' in parentOntWithWf[pid]) {
-							parentOntWithWf[pid]['children'].push({id: uid,name: name});
-						}
-						else 
-							parentOntWithWf[pid]={'children':[{id: uid,name: name}]};	
-					}
-					else {
-						parentOntWithWf[pid]={'children':[{id: uid,name: name}]};							
-						console.log("ADDED first time");
-						console.log(parentOntWithWf);
-					}
+	var currentParent="";	
+	url="{{ url_for("get_ontology_count") }}"
+	if(query) 
+		url=url+"?"+query;	
+	$.getJSON( url, function( data ) {		
+	  $.each( data, function( key, val ) {
+		  for (var ont_key = 0; ont_key < val.length; ont_key++) {
+			this_count=val[ont_key].count	  //counter
+			this_name=val[ont_key].name		  //parent name str 
+			this_pid=val[ont_key].parent_uid  //pid (parent ont)
+			this_uid=val[ont_key].uid		  //uid (ont)
+			this_value=val[ont_key].value	  //ont value str
+					
+			//1st time processing parent, add metadata and child array
+			if(currentParent!=this_name) {
+				parentOntWithWf[this_pid]={}
+				parentOntWithWf[this_pid]['name']=this_name;	
+				parentOntWithWf[this_pid]['children']=[{id: this_uid,name: this_value,count:this_count}];	
+				parentCount++;
+			}
+			else {
+				parentOntWithWf[this_pid]['name']=this_name;	
+				parentOntWithWf[this_pid]['children'].push({id: this_uid,name: this_value, count:this_count});	
+			}
+					
+			currentParent=this_name;
+		  }
+	   });
+	  // displayOntFilterOptions(query);
+	   //display 
+	   for (var index in parentOntWithWf) {
+			name=parentOntWithWf[index].name;
+			uid=index;
+			children=parentOntWithWf[index].children; //with associated workflow<br>
+			ontTreeMenu+="<li id=\""+uid+"\">"+name+"<ul>";
+			for (c in children) {
+				this_id=children[c]['id'];
+				this_name=children[c]['name'];	
+				this_count=children[c]['count'];			
+				ontTreeMenu +="<li><input type=\"checkbox\" class=\"ont_filter_selection\" name=\"ont_filter_selection\" ";
+				if (query && query.indexOf(this_id)>0 && query.indexOf(this_name)>0) {
+					ontTreeMenu +="checked ";
 				}
-			},
-			error: function() {
-				alert('Error occured');
+				ontTreeMenu +="id='{\"uid\":\""+this_id+"\", \"value\":\""+this_name+"\"}'> ";
+				ontTreeMenu +=this_name+"<span class=\"muted\" id=\"num_wf_ont_"+this_id+"\"> ("+this_count+") </span></li>";
 			}
-		});
-		//count=count+1;*/
-	}
-	displayOntFilterOptions(query);
-}
-	
-function displayOntFilterOptions(query) {
-	for (var index in parentOntWithWf) {
-		name=parentOntWithWf[index].name;
-		uid=index;
-		children=parentOntWithWf[index].children; //with associated workflow<br>
-		ontTreeMenu+="<li id=\""+uid+"\">"+name+"<ul>";
-		for (c in children) {
-			this_id=children[c]['id'];
-			this_name=children[c]['name'];	
-			this_count=children[c]['count'];			
-			onselectStr =  'onClick="ontFilterSelection(\''+this_id+'\');"';
-			ontTreeMenu +="<li><input type=\"checkbox\" class=\"ont_filter_selection\" name=\"ont_filter_selection\" ";
-			if (query && query.indexOf(this_id+"@@@"+this_name)>0) {
-				ontTreeMenu +="checked ";
-			}
-			ontTreeMenu +="id=\""+this_id+"@@@"+this_name+"\"> ";
-			ontTreeMenu +=this_name+"<span class=\"muted\" id=\"num_wf_ont_"+this_id+"\"> ("+this_count+") </span></li>";
-			//updateOntLink(uid,this_id,this_name,this_id,query);			
-		}
-		ontTreeMenu+="</ul></li>";
-	}
+			ontTreeMenu+="</ul></li>";
+	  }
+	  $("#ont_listing").html(ontTreeMenu);	 
+	});
 }
 
-//function ontFilterSelection(uid, pid, name) {
-function ontFilterSelection(uid) {	
-	url="{{ url_for("get_workflows") }}" + "?wf_ont_id=" + uid+"&display=table";
-	clearWfFilterFields();
-	loadWorkflowTable(url);
+function displayOntFilterOptions(query) {
+
 }
+
 </script>
 <style>
 .nav-header{

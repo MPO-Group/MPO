@@ -16,6 +16,7 @@ import math
 from authentication import get_user_dn, parse_dn
 import urllib
 from collections import OrderedDict
+import ast
 
 
 try:
@@ -33,7 +34,7 @@ else:
     mc = False
 
 #debug logging
-webdebug = True  #our inline print statements
+webdebug = False  #our inline print statements
 if webdebug:
     httploglevel=1
 else:
@@ -207,7 +208,6 @@ def workflows():
 
     #get full ontology
     ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,))
-    ont_list_req=s.get("%s/ontology/term/count"%(API_PREFIX,))
 
         ### ontology tree
         #req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
@@ -257,16 +257,82 @@ def workflows():
             else:
                 i['quality']=''
 
-#    ont_result=""
     wf_type_list=""
-
     if(worktreeroot):
-#        ont_result=ont_tree_req.result().json().get('root').get('children')
         wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
 
-    everything={"username":USERNAME,"db_server":DB_SERVER,
-                "ont_list":ont_list_req.result().json(), "wf_type_list":wf_type_list}
+    everything={"username":USERNAME,"db_server":DB_SERVER,"wf_type_list":wf_type_list}
+
     return render_template('workflows_index.html', **everything)
+
+@app.route('/get_ontology_count')
+def get_ontology_count():
+
+    #using asynchronous requests now
+    global s
+    #optionally use grouped requests:
+    groupedrequests=False
+
+    print('WEBSERVER: workflows timestamp start index',stime.time() )
+    if webdebug: print('WEBSERVER: workflows thread count START : ', threading.active_count() )
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    #Set dn for API session
+    s.headers={'Real-User-DN':dn, 'Connection':'close' }
+    
+    #General wf filter user input
+    wf_date_val1=request.args.get('wf_date1')
+    wf_date_val2=request.args.get('wf_date2')
+    wf_name=request.args.get('wf_name')
+    wf_desc=request.args.get('wf_description')
+    wf_username=request.args.get('wf_username')
+    wf_lname=request.args.get('wf_lname')
+    wf_fname=request.args.get('wf_fname')
+
+    #Ont filter selection list
+    wf_ont_id=request.args.get('wf_ont_id')
+    
+    #Process wf filter value, store pairs into list to produce the query str
+    wf_query_list=[]
+    if wf_date_val1:
+        wf_query_list.append("wf_start_time="+wf_date_val1)
+    if wf_date_val2:
+        wf_query_list.append("wf_end_time="+wf_date_val2)
+    if wf_name:
+        wf_query_list.append("wf_name="+wf_name)
+    if wf_desc:
+        wf_query_list.append("wf_desc="+wf_desc)
+    if wf_username:
+        wf_query_list.append("username="+wf_username)
+    if wf_lname:
+        wf_query_list.append("lastname="+wf_lname)
+    if wf_fname:
+        wf_query_list.append("firstname="+wf_fname)
+    wf_query='&'.join(wf_query_list) 
+    
+    #Process ont filter selection input, store pairs into list and create query str
+    ont_query=[] 
+    if wf_ont_id:
+        wf_ont_id_list=json.loads(wf_ont_id)
+        for ont in wf_ont_id_list:
+            ont=ont.encode('UTF8')
+            ont=ast.literal_eval(ont)
+            wf_ont_value=ont['value']
+            wf_ont_pid=ont['uid']
+            ont_query.append({"uid":wf_ont_pid,"value":wf_ont_value})
+    ont_params=json.dumps(ont_query) 
+
+    if ont_query:
+        ont_list=s.get("%s/ontology/term/count?term=%s&%s"%(API_PREFIX,ont_params,wf_query))
+    else:
+        ont_list=s.get("%s/ontology/term/count?%s"%(API_PREFIX,wf_query))
+
+    return jsonify(ont_list = ont_list.result().json())
+    
 
 @app.route('/get_workflows')
 def get_workflows():
@@ -324,8 +390,27 @@ def get_workflows():
     else:
         rpp=15
 
-    #get total # of workflows
-    r=s.get("%s/workflow"%API_PREFIX).result()
+    ont_query=[]
+
+    #Process ont filter selection input
+    if wf_ont_id:
+        wf_ont_id_list=json.loads(wf_ont_id)
+        for ont in wf_ont_id_list:
+            ont=ont.encode('UTF8')
+            ont=ast.literal_eval(ont)
+            wf_ont_value=ont['value']
+            wf_ont_pid=ont['uid']
+            ont_query.append({"uid":wf_ont_pid,"value":wf_ont_value})
+
+    ont_params=json.dumps(ont_query)
+
+    #grab wf data
+    if ont_query:
+        ont_list=s.get("%s/workflow?term=%s"%(API_PREFIX,ont_params))
+    else:
+        ont_list=s.get("%s/workflow"%(API_PREFIX))
+    r=ont_list.result()
+
     #JCW may want to provide resource for this when transfer becomes large
     #().result() needed by FuturesSession to block for async response
 
@@ -339,13 +424,13 @@ def get_workflows():
     if wf_range:
         rlist=wf_range.split(',')
         rmin=int(rlist[0])
-        #rmax=int(rlist[1])
         rmax=rmin+rpp-1
     else:
         #default range
         rmin=1
         rmax=rpp
 
+    # begin manual filter - need to replace later with /workflow?wf_desc
     if wf_type:
         if wf_type != "all":
             #get workflows by specified type, JCW: can just filter initial query
@@ -367,45 +452,10 @@ def get_workflows():
     if wf_fname:
         rjson = [item for item in rjson if wf_fname.lower() in item['user']['firstname'].lower()]
 
-    if wf_ont_id:
-        print "+++++++++++++++++++++++++++++++++++++++"
-        print "+++++++++++++++++++++++++++++++++++++++"
-        print "+++++++++++++++++++++++++++++++++++++++"
-        ont_filter=[]
-        wf_ont_id_list=wf_ont_id.split(",")
-        for ont in wf_ont_id_list:
-            print ""
-            print ""
-            print ""
-            print "Processing ont... ",ont
-            ont_info=[]
-            ont_info=ont.split("@@@")
-            wf_ont_value=ont_info[1]
-            wf_ont_pid=ont_info[0]
-            
-#            ont_info=s.get("%s/ontology/term/%s"%(API_PREFIX,ont,), **certargs).result().json()
-#            wf_ont_value=ont_info[0]['name']
-#            wf_ont_pid=ont_info[0]['parent_uid']
-            print "VALUE: ",wf_ont_value
-            print "PID: ",wf_ont_pid
-            r=requests.get("%s/ontology/instance?term_uid=%s"%(API_PREFIX,wf_ont_pid,), **certargs)
-            ont_result = r.json()
-    
-            if ont_result:
-                for item in ont_result:
-                    if item['value'] == wf_ont_value:
-                        ont_filter.append(item['parent_uid'])
-
-        temp_ont_filter=list(ont_filter)
-        for t in temp_ont_filter:
-            if ont_filter.count(t)!=len(wf_ont_id_list):
-                ont_filter.remove(t)
-
-        rjson = [item for item in rjson if item['uid'] in ont_filter]
-
     if ont_id:
         ont_filter=[]
         ont_id_list=ont_id.split(",")
+        print "ont_id......... ",ont_id
         for ont in ont_id_list:
             ont_info=s.get("%s/ontology/term/%s"%(API_PREFIX,ont,), **certargs).result().json()
             wf_ont_value=ont_info[0]['name']
@@ -426,6 +476,8 @@ def get_workflows():
 
     if wf_date_val2:
         rjson = [item for item in rjson if datetime.datetime.strptime(wf_date_val2,df) >= datetime.datetime.strptime(item['time'][:10],df)]
+
+    # end of manual filter 
 
     if webdebug: print('web debug rjson',rjson, rmin, rmax)
     rjson=rjson[rmin-1:rmax]
@@ -517,17 +569,17 @@ def get_workflows():
 
         if not groupedrequests:
             pid=i['uid']
-        #get comments for a workflow
+            #get comments for a workflow
             c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),
                     background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
             future_list.append(c)
 
-        #get alias' for workflow display
+            #get alias' for workflow display
             cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),
                       background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
             future_list.append(cid)
 
-        #get workflow ontology terms: quality values
+            #get workflow ontology terms: quality values
             qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid),
                            background_callback=lambda sess,resp,index=index: qual_cb(sess,resp,index) )
             future_list.append(qual_req)
