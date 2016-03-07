@@ -3,12 +3,6 @@
 {% block hscripts %}
 <script>
 var debug=0;
-var userPaths = [];
-var parentOntWithWf = {};
-var wfAttrib = [];
-var ontTreeMenu = "";
-var ont_selections = [];
-var subTree="";
 
 $(document).ready(function () {
 	
@@ -82,13 +76,14 @@ function loadWorkflowTable(url) {
 
 //populate a list of ontology list including terms with children to filter by
 function loadOntFilterOptions(query){	
-	ontTreeMenu='';	 
-	parentOntWithWf = {};
-	var parentCount=1;
-	var currentParent="";	
+	
+	var currentParent="";
+	var ontTreeMenu = "";		
+	var parentOntWithWf = {};
 	url="{{ url_for("get_ontology_count") }}"
 	if(query) 
 		url=url+"?"+query;	
+		
 	$.getJSON( url, function( data ) {		
 	  $.each( data, function( key, val ) {
 		  for (var ont_key = 0; ont_key < val.length; ont_key++) {
@@ -103,7 +98,6 @@ function loadOntFilterOptions(query){
 				parentOntWithWf[this_pid]={}
 				parentOntWithWf[this_pid]['name']=this_name;	
 				parentOntWithWf[this_pid]['children']=[{id: this_uid,name: this_value,count:this_count}];	
-				parentCount++;
 			}
 			else {
 				parentOntWithWf[this_pid]['name']=this_name;	
@@ -113,8 +107,8 @@ function loadOntFilterOptions(query){
 			currentParent=this_name;
 		  }
 	   });
-	  // displayOntFilterOptions(query);
-	   //display 
+	   
+	   //display ont based wf filters
 	   for (var index in parentOntWithWf) {
 			name=parentOntWithWf[index].name;
 			uid=index;
