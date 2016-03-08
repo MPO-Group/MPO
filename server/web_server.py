@@ -16,6 +16,7 @@ import math
 from authentication import get_user_dn, parse_dn
 import urllib
 from collections import OrderedDict
+import ast
 
 
 try:
@@ -177,8 +178,164 @@ def index():
     everything={"username":USERNAME,"db_server":DB_SERVER}
     return render_template('index.html', **everything)
 
+
 @app.route('/workflows')
 def workflows():
+    #using asynchronous requests now
+    global s
+    #optionally use grouped requests:
+    groupedrequests=False
+
+    print('WEBSERVER: workflows timestamp start index',stime.time() )
+    if webdebug: print('WEBSERVER: workflows thread count START : ', threading.active_count() )
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    if webdebug:
+        print('WEBDEBUG: workflows certargs',certargs)
+
+    #Set dn for API session
+    s.headers={'Real-User-DN':dn, 'Connection':'close' }
+
+    #send out some requests for preload
+    #get quality ontology term uid
+    quality_req=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,))
+
+    #get UID of Workflow types in ontology
+    wf_type_req=s.get("%s/ontology/term?path=/Workflow/Type"%(API_PREFIX,))
+
+    #get full ontology
+    ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,))
+
+        ### ontology tree
+        #req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
+        #JCW optimize, ask for just workflow types leaf in ontology tree
+        #that's all we are using here
+        #its best really to use two queries here.
+        #Actually, ont_result is used in index.html to display the whole ontology tree, so this should
+        #really be right in index.html: req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
+        #get workflow types
+        #maybe this if we change nodes to be generic worknames=[item['node']['data']['name'] for item in worktree ]
+        #JCW JAN 2015, ont request moved to delayed request below
+#        worktreeroot=requests.get("%s/ontology/term"%(API_PREFIX),params={'path':'Workflow/Type'}, **certargs).json()
+#        wf_ont_tree=requests.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']), **certargs).json()
+
+    #Callbacks for use in following loop
+    future_list=[]
+
+    #retrieve workflow type UID from prior request
+    worktreeroot = wf_type_req.result().json()
+    #issue new request for workflow type data
+    if(worktreeroot):
+        wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']))
+
+    #JCW unroll callbacks here
+    for future in future_list:
+        future.result()
+
+    if groupedrequests:
+        allcomments=acm.result().json() #error checking
+        allalias=aal.result().json()
+        allqual=aqual.result().json()
+
+        for index,i in enumerate(results):        #i is dict, loop through list of workflows
+            comments=allcomments[i['uid']]
+            for temp in comments: #get number of comments, truncate time string
+                if temp['time']:
+                    thetime=temp['time'][:19]
+                    temp['time']=thetime
+
+            #comments=allcomments[results[index]['uid']]
+            i['num_comments']=len(comments)
+            i['comments']=comments
+            i['alias']=allalias[i['uid']]['alias']
+
+            if allqual[i['uid']]:
+                i['quality']=allqual[i['uid']][0].get('value')
+            else:
+                i['quality']=''
+
+    wf_type_list=""
+    if(worktreeroot):
+        wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
+
+    everything={"username":USERNAME,"db_server":DB_SERVER,"wf_type_list":wf_type_list}
+
+    return render_template('workflows_index.html', **everything)
+
+@app.route('/get_ontology_count')
+def get_ontology_count():
+
+    #using asynchronous requests now
+    global s
+    #optionally use grouped requests:
+    groupedrequests=False
+
+    print('WEBSERVER: workflows timestamp start index',stime.time() )
+    if webdebug: print('WEBSERVER: workflows thread count START : ', threading.active_count() )
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    #Set dn for API session
+    s.headers={'Real-User-DN':dn, 'Connection':'close' }
+    
+    #General wf filter user input
+    wf_date_val1=request.args.get('wf_date1')
+    wf_date_val2=request.args.get('wf_date2')
+    wf_name=request.args.get('wf_name')
+    wf_desc=request.args.get('wf_description')
+    wf_username=request.args.get('wf_username')
+    wf_lname=request.args.get('wf_lname')
+    wf_fname=request.args.get('wf_fname')
+
+    #Ont filter selection list
+    wf_ont_id=request.args.get('wf_ont_id')
+    
+    #Process wf filter value, store pairs into list to produce the query str
+    wf_query_list=[]
+    if wf_date_val1:
+        wf_query_list.append("wf_start_time="+wf_date_val1)
+    if wf_date_val2:
+        wf_query_list.append("wf_end_time="+wf_date_val2)
+    if wf_name:
+        wf_query_list.append("wf_name="+wf_name)
+    if wf_desc:
+        wf_query_list.append("wf_desc="+wf_desc)
+    if wf_username:
+        wf_query_list.append("username="+wf_username)
+    if wf_lname:
+        wf_query_list.append("lastname="+wf_lname)
+    if wf_fname:
+        wf_query_list.append("firstname="+wf_fname)
+    wf_query='&'.join(wf_query_list) 
+    
+    #Process ont filter selection input, store pairs into list and create query str
+    ont_query=[] 
+    if wf_ont_id:
+        wf_ont_id_list=json.loads(wf_ont_id)
+        for ont in wf_ont_id_list:
+            ont=ont.encode('UTF8')
+            ont=ast.literal_eval(ont)
+            wf_ont_value=ont['value']
+            wf_ont_pid=ont['uid']
+            ont_query.append({"uid":wf_ont_pid,"value":wf_ont_value})
+    ont_params=json.dumps(ont_query) 
+
+    if ont_query:
+        ont_list=s.get("%s/ontology/term/count?term=%s&%s"%(API_PREFIX,ont_params,wf_query))
+    else:
+        ont_list=s.get("%s/ontology/term/count?%s"%(API_PREFIX,wf_query))
+
+    return jsonify(ont_list = ont_list.result().json())
+    
+
+@app.route('/get_workflows')
+def get_workflows():
     #using asynchronous requests now
     global s
     #optionally use grouped requests:
@@ -202,18 +359,8 @@ def workflows():
     #Set dn for API session
     s.headers={'Real-User-DN':dn, 'Connection':'close' }
 
-    #send out some requests for preload
     #get quality ontology term uid
     quality_req=s.get("%s/ontology/term?path=/Generic/Status/quality"%(API_PREFIX,))
-
-    #get UID of Workflow types in ontology
-    wf_type_req=s.get("%s/ontology/term?path=/Workflow/Type"%(API_PREFIX,))
-
-    #get full ontology
-    ont_tree_req=s.get("%s/ontology/term/tree"%(API_PREFIX,))
-
-    #get URL variables for this page
-    wid=request.args.get('wid')
 
     #pagination control variables
     wf_range=request.args.get('range')
@@ -228,10 +375,9 @@ def workflows():
     wf_username=request.args.get('wf_username')
     wf_date_val1=request.args.get('wf_date1')
     wf_date_val2=request.args.get('wf_date2')
-
-    wf_ont_id=request.args.get('ont_id')
-    wf_ont_pid=request.args.get('ont_pid')
-    wf_ont_value=request.args.get('ont_value')
+    wf_ont_id=request.args.get('wf_ont_id')
+    ont_id=request.args.get('ont_id')
+    display=request.args.get('display')
 
     if wf_page:
         current_page=int(wf_page)
@@ -244,8 +390,27 @@ def workflows():
     else:
         rpp=15
 
-    #get total # of workflows
-    r=s.get("%s/workflow"%API_PREFIX).result()
+    ont_query=[]
+
+    #Process ont filter selection input
+    if wf_ont_id:
+        wf_ont_id_list=json.loads(wf_ont_id)
+        for ont in wf_ont_id_list:
+            ont=ont.encode('UTF8')
+            ont=ast.literal_eval(ont)
+            wf_ont_value=ont['value']
+            wf_ont_pid=ont['uid']
+            ont_query.append({"uid":wf_ont_pid,"value":wf_ont_value})
+
+    ont_params=json.dumps(ont_query)
+
+    #grab wf data
+    if ont_query:
+        ont_list=s.get("%s/workflow?term=%s"%(API_PREFIX,ont_params))
+    else:
+        ont_list=s.get("%s/workflow"%(API_PREFIX))
+    r=ont_list.result()
+
     #JCW may want to provide resource for this when transfer becomes large
     #().result() needed by FuturesSession to block for async response
 
@@ -255,19 +420,17 @@ def workflows():
 
     rjson = r.json()
 
-    num_wf=len(rjson) # number of workflows returned from api call
-
     ### get start & end of range of workflows
     if wf_range:
         rlist=wf_range.split(',')
         rmin=int(rlist[0])
-        #rmax=int(rlist[1])
         rmax=rmin+rpp-1
     else:
         #default range
         rmin=1
         rmax=rpp
 
+    # begin manual filter - need to replace later with /workflow?wf_desc
     if wf_type:
         if wf_type != "all":
             #get workflows by specified type, JCW: can just filter initial query
@@ -275,7 +438,7 @@ def workflows():
             #r=s.get("%s/workflow?type=%s"%(API_PREFIX,wf_type,), headers={'Real-User-DN':dn})
             #rjson = r.json()
             rjson = [item for item in rjson if item['type'] == wf_type]
-            num_wf=len(rjson) # number of workflows of specified type
+            #num_wf=len(rjson) # number of workflows of specified type
             #get range of workflows of specified type
             #r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
     if wf_desc:
@@ -289,48 +452,44 @@ def workflows():
     if wf_fname:
         rjson = [item for item in rjson if wf_fname.lower() in item['user']['firstname'].lower()]
 
-    if wf_ont_id and wf_ont_pid:
+    if ont_id:
         ont_filter=[]
-        r=requests.get("%s/ontology/instance?term_uid=%s"%(API_PREFIX,wf_ont_pid,), **certargs)
-        ont_result = r.json()
-        for item in ont_result:
-            if item['value'] == wf_ont_value:
-                ont_filter.append(item['parent_uid'])
+        ont_id_list=ont_id.split(",")
+        print "ont_id......... ",ont_id
+        for ont in ont_id_list:
+            ont_info=s.get("%s/ontology/term/%s"%(API_PREFIX,ont,), **certargs).result().json()
+            wf_ont_value=ont_info[0]['name']
+            wf_ont_pid=ont_info[0]['parent_uid']
+            r=requests.get("%s/ontology/instance?term_uid=%s"%(API_PREFIX,wf_ont_pid,), **certargs)
+            ont_result = r.json()
+            if ont_result:
+                for item in ont_result:
+                    if item['value'] == wf_ont_value:
+                        ont_filter.append(item['parent_uid'])
         rjson = [item for item in rjson if item['uid'] in ont_filter]
 
-
-    df='%Y-%m-%d %H:%M:%S' 
+    df='%Y-%m-%d %H:%M:%S'
     df='%Y-%m-%d'
 
     if wf_date_val1:
-        #rjson = [item for item in rjson if datetime.strptime(wf_date_val1,df) <= datetime.strptime(item['time'][:10],df)] 
         rjson = [item for item in rjson if datetime.datetime.strptime(wf_date_val1,df) <= datetime.datetime.strptime(item['time'][:10],df)]
 
     if wf_date_val2:
-        #rjson = [item for item in rjson if datetime.strptime(wf_date_val2,df) >= datetime.strptime(item['time'][:10],df)] 
         rjson = [item for item in rjson if datetime.datetime.strptime(wf_date_val2,df) >= datetime.datetime.strptime(item['time'][:10],df)]
 
+    # end of manual filter 
 
     if webdebug: print('web debug rjson',rjson, rmin, rmax)
     rjson=rjson[rmin-1:rmax]
+    num_wf=len(rjson)
     #calculate number of pages
     num_pages=int(math.ceil(float(num_wf)/float(rpp)))
 
     results = rjson #r.json()
 
-        ### ontology tree
-        #req=requests.get("%s/ontology/term/vocabulary"%(API_PREFIX), **certargs)
-        #JCW optimize, ask for just workflow types leaf in ontology tree
-        #that's all we are using here
-        #its best really to use two queries here.
-        #Actually, ont_result is used in index.html to display the whole ontology tree, so this should
-        #really be right in index.html: req=requests.get("%s/ontology/term/tree"%(API_PREFIX), **certargs)
-        #get workflow types
-        #maybe this if we change nodes to be generic worknames=[item['node']['data']['name'] for item in worktree ]
-        #JCW JAN 2015, ont request moved to delayed request below
-#        worktreeroot=requests.get("%s/ontology/term"%(API_PREFIX),params={'path':'Workflow/Type'}, **certargs).json()
-#        wf_ont_tree=requests.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']), **certargs).json()
-
+    if display=="id":
+        id_result = [item['uid'] for item in results]
+        return jsonify(results = id_result)
 
     #Callbacks for use in following loop
     future_list=[]
@@ -370,14 +529,12 @@ def workflows():
                 username=user_info[0]['username']
                 temp['username']=username
 
-
             if temp['time']:
                 thetime=temp['time'][:19]
                 temp['time']=thetime
 
         results[index]['num_comments']=len(comments)
         results[index]['comments']=comments
-
 
     #get needed info from prior requests before going through workflows
     #quality uid
@@ -387,12 +544,6 @@ def workflows():
     else:
         qterm_uid='0'
         print("Error in webserver, /ontology/term?path=/Generic/Status/quality not found")
-
-    #retrieve workflow type UID from prior request
-    worktreeroot = wf_type_req.result().json()
-    #issue new request for workflow type data
-    if(worktreeroot):
-        wf_ont_tree = s.get("%s/ontology/term/%s/tree"%(API_PREFIX,worktreeroot[0]['uid']))
 
     #list of workids for grouped requests
     if groupedrequests:
@@ -404,11 +555,11 @@ def workflows():
     #get comments and quality factors for workflows
     for index,i in enumerate(results):        #i is dict, loop through list of workflows
         #if ?wid=<wid> used, show comments for only that workflow
-        if wid:
-            if wid == i['uid']:
-                results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
-        else:
-            results[index]['show_comments'] = ''
+        #if wid:
+        #    if wid == i['uid']:
+        #        results[index]['show_comments'] = 'in' #in is the name of the css class to collapse accordion body
+        #else:
+        results[index]['show_comments'] = ''
         this_state=getwfstate(i['uid'])
         results[index]['state']=this_state
 
@@ -418,25 +569,22 @@ def workflows():
 
         if not groupedrequests:
             pid=i['uid']
-        #get comments for a workflow
+            #get comments for a workflow
             c=s.get("%s/workflow/%s/comments"%(API_PREFIX,pid),
                     background_callback=lambda sess,resp,index=index: comment_cb(sess,resp,index) )
             future_list.append(c)
 
-        #get alias' for workflow display
+            #get alias' for workflow display
             cid=s.get("%s/workflow/%s/alias"%(API_PREFIX,pid),
                       background_callback=lambda sess,resp,index=index: alias_cb(sess,resp,index) )
             future_list.append(cid)
 
-        #get workflow ontology terms: quality values
+            #get workflow ontology terms: quality values
             qual_req=s.get("%s/ontology/instance?term_uid=%s&parent_uid=%s"%(API_PREFIX,qterm_uid,pid),
                            background_callback=lambda sess,resp,index=index: qual_cb(sess,resp,index) )
             future_list.append(qual_req)
 
-
-
     #process comments, alias'
-
     #JCW unroll callbacks here
     for future in future_list:
         future.result()
@@ -463,28 +611,17 @@ def workflows():
             else:
                 i['quality']=''
 
-
-    ont_result=""
-    wf_type_list=""
-
-    if(worktreeroot):
-        ont_result=ont_tree_req.result().json().get('root').get('children')
-        wf_type_list = [str(item.keys()[0]) for item in wf_ont_tree.result().json()['Type']['children']]
-
-
-
-
     #calculate page_created time for display
     time_end = stime.time()
     begin_to_end = time_end - time_begin
     page_created = "%s" %((str(begin_to_end))[:6])
-
-    everything={"username":USERNAME,"db_server":DB_SERVER,"page_created":page_created,
-                "results":results, "ont_result":ont_result, "wf_type":wf_type,
-                "rpp":rpp, "current_page":current_page, "wf_type_list":wf_type_list,
-                "num_pages":num_pages, "num_wf":num_wf}
-    return render_template('workflows_index.html', **everything)
-
+    
+    if display=="table":
+        everything={"username":USERNAME,"db_server":DB_SERVER,"results":results,"page_created":page_created,
+                    "rpp":rpp,"current_page":current_page,"num_pages":num_pages, "num_wf":num_wf}
+        return render_template('get_workflows.html', **everything)
+    elif display=="count":
+        return jsonify(num_wf=num_wf)
 
 
 #get children of specified uid (object)
