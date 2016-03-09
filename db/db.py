@@ -249,7 +249,6 @@ def getRecord(table,queryargs={}, dn=None):
             qa=processArgument(queryargs[key])
             if qa == 'None':
                 q+=" and CAST("+qm[key]+" as text) is Null"
-                v+=(qm[key],)
             else:
                 q+=" and CAST("+qm[key]+" as text) ILIKE %s"
                 v+=('%'+qa+'%',)
