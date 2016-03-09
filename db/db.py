@@ -242,26 +242,32 @@ def getRecord(table,queryargs={}, dn=None):
         q+=", getWID('"+processArgument(queryargs['uid'])+"') as work_uid "
 
     #map user and filter by query
-    s="where a."+qm['user_uid']+"=b.uuid"
+    q+="where a."+qm['user_uid']+"=b.uuid"
+    v=()
     for key in query_map[table]:
         if queryargs.has_key(key):
             qa=processArgument(queryargs[key])
             if qa == 'None':
-                s+=" and "+ "CAST(%s as text) is Null" % (qm[key],)
+                q+=" and CAST("+qm[key]+" as text) is Null"
+                v+=(qm[key],)
             else:
-                s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
+                q+=" and CAST("+qm[key]+" as text) ILIKE %s"
+                v+=('%'+qa+'%',)
 
     ##ONTOLOGY/TERMS handling
     ontology_terms = []
     if table == 'ontology_terms' and queryargs.has_key('path'):
-        s+= " and ot_guid=getTermUidByPath('"+processArgument(queryargs['path'])+"')"
-    if (s): q+=s
+        q+= " and ot_guid=getTermUidByPath('"+processArgument(queryargs['path'])+"')"
+    if queryargs.has_key('term'):
+        (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
+        q+=' and '+query_map[table]['uid']+' in '+s
+        v+=t
 
     if dbdebug:
         print('get query for route '+table+': '+q)
 
     # execute our Query
-    cursor.execute(q)
+    cursor.execute(q,v)
     # retrieve the records from the database
     if queryargs.has_key('uri'):
         records = [x for x in cursor.fetchall() if x.get('uri') == queryargs.get('uri')]
