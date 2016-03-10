@@ -245,6 +245,8 @@ def getRecord(table,queryargs={}, dn=None):
     q+="where a."+qm['user_uid']+"=b.uuid"
     v=()
     for key in query_map[table]:
+        #handle time specially
+        if key == 'time': continue
         if queryargs.has_key(key):
             qa=processArgument(queryargs[key])
             if qa == 'None':
@@ -252,11 +254,32 @@ def getRecord(table,queryargs={}, dn=None):
             else:
                 q+=" and CAST("+qm[key]+" as text) ILIKE %s"
                 v+=('%'+qa+'%',)
+    if queryargs.has_key('time'):
+        (start,end)=tuple(queryargs['time'].split(','))
+        if start and end:
+            q+=' and d.creation_time between %s and %s'
+            v+=(start,end)
+        elif start:
+            q+=' and d.creation_time >= %s'
+            v+=(start,)
+        elif end:
+            q+=' and d.creation_time <= %s'
+            v+=(end,)
 
     ##ONTOLOGY/TERMS handling
     ontology_terms = []
     if table == 'ontology_terms' and queryargs.has_key('path'):
         q+= " and ot_guid=getTermUidByPath('"+processArgument(queryargs['path'])+"')"
+    if table != 'mpousers':
+        if queryargs.has_key('username'):
+            q+=' and b.username ilike %s'
+            v+=('%'+queryargs['username']+'%',)
+        if queryargs.has_key('lastname'):
+            q+=' and b.lastname ilike %s'
+            v+=('%'+queryargs['lastname']+'%',)
+        if queryargs.has_key('firstname'):
+            q+=' and b.firstname ilike %s'
+            v+=('%'+queryargs['firstname']+'%',)
     if queryargs.has_key('term'):
         (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
         q+=' and '+query_map[table]['uid']+' in '+s
@@ -346,12 +369,18 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
     q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, mpousers b, ontology_instances c, workflow d where c.term_guid=a.ot_guid and c.target_guid=d.w_guid and d.u_guid=b.uuid'
 
     v=()
-    if queryargs.has_key('wf_start_time'):
-        q+=' and d.creation_time >= %s'
-        v+=(queryargs['wf_start_time'],)
-    if queryargs.has_key('wf_end_time'):
-        q+=' and d.creation_time <= %s'
-        v+=(queryargs['wf_end_time'],)
+    if queryargs.has_key('time'):
+        print queryargs['time']
+        (start,end)=tuple(queryargs['time'].split(','))
+        if start and end:
+            q+=' and d.creation_time between %s and %s'
+            v+=(start,end)
+        elif start:
+            q+=' and d.creation_time >= %s'
+            v+=(start,)
+        elif end:
+            q+=' and d.creation_time <= %s'
+            v+=(end,)
     if queryargs.has_key('wf_name'):
         q+=' and d.name ilike %s'
         v+=('%'+queryargs['wf_name']+'%',)
@@ -672,12 +701,24 @@ def getWorkflow(queryargs={},dn=None):
     #JCW SEP 2013, would be preferable to group queryargs in separate value tuple
     #to protect from sql injection
     for key in query_map['workflow']:
+        if key == 'time': continue
         if dbdebug:
             print ('DBDEBUG workflow key',key,queryargs.has_key(key),queryargs.keys())
         if queryargs.has_key(key):
             qa=processArgument(queryargs[key])
             q+=' and CAST(a.'+query_map['workflow'][key]+' as text) iLIKE %s'
             v+= ('%'+qa+'%',)
+    if queryargs.has_key('time'):
+        (start,end)=tuple(queryargs['time'].split(','))
+        if start and end:
+            q+=' and d.creation_time between %s and %s'
+            v+=(start,end)
+        elif start:
+            q+=' and d.creation_time >= %s'
+            v+=(start,)
+        elif end:
+            q+=' and d.creation_time <= %s'
+            v+=(end,)
 
     if queryargs.has_key('alias'):  #handle composite id queries
     #logic here to extract composite_seq,user, and workflow name from composite ID
@@ -692,6 +733,15 @@ def getWorkflow(queryargs={},dn=None):
 #    if queryargs.has_key('username'): #handle username queries
 #        q+=" and b.username='%s'" % queryargs['username']
 
+    if queryargs.has_key('username'):
+        q+=' and b.username ilike %s'
+        v+=('%'+queryargs['username']+'%',)
+    if queryargs.has_key('lastname'):
+        q+=' and b.lastname ilike %s'
+        v+=('%'+queryargs['lastname']+'%',)
+    if queryargs.has_key('firstname'):
+        q+=' and b.firstname ilike %s'
+        v+=('%'+queryargs['firstname']+'%',)
     if queryargs.has_key('term'):
         (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
         q+=' and w_guid in '+s
