@@ -256,13 +256,10 @@ def getRecord(table,queryargs={}, dn=None):
                 v+=('%'+qa+'%',)
     if queryargs.has_key('time'):
         (start,end)=tuple(queryargs['time'].split(','))
-        if start and end:
-            q+=' and a.creation_time between %s and %s'
-            v+=(start,end)
-        elif start:
+        if start:
             q+=' and a.creation_time >= %s'
             v+=(start,)
-        elif end:
+        if end:
             q+=' and a.creation_time <= %s'
             v+=(end,)
 
@@ -372,13 +369,10 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
     if queryargs.has_key('time'):
         print queryargs['time']
         (start,end)=tuple(queryargs['time'].split(','))
-        if start and end:
-            q+=' and d.creation_time between %s and %s'
-            v+=(start,end)
-        elif start:
+        if start:
             q+=' and d.creation_time >= %s'
             v+=(start,)
-        elif end:
+        if end:
             q+=' and d.creation_time <= %s'
             v+=(end,)
     if queryargs.has_key('wf_name'):
@@ -710,13 +704,10 @@ def getWorkflow(queryargs={},dn=None):
             v+= ('%'+qa+'%',)
     if queryargs.has_key('time'):
         (start,end)=tuple(queryargs['time'].split(','))
-        if start and end:
-            q+=' and a.creation_time between %s and %s'
-            v+=(start,end)
-        elif start:
+        if start:
             q+=' and a.creation_time >= %s'
             v+=(start,)
-        elif end:
+        if end:
             q+=' and a.creation_time <= %s'
             v+=(end,)
 
