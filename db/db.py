@@ -257,13 +257,13 @@ def getRecord(table,queryargs={}, dn=None):
     if queryargs.has_key('time'):
         (start,end)=tuple(queryargs['time'].split(','))
         if start and end:
-            q+=' and d.creation_time between %s and %s'
+            q+=' and a.creation_time between %s and %s'
             v+=(start,end)
         elif start:
-            q+=' and d.creation_time >= %s'
+            q+=' and a.creation_time >= %s'
             v+=(start,)
         elif end:
-            q+=' and d.creation_time <= %s'
+            q+=' and a.creation_time <= %s'
             v+=(end,)
 
     ##ONTOLOGY/TERMS handling
@@ -711,13 +711,13 @@ def getWorkflow(queryargs={},dn=None):
     if queryargs.has_key('time'):
         (start,end)=tuple(queryargs['time'].split(','))
         if start and end:
-            q+=' and d.creation_time between %s and %s'
+            q+=' and a.creation_time between %s and %s'
             v+=(start,end)
         elif start:
-            q+=' and d.creation_time >= %s'
+            q+=' and a.creation_time >= %s'
             v+=(start,)
         elif end:
-            q+=' and d.creation_time <= %s'
+            q+=' and a.creation_time <= %s'
             v+=(end,)
 
     if queryargs.has_key('alias'):  #handle composite id queries
