@@ -20,7 +20,7 @@ $(document).ready(function () {
 		loadOntFilterOptions();
 	});
 		
-	// onclick - filter, reload data 
+	// onclick - filter, reload data 	
 	$('#wf_filter_submit').on('click', function () {		
 		//check for ontology selection:
 		var url="{{ url_for("get_workflows",display="table") }}"
@@ -51,6 +51,13 @@ $(document).ready(function () {
 		loadOntFilterOptions(url_query);
 		loadWorkflowTable(url);	
 	});
+	//submit wf filter form when "Enter" is pressed from input
+	$('.user_entry_wf').keypress(function(e){
+        if(e.which == 13){
+            $('#wf_filter_submit').click();
+        }
+    });
+	
 
 	loadOntFilterOptions(); //display wf ontology filter options
 	clearWfFilterFields(); //clear wf filter fields
@@ -260,10 +267,12 @@ input.user_entry_wf_sm{
           		<!-- workflow nav menu -->
                 <table class="sidebar-nav-table">
                     <tr>
-                    	<td>Time</td>
-                        <td>
-                        <input type="text" class="user_entry_wf user_entry_wf_sm" id="wf_date_val1" name="wf_date1" /> &macr;
-                        <input type="text" class="user_entry_wf user_entry_wf_sm" id="wf_date_val2" name="wf_date2" /></td>
+                    	<td>Time (Start)</td>
+                        <td><input type="text" class="user_entry_wf" id="wf_date_val1" name="wf_date1" /></td>
+                    </tr>
+                    <tr>
+                    	<td>Time (End)</td>
+                        <td><input type="text" class="user_entry_wf" id="wf_date_val2" name="wf_date2" /></td>
                     </tr>
                     <tr>
                     	<td>Name</td>
