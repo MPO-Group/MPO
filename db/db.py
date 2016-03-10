@@ -367,7 +367,6 @@ def getOntologyTermCount(id='0',queryargs={},dn=None):
 
     v=()
     if queryargs.has_key('time'):
-        print queryargs['time']
         (start,end)=tuple(queryargs['time'].split(','))
         if start:
             q+=' and d.creation_time >= %s'
