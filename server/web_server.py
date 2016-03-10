@@ -390,9 +390,28 @@ def get_workflows():
     else:
         rpp=15
 
-    ont_query=[]
+    #Process wf filter value, store pairs into list to produce the query str
+    wf_query_list=[]
+    if wf_date_val1 or wf_date_val2:
+        if wf_date_val1 is None:
+            wf_date_val1=""
+        if wf_date_val2 is None:
+            wf_date_val2=""
+        wf_query_list.append("time="+wf_date_val1+","+wf_date_val2)
+    if wf_name:
+        wf_query_list.append("name="+wf_name)
+    if wf_desc:
+        wf_query_list.append("description="+wf_desc)
+    if wf_username:
+        wf_query_list.append("username="+wf_username)
+    if wf_lname:
+        wf_query_list.append("lastname="+wf_lname)
+    if wf_fname:
+        wf_query_list.append("firstname="+wf_fname)
+    wf_query='&'.join(wf_query_list)
 
-    #Process ont filter selection input
+    #Process ont filter selection input, store pairs into list and create query str
+    ont_query=[]
     if wf_ont_id:
         wf_ont_id_list=json.loads(wf_ont_id)
         for ont in wf_ont_id_list:
@@ -406,9 +425,9 @@ def get_workflows():
 
     #grab wf data
     if ont_query:
-        ont_list=s.get("%s/workflow?term=%s"%(API_PREFIX,ont_params))
+        ont_list=s.get("%s/workflow?term=%s&%s"%(API_PREFIX,ont_params,wf_query))
     else:
-        ont_list=s.get("%s/workflow"%(API_PREFIX))
+        ont_list=s.get("%s/workflow?%s"%(API_PREFIX,wf_query))
     r=ont_list.result()
 
     #JCW may want to provide resource for this when transfer becomes large
@@ -429,55 +448,6 @@ def get_workflows():
         #default range
         rmin=1
         rmax=rpp
-
-    # begin manual filter - need to replace later with /workflow?wf_desc
-    if wf_type:
-        if wf_type != "all":
-            #get workflows by specified type, JCW: can just filter initial query
-            #CAUTION, may want to actually make this query if we choose not to get all workflows the first time
-            #r=s.get("%s/workflow?type=%s"%(API_PREFIX,wf_type,), headers={'Real-User-DN':dn})
-            #rjson = r.json()
-            rjson = [item for item in rjson if item['type'] == wf_type]
-            #num_wf=len(rjson) # number of workflows of specified type
-            #get range of workflows of specified type
-            #r=s.get("%s/workflow?type=%s&range=(%s,%s)"%(API_PREFIX,wf_type,rmin,rmax), headers={'Real-User-DN':dn})
-    if wf_desc:
-        rjson = [item for item in rjson if wf_desc.lower() in item['description'].lower()]
-    if wf_name:
-        rjson = [item for item in rjson if wf_name.lower() in item['name'].lower()]
-    if wf_username:
-        rjson = [item for item in rjson if wf_username.lower() in item['user']['username'].lower()]
-    if wf_lname:
-        rjson = [item for item in rjson if wf_lname.lower() in item['user']['lastname'].lower()]
-    if wf_fname:
-        rjson = [item for item in rjson if wf_fname.lower() in item['user']['firstname'].lower()]
-
-    if ont_id:
-        ont_filter=[]
-        ont_id_list=ont_id.split(",")
-        print "ont_id......... ",ont_id
-        for ont in ont_id_list:
-            ont_info=s.get("%s/ontology/term/%s"%(API_PREFIX,ont,), **certargs).result().json()
-            wf_ont_value=ont_info[0]['name']
-            wf_ont_pid=ont_info[0]['parent_uid']
-            r=requests.get("%s/ontology/instance?term_uid=%s"%(API_PREFIX,wf_ont_pid,), **certargs)
-            ont_result = r.json()
-            if ont_result:
-                for item in ont_result:
-                    if item['value'] == wf_ont_value:
-                        ont_filter.append(item['parent_uid'])
-        rjson = [item for item in rjson if item['uid'] in ont_filter]
-
-    df='%Y-%m-%d %H:%M:%S'
-    df='%Y-%m-%d'
-
-    if wf_date_val1:
-        rjson = [item for item in rjson if datetime.datetime.strptime(wf_date_val1,df) <= datetime.datetime.strptime(item['time'][:10],df)]
-
-    if wf_date_val2:
-        rjson = [item for item in rjson if datetime.datetime.strptime(wf_date_val2,df) >= datetime.datetime.strptime(item['time'][:10],df)]
-
-    # end of manual filter 
 
     if webdebug: print('web debug rjson',rjson, rmin, rmax)
     rjson=rjson[rmin-1:rmax]
