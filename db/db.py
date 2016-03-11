@@ -371,12 +371,13 @@ def getOntologyTermCount(table=None,queryargs={},dn=None):
     else:
         q+=' where c.term_guid=a.ot_guid'
     v=()
-    for key in query_map[table]:
-        #handle time specially
-        if key == 'time': continue
-        if queryargs.has_key(key):
-            q+=' and CAST(d.'+query_map[table][key]+' as text) ilike %s'
-            v+=('%'+queryargs[key]+'%',)
+    if table and query_map.has_key(table):
+        for key in query_map[table]:
+            #handle time specially
+            if key == 'time': continue
+            if queryargs.has_key(key):
+                q+=' and CAST(d.'+query_map[table][key]+' as text) ilike %s'
+                v+=('%'+queryargs[key]+'%',)
     for key in query_map['mpousers']:
         if key == 'time': continue
         if queryargs.has_key(key):
