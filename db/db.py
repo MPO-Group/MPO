@@ -366,17 +366,24 @@ def getOntologyTermCount(table=None,queryargs={},dn=None):
     #Construct query for database
     q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, mpousers b, ontology_instances c'
 
-    if table and query_map.has_key(table):
+    if table and query_map.has_key(table) and table not in (ontology_terms,mpousers,ontology_instances):
         q+=', '+table+' d where c.term_guid=a.ot_guid and c.target_guid=d.'+query_map[table]['uid']+' and d.'+query_map[table]['user_uid']+'=b.uuid'
     else:
         q+=' where c.term_guid=a.ot_guid'
     v=()
-    if table and query_map.has_key(table):
+    if table and query_map.has_key(table) and table not in (ontology_terms,mpousers,ontology_instances):
         for key in query_map[table]:
             #handle time specially
             if key == 'time': continue
             if queryargs.has_key(key):
                 q+=' and CAST(d.'+query_map[table][key]+' as text) ilike %s'
+                v+=('%'+queryargs[key]+'%',)
+    elif not table:
+        for key in query_map['ontology_instances']:
+            #handle time specially
+            if key == 'time': continue
+            if queryargs.has_key(key):
+                q+=' and CAST(c.'+query_map['ontology_instances'][key]+' as text) ilike %s'
                 v+=('%'+queryargs[key]+'%',)
     for key in query_map['mpousers']:
         if key == 'time': continue
