@@ -23,7 +23,8 @@ dbdebug=False
 #  name. If it is not is this dictionary, it is ignored. This provides
 #  some protection from SQL injection
 
-query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
+query_map = {'workflow':{'name':'name', 'description':'description',
+                         'uid':'w_guid','user_uid':'u_guid',
                          'composite_seq':'comp_seq', 'time':'creation_time',
                          },
              'collection':{'name':'name', 'description':'description', 'uid':'c_guid',
@@ -357,38 +358,38 @@ def getSelectionByTerms(terms):
 
     return (q,v)
 
-def getOntologyTermCount(id='0',queryargs={},dn=None):
+def getOntologyTermCount(table=None,queryargs={},dn=None):
     """
     Returns the count of ontology terms by instance values.
     """
 
     #Construct query for database
-    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, mpousers b, ontology_instances c, workflow d where c.term_guid=a.ot_guid and c.target_guid=d.w_guid and d.u_guid=b.uuid'
+    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, mpousers b, ontology_instances c'
 
+    if table and query_map.has_key(table):
+        q+=', '+table+' d where c.term_guid=a.ot_guid and c.target_guid=d.'+query_map[table]['uid']+' and d.'+query_map[table]['user_uid']+'=b.uuid'
+    else:
+        q+=' where c.term_guid=a.ot_guid'
     v=()
+    for key in query_map[table]:
+        #handle time specially
+        if key == 'time': continue
+        if queryargs.has_key(key):
+            q+=' and CAST(d.'+query_map[table][key]+' as text) ilike %s'
+            v+=('%'+queryargs[key]+'%',)
+    for key in query_map['mpousers']:
+        if key == 'time': continue
+        if queryargs.has_key(key):
+            q+=' and CAST(b.'+query_map['mpousers'][key]+' as text) ilike %s'
+            v+=('%'+queryargs[key]+'%',)
     if queryargs.has_key('time'):
         (start,end)=tuple(queryargs['time'].split(','))
         if start:
-            q+=' and d.creation_time >= %s'
+            q+=' and '+'d' if table and query_map.has_key(table) else 'c'+'.creation_time >= %s'
             v+=(start,)
         if end:
-            q+=' and d.creation_time <= %s'
+            q+=' and '+'d' if table and query_map.has_key(table) else 'c'+'.creation_time <= %s'
             v+=(end,)
-    if queryargs.has_key('wf_name'):
-        q+=' and d.name ilike %s'
-        v+=('%'+queryargs['wf_name']+'%',)
-    if queryargs.has_key('wf_desc'):
-        q+=' and d.description ilike %s'
-        v+=('%'+queryargs['wf_desc']+'%',)
-    if queryargs.has_key('username'):
-        q+=' and b.username ilike %s'
-        v+=('%'+queryargs['username']+'%',)
-    if queryargs.has_key('lastname'):
-        q+=' and b.lastname ilike %s'
-        v+=('%'+queryargs['lastname']+'%',)
-    if queryargs.has_key('firstname'):
-        q+=' and b.firstname ilike %s'
-        v+=('%'+queryargs['firstname']+'%',)
     if queryargs.has_key('term'):
         (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
         q+=' and target_guid in '+s
