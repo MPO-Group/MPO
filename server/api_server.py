@@ -909,9 +909,10 @@ def ontologyClass(id=None, dn=None):
         pass
     return result
 
+@app.route(routes['ontology_term']+'/count/<table>', methods=['GET'])
 @app.route(routes['ontology_term']+'/count', methods=['GET'])
 @checkaccess
-def ontologyTermCount(id=None, dn=None):
+def ontologyTermCount(table=None, dn=None):
     '''
     Resource: ontology term count
 
@@ -921,10 +922,7 @@ def ontologyTermCount(id=None, dn=None):
 
     api_version,root_url,root=get_api_version(request.url)
 
-    if not id:
-        id='0' #root parent_uid
-
-    r = rdb.getOntologyTermCount(id, request.args, dn=dn )
+    r = rdb.getOntologyTermCount(table, request.args, dn=dn )
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 

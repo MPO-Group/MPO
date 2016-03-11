@@ -298,14 +298,16 @@ def get_ontology_count():
     
     #Process wf filter value, store pairs into list to produce the query str
     wf_query_list=[]
-    if wf_date_val1:
-        wf_query_list.append("wf_start_time="+wf_date_val1)
-    if wf_date_val2:
-        wf_query_list.append("wf_end_time="+wf_date_val2)
+    if wf_date_val1 or wf_date_val2:
+        if wf_date_val1 is None:
+            wf_date_val1=""
+        if wf_date_val2 is None:
+            wf_date_val2=""
+        wf_query_list.append("time="+wf_date_val1+","+wf_date_val2)
     if wf_name:
-        wf_query_list.append("wf_name="+wf_name)
+        wf_query_list.append("name="+wf_name)
     if wf_desc:
-        wf_query_list.append("wf_desc="+wf_desc)
+        wf_query_list.append("description="+wf_desc)
     if wf_username:
         wf_query_list.append("username="+wf_username)
     if wf_lname:
@@ -327,9 +329,9 @@ def get_ontology_count():
     ont_params=json.dumps(ont_query) 
 
     if ont_query:
-        ont_list=s.get("%s/ontology/term/count?term=%s&%s"%(API_PREFIX,ont_params,wf_query))
+        ont_list=s.get("%s/ontology/term/count/workflow?term=%s&%s"%(API_PREFIX,ont_params,wf_query))
     else:
-        ont_list=s.get("%s/ontology/term/count?%s"%(API_PREFIX,wf_query))
+        ont_list=s.get("%s/ontology/term/count/workflow?%s"%(API_PREFIX,wf_query))
 
     return jsonify(ont_list = ont_list.result().json())
     
