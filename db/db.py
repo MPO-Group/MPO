@@ -366,12 +366,12 @@ def getOntologyTermCount(table=None,queryargs={},dn=None):
     #Construct query for database
     q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, mpousers b, ontology_instances c'
 
-    if table and query_map.has_key(table) and table not in (ontology_terms,mpousers,ontology_instances):
+    if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances'):
         q+=', '+table+' d where c.term_guid=a.ot_guid and c.target_guid=d.'+query_map[table]['uid']+' and d.'+query_map[table]['user_uid']+'=b.uuid'
     else:
         q+=' where c.term_guid=a.ot_guid'
     v=()
-    if table and query_map.has_key(table) and table not in (ontology_terms,mpousers,ontology_instances):
+    if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances'):
         for key in query_map[table]:
             #handle time specially
             if key == 'time': continue
