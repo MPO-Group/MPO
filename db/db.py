@@ -392,11 +392,12 @@ def getOntologyTermCount(table=None,queryargs={},dn=None):
             v+=('%'+queryargs[key]+'%',)
     if queryargs.has_key('time'):
         (start,end)=tuple(queryargs['time'].split(','))
+        t='d' if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances') else 'c'
         if start:
-            q+=' and '+'d' if table and query_map.has_key(table) else 'c'+'.creation_time >= %s'
+            q+=' and '+t+'.creation_time >= %s'
             v+=(start,)
         if end:
-            q+=' and '+'d' if table and query_map.has_key(table) else 'c'+'.creation_time <= %s'
+            q+=' and '+t+'.creation_time <= %s'
             v+=(end,)
     if queryargs.has_key('term'):
         (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
