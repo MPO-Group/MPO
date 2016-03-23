@@ -14,10 +14,17 @@ from urlparse import urlparse
 from distutils.util import strtobool
 import datetime
 import functools
+from flask_admin.contrib.sqla import ModelView
+from flask_sqlalchemy import SQLAlchemy
+from flask.ext.security import Security, SQLAlchemyUserDatastore, \
+    UserMixin, RoleMixin, login_required
+from sqlalchemy_utils import UUIDType
+import datetime
 
 #Only needed for event prototype
 import gevent
 from gevent.queue import Queue
+
 
 #API version we are serving.
 MPO_API_VERSION = 'v0'
@@ -38,11 +45,68 @@ rdb.init(conn_string)
 
 app = Flask(__name__)
 app.debug=True
+app.secret_key = "super secret key"
+
 apidebug=True
+
+# sqlalchemy stuff
+conn_terms = conn_string.split()
+for term in conn_terms:
+    if term.startswith('host'):
+        dbhost = term.split('=')[1][1:-1]
+    if term.startswith('dbname'):
+        dbname = term.split('=')[1][1:-1]
+    if term.startswith('user'):
+        dbuser = term.split('=')[1][1:-1]
+    if term.startswith('password'):
+        dbpassword = term.split('=')[1][1:-1]
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%s:%s@%s/%s' % (dbuser, dbpassword, dbhost, dbname,)
+app.config['WTF_CSRF_ENABLED'] = False
+print "sql alchemy connecting to /%s/"%app.config['SQLALCHEMY_DATABASE_URI']
+db = SQLAlchemy(app)
+
+
+# Create database connection object
+db = SQLAlchemy(app)
+
+# Define models
+roles_users = db.Table('roles_users',
+        db.Column('user_id', db.Integer(), db.ForeignKey('mpousers.id')),
+        db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
+
+class Role(db.Model, RoleMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+
+class User(db.Model, UserMixin):
+    __tablename__ = u'mpousers'
+
+    id = db.Column(db.Integer(), unique=True, primary_key=True)
+    email = db.Column(db.String(255), unique=True)
+    username = db.Column(db.Text(), nullable=False, unique=True)
+    uuid = db.Column(db.String(64), unique=True)
+    firstname = db.Column(db.Text())
+    lastname = db.Column(db.Text())
+    email = db.Column(db.Text(), unique=True)
+    organization = db.Column(db.Text())
+    phone = db.Column(db.Text())
+    dn = db.Column(db.Text())
+    creation_time = db.Column(db.DateTime(), default=datetime.datetime.now())
+
+    password = db.Column(db.String(255))
+    active = db.Column(db.Boolean())
+    confirmed_at = db.Column(db.DateTime())
+    roles = db.relationship('Role', secondary=roles_users,
+                            backref=db.backref('users', lazy='dynamic'))
+
+# Setup Flask-Security
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+security = Security(app, user_datastore)
 
 #admin handling
 admin = Admin(app, name='MPO', template_mode='bootstrap2')
-
+admin.add_view(ModelView(User, db.session))
 
 routes={'collection':'collection','workflow':'workflow',
         'activity': 'activity', 'dataobject':'dataobject',
@@ -51,7 +115,9 @@ routes={'collection':'collection','workflow':'workflow',
         'ontology_term':'ontology/term',
         'ontology_instance':'ontology/instance',
         'user':'user', 'item':'item',
-        'guid':'uid'}
+        'guid':'uid',
+        'sec_user':'sec_user',
+        'token':'token'}
 
 
 class MPOSetEncoder(json.JSONEncoder):
@@ -467,7 +533,6 @@ def collectionElement(id=None, oid=None, dn=None):
     #    r=[{'mesg':'No records found', 'number_of_records':0, 'status':404}]
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=istatus)
-
 
 
 @app.route(routes['workflow']+'/<id>', methods=['GET'])
@@ -1050,6 +1115,28 @@ def item(id, dn=None):
                               payload=payload)
 
     return Response(json.dumps({'table':r,'uid':id}), mimetype='application/json')
+
+from flask_security import auth_token_required
+
+@app.route(routes['token'], methods=['GET'])
+@login_required 
+def token(dn=None):
+    from pprint import pprint
+    from flask_security.core import current_user
+    dest = request.args.get('redirect')
+    destination = "%s&email=%s&authentication_token=%s"%(dest, current_user.email, current_user.get_auth_token(),)
+    print "dest is %s\ndestination is %s"%(dest, destination)
+    if dest:
+        return redirect(destination, code=302)
+    else:
+        return Response(json.dumps({'id':current_user.id, 'email':current_user.email, 'authentication_token':current_user.get_auth_token()}), mimetype='application/json',status=200)
+
+@app.route(routes['sec_user'], methods=['GET'])
+@auth_token_required
+def sec_user(dn=None):
+    from flask_security.core import current_user
+    r = user_datastore.get_user(current_user.id)
+    return Response(json.dumps((r.email, str(r.uuid), r.id)), mimetype='application/json',status=200)
 
 if __name__ == '__main__':
     #adding debug option here, so we can see what is going on.
