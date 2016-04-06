@@ -13,9 +13,13 @@
             <ul class="nav">
                 <li {% block index_active %}{% endblock %}><a href="{{ url_for("index") }}"><span class="icon-home"></span> Home</a></li>
                 <li {% block workflows_active %}{% endblock %}><a href="{{ url_for("workflows") }}"><img src="/static/img/images/_icon_workflow.png"/>   Workflows</a></li>
-                <li {% block collect_active %}{% endblock %}><a href="{{ url_for("collections") }}"><span class="icon-list-alt"></span> Collections</a></li>
                 <li {% block dataobject_active %}{% endblock %}><a href="{{ url_for("dataobject") }}"><img src="/static/img/images/_icon_dataobject.png"> Data Objects</a></li>
-                <li {% block search_active %}{% endblock %}><a href="{{ url_for("search") }}"><span class="icon-search"></span> Search</a></li>
+                <li {% block collect_active %}{% endblock %}><a href="{{ url_for("collections") }}"><span class="icon-list-alt"></span> Collections</a></li>
+                <li {% block cart_active %}{% endblock %}><a href="{{ url_for("cart") }}"><span class="icon-shopping-cart" id="shopping-cart"></span> Collection Cart</a></li>
+                <li {% block search_active %}{% endblock %} style="color:red"><a href="{{ url_for("search") }}"><span class="icon-search"></span> Search</a></li>
+            {% if username %}
+                <li><a href="#"><small><i class="icon-user"></i> <small>{{username}}</small></small></a></li>
+            {% endif %}
 			</ul>
             {% if request.path != "/home" and db_server != "demo" %}
             <span style="float:right; padding-top: 10px">
@@ -37,11 +41,6 @@
             </form>
             </span>
             {% endif %}   
-            {% if username %}
-            <ul class="nav pull-right">
-                <li><a href="#"><small><i class="icon-user"></i> <small>{{username}}</small></small></a></li>
-            </ul>
-            {% endif %}
           </div><!--/.nav-collapse -->
         </div>
       </div>

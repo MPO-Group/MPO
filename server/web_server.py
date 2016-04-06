@@ -172,11 +172,37 @@ if not USING_UWSGI:
     PRODUCTION_API_PREFIX+="api"
 PRODUCTION_API_PREFIX+="/"+MPO_API_VERSION
 
-
 @app.route('/')
 def index():
     everything={"username":USERNAME,"db_server":DB_SERVER}
     return render_template('index.html', **everything)
+
+
+@app.route('/cart')
+def cart():
+
+    #using asynchronous requests now
+    global s
+    #optionally use grouped requests:
+    groupedrequests=False
+
+    print('WEBSERVER: workflows timestamp start index',stime.time() )
+    if webdebug: print('WEBSERVER: workflows thread count START : ', threading.active_count() )
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    #Set dn for API session
+    s.headers={'Real-User-DN':dn, 'Connection':'close' }
+
+    #Get all collections
+    collection_list=(s.get("%s/collection"%(API_PREFIX))).result().json()
+   # collection_list=(s.get("%s/collection"%(API_PREFIX))).result()
+
+    everything={"username":USERNAME,"db_server":DB_SERVER,"collection_list":collection_list}
+    return render_template('cart.html', **everything)
 
 
 @app.route('/workflows')
@@ -334,6 +360,31 @@ def get_ontology_count():
         ont_list=s.get("%s/ontology/term/count/workflow?%s"%(API_PREFIX,wf_query))
 
     return jsonify(ont_list = ont_list.result().json())
+
+
+@app.route('/get_collections')
+def get_collections():
+
+    #using asynchronous requests now
+    global s
+    #optionally use grouped requests:
+    groupedrequests=False
+
+    print('WEBSERVER: workflows timestamp start index',stime.time() )
+    if webdebug: print('WEBSERVER: workflows thread count START : ', threading.active_count() )
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    #Set dn for API session
+    s.headers={'Real-User-DN':dn, 'Connection':'close' }
+    
+    #Get all collections
+    collection_list=s.get("%s/collection"%(API_PREFIX,wf_query))
+
+    return jsonify(collection_list = collection_list.result().json())
     
 
 @app.route('/get_workflows')
@@ -1195,6 +1246,24 @@ def ontology_instance():
     response.headers['Content-Type'] = 'text/plain'
     return response
 
+@app.route('/create_collection', methods=['POST'])
+def create_collection():
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    try:
+        data = request.form.to_dict()
+        print "Temp debug message -- CREATING a new collection: "
+        print data
+        submit = requests.post("%s/collection"%API_PREFIX, data, **certargs)
+        if submit.status_code == 401:
+            return "401"
+        return "200"
+    except:
+        pass
+    return ''
+
+
 @app.route('/add_to_collection', methods=['GET','POST'])
 def add_to_collection():
     dn = get_user_dn(request)
@@ -1206,7 +1275,6 @@ def add_to_collection():
         data['elements']=data['oid']
         r=json.dumps(data)
         cid=data['cid']
-        oid=data['oid']
         response=requests.post("%s/collection/%s/element"%(API_PREFIX,cid), r, **certargs)
         if response.status_code == 401:
             return "401"

@@ -250,10 +250,10 @@ input.user_entry_wf_sm{
 {% block container %}
     <div class="row-fluid">
    	<div class="span12" >
-    <h4>MPO Workflows <input type="button" value="View all Workflows" class="btn btn-mini btn-info wf_filter_clear" /></h4>
-    	<div class="row-fluid">
+    	<div class="row-fluid">  
 		<!-- left navigation menu span -->
         <div class="span3">
+	      <h4>MPO Workflows <input type="button" value="View all Workflows" class="btn btn-mini btn-info wf_filter_clear" /></h4>
           <div class="well sidebar-nav">
                                           
                 <!-- ontology list menu -->
@@ -304,8 +304,10 @@ input.user_entry_wf_sm{
         </div><!--/span left navigation-->    
         
    	<!-- workflow table list span -->
-		<div id="wf_table" class="span9">       
-
+		<div class="span9">
+            <div style="height: 40px;"><div id="message" ></div></div>      
+            <div id="wf_table">   
+            </div> 
     	</div> <!-- end of span9 -->
     
     

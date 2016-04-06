@@ -52,6 +52,10 @@
 </script>
 
 <script>
+var icons={'workflow': '<img src="/static/img/images/_icon_workflow.png"/>',
+'dataobject': '<img src="/static/img/images/_icon_dataobject.png"/>',
+'collection': '<span class="icon-list-alt"></span>'};
+
 $(document).ready(function() {
 	$("input.copy:text").click(function() { $(this).select();  } );
 	$("input.copy:text").css( 'cursor', 'pointer' );
@@ -60,6 +64,7 @@ $(document).ready(function() {
 		e.preventDefault();
 	 	anchorScroll( $(this), $($(this).attr("href")), 100 );		
 	}); 
+	checkCart();
 });
 
 function anchorScroll(this_obj, that_obj, base_speed) {
@@ -118,124 +123,142 @@ function getQueryVariable(variable) {
   }
 }
 
-	function mdsEvent(event,repeat,success_cb,error_cb,userarg) {
-	  var req = new XMLHttpRequest();
-	  req.open('GET','{{evserver}}/'+event,true);
-	  req.responseType = '';
-	  req.scb=success_cb;
-	  req.fcb=error_cb;
-	  req.event=event;
-	  req.userarg=userarg;
-	  req.repeat=repeat;
-	  req.onreadystatechange = function() {
-		if (this.readyState == 4) {
-		   if (this.status == 200) {
-			  console.log("ready");
-			  console.log(this.responseXML);
-			  console.log(this.responseText);
+function mdsEvent(event,repeat,success_cb,error_cb,userarg) {
+  var req = new XMLHttpRequest();
+  req.open('GET','{{evserver}}/'+event,true);
+  req.responseType = '';
+  req.scb=success_cb;
+  req.fcb=error_cb;
+  req.event=event;
+  req.userarg=userarg;
+  req.repeat=repeat;
+  req.onreadystatechange = function() {
+	if (this.readyState == 4) {
+	   if (this.status == 200) {
+		  console.log("ready");
+		  console.log(this.responseXML);
+		  console.log(this.responseText);
 		  var parser = new DOMParser(); //this is a workaround to know errors in some browsers with responseXML
-	
-			  var xmlDoc = parser.parseFromString(this.responseText, "application/xml");
-			  data = xmlToJson(xmlDoc);
-			  console.log(xmlDoc);
-			  console.log(data);
+
+		  var xmlDoc = parser.parseFromString(this.responseText, "application/xml");
+		  data = xmlToJson(xmlDoc);
+		  console.log(xmlDoc);
+		  console.log(data);
 	//          data = this.responseText;
-			  this.scb(this.event,data,this.userarg);
-			  if (this.repeat != 0) {
-				 this.open('GET','{{evserver}}/'+event,true);
-				 this.send();
-				 return;
-			  }
-		   }
-		   else if (req.status == 204) {
-			  this.open('GET','{{evserver}}/'+event,true);
+		  this.scb(this.event,data,this.userarg);
+		  if (this.repeat != 0) {
+			 this.open('GET','{{evserver}}/'+event,true);
+			 this.send();
+			 return;
+		  }
+	   }
+	   else if (req.status == 204) {
+		  this.open('GET','{{evserver}}/'+event,true);
 			  this.send();
-			  return;
-		   } else if (req.status != 0) {
-			  this.fcb(this.event,req.response,this.userarg);
-		   }
-		   this.onreadystatechange = function() {}
-		}
-	  };
-	  req.send();
-	  return req;
+		  return;
+   } else if (req.status != 0) {
+		  this.fcb(this.event,req.response,this.userarg);
+	   }
+	   this.onreadystatechange = function() {}
 	}
+  };
+  req.send();
+  return req;
+}
 
-
-	function qs(search_for) {
-		var query = window.location.search.substring(1);
-		var parms = query.split('&');
-		for (var i=0; i<parms.length; i++) {
-			var pos = parms[i].indexOf('=');
-			if (pos > 0  && search_for == parms[i].substring(0,pos)) {
-				return parms[i].substring(pos+1);;
-			}
+function qs(search_for) {
+	var query = window.location.search.substring(1);
+	var parms = query.split('&');
+	for (var i=0; i<parms.length; i++) {
+		var pos = parms[i].indexOf('=');
+		if (pos > 0  && search_for == parms[i].substring(0,pos)) {
+			return parms[i].substring(pos+1);;
 		}
-		return "";
 	}
-/* $(function(){
-      $('#_db').bind('change', function () {
-		  var db=$('#_db').val();
-		  var formData = $(this).serialize();
-		  this.form.submit();
-		  //process the form
-		 /* $.ajax({
-			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
-			url 		: '{{ url_for('submit_db') }}', // the url where we want to POST
-			data 		: formData, // our data object
-			dataType 	: 'json', // what type of data do we expect back from the server
-            encode      : true
-		  })*/
-		  //callback
-  		 /* .done(function(data) {
-			console.log(data);	
-			var url = "https://mpo.gat.com/mpo/home"; // get selected value
-          if (url) { // require a URL
-              window.location = url; // redirect
-          }
-		  });*/
-		  // stop the form from submitting the normal way and refreshing the page
-		 // event.preventDefault();
-		 // this.form.submit();
-		/*  var url = "https://mpo.gat.com/mpo/home"; // get selected value
-          if (url) { // require a URL
-              window.location = url; // redirect
-          }
-          return false;*/
-		  
-		  
-		  
-		  ////
- /* $('[id^=submit_comment]').submit(function(event) {
-		var fadeTime = 5000;
-		var formData = $(this).serialize();
-		//process the form
-		$.ajax({
-			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
-			url 		: '{{ url_for('submit_comment') }}', // the url where we want to POST
-			data 		: formData, // our data object
-			dataType 	: 'json', // what type of data do we expect back from the server
-            encode      : true
-		})
-		//callback
-		.done(function(data) {
-			console.log(data);	
-			$('#submit_results').show();
-			$('#submit_results').html('<div class="alert alert-success" role="alert">Comment submitted.</div>');
-			$('#submit_results').fadeOut(fadeTime, function() {
-					// Animation complete.
-					$('#submit_results').html("");
-				});
-		});
-		// stop the form from submitting the normal way and refreshing the page
-		event.preventDefault();
-	});
-		  /////
-		  */
+	return "";
+}
 
+/* local storage labels */
+var lsMPOCart='MPO-Cart';
+var defaultCart ={ 
+	"workflow": {},
+	"dataobject": {},
+	"collection": {},
+};	
+
+function checkCart() {
+	var empty=0;
+	var cart=JSON.parse(localStorage.getItem(lsMPOCart));
+	for (key in cart){
+		console.log(key);
+		content=cart[key];
+		for (cart_item in content){
+			empty=1;
+			console.log(content[cart_item]);
+			console.log("EMPTY is... "+empty);
+		}
+	}
+	console.log("Cart is...  EMPTY: "+empty);
+	if(empty==1){
+		console.log("CHANGING COLOR TO GREEN");
+		$("#shopping-cart").css('border-bottom', '2px dotted #00ffff');
+	}
+	else {
+		$("#shopping-cart").css('border-bottom', 'none');
+	}
+}
+
+//add element to cart, browser localStorage
+function addToCart(type, element_id, name, desc) {
+	if(element_id!=""){
+		//set up default cart if cart not already set 
+		if (localStorage.getItem(lsMPOCart) === null) {
+			localStorage[lsMPOCart] = JSON.stringify(defaultCart);
+		}			
+		cart=(JSON.parse(localStorage.getItem(lsMPOCart)))
+		cart_wf = $.map(cart[type], function(el) { return el });
+		in_array=0	
+			
+		for (cart_item in cart_wf){			
+			c=cart_wf[cart_item];
+			if(c.id==element_id)
+				in_array=1
+		}
+		
+		if(in_array==0) {
+			cart_wf.push({
+				'id': element_id,
+				'name': name,
+				'desc': desc
+			});
+			cart[type]=cart_wf;
+			localStorage.setItem(lsMPOCart, JSON.stringify(cart));		
+		
+			$('#message').stop( true, true ).show();
+			$('#message').html('<div class="alert alert-success" role="alert">Item has been added to your cart.</div>');
+			$('#message').fadeOut(3000, function() {
+				// Animation complete.
+				$('#message').html("");
+			});	
+		}	
+		else {
+			$('#message').stop( true, true ).show();
+			$('#message').html('<div class="alert alert-success" role="alert">Item is already in your cart.</div>');
+			$('#message').fadeOut(3000, function() {
+				// Animation complete.
+				$('#message').html("");
+			});	
+		}
+	}
+	checkCart();	
+}
 </script>
 
+
 <style>
+.link {
+	cursor: pointer;
+}
 input.small{
 	font-size: 9px;
 	height: 10px;
