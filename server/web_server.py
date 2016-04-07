@@ -1253,9 +1253,13 @@ def create_collection():
               'verify':False, 'headers':{'Real-User-DN':dn}}
     try:
         data = request.form.to_dict()
+        print "" 
         print "Temp debug message -- CREATING a new collection: "
         print data
-        submit = requests.post("%s/collection"%API_PREFIX, data, **certargs)
+        data['dn']=dn
+#        data['elements']=json.dumps(data['elements'])
+        r = json.dumps(data)
+        submit = requests.post("%s/collection"%API_PREFIX, r, **certargs)
         if submit.status_code == 401:
             return "401"
         return "200"
