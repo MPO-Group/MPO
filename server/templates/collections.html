@@ -8,6 +8,7 @@ var wfAttrib = [];
 var ontTreeMenu = "";
 var ont_selections = [];
 var subTree="";
+var this_uid="{{ uid }}";
 
 $(document).ready(function () {
 
@@ -109,6 +110,34 @@ $(document).ready(function () {
 			$('#block_' + c_uid).animate({backgroundColor:"#fff"},fadeTime);
 		});
 		// stop the form from submitting the normal way and refreshing the page
+		event.preventDefault();
+	});
+	
+		/**
+	*
+	/*function handles collection deletion
+	*/
+	$(document.body).on('click', '.coll-delete-btn' ,function(event){	
+		var element_id=(this).id.substring(12); //remove "coll-delete_" from id
+		console.log("Removing eleemtn: "+element_id+" from collection: "+this_uid);
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('delete_from_collection') }}', // the url where we want to POST
+			data 		:  { cid: this_uid, oid: element_id }, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			if (data=="200") {
+				//remove entry from collection_table
+				$('table#collection_table tr#element_'+element_id).remove();
+			}
+			else {
+				//process error
+			}
+		});
 		event.preventDefault();
 	});
 
@@ -411,13 +440,13 @@ function setWfQuality(wfid,numq) {
             <b>Description:</b> {{ coll_desc }}
         	<div id="tbl">
             <!-- workflow list table -->
-            <table class="main table table-hover table-striped" id="workflow_table">
+            <table class="main table table-hover table-striped" id="collection_table">
                 <tr>
                 <th width="2%">&nbsp;</th><th width="25%">Name</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th width="3%"></th>
               </tr>
     		{% for item in results %}
                 <div id="accordion2" class="accordion">
-                <tr>
+                <tr id=element_{{ item.uid }}>
                     <td><span class="muted"><em><small>{{ wf_number }}</small></em></span></td>
                         
                   <td>{% if item.type == "workflow" %}
@@ -435,7 +464,6 @@ function setWfQuality(wfid,numq) {
                         <span class="muted"><br /><em><small>{{ item.related }}</small></em></span>
                        
                       		{% endif %}
-                    </td>
                     </td>
                     	
                   <td>
@@ -477,7 +505,8 @@ function setWfQuality(wfid,numq) {
                 </div>
                 </td>               
                 <td>
-                	<!-- <a href="#"title="remove workflow from collection">[-]</a> -->
+                <a href="" id="coll-delete_{{ item.uid }} " class="coll-delete-btn btn btn-mini btn-warning" id="remove" title="Remove from Collection">
+                [-]</a>
                 </td>
               </tr>
               <tr>

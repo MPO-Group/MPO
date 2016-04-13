@@ -66,12 +66,29 @@ table#comment-form td {
 table#comment-form {
 	width: 100%;
 }
+.arrow-up {
+	width: 0; 
+	height: 0; 
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-bottom: 5px solid black;
+}
+
+.arrow-down {
+	width: 0; 
+	height: 0; 
+	border-left: 20px solid transparent;
+	border-right: 20px solid transparent;
+	border-top: 20px solid #f00;
+}
+
 </style>
 <script>
 var nodeUIDs = new Array(); //store node UIDs for comparison with new node UIDs added after page load
 var wid = ""; //store workflow wid
 var lastUpdate = ""; //store last update time
 var rightScrollHeight='700px';
+var this_uid="{{ wid }}";
 //var clickedLinkedWorkflows=[];
 
 function formatDate(date) {
@@ -169,8 +186,8 @@ $(document).ready(function () {
 	//lastUpdate=new Date(); //GET CURRENT DATE ON PAGE LOAD for newest added element comparison
 
 	var nodeCount=0;
-	var dataElements = {}; //for name - desc in popover
-	
+	var dataElements = {}; //for name - desc in popover, key by uid
+	loadCollectionDropdown();
 	for (var key in dataObjs) 
 	{
 	  if (dataObjs.hasOwnProperty(key)) {
@@ -180,22 +197,22 @@ $(document).ready(function () {
 		for(var j in tmp) {
 			if(j=="data") {
 				var tmp2=tmp[j];
-				var tmp3=tmp2[0];  
+				var tmp3=tmp2[0]; 
 				
-				dataElements[tmp['name']]="";
+				dataElements[tmp['uid']]="";
 				if(tmp3['description'])
-					dataElements[tmp['name']]+=tmp3['description'];
+					dataElements[tmp['uid']]+=tmp3['description'];
 				else if(tmp3['do_info']['description'])
-					dataElements[tmp['name']]+=tmp3['do_info']['description'];
+					dataElements[tmp['uid']]+=tmp3['do_info']['description'];
 				if(tmp3['time']) {
-					dataElements[tmp['name']]+= "<div><small>"+tmp3['time']+"</small></div>";
+					dataElements[tmp['uid']]+= "<div><small>"+tmp3['time']+"</small></div>";
 					//store latest workflow update time
 					tmpDateTime=new Date(tmp3['time'].replace(" ","T"));
 					if(tmpDateTime > lastUpdate)
 						lastUpdate=tmpDateTime
 				}
 				else if(tmp3['do_info']['time']) {
-					dataElements[tmp['name']]+= "<div><small>"+tmp3['do_info']['time']+"</small></div>";
+					dataElements[tmp['uid']]+= "<div><small>"+tmp3['do_info']['time']+"</small></div>";
 					//store latest workflow update time
 					tmpDateTime=new Date(tmp3['do_info']['time'].replace(" ","T"));
 					if(tmpDateTime > lastUpdate)
@@ -203,7 +220,7 @@ $(document).ready(function () {
 				}
 				if(tmp3['uri']) {
 					var fill=false;
-					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['uri']+"</small>";
+					dataElements[tmp['uid']]+="<ul><li><small>uri: "+tmp3['uri']+"</small>";
 					if(tmp3['wf_link']) {
 						for (var cnt in tmp3['wf_link']) {
 							if (tmp3['wf_link']['count'] > 1) {
@@ -213,12 +230,11 @@ $(document).ready(function () {
 						if(fill)
 							fillSVGElement(tmp['uid'],"linked");
 					}
-					dataElements[tmp['name']]+="</li>";
-					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
+					dataElements[tmp['uid']]+="</li>";
 				}
 				else if('do_info' in tmp3 && tmp3['do_info']['uri']) {
 					var fill=false;
-					dataElements[tmp['name']]+="<ul><li><small>uri: "+tmp3['do_info']['uri']+"</small>";
+					dataElements[tmp['uid']]+="<ul><li><small>uri: "+tmp3['do_info']['uri']+"</small>";
 					if(tmp3['wf_link']) {
 							if (tmp3['wf_link']['count'] > 1) {
 								fill=true;
@@ -226,24 +242,25 @@ $(document).ready(function () {
 						if(fill)
 							fillSVGElement(tmp['uid'],"linked");
 					}
-					dataElements[tmp['name']]+="</li>";
-					dataElements[tmp['name']]+="<li><small>uid: "+tmp3['uid']+"</small></li>"; 
+					dataElements[tmp['uid']]+="</li>";
 				}
+				if(tmp3 && tmp3['uid']) 
+					dataElements[tmp['uid']]+="<li><small>uid: "+tmp3['uid']+" AND "+j+"</small></li>"; 
 			}
 			else if(j=="metadata") {
 				var tmp2=tmp[j];
-				if(dataElements[tmp['name']])
-					dataElements[tmp['name']]=dataElements[tmp['name']]+"<li><small>metadata:</small><ul>";
+				if(dataElements[tmp['uid']])
+					dataElements[tmp['uid']]=dataElements[tmp['uid']]+"<li><small>metadata:</small><ul>";
 				else
-					dataElements[tmp['name']]="<ul><li><small>metadata:</small><ul>";
+					dataElements[tmp['uid']]="<ul><li><small>metadata:</small><ul>";
 				for (var z in tmp2)
 				{
 					var tmp3=tmp2[z];
 					if(tmp3['key']) {
-						dataElements[tmp['name']]=dataElements[tmp['name']] + "<li><small>" + tmp3['key'] + ': ' + tmp3['value'] + "</small></li>";
+						dataElements[tmp['uid']]=dataElements[tmp['uid']] + "<li><small>" + tmp3['key'] + ': ' + tmp3['value'] + "</small></li>";
 					}
 				}
-				dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></li></ul>";
+				dataElements[tmp['uid']]=dataElements[tmp['uid']]+"</ul></li></ul>";
 			}
 		}
 		nodeCount++;
@@ -260,6 +277,7 @@ $(document).ready(function () {
 	//checks and adjusts svg width/height if needed
 	var workflowWidth=$("#svg").width();
 
+	document.getElementsByTagName("svg").item(0).setAttribute("width","100%");
 	var w =	document.getElementsByTagName("svg").item(0).getAttribute("width");	
 	var h =	document.getElementsByTagName("svg").item(0).getAttribute("height");
 	var width=parseInt(w.replace("pt",""));
@@ -340,17 +358,15 @@ $(document).ready(function () {
 			node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
 			nodeTitle=node.childNodes[4].textContent;
 			//node.childNodes[4].id = "text_" + id;
-			if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
-				sub_content = dataElements[node.childNodes[4].textContent];
+			//alert(node.childNodes[3]);
+			if(typeof(dataElements[node.childNodes[0].textContent]) !== 'undefined') {
+				sub_content = dataElements[node.childNodes[0].textContent];
 				popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ nodeTitle +'</strong><br/><small><em>' + sub_content; 
 			}
 		}
 		if(key==0)
-		//if(id=="node1")
-			//popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a href="#modal_'+wid+'" data-toggle="modal">Add comments</a></small></div>';
 			popcontent=popcontent + wf_desc + '</em></small></span></div><hr/><div><small><a data-val="'+wid+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 		else
-		//popcontent=popcontent + '</em></small></span></div><hr/><div><small><a href="#modal_'+id+'" data-toggle="modal">view/add comments</a></small></div>';
 			popcontent=popcontent + '</em></small></span></div><hr/><div><small><a data-val="'+id+'" class="select-change btn btn-mini btn-success"><span class="icon-comment"></span> Add Comment</a></small></div>';
 		
 		$("#text_"+id).popover({container:'body', html: true, content: popcontent, trigger: 'manual'});
@@ -415,7 +431,6 @@ $(document).ready(function () {
 				var current=$(this);
 				var wfID=$( this ).text();
 				var url="{{ url_for('workflow') }}/"+wfID;
-				console.log (url);
 				var jqxhr = $.getJSON( url, function( data ) {
 					var text=data[0]["username"]+"/"+data[0]["name"]+"/"+data[0]["composite_seq"]+" - "+data[0]["description"];
 					var linked_text="<a href=\"{{ url_for('connections') }}/"+data[0]["uid"]+"\"><span class='icon-workflow'></span> <em>"+text+"</em></a>"
@@ -532,8 +547,153 @@ $(document).ready(function () {
 		event.preventDefault();
 	});
 	// end of Submit comment
+    $("#coll_dropdown").hide()
+    $("#collection_tbl").hide()
+	$("#toggle-coll-list").click(function(event){
+	    $("#coll_dropdown").toggle();
+	    $("#collection_tbl").toggle();
+		if($("#toggle-coll-list").html()=="[Display]") 
+			$("#toggle-coll-list").html("[Hide]");
+		else 
+			$("#toggle-coll-list").html("[Display]");
+		event.preventDefault();
+	});
+   /**
+	*
+	/*function handles collection addition
+	*/
+	$('#coll_dropdown').change(function(event) {
+		var coll_id=$(this).val();
+		//ajax call to add to collection
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('add_to_collection') }}', // the url where we want to POST
+			data 		:  { cid: coll_id, oid: this_uid }, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			if (data=="200") {
+				//remove used from dropdown
+				loadCollectionDropdown();  
+				coll_url="https://mpo-new.gat.com/api/v0/collection/"+coll_id; 
+				
+				$.getJSON(coll_url,{},function(data)
+				{
+					obj=data[0];		
+					if($("#collection_table").length == 0) {
+						//if collection list table does not exist, create one
+						$( "div#collection_tbl" ).html( '<table class="main table table-hover table-striped" id="collection_table">'+
+						'<tr>'+
+						'	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th><th></th>'+
+						'</tr>'+
+						'</table>' );
+					}		
+					//add new collection to the table
+					$('#collection_table > tbody:last-child').append('<tr id="collection_'+coll_id+'">\n'+					 
+					'<td><a href="{{ url_for("collections") }}/'+coll_id+'">'+obj['name']+'</a></td>\n'+
+					'<td>'+obj['description']+'</td>\n'+
+					'<td>'+obj['username']+'</td>\n'+
+					'<td>'+obj['time']+'</td>\n'+
+					'<td><a href="" id="coll-delete_'+coll_id+'" class="" id="remove" title="Remove from Collection">'+
+					'[-]</a></td>\n</tr>\n');
+					$( "#coll-delete_"+coll_id ).addClass( "coll-delete-btn btn btn-mini btn-warning" );					
+				});				
+			}
+			else {
+				//process error
+			}
+		}); 
+	});
+	
+	/**
+	*
+	/*function handles collection deletion
+	*/
+	$(document.body).on('click', '.coll-delete-btn' ,function(event){	
+		var coll_id=(this).id.substring(12); //remove "coll-delete_" from id
+		//process the form
+		$.ajax({
+			type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+			url 		: '{{ url_for('delete_from_collection') }}', // the url where we want to POST
+			data 		:  { cid: coll_id, oid: this_uid }, // our data object
+			dataType 	: 'json', // what type of data do we expect back from the server
+            encode      : true
+		})
+		//callback
+		.done(function(data) {
+			if (data=="200") {
+				//add removed collection to dropdown
+				loadCollectionDropdown();
+				//remove entry from collection_table
+				$('table#collection_table tr#collection_'+coll_id).remove();
+			}
+			else {
+				//process error
+			}
+		});
+		event.preventDefault();
+	});
+	
 	//convert linked Workflow UIDs to compID and description.  css class: linkedwf
 }); //end document.ready
+
+/**		
+/*	
+ *function created list of available collections as a dropdown options
+ */
+function loadCollectionDropdown() {
+	url="https://mpo-new.gat.com/api/v0/collection";
+	this_coll_list="https://mpo-new.gat.com/test-api/v0/collection?element_uid="+this_uid;		
+	var used_coll_ids = [];
+	$.getJSON(this_coll_list,{},function(data)
+    {
+		obj=data[0];
+		coll_used_ctr=data.length
+        $.each(data, function(i,obj)
+        {
+			used_coll_ids.push(obj['parent_uid']);	
+        });
+    }).then(function() {
+		//clear the dropdown except for default value
+		//attach current values to dropdown
+		$.getJSON(url,{},function(data)
+		{
+			obj=data[0];
+			coll_all_ctr=data.length
+			//all collections used
+			if(coll_used_ctr==coll_all_ctr) {
+				$('#coll_dropdown')
+					.find('option')
+					.remove()
+					.end()
+					.append('<option value="">No collections available</option>');
+			}
+			else {
+				$('#coll_dropdown')
+				.find('option')
+				.remove()
+				.end()
+				.append('<option value="">Add to selected collection</option>');
+				
+				$.each(data, function(i,obj)
+				{
+					/* if not in coll_list, append as an option */
+					if(jQuery.inArray(obj['uid'], used_coll_ids) == -1)
+					{
+						$('#coll_dropdown').append(
+							 $('<option></option>')
+									.val(obj['uid'])
+							 .html(obj['name']));
+					}
+				});
+			}
+		});
+	});	
+}
+
+
 function hideToggleSubLists() {
 	$('.wf_links li').click(function(ev) {
 		$(this).find('>ul').slideToggle();
@@ -638,11 +798,11 @@ function buildPageElements(wfID) {
 					if(j=="data") {
 						var tmp2=tmp[j];
 						var tmp3=tmp2[0];
-						dataElements[tmp['name']]="";
+						dataElements[tmp['uid']]="";
 						if(tmp3['description'])
-							dataElements[tmp['name']]+=tmp3['description'];
+							dataElements[tmp['uid']]+=tmp3['description'];
 						if(tmp3['time']) {
-							dataElements[tmp['name']]+= ' - ' + tmp3['time'];
+							dataElements[tmp['uid']]+= ' - ' + tmp3['time'];
 							//store latest workflow update time
 							tmpDateTime=new Date(tmp3['time'].replace(" ","T"));
 							if(tmpDateTime > lastUpdate) {
@@ -653,22 +813,22 @@ function buildPageElements(wfID) {
 							}
 						}
 						if(tmp3['uri'])
-							dataElements[tmp['name']]+= '<br/><em>uri</em>: ' + tmp3['uri'];
+							dataElements[tmp['uid']]+= '<br/><em>uri</em>: ' + tmp3['uri'];
 					}
 					else if(j=="metadata") {
 						var tmp2=tmp[j];
-						if(dataElements[tmp['name']])
-							dataElements[tmp['name']]=dataElements[tmp['name']]+"<div>metadata:<ul>";
+						if(dataElements[tmp['uid']])
+							dataElements[tmp['uid']]=dataElements[tmp['uid']]+"<div>metadata:<ul>";
 						else
-							dataElements[tmp['name']]="<div>metadata:<ul>";
+							dataElements[tmp['uid']]="<div>metadata:<ul>";
 						for (var z in tmp2)
 						{
 							var tmp3=tmp2[z];
 							if(tmp3['key']) {
-								dataElements[tmp['name']]=dataElements[tmp['name']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
+								dataElements[tmp['uid']]=dataElements[tmp['uid']] + "<li>" + tmp3['key'] + ': ' + tmp3['value'] + "</li>";
 							}
 						}
-						dataElements[tmp['name']]=dataElements[tmp['name']]+"</ul></div>";
+						dataElements[tmp['uid']]=dataElements[tmp['uid']]+"</ul></div>";
 					}
 				}//end for
 				
@@ -734,9 +894,9 @@ function buildPageElements(wfID) {
 					node.childNodes[4].setAttribute("style",'fill:rgb(0,76,153);cursor:pointer;'); //text styles
 					node.childNodes[4].setAttribute("id","text_" + id); //id links popover menu
 					//node.childNodes[4].id = "text_" + id;
-					if(typeof(dataElements[node.childNodes[4].textContent]) !== 'undefined') {
-						sub_content = dataElements[node.childNodes[4].textContent];
-						popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[4].textContent +'</strong><br/><small><em>' + sub_content;
+					if(typeof(dataElements[node.childNodes[0].textContent]) !== 'undefined') {
+						sub_content = dataElements[node.childNodes[0].textContent];
+						popcontent='<div><span class="pull-right">&nbsp;&nbsp;<a class="label" onclick="closepop(\'text_'+id+'\')" >x</a></span><span><strong>'+ node.childNodes[0].textContent +'</strong><br/><small><em>' + sub_content;
 					}
 				}
 				if(key==0)
@@ -924,7 +1084,43 @@ function buildPageElements(wfID) {
             </div><!-- accordion-body -->
             </div>
             <!-- End comment -->
-
+<!-- collections -->
+			
+ 			<h5><span class="icon-list-alt"></span> Associated Collections
+            <a href="#" id="toggle-coll-list">[Display]</a>
+            
+             <div class="dropdown" style="float:right">
+              <select id="coll_dropdown" class="btn btn-info" >
+              <option value="">Add to selected collection</option>
+              </select>
+              <br />
+            </div>
+              
+              </h5>
+            <!-- workflow list table -->
+        	<div id="collection_tbl">
+            {% if coll_list %}
+            <!-- workflow list table -->
+            <table class="main table table-hover table-striped" id="collection_table">
+            	<tr>
+                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th><th></th>
+              	</tr>
+            	{% for item in coll_list %}
+                	<tr id="collection_{{ item.collection_uid }}">
+                	<td><a href="{{ url_for("collections", uid=item.collection_uid) }}">{{ item.name }}</a></td>
+                    <td>{{ item.description }} </td>
+                    <td>{{ item.username }} </td>
+                    <td>{{ item.time }} </td>
+                    <td><a href="" id="coll-delete_{{ item.collection_uid }} " class="coll-delete-btn btn btn-mini btn-warning" id="remove"  title="Remove from Collection">[-]</a></td>
+                    </tr>
+                {% endfor %}
+               </table>
+           {% else %}
+               	<p><em>There are no associated collections.</em></p>
+           {% endif %}  
+			 </span>
+    		</div> <!--end workflow table div -->     
+<!-- /collections -->
                 <div class="table-container">             
                 <table class="main table" id="coltab2">
                 	<thead>
@@ -1090,6 +1286,9 @@ function buildPageElements(wfID) {
                 {% endif %}
              </div> <!-- end row-fluid -->
         </div> <!-- end span12 -->
+        
+        <!-- end collections_table -->
+        
     </div><!-- end row-fluid -->
 <span style="float: right"><em><small>Page created in: {{ page_created }} seconds.</small></em></span>
   </div> <!-- end leaderboard -->

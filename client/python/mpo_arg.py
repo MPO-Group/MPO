@@ -7,7 +7,7 @@ argument layout for mpo:
 post
 get
 delete
-not implemented: put
+put
 add
 step
 init
@@ -131,6 +131,7 @@ class mpo_methods(object):
     POSTheaders = {'content-type': 'application/json'}
     GETheaders= {'ACCEPT': 'application/json'}
     DELETEheaders= {'ACCEPT': 'application/json'}
+    PUTheaders= {'ACCEPT': 'application/json'}
     ID='uid'
     WORKID='work_uid'
     PARENTID='parent_uid' #field for object id to which comments and metadata are attached
@@ -344,6 +345,46 @@ class mpo_methods(object):
 
 
 
+    def put(self,route="",target=None,params={},verbose=False,**kwargs):
+        import re
+        """
+        Modify a resource.
+        Keyword arguments:
+        params -- python dictionary or a list of tuples
+        route -- API route for resource
+        """
+        url=self.api_url+route
+
+        if isinstance(params,str): #string repr of a dict
+            datadict=ast.literal_eval(params)
+        elif isinstance(params,dict):
+            datadict=params
+        elif isinstance(params,list): #list of key=value strings
+            datadict=dict(re.findall(r'(\S+)=(".*?"|\S+)', ' '.join(params) ))
+        else:
+            #throw error
+            datadict={}
+
+        if target:
+            datadict['parent_uid']=target
+
+        if self.debug or verbose or self.dryrun:
+            print('MPO.PUT from {u} with headers of {h}, request options, {ra}, and arguments of {a}'.format(
+                  u=url,h=self.PUTheaders,ra=self.requestargs, a=str(datadict) ) ,file=sys.stderr)
+            return
+
+        r = self.session.put(url,json.dumps(datadict),headers=self.PUTheaders)
+        if self.debug or verbose:
+            print('MPO.PUT response',r.url,r.status_code,file=sys.stderr)
+
+        r.raise_for_status()
+
+        if self.filter:
+            r=self.format(r,self.filter)
+
+        return r
+
+
     def post(self,route="",workflow_ID=None,obj_ID=None,data=None,**kwargs):
         """POST a messsage to an MPO route.
         Used by all methods that create objects in an MPO workflow.
@@ -524,7 +565,7 @@ class mpo_methods(object):
         if specified:
             specified=str2bool(specified)
 
-        payload={"name":term,"description":desc,"value_type":vtype,"specified":specified,"units":units}
+        payload={"name":term,"description":desc,"type":vtype,"specified":specified,"units":units}
         r=self.post(self.ONTOLOGY_TERM_RT,None,parent_ID,payload,**kwargs)
         return r
 
@@ -534,15 +575,22 @@ class mpo_methods(object):
         Add terms to the ontology instance
           target      ID of annotated object
           path        Path of ontology term type
-          value       Value of the term, must conform to ontology contraint
+          value       Value of the term, must conform to ontology constraint
+          force       Force overwrite exisiting value
         """
 
         if target == None or path == None or value == None:
             print("Usage: ontology_instance target path value",file=sys.stderr)
             sys.exit(2)
 
+        force = kwargs.get('force')
+
         payload={"path":path,"value":value}
-        r=self.post(self.ONTOLOGY_INSTANCE_RT,None,target,payload,**kwargs)
+        if force:
+            r=self.put(self.ONTOLOGY_INSTANCE_RT,target,payload,**kwargs)
+        else:
+            r=self.post(self.ONTOLOGY_INSTANCE_RT,None,target,payload,**kwargs)
+
         return r
 
 
@@ -794,6 +842,13 @@ class mpo_cli(object):
                                 help='Query arguments as key=value')
         delete_parser.set_defaults(func=self.mpo.delete)
 
+        #put
+        put_parser=subparsers.add_parser('put', help='PUT to a route')
+        put_parser.add_argument('route',action='store',help='Route of resource to modify')
+        put_parser.add_argument('-p','--params',action='store',nargs='*',
+                                help='Query arguments as key=value')
+        put_parser.set_defaults(func=self.mpo.put)
+
         #init
         init_parser=subparsers.add_parser('init', aliases=( ('start_workflow',)),help='Start a new workflow')
         init_parser.add_argument('-n','--name',action='store',help='''Name to assign the workflow\n.
@@ -854,7 +909,10 @@ class mpo_cli(object):
         ontologyInstance_parser.add_argument('path', action='store', help='Path of ntology term type')
         ontologyInstance_parser.add_argument('value', action='store',
                                              help='Value of the term, must conform to ontology contraint,')
+
         ontologyInstance_parser.set_defaults(func=self.mpo.ontology_instance)
+        ontologyInstance_parser.add_argument('--force','-f',action='store_true', help='Force overwrite existing value',default=False)
+
 
         #archive, note all arguments must be processed by the protocol
         archive_parser=subparsers.add_parser('archive',help='Archive a data object.')
@@ -863,7 +921,6 @@ class mpo_cli(object):
         archive_parser.add_argument('--protocol', '-p', action='store',metavar='protocol',
                                    nargs=argparse.REMAINDER)
         archive_parser.set_defaults(func=self.mpo.archive)
-
 
         #collect
         collect_parser=subparsers.add_parser('collect',help='Create a new collection')

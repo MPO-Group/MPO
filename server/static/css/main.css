@@ -91,11 +91,6 @@ table .main {
 	font-weight: normal;
 }
 
-.main th,td,caption { 
-	padding: 7px; 
-	border-bottom: 1px solid #e1e1e1;	
-}
-
 .accordion-group {
     border: 0px;
 
@@ -154,21 +149,21 @@ padding: 7px 9px;
 
 /* Icons */
 .icon-workflow {
-    background-image: url("https://mpo.gat.com/static/img/images/_icon_workflow.png");
+    background-image: url("/static/img/images/_icon_workflow.png");
     background-position: center center;
 }
 
 .icon-activity {
-    background-image: url("https://mpo.gat.com/static/img/images/_icon_activity.png");
+    background-image: url("/static/img/images/_icon_activity.png");
     background-position: center center;
 }
 
 .icon-dataobject {
-    background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject.png");
+    background-image: url("/static/img/images/_icon_dataobject.png");
     background-position: center center;
 }
 .icon-dataobject-blue {
-    background-image: url("https://mpo.gat.com/static/img/images/_icon_dataobject_blue.png");
+    background-image: url("/static/img/images/_icon_dataobject_blue.png");
     background-position: center center;
 }
 .lighter{

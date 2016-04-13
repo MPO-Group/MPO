@@ -200,7 +200,11 @@ def checkaccess(f):
                 if apidebug: print ('APIDEBUG: DEMO User does not have write access')
                 return Response(json.dumps({'error':'No write access for user', 'dn':dn}), status=401)
         elif request.method == 'PUT':
-            print("checking modify access")
+            if apidebug: print("APIDEBUG: checking put access")
+            dn=get_user_dn(request)
+            if not rdb.validWriter(dn):
+                if apidebug: print ('APIDEBUG: DEMO User does not have delete access')
+                return Response(json.dumps({'error':'No delete access for user', 'dn':dn}), status=401)
         elif request.method == 'DELETE':
             if apidebug:  print("APIDEBUG: checking delete access")
             dn=get_user_dn(request)
@@ -333,7 +337,7 @@ else:
                 routes[k] = '/' + routes[k]
 
 
-@app.route(routes['collection']+'/<id>', methods=['GET'])
+@app.route(routes['collection']+'/<id>', methods=['GET', 'DELETE'])
 @app.route(routes['collection'],  methods=['GET', 'POST'])
 @checkaccess
 def collection(id=None,dn=None):
@@ -343,6 +347,7 @@ def collection(id=None,dn=None):
     /collection - GET a list of all (or filtered) collections
                 - POST a new collection
     /collection/<id> - GET collection information, including list of member UUIDs
+                     - DELETE a collection and the associated elements
     /collection/?element_uid=:uid - GET collections having element member giving by :uid
     """
     api_version,root_url,root=get_api_version(request.url)
@@ -362,13 +367,18 @@ def collection(id=None,dn=None):
             #general searches
             else:
                 r = rdb.getRecord('collection',request.args, dn=dn)
+    elif request.method == 'DELETE':
+        if id:
+            r = rdb.deleteCollection({'uid':id}, dn=dn )
+        else:
+            r=[]
 
     return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 
 @app.route(routes['collection']+'/<id>'+'/element', methods=['GET','POST'])
-@app.route(routes['collection']+'/<id>/element/<oid>', methods=['GET'])
+@app.route(routes['collection']+'/<id>/element/<oid>', methods=['GET','DELETE'])
 @checkaccess
 def collectionElement(id=None, oid=None, dn=None):
     """
@@ -408,9 +418,14 @@ def collectionElement(id=None, oid=None, dn=None):
             r.append(rr)
             morer = rdb.getRecord('collection_elements',{'uid':rr['uid']},dn=dn)
             publishEvent('mpo_collection_elements',onlyone(morer))
+    elif request.method == 'DELETE':
+        if oid:
+            r = rdb.deleteCollectionElement({'parent_uid':id,'uid':oid}, dn=None)
+        else:
+            r = []
     elif request.method == 'GET':
         if oid:
-            r = rdb.getRecord('collection_elements',{'uid':oid}, dn=dn)
+            r = rdb.getRecord('collection_elements',{'parent_uid':id,'uid':oid}, dn=dn)
         else:
             r = rdb.getRecord('collection_elements',{'parent_uid':id}, dn=dn)
 
@@ -894,6 +909,23 @@ def ontologyClass(id=None, dn=None):
         pass
     return result
 
+@app.route(routes['ontology_term']+'/count/<table>', methods=['GET'])
+@app.route(routes['ontology_term']+'/count', methods=['GET'])
+@checkaccess
+def ontologyTermCount(table=None, dn=None):
+    '''
+    Resource: ontology term count
+
+
+    This function returns the count of ontology terms by instance values.
+    '''
+
+    api_version,root_url,root=get_api_version(request.url)
+
+    r = rdb.getOntologyTermCount(table, request.args, dn=dn )
+
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
+
 
 @app.route(routes['ontology_term']+'/<id>/vocabulary', methods=['GET'])
 @app.route(routes['ontology_term']+'/vocabulary', methods=['GET'])
@@ -937,7 +969,7 @@ def ontologyTermTree(id=None, dn=None):
 
     r = rdb.getOntologyTermTree(id, dn=dn )
 
-    return jsonify(**r)
+    return Response(json.dumps(r,cls=MPOSetEncoder),mimetype='application/json',status=200)
 
 
 @app.route(routes['ontology_term']+'/<id>', methods=['GET','DELETE'])
@@ -979,14 +1011,16 @@ def ontologyTerm(id=None, dn=None):
 
 
 @app.route(routes['ontology_instance']+'/<id>', methods=['GET'])
-@app.route(routes['ontology_instance'], methods=['GET', 'POST'])
+@app.route(routes['ontology_instance'], methods=['GET', 'POST', 'PUT'])
 @checkaccess
 def ontologyInstance(id=None, dn=None):
     api_version,root_url,root=get_api_version(request.url)
 
     if request.method == 'POST':
         r = rdb.addOntologyInstance(request.data,dn=dn)
-    else:
+    elif request.method == 'PUT':
+        r = rdb.modifyOntologyInstance(request.data,dn=dn)
+    elif request.method == 'GET':
         if id:
             r = rdb.getRecord('ontology_instances', {'uid':id}, dn=dn )
         else:

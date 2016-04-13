@@ -9,6 +9,7 @@ import uuid
 import datetime
 import os
 import textwrap
+from collections import defaultdict
 
 dbdebug=False
 
@@ -22,7 +23,8 @@ dbdebug=False
 #  name. If it is not is this dictionary, it is ignored. This provides
 #  some protection from SQL injection
 
-query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_guid',
+query_map = {'workflow':{'name':'name', 'description':'description',
+                         'uid':'w_guid','user_uid':'u_guid',
                          'composite_seq':'comp_seq', 'time':'creation_time',
                          },
              'collection':{'name':'name', 'description':'description', 'uid':'c_guid',
@@ -52,7 +54,7 @@ query_map = {'workflow':{'name':'name', 'description':'description', 'uid':'w_gu
              'ontology_terms' : {'uid':'ot_guid','name':'name', 'description':'description',
                                  'parent_uid':'parent_guid', 'type':'value_type',
                                  'units':'units','specified':'specified',
-                                 'user_uid':'added_by','date_added':'date_added'},
+                                 'user_uid':'added_by','time':'date_added'},
              'ontology_instances' : {'uid':'oi_guid','parent_uid':'target_guid','value':'value',
                                      'term_uid':'term_guid','time':'creation_time','user_uid':'u_guid'}
          }
@@ -132,6 +134,52 @@ def getRecordTable(id, dn=None):
 
     return table
 
+def deleteCollection(queryargs={}, dn=None):
+    '''
+    Given a collection id delete it and its associated elements from the db
+    '''
+     # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    #delete the collection elements (could be none)
+    cursor.execute('delete from collection_elements where '+query_map['collection_elements']['parent_uid']+'=%s',(queryargs['uid'],))
+    #delete the collection
+    cursor.execute('delete from collection where '+query_map['collection']['uid']+'=%s',(queryargs['uid'],))
+    rc = cursor.rowcount
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    if rc and rc != -1:
+        return {'uid':queryargs['uid']}
+    else:
+        return {}
+
+
+def deleteCollectionElement(queryargs={}, dn=None):
+    '''
+    Given a collection element id delete it from the db
+    '''
+     # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    #delete the collection element
+    cursor.execute('delete from collection_elements where '+query_map['collection_elements']['parent_uid']+'=%s and '+query_map['collection_elements']['uid']+'=%s',(queryargs['parent_uid'],queryargs['uid']))
+    rc = cursor.rowcount
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    if rc and rc != -1:
+        return {'uid':queryargs['uid']}
+    else:
+        return {}
+
+
 def deleteOntologyTerms(queryargs={}, dn=None):
     '''
     Given a record id delete the record from the db.
@@ -156,6 +204,7 @@ def deleteOntologyTerms(queryargs={}, dn=None):
     conn.close()
 
     return r
+
 
 def getRecord(table,queryargs={}, dn=None):
     '''
@@ -194,26 +243,51 @@ def getRecord(table,queryargs={}, dn=None):
         q+=", getWID('"+processArgument(queryargs['uid'])+"') as work_uid "
 
     #map user and filter by query
-    s="where a."+qm['user_uid']+"=b.uuid"
+    q+="where a."+qm['user_uid']+"=b.uuid"
+    v=()
     for key in query_map[table]:
+        #handle time specially
+        if key == 'time': continue
         if queryargs.has_key(key):
             qa=processArgument(queryargs[key])
             if qa == 'None':
-                s+=" and "+ "CAST(%s as text) is Null" % (qm[key],)
+                q+=" and CAST("+qm[key]+" as text) is Null"
             else:
-                s+=" and "+ "CAST(%s as text) ILIKE '%%%s%%'" % (qm[key],qa)
+                q+=" and CAST("+qm[key]+" as text) ILIKE %s"
+                v+=('%'+qa+'%',)
+    if queryargs.has_key('time'):
+        (start,end)=tuple(queryargs['time'].split(','))
+        if start:
+            q+=' and a.creation_time >= %s'
+            v+=(start,)
+        if end:
+            q+=' and a.creation_time <= %s'
+            v+=(end,)
 
     ##ONTOLOGY/TERMS handling
     ontology_terms = []
     if table == 'ontology_terms' and queryargs.has_key('path'):
-        s+= " and ot_guid=getTermUidByPath('"+processArgument(queryargs['path'])+"')"
-    if (s): q+=s
+        q+= " and ot_guid=getTermUidByPath('"+processArgument(queryargs['path'])+"')"
+    if table != 'mpousers':
+        if queryargs.has_key('username'):
+            q+=' and b.username ilike %s'
+            v+=('%'+queryargs['username']+'%',)
+        if queryargs.has_key('lastname'):
+            q+=' and b.lastname ilike %s'
+            v+=('%'+queryargs['lastname']+'%',)
+        if queryargs.has_key('firstname'):
+            q+=' and b.firstname ilike %s'
+            v+=('%'+queryargs['firstname']+'%',)
+    if queryargs.has_key('term'):
+        (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
+        q+=' and '+query_map[table]['uid']+' in '+s
+        v+=t
 
     if dbdebug:
         print('get query for route '+table+': '+q)
 
     # execute our Query
-    cursor.execute(q)
+    cursor.execute(q,v)
     # retrieve the records from the database
     if queryargs.has_key('uri'):
         records = [x for x in cursor.fetchall() if x.get('uri') == queryargs.get('uri')]
@@ -258,6 +332,92 @@ def getWorkflowType(id,queryargs={},dn=None):
     conn.close()
 
     return records['value']
+
+
+def getSelectionByTerms(terms):
+    conn = mypool.connect()
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    v=()
+    q='('
+    d = defaultdict(list)
+    for key in terms:
+        if key.has_key('uid'):
+            d[key['uid']].append(key['value'])
+        elif key.has_key('path'):
+            cursor.execute('select getTermUidByPath(%s) as uid',(key['path'],))
+            d[cursor.fetchone()['uid']].append(key['value'])
+    for k,l in d.iteritems():
+        s = 'select target_guid from ontology_terms a, ontology_instances c where c.term_guid=a.ot_guid and ('
+        for m in l:
+            s+= '('+query_map['ontology_terms']['uid']+'=%s'+' and '+query_map['ontology_instances']['value']+'=%s) or '
+            v+=(k,m)
+        q+=s[:-4]+') intersect '
+    q=q[:-11]+')'
+    cursor.close()
+    conn.close()
+
+    return (q,v)
+
+def getOntologyTermCount(table=None,queryargs={},dn=None):
+    """
+    Returns the count of ontology terms by instance values.
+    """
+
+    #Construct query for database
+    q = 'SELECT a.ot_guid AS uid, a.parent_guid AS parent_uid, a.name AS name, c.value, count(*) FROM ontology_terms a, mpousers b, ontology_instances c'
+
+    if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances'):
+        q+=', '+table+' d where c.term_guid=a.ot_guid and c.target_guid=d.'+query_map[table]['uid']+' and d.'+query_map[table]['user_uid']+'=b.uuid'
+    else:
+        q+=' where c.term_guid=a.ot_guid'
+    v=()
+    if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances'):
+        for key in query_map[table]:
+            #handle time specially
+            if key == 'time': continue
+            if queryargs.has_key(key):
+                q+=' and CAST(d.'+query_map[table][key]+' as text) ilike %s'
+                v+=('%'+queryargs[key]+'%',)
+    elif not table:
+        for key in query_map['ontology_instances']:
+            #handle time specially
+            if key == 'time': continue
+            if queryargs.has_key(key):
+                q+=' and CAST(c.'+query_map['ontology_instances'][key]+' as text) ilike %s'
+                v+=('%'+queryargs[key]+'%',)
+    for key in query_map['mpousers']:
+        if key == 'time': continue
+        if queryargs.has_key(key):
+            q+=' and CAST(b.'+query_map['mpousers'][key]+' as text) ilike %s'
+            v+=('%'+queryargs[key]+'%',)
+    if queryargs.has_key('time'):
+        (start,end)=tuple(queryargs['time'].split(','))
+        t='d' if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances') else 'c'
+        if start:
+            q+=' and '+t+'.creation_time >= %s'
+            v+=(start,)
+        if end:
+            q+=' and '+t+'.creation_time <= %s'
+            v+=(end,)
+    if queryargs.has_key('term'):
+        (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
+        q+=' and target_guid in '+s
+        v+=t
+
+    q+=' group by uid, parent_uid, a.name, c.term_guid,value order by a.name,c.value'
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    # execute our Query
+    cursor.execute(q,v)
+    # retrieve the records from the database
+    records = cursor.fetchall()
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+
+    return records
 
 
 def getOntologyTermTree(id='0',dn=None):
@@ -523,12 +683,6 @@ def getWorkflow(queryargs={},dn=None):
             qa= tuple(map(int, therange[1:-1].split(',')))
             print('DDEBUG tuple range is',qa)
 
-    # get a connection, if a connect cannot be made an exception will be raised here
-    conn = mypool.connect()
-
-    # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
-
     #build our Query, base query is a join between the workflow and user tables to get the username
     q = textwrap.dedent("""\
                 SELECT a.w_guid as uid, a.name, a.description, a.creation_time as time,
@@ -537,10 +691,12 @@ def getWorkflow(queryargs={},dn=None):
 
     #join with ontology_instance table to get workflow type
     q += " WHERE a.u_guid=b.uuid and a.w_guid=c.target_guid and c.term_guid=getTermUidByPath('/Workflow/Type')"
+    v=()
     # add extra query filter on workflow type (which is stored in a separate table)
     if queryargs.has_key('type'):
         #q+= " and a.w_guid=c.target_guid and c.value='"+processArgument(queryargs['type'])+"'"
-        q+= " and c.value='"+processArgument(queryargs['type'])+"'"
+        q+= " and c.value=%s"
+        v+=(processArgument(queryargs['type']),)
 
 
     #logic here to convert queryargs to additional WHERE constraints
@@ -548,11 +704,21 @@ def getWorkflow(queryargs={},dn=None):
     #JCW SEP 2013, would be preferable to group queryargs in separate value tuple
     #to protect from sql injection
     for key in query_map['workflow']:
+        if key == 'time': continue
         if dbdebug:
             print ('DBDEBUG workflow key',key,queryargs.has_key(key),queryargs.keys())
         if queryargs.has_key(key):
             qa=processArgument(queryargs[key])
-            q+=" and CAST(a.%s as text) iLIKE '%%%s%%'" % (query_map['workflow'][key],qa)
+            q+=' and CAST(a.'+query_map['workflow'][key]+' as text) iLIKE %s'
+            v+= ('%'+qa+'%',)
+    if queryargs.has_key('time'):
+        (start,end)=tuple(queryargs['time'].split(','))
+        if start:
+            q+=' and a.creation_time >= %s'
+            v+=(start,)
+        if end:
+            q+=' and a.creation_time <= %s'
+            v+=(end,)
 
     if queryargs.has_key('alias'):  #handle composite id queries
     #logic here to extract composite_seq,user, and workflow name from composite ID
@@ -561,12 +727,25 @@ def getWorkflow(queryargs={},dn=None):
         if dbdebug:
             print('compid: username/workflow_type/seq:',compid,compid.split('/'))
         compid = compid.split('/')
-        q+=" and b.username     ='%s'" % compid[0]
-        q+=" and c.value     ='%s'" % compid[1]
-        q+=" and a.comp_seq='%s'" % compid[2]
+        q+=" and b.username=%s and c.value=%s and a.comp_seq=%s"
+        v+=tuple(compid)
 
-    if queryargs.has_key('username'): #handle username queries
-        q+=" and b.username='%s'" % queryargs['username']
+#    if queryargs.has_key('username'): #handle username queries
+#        q+=" and b.username='%s'" % queryargs['username']
+
+    if queryargs.has_key('username'):
+        q+=' and b.username ilike %s'
+        v+=('%'+queryargs['username']+'%',)
+    if queryargs.has_key('lastname'):
+        q+=' and b.lastname ilike %s'
+        v+=('%'+queryargs['lastname']+'%',)
+    if queryargs.has_key('firstname'):
+        q+=' and b.firstname ilike %s'
+        v+=('%'+queryargs['firstname']+'%',)
+    if queryargs.has_key('term'):
+        (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
+        q+=' and w_guid in '+s
+        v+=t
 
     # order by date
     q+=" order by time desc"
@@ -574,13 +753,19 @@ def getWorkflow(queryargs={},dn=None):
     if queryargs.has_key('range'): # return a range
         therange=queryargs['range']
         qa= tuple(map(int, therange[1:-1].split(',')))
-        q+=" limit %s" % (qa[1]-qa[0]+1)
-        q+=" offset %s" % (qa[0]-1)
+        q+=" limit %s offset %s"
+        v+=((qa[1]-qa[0]+1),(qa[0]-1),)
 
     # execute our Query
     if dbdebug:
         print('workflows q',q)
-    cursor.execute(q)
+
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+
+    cursor.execute(q,v)
 
     # retrieve the records from the database and rearrange
     records = cursor.fetchall()
@@ -922,11 +1107,46 @@ def addOntologyInstance(json_request,dn):
     cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
                    "target_guid=%s",(term['uid'],objs['parent_uid']))
     if cursor.fetchone():
-        return None
+        return {}
 
     q=("insert into ontology_instances (oi_guid,target_guid,term_guid,value,creation_time,u_guid) "+
        "values(%s,%s,%s,%s,%s,%s)")
     v=(oi_guid,objs['parent_uid'],term['uid'],objs['value'],datetime.datetime.now(),user_id)
+    cursor.execute(q,v)
+    # Make the changes to the database persistent
+    conn.commit()
+    records = {}
+    records['uid'] = oi_guid
+    # Close communication with the database
+    cursor.close()
+    conn.close()
+
+    return records
+
+
+def modifyOntologyInstance(json_request,dn):
+    objs = json.loads(json_request)
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = mypool.connect()
+    cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
+    #get the user id
+    cursor.execute("select uuid from mpousers where dn=%s", (dn,))
+    user_id = cursor.fetchone()['uuid']
+
+    # get the ontology term
+    term = getRecord('ontology_terms', {'path':processArgument(objs['path'])}, dn )
+    if not term:
+        return {}
+
+    # make sure the instance exists already.
+    cursor.execute("select oi_guid from ontology_instances where term_guid=%s and "+
+                   "target_guid=%s",(term[0]['uid'],objs['parent_uid']))
+    oi_guid=cursor.fetchone()['oi_guid']
+    if not oi_guid:
+        return {}
+
+    q=("update ontology_instances set value=%s, creation_time=%s, u_guid=%s where oi_guid=%s and target_guid=%s and term_guid=%s")
+    v=(objs['value'],datetime.datetime.now(),user_id,oi_guid,objs['parent_uid'],term[0]['uid'])
     cursor.execute(q,v)
     # Make the changes to the database persistent
     conn.commit()
