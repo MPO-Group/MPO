@@ -11,7 +11,7 @@ import os
 import textwrap
 from collections import defaultdict
 
-dbdebug=True
+dbdebug=False
 
 
 #  list of valid query fields and their mapped name in the table, Use
@@ -943,17 +943,15 @@ def addCollection(request,dn):
     conn = mypool.connect()
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
     c_guid = str(uuid.uuid4())
-    print "[temp debug] --- inside addCollection"
 
     #get the user id
+
     cursor.execute("select uuid from mpousers where dn=%s", (dn,))
     user_id = cursor.fetchone()['uuid']
-    p = json.loads(request)
-    p['elements']=json.loads(p['elements'])
 
+    p = json.loads(request)
     q = ("insert into collection (c_guid, name, description, u_guid, creation_time) " +
          "values (%s,%s,%s,%s,%s)")
-    print "[temp debug] --- adding new collection ", q
     v= (c_guid, p['name'], p['description'], user_id, datetime.datetime.now())
     if dbdebug:
         print ('DBDEBUG:: addcollection: ',q, v)
@@ -962,11 +960,7 @@ def addCollection(request,dn):
     for e in p['elements']:
         q = ("insert into collection_elements (c_guid, e_guid, u_guid, creation_time) " +
              "values (%s,%s,%s,%s)")
-        print "[temp debug] --- inside for, processing element, %s",str(e)
-        print q
         v= (c_guid, e, user_id, datetime.datetime.now())
-        print v
-        print ""
         cursor.execute(q,v)
 
     # Make the changes to the database persistent
