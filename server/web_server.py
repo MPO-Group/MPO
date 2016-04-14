@@ -1253,7 +1253,7 @@ def create_collection():
               'verify':False, 'headers':{'Real-User-DN':dn}}
     try:
         data = request.form.to_dict()
-        data['elements']=request.form.getlist('elements')
+        data['elements']=request.form.getlist('elements[]')
 
         print ""
         print "web_server.py -- temp debug message -- CREATING a new collection: "
@@ -1267,7 +1267,7 @@ def create_collection():
 
         submit = requests.post("%s/collection"%API_PREFIX, data, **certargs)
 
-#        r will be str, API receives data as is
+        #r will be str, API receives data as is
 #        r = json.dumps(data)
 #        print " --- type r data: ", type(r)
 #        submit = requests.post("%s/collection"%API_PREFIX, r, **certargs)
