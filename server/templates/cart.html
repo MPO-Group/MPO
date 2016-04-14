@@ -139,7 +139,8 @@ $(document).ready(function() {
 				  return $(this).val();
 				}).get();
 				elements_list=JSON.stringify(selectIds);
-			
+				//elements_list=JSON.stringify(selectIds).replace(/\"/g, "");
+				elements_list=elements_list.substring(1, elements_list.length-1);
 				var formData = $(this).serialize();
 				$.ajax({
 					type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)

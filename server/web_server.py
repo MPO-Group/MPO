@@ -1253,7 +1253,6 @@ def create_collection():
               'verify':False, 'headers':{'Real-User-DN':dn}}
     try:
         data = request.form.to_dict()
-        data['dn']=dn
         data['elements']=request.form.getlist('elements')
 
         print ""
@@ -1261,8 +1260,11 @@ def create_collection():
         print data
         print ""
 
-        print " --- type elements: ", type(data['elements'])
         print " --- type data: ", type(data)
+        print " --- type elements: ", type(data['elements'])
+        print " --- elements: ", data['elements']
+        print
+
         submit = requests.post("%s/collection"%API_PREFIX, data, **certargs)
 
 #        r will be str, API receives data as is
