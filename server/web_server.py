@@ -1265,7 +1265,7 @@ def create_collection():
         print " --- elements: ", data['elements']
         print
 
-        submit = requests.post("%s/collection"%API_PREFIX, data, **certargs)
+        submit = requests.post("%s/collection"%API_PREFIX, json.dumps(data), **certargs)
 
         #r will be str, API receives data as is
 #        r = json.dumps(data)
