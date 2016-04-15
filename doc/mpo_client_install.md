@@ -1,75 +1,82 @@
 # CLIENT INSTALLATION
 
 For commandline and scripting tools, only the mpo_arg.py class
-is needed. The only non standard python dependencies of this are requests.py and urllib3.py
+is strictly needed. The only non standard python dependencies of this are requests.py and urllib3.py
 These dependencies are provided in a virtual environment. For installation, 
-the requirements are system installed python2.7 and the virtualenv package for python.
-To install virtualenv, 
+the requirements are system installed python2.7, pip,  and the virtualenv package for python.
+
+* Grab a copy of the MPO distribution.
+```
+pushd /tmp
+git clone https://github.com/MPO-Group/MPO.git
+popd
+```
+
+* Install virtualenv if needed, 
 ```
 sudo pip install virtualenv
 ```
-Alternatively, grab a known working copy from the mpo repo:
-```
-svn export https://www.psfc.mit.edu/mposvn/trunk/virtualenv.py
-```
-Then to install the client:
 
-* setting up python environment
-
-```    
-cd $INSTALL_DIR
+* and set up python environment
+```
+cd <directory above desired install location>
+mkdir MPO ; cd MPO
+export MPO_ROOT=$PWD #or `setenv MPO_ROOT $PWD` as appropriate for your shell
 virtualenv mpo_env
 source mpo_env/bin/activate
-rm -rf mpo_env/bin/pip* mpo_env/lib/python2.7/site-packages/pip*
-easy_install pip
 pip install requests urllib3
+deactivate #leave virtual environment - it will still work.
 ``` 
+
 * create user preferences directory
 ```
 mkdir $HOME/.mpo
 chown $USER:$USER $HOME/mpo
 chmod 700 $HOME/.mpo
 pushd $HOME/.mpo
-svn export https://www.psfc.mit.edu/mposvn/trunk/mpo.conf
+cp /tmp/MPO/mpo.conf .
 ```
-* add your certificate
+
+* add your certificate as issued by MPO (or other CA supported by the mpo server you are using).
 ```
-cp path_to_key/my_key.pem .
+cp <path_to_key>/my_key.pem .
+#optionally copy demo key.
+cp "/tmp/MPO/MPO Demo User.pem" mpo_demo.pem
 ```
+
 * edit mpo.conf to specify your certificate and other preferences:
 ```
 vim mpo.conf
 ```
-* retrieve client (svn or copy from existing checkout) note, using export below does not create .svn and keep the pointer but allows retrieval of single files.
+
+* install client source and option sub-classes for archiving actions.
 ```
-svn export https://www.psfc.mit.edu/mposvn/trunk/mpo.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_arg.py
+popd  #should be back in $MPO_ROOT
+cp /tmp/MPO/mpo.py .
+cp /tmp/MPO/client/python/mpo*.py .
 ```
-* retrieve the python archive classes
-```
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_dataobject.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_filesys.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_mdsplus.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_ptdata.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_rsync.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_wos.py
-```
-* should be done
-```
-alias mpo='/home/jwright/bin/mpo.py'
-```
+
 * Change the first line of mpo.py to point to your new python copy
- First line eg:   #!/usr/local/bin/mpo_env/bin/python
+ First line eg:   #!/home/user/mpo_env/bin/python
  you may also set mpo environment defaults here. Especially the
  default MPO api server and your MPO authorization.
 ```
-vi mpo.py
+vi $MPO_ROOT/mpo.py
 ```
+
+
+* Finish up.
+```
+chmod +x $MPO_ROOT/mpo.py
+alias mpo=$MPO_ROOT/mpo.py
+rm -rf /tmp/MPO
+```
+
 * Try it out.  
 * help on the mpo command
 
 ```
-\$ mpo --help
+$ mpo --help
 usage: mpo.py [-h] [--user USER] [--pass PASS]
               [--format {id,raw,text,json,dict,pretty} | --field FIELD]
               [--verbose] [--host HOST] [--dryrun]
@@ -115,24 +122,24 @@ optional arguments:
                         request
 
 Metadata Provenance Ontology project
-\$
+$
 ```
 * get the users in the database
 
 ```
-\# get the uuids of the users
-\#
-\$ mpo get user
-\['ddc315a1-6310-41e7-a84d-886bc904f3b2', 'f223db41-d1c5-41db-b8af-fde6c0a16f76'\]
+# get the uuids of the users
+#
+$ mpo get user
+['ddc315a1-6310-41e7-a84d-886bc904f3b2', 'f223db41-d1c5-41db-b8af-fde6c0a16f76']
 
 ```
 
 ```
-\# get the users full records as nicely formatted json
-\#
-\$ mpo --format pretty get user 
-\[
-    \{
+# get the users full records as nicely formatted json
+#
+$ mpo --format pretty get user 
+[
+    {
         "username":"mpoadmin",
         "dn":null,
         "uid":"ddc315a1-6310-41e7-a84d-886bc904f3b2",
@@ -142,8 +149,8 @@ Metadata Provenance Ontology project
         "time":"2015-06-10 12:17:03.192294",
         "organization":null,
         "email":null
-    \},
-    \{
+    },
+    {
         "username":"mpodemo",
         "dn":"emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US",
         "uid":"f223db41-d1c5-41db-b8af-fde6c0a16f76",
@@ -153,7 +160,7 @@ Metadata Provenance Ontology project
         "time":"2015-06-10 12:17:03.193528",
         "organization":"MIT",
         "email":"jas@psfc.mit.edu"
-    \},
-\]
-\$ 
+    },
+]
+ 
 ```
