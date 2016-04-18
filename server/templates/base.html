@@ -190,17 +190,12 @@ function checkCart() {
 	var empty=0;
 	var cart=JSON.parse(localStorage.getItem(lsMPOCart));
 	for (key in cart){
-		console.log(key);
 		content=cart[key];
 		for (cart_item in content){
 			empty=1;
-			console.log(content[cart_item]);
-			console.log("EMPTY is... "+empty);
 		}
 	}
-	console.log("Cart is...  EMPTY: "+empty);
 	if(empty==1){
-		console.log("CHANGING COLOR TO GREEN");
 		$("#shopping-cart").css('border-bottom', '2px dotted #00ffff');
 	}
 	else {

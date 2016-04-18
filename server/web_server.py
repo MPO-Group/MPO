@@ -1254,23 +1254,7 @@ def create_collection():
     try:
         data = request.form.to_dict()
         data['elements']=request.form.getlist('elements[]')
-
-        print ""
-        print "web_server.py -- temp debug message -- CREATING a new collection: "
-        print data
-        print ""
-
-        print " --- type data: ", type(data)
-        print " --- type elements: ", type(data['elements'])
-        print " --- elements: ", data['elements']
-        print
-
         submit = requests.post("%s/collection"%API_PREFIX, json.dumps(data), **certargs)
-
-        #r will be str, API receives data as is
-#        r = json.dumps(data)
-#        print " --- type r data: ", type(r)
-#        submit = requests.post("%s/collection"%API_PREFIX, r, **certargs)
     
         if submit.status_code == 401:
             return "401"
