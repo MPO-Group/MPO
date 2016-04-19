@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% block title %}MPO Cart{% endblock %}
+{% block hscripts %}
+
+<style>
+#nav_split, #ont_search_header, #wf_search_header, #wf_attrib, #wf_hide {
+	display: none;
+}
+.nav_search_header {
+ 	font-size: small;
+	color: #999;
+	font-style: italic;	
+}
+.attrib {
+	font-size: small;
+	font-weight: normal;
+	font-style: normal;
+	text-decoration: none;
+	text-transform: none;
+}
+.user_sel {
+	font-size:12px;
+	font-style:italic;
+	color:#390;
+}
+.type_sel {
+	font-size:11px;
+	color:#666;
+	width: 80px;
+	border: 1px thin #ddd;
+	height: 22px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;		
+}
+.wf_more {
+	font-style: italic;
+	text-transform:none;
+	font-weight: 200;
+	list-style-type: none;
+}
+#clear_ont_path {
+	background-color: #F90;
+	height: 10px;
+	font-size: 9px;
+	color: #fff;
+	padding: 2px;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+ul li input.user_entry {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 50px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+ul li input.user_entry_wf {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 125px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+
+ul li input.user_time_wf {
+	border: 1px thin #ddd;
+	height: 10px;
+	line-height: 11px;
+	width: 60px;
+	font-size:12px;
+	vertical-align: middle;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;	
+}
+
+#ont_listing ul li {
+	font-size: 12px;
+	font-weight: normal;	
+}
+#ont_listing ul li ul li {
+	font-size: 12px;
+	font-weight: normal;
+	font-style: normal;
+	text-transform: none;
+}
+#ont_listing ul li ul li ul li {
+	font-size: 12px;
+}
+
+.set_quality {
+	cursor: pointer;
+}
+
+#workflow_tbl {
+	position:relative;
+	overflow:hidden;
+}
+
+</style>
+
+<script>
+
+$(document).ready(function() {
+	loadCartTable();
+	loadCollectionListInput();	
+	element_ctr=0;
+	$('#cart-add-btn').click(function(event) {
+		element_ctr=0;
+		event.preventDefault();
+		var coll_id=$("#coll_val").val();	
+		var coll_name=$("#coll_name").val();	
+		if(coll_name=="") coll_id="";	
+		if(coll_id==""){
+			if(coll_name=="") {
+				element_ctr=element_ctr+1; //prevent 2nd error message to display
+				$('#message').stop( true, true ).show();
+				$('#message').html('<div class="alert alert-danger" role="alert">Please specify a collection name.</div>');
+				$('#message').fadeOut(4000, function() {
+					// Animation complete.
+					$('#message').html("");
+				});	
+			}
+			else {
+				//FIXME - need to create a new collection here and add entries to the collection.
+				var selectIds = $("input[name=element]:checked").map(function(){
+				  return $(this).val();
+				}).get();
+				var formData = $(this).serialize();
+				$.ajax({
+					type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+					url 		: '{{ url_for('create_collection') }}', // the url where we want to POST
+					data 		:  { name: coll_name, elements: selectIds, description: '' }, // our data object
+					dataType 	: 'json', // what type of data do we expect back from the server
+				}).done(function(data) {					
+					$('#message').stop( true, true ).show();
+					$('#message').html('<div class="alert alert-success" role="alert">Entries added to collection.</div>');
+					$('#message').fadeOut(4000, function() {
+						// Animation complete.
+						$('#message').html("");
+					});	
+				});	
+			}
+		}
+		else  {			
+			$("input[name=element]:checked").each(function() {
+				if($(this).val() !=""){
+					$.ajax({
+						type 		: 'POST', // define the type of HTTP verb we want to use (POST for our form)
+						url 		: '{{ url_for('add_to_collection') }}', // the url where we want to POST
+						data 		:  { cid: coll_id, oid: $(this).val() }, // our data object
+						dataType 	: 'json', // what type of data do we expect back from the server
+						   encode      : true
+					}).done(function(data) {
+						element_ctr=element_ctr+1;
+						$('#message').stop( true, true ).show();
+						$('#message').html('<div class="alert alert-success" role="alert">Entries added to collection.</div>');
+						$('#message').fadeOut(4000, function() {
+							// Animation complete.
+							$('#message').html("");
+						});	
+					}); 
+				}
+			});
+			if(element_ctr==0){
+				$('#message').stop( true, true ).show();
+				$('#message').html('<div class="alert alert-danger" role="alert">Please select item(s) to add to the collection.</div>');
+				$('#message').fadeOut(4000, function() {
+					// Animation complete.
+					$('#message').html("");
+				});	
+			}
+		}			
+	});
+	$(".checkAll").change(function () {
+		$("input:checkbox").prop('checked', $(this).prop("checked"));
+	});
+});
+
+function loadCollectionListInput() {	
+	/* load collections */
+	var availableCollections = [];
+    {% for item in collection_list %}	
+		availableCollections.push({
+				'label': "{{ item.name}}",
+				'value': "{{ item.uid  }}"
+		});
+    {% endfor %}
+	/* setup autocomplete */	
+	$("#coll_name").autocomplete({
+		source: availableCollections,		
+		select: function( event, ui ) {
+            $( "#coll_name" ).val( ui.item.label); //ui.item is your object from the array
+            $( "#coll_val" ).val( ui.item.value); //ui.item is your object from the arrays
+            return false;
+        },	
+		change: function (event, ui) {
+			if (!ui.item) {
+				//new item - create new collection
+				$( "#coll_val" ).val('');
+			}
+		},		
+		focus: function( event, ui ) {
+            $( "#coll_name" ).val( ui.item.label); //ui.item is your object from the array
+            return false;
+        }		
+				
+	});		
+}
+
+function loadCartTable() {
+	var ctr=0;
+	var cart= JSON.parse(localStorage.getItem(lsMPOCart));
+	for (key in cart){
+		content=cart[key];
+		$('#cart_table tbody').append('<tr><th colspan=4 style="text-align:center; background-color: #CFECEC; color: #333333"><strong>'+icons[key]+' '+key.toUpperCase()+'</strong></th></tr>');
+		$('#cart_table tbody').append('<tr><th></th><th><strong>Name</strong></th><th><strong>Description</strong></th><th></th></tr>');
+		
+		for (cart_item in content){
+			ctr=ctr+1;
+			c=content[cart_item];
+			$('#cart_table tbody').append('<tr id="cart-row-'+c.id+'"><td><input type="checkbox" class="element" name="element" value="'+c.id+'"></td><td>'+
+			icons[key]+' '+c.name+'</td><td>'+c.desc+'</td><td><span id="cart-delete-'+c.id+
+			'" class="cart-delete-btn btn btn-mini btn-warning link" onclick=\"removeFromCart(\''+key+'\',\''+c.id+'\')\" title="Remove from Cart">[-]</span></td></tr>');
+		}
+	}
+	if(ctr==0){
+		$("#workflow_tbl").html("No entries found in your cart.");
+		$("#cart-submit").hide();
+	}
+	else {
+		//check all, clear all checked
+		$("#workflow_tbl").append('<p><input type="checkbox" class="checkAll"/> <small>Check all</small></p> ');
+		
+		$("#workflow_tbl").prepend('<p><input type="checkbox" class="checkAll"/> <small>Check all</small></p> ');
+	}
+}
+
+function removeFromCart(type, id) {
+	var cart= JSON.parse(localStorage.getItem(lsMPOCart));
+	content=cart[type];
+	var found=0;
+	for (ctr in content){
+		if(content[ctr]['id']==id) {
+			found=1;
+			break;
+		}
+	}
+	if (found==1){
+		content.splice(ctr, 1);
+		cart[type]=content;	
+		localStorage.setItem(lsMPOCart, JSON.stringify(cart));			
+		//remove row from table
+		$('#cart_table tr#cart-row-'+id).remove();
+		var row_ctr = $('#cart_table tr').length;
+		if(row_ctr<=4) {
+			clearCart();
+		}
+		else {
+			$('#message-top').stop( true, true ).show();
+			$('#message-top').html('<div class="alert alert-success" role="alert">Entry removed from cart.</div>');
+			$('#message-top').fadeOut(4000, function() {
+				// Animation complete.
+				$('#message-top').html("");		
+			});
+		}
+	}
+}
+
+function clearCart() {
+	localStorage[lsMPOCart] = JSON.stringify(defaultCart);
+	$("#workflow_tbl").html("No entries found in your cart.");
+	$("#cart-submit").hide();
+	$("#shopping-cart").css('border-bottom', 'none');
+	$('#message-top').stop( true, true ).show();
+	$('#message-top').html('<div class="alert alert-success" role="alert">Cart cleared.</div>');
+	$('#message-top').fadeOut(4000, function() {
+		// Animation complete.
+		$('#message-top').html("");	
+	});
+}
+</script>
+
+{% endblock %}
+{% block collect_active %} class="active" {% endblock %}
+{% block container %}
+     <div class="row-fluid"><br/>    
+        <h4>MPO Cart &nbsp;<input value="Clear Cart" class="btn btn-mini btn-warning cart_clear" type="button" onClick="clearCart()"></h4> 
+        	<div style="height: 40px;"><div id="message-top" ></div></div>  
+            <div id="workflow_tbl">
+            <table class="main table table-hover" id="cart_table">
+            	<tbody>
+                </tbody>
+            </table> 
+            </div>
+            <div id="cart-submit">
+            <p class="text-center">
+        	 Collection Name: <input type="hidden" id="coll_val" name="coll_val" value="" /> <input type="text" id="coll_name" name="coll_name" /> <br />
+            <span id="cart-add-btn" class="cart-add-btn btn btn-info btn-block" title="Add to Cart">Add selected entries to the specified collection</span>
+            
+            <div id="message" ></div>
+            </p>
+            </div>
+    	</div> <!-- end span12 -->    
+    </div> <!-- end row fluid -->
+
+{% endblock %}

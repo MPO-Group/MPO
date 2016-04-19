@@ -121,13 +121,14 @@ ul li input.user_time_wf {
 {% block container %}
      <div class="row-fluid"><br/>    
         <h4>MPO Collections</h4>
+        <div style="height: 40px;"><div id="message" ></div></div>  
 <!-- If data exists in DB -->
 {% if coll_list %}    
         	<div id="workflow_tbl">
             <!-- workflow list table -->
             <table class="main table table-hover table-striped" id="workflow_table">
             	<tr>
-                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th>
+                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th><th></th></th>
               	</tr>
             	{% for item in coll_list %}
                 	<tr>
@@ -136,6 +137,7 @@ ul li input.user_time_wf {
                     <td>{{ item.description }} </td>
                     <td>{{ item.username }} </td>
                     <td>{{ item.time }} </td>
+                    <td><span class="icon-shopping-cart link" id="{{ item.uid }}_cart" onclick="addToCart('collection', '{{ item.uid }}', '{{ item.name }}', '{{ item.description }}')"></span></td>
                     </tr>
                 {% endfor %}
                </table> 
