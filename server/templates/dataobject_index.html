@@ -11,7 +11,10 @@ $(document).ready(function() {
 		"processing": true,
         "serverSide": true,
 		"bFilter": false,
-        "ajax": "{{ url_for("get_server_data") }}",
+		"ajax": {
+            "url": "{{ url_for("get_server_data") }}",
+            "type": "POST"
+        },
         "columns": [
             { 
 				"data": "uid",

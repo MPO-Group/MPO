@@ -1646,7 +1646,8 @@ def dataobject(uid=False):
     return render_template('dataobject.html',  **everything)
 
 
-@app.route('/get_server_data', methods=['GET'])
+
+@app.route('/get_server_data', methods=['POST'])
 def get_server_data(uid=False):
     global s
     dn = get_user_dn(request)
@@ -1657,14 +1658,16 @@ def get_server_data(uid=False):
 
     #Get request values - this should match up with the order of columns in HTML
     columns=["uid", "name", "description", "uri", "source_uid", "username", "time"]
-    start=int(request.args.get('start'))
-    length=int(request.args.get('length'))
+
+    form = request.form.to_dict() #gets POSTed form fields as dict
+    start=int(form['start'])
+    length=int(form['length'])
     end=start+length
-    draw=int(request.args.get('draw'))
-    order_by=int(request.args.get('order[0][column]'))
-    order_dir=request.args.get('order[0][dir]')
+    draw=int(form['draw'])
+    order_by=int(form['order[0][column]'])
+    order_dir=(form['order[0][dir]'])
     #overall serach value
-    search_str=request.args.get('search[value]')
+    search_str=(form['search[value]'])
     i=0;
 
     #search per column - columnsx4][search][value]
