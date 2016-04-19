@@ -71,6 +71,7 @@ function clearWfFilterFields(){
 }
 
 function loadWorkflowTable(url) {
+	$("#wf_table").html("<p><em>Processing...</em></p>");
     $.ajax({
     	type: "GET",
     	url: url,
