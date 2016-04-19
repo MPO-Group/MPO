@@ -64,14 +64,35 @@ $(document).ready(function () {
 	loadWorkflowTable( "{{ url_for("get_workflows",display="table") }}" ); 	// display list of workflows
 });
 
+function getGetQuery()
+{
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+	return vars;
+}
+
 function clearWfFilterFields(){	
 	$("input.user_entry:text").val("");
 	$("input.user_entry_wf:text").val("");
 	$("#wf_type_sel").val("");
 }
 
-function loadWorkflowTable(url) {
-	$("#wf_table").html("<p><em>Processing...</em></p>");
+function loadWorkflowTable(url) {	
+	var r = getGetQuery()["r"];
+	var p = getGetQuery()["p"];
+	var range = getGetQuery()["range"];
+	if(r!="" && r!= undefined)
+		url=url+"&r="+r;		
+	if(p!="" && p!= undefined)
+		url=url+"&p="+p;		
+	if(range!="" && range!= undefined)
+		url=url+"&range="+range;		
     $.ajax({
     	type: "GET",
     	url: url,

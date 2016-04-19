@@ -503,8 +503,8 @@ def get_workflows():
         rmax=rpp
 
     if webdebug: print('web debug rjson',rjson, rmin, rmax)
-    rjson=rjson[rmin-1:rmax]
     num_wf=len(rjson)
+    rjson=rjson[rmin-1:rmax]
     #calculate number of pages
     num_pages=int(math.ceil(float(num_wf)/float(rpp)))
 
@@ -640,6 +640,10 @@ def get_workflows():
     page_created = "%s" %((str(begin_to_end))[:6])
     
     if display=="table":
+        print ""
+        print ""
+        print ""
+        print "NUM WF is ",num_wf
         everything={"username":USERNAME,"db_server":DB_SERVER,"results":results,"page_created":page_created,
                     "rpp":rpp,"current_page":current_page,"num_pages":num_pages, "num_wf":num_wf}
         return render_template('get_workflows.html', **everything)
