@@ -94,7 +94,7 @@ function loadWorkflowTable(url) {
 	if(range!="" && range!= undefined)
 		url=url+"&range="+range;		
     $.ajax({
-    	type: "GET",
+    	type: "POST",
     	url: url,
     	dataType: 'html',
 		success: function(html){

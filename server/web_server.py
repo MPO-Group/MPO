@@ -387,7 +387,7 @@ def get_collections():
     return jsonify(collection_list = collection_list.result().json())
     
 
-@app.route('/get_workflows')
+@app.route('/get_workflows', methods=['POST'])
 def get_workflows():
     #using asynchronous requests now
     global s
