@@ -10,49 +10,55 @@
 </head>
 <body>
 <h1 id="client-installation">CLIENT INSTALLATION</h1>
-<p>For commandline and scripting tools, only the mpo_arg.py class<br />is needed. The only non standard python dependencies of this are requests.py and urllib3.py<br />These dependencies are provided in a virtual environment. For installation,<br />the requirements are system installed python2.7 and the virtualenv package for python.<br />To install virtualenv,</p>
-<pre><code>sudo pip install virtualenv</code></pre>
-<p>Alternatively, grab a known working copy from the mpo repo:</p>
-<pre><code>svn export https://www.psfc.mit.edu/mposvn/trunk/virtualenv.py</code></pre>
-<p>Then to install the client:</p>
+<p>For commandline and scripting tools, only the mpo_arg.py class<br />
+is strictly needed. The only non standard python dependencies of this are requests.py and urllib3.py<br />
+These dependencies are provided in a virtual environment. For installation,<br />
+the requirements are system installed python2.7, pip, and the virtualenv package for python.</p>
 <ul>
-<li>setting up python environment</li>
-</ul>
-<pre><code>cd $INSTALL_DIR
+<li><p>Grab a copy of the MPO distribution.</p>
+<pre><code>pushd /tmp
+git clone https://github.com/MPO-Group/MPO.git
+popd</code></pre></li>
+<li><p>Install virtualenv if needed,</p>
+<pre><code>sudo pip install virtualenv</code></pre></li>
+<li><p>and set up python environment</p>
+<pre><code>cd &lt;directory above desired install location&gt;
+mkdir MPO ; cd MPO
+export MPO_ROOT=$PWD #or `setenv MPO_ROOT $PWD` as appropriate for your shell
 virtualenv mpo_env
 source mpo_env/bin/activate
-rm -rf mpo_env/bin/pip* mpo_env/lib/python2.7/site-packages/pip*
-easy_install pip
-pip install requests urllib3</code></pre>
-<ul>
+pip install requests urllib3
+deactivate #leave virtual environment - it will still work.</code></pre></li>
 <li><p>create user preferences directory</p>
 <pre><code>mkdir $HOME/.mpo
 chown $USER:$USER $HOME/mpo
 chmod 700 $HOME/.mpo
 pushd $HOME/.mpo
-svn export https://www.psfc.mit.edu/mposvn/trunk/mpo.conf</code></pre></li>
-<li><p>add your certificate</p>
-<pre><code>cp path_to_key/my_key.pem .</code></pre></li>
+cp /tmp/MPO/mpo.conf .</code></pre></li>
+<li><p>add your certificate as issued by MPO (or other CA supported by the mpo server you are using).</p>
+<pre><code>cp &lt;path_to_key&gt;/my_key.pem .
+#optionally copy demo key.
+cp &quot;/tmp/MPO/MPO Demo User.pem&quot; mpo_demo.pem</code></pre></li>
 <li><p>edit mpo.conf to specify your certificate and other preferences:</p>
 <pre><code>vim mpo.conf</code></pre></li>
-<li><p>retrieve client (svn or copy from existing checkout) note, using export below does not create .svn and keep the pointer but allows retrieval of single files.</p>
-<pre><code>svn export https://www.psfc.mit.edu/mposvn/trunk/mpo.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_arg.py</code></pre></li>
-<li><p>retrieve the python archive classes</p>
-<pre><code>svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_dataobject.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_filesys.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_mdsplus.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_ptdata.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_rsync.py
-svn export https://www.psfc.mit.edu/mposvn/trunk/client/python/mpo_ar_wos.py</code></pre></li>
-<li><p>should be done</p>
-<pre><code>alias mpo=&#39;/home/jwright/bin/mpo.py&#39;</code></pre></li>
-<li><p>Change the first line of mpo.py to point to your new python copy<br /> First line eg: #!/usr/local/bin/mpo_env/bin/python<br /> you may also set mpo environment defaults here. Especially the<br /> default MPO api server and your MPO authorization.</p>
-<pre><code>vi mpo.py</code></pre></li>
-<li>Try it out.<br /></li>
+<li><p>install client source and option sub-classes for archiving actions.</p>
+<pre><code>popd  #should be back in $MPO_ROOT
+cp /tmp/MPO/mpo.py .
+cp /tmp/MPO/client/python/mpo*.py .</code></pre></li>
+<li><p>Change the first line of mpo.py to point to your new python copy<br />
+First line eg: #!/home/user/mpo_env/bin/python<br />
+you may also set mpo environment defaults here. Especially the<br />
+default MPO api server and your MPO authorization.</p>
+<pre><code>vi $MPO_ROOT/mpo.py</code></pre></li>
+<li><p>Finish up.</p>
+<pre><code>chmod +x $MPO_ROOT/mpo.py
+alias mpo=$MPO_ROOT/mpo.py
+rm -rf /tmp/MPO</code></pre></li>
+<li>Try it out.<br />
+</li>
 <li><p>help on the mpo command</p></li>
 </ul>
-<pre><code>\$ mpo --help
+<pre><code>$ mpo --help
 usage: mpo.py [-h] [--user USER] [--pass PASS]
               [--format {id,raw,text,json,dict,pretty} | --field FIELD]
               [--verbose] [--host HOST] [--dryrun]
@@ -98,20 +104,20 @@ optional arguments:
                         request
 
 Metadata Provenance Ontology project
-\$</code></pre>
+$</code></pre>
 <ul>
 <li>get the users in the database</li>
 </ul>
-<pre><code>\# get the uuids of the users
-\#
-\$ mpo get user
-\[&#39;ddc315a1-6310-41e7-a84d-886bc904f3b2&#39;, &#39;f223db41-d1c5-41db-b8af-fde6c0a16f76&#39;\]
+<pre><code># get the uuids of the users
+#
+$ mpo get user
+[&#39;ddc315a1-6310-41e7-a84d-886bc904f3b2&#39;, &#39;f223db41-d1c5-41db-b8af-fde6c0a16f76&#39;]
 </code></pre>
-<pre><code>\# get the users full records as nicely formatted json
-\#
-\$ mpo --format pretty get user 
-\[
-    \{
+<pre><code># get the users full records as nicely formatted json
+#
+$ mpo --format pretty get user 
+[
+    {
         &quot;username&quot;:&quot;mpoadmin&quot;,
         &quot;dn&quot;:null,
         &quot;uid&quot;:&quot;ddc315a1-6310-41e7-a84d-886bc904f3b2&quot;,
@@ -121,8 +127,8 @@ Metadata Provenance Ontology project
         &quot;time&quot;:&quot;2015-06-10 12:17:03.192294&quot;,
         &quot;organization&quot;:null,
         &quot;email&quot;:null
-    \},
-    \{
+    },
+    {
         &quot;username&quot;:&quot;mpodemo&quot;,
         &quot;dn&quot;:&quot;emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US&quot;,
         &quot;uid&quot;:&quot;f223db41-d1c5-41db-b8af-fde6c0a16f76&quot;,
@@ -132,8 +138,8 @@ Metadata Provenance Ontology project
         &quot;time&quot;:&quot;2015-06-10 12:17:03.193528&quot;,
         &quot;organization&quot;:&quot;MIT&quot;,
         &quot;email&quot;:&quot;jas@psfc.mit.edu&quot;
-    \},
-\]
-\$ </code></pre>
+    },
+]
+ </code></pre>
 </body>
 </html>

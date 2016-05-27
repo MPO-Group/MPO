@@ -15,7 +15,6 @@
 	border: dotted 2px #E1E1E1;
 }
 tr.node td:first-child {
-	/*background-color: #FDCD66;*/
 	color: #08C;
 	padding-left: 10px;
 	font-weight: bold;	
@@ -38,10 +37,8 @@ tr.node ul li {
 	color:#004B82;
 }
 .main td.detail {
-   /* line-height: 0px;*/
     padding: 2px 0px 0px 0px;
     border: 0px none;
-	/*background-color: #F6FDFA;*/
 	background-color: #FFF7B1;
 	color: #272727;
 	font-size: 11px;
@@ -73,7 +70,6 @@ table#comment-form {
 	border-right: 5px solid transparent;
 	border-bottom: 5px solid black;
 }
-
 .arrow-down {
 	width: 0; 
 	height: 0; 
@@ -81,7 +77,6 @@ table#comment-form {
 	border-right: 20px solid transparent;
 	border-top: 20px solid #f00;
 }
-
 </style>
 <script>
 var nodeUIDs = new Array(); //store node UIDs for comparison with new node UIDs added after page load
@@ -89,7 +84,6 @@ var wid = ""; //store workflow wid
 var lastUpdate = ""; //store last update time
 var rightScrollHeight='700px';
 var this_uid="{{ wid }}";
-//var clickedLinkedWorkflows=[];
 
 function formatDate(date) {
     var d=new Date(date);
@@ -114,10 +108,6 @@ function formatDate(date) {
 
 function closepop(id) {
 	$('#'+id).popover('hide');
-}
-
-function showComments() {
-	$( "#node_comments" ).toggle();
 }
 
 function inArray(value, array) {

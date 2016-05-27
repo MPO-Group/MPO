@@ -64,15 +64,37 @@ $(document).ready(function () {
 	loadWorkflowTable( "{{ url_for("get_workflows",display="table") }}" ); 	// display list of workflows
 });
 
+function getGetQuery()
+{
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+	return vars;
+}
+
 function clearWfFilterFields(){	
 	$("input.user_entry:text").val("");
 	$("input.user_entry_wf:text").val("");
 	$("#wf_type_sel").val("");
 }
 
-function loadWorkflowTable(url) {
+function loadWorkflowTable(url) {	
+	var r = getGetQuery()["r"];
+	var p = getGetQuery()["p"];
+	var range = getGetQuery()["range"];
+	if(r!="" && r!= undefined)
+		url=url+"&r="+r;		
+	if(p!="" && p!= undefined)
+		url=url+"&p="+p;		
+	if(range!="" && range!= undefined)
+		url=url+"&range="+range;		
     $.ajax({
-    	type: "GET",
+    	type: "POST",
     	url: url,
     	dataType: 'html',
 		success: function(html){
@@ -250,10 +272,10 @@ input.user_entry_wf_sm{
 {% block container %}
     <div class="row-fluid">
    	<div class="span12" >
-    <h4>MPO Workflows <input type="button" value="View all Workflows" class="btn btn-mini btn-info wf_filter_clear" /></h4>
-    	<div class="row-fluid">
+    	<div class="row-fluid">  
 		<!-- left navigation menu span -->
         <div class="span3">
+	      <h4>MPO Workflows <input type="button" value="View all Workflows" class="btn btn-mini btn-info wf_filter_clear" /></h4>
           <div class="well sidebar-nav">
                                           
                 <!-- ontology list menu -->
@@ -304,8 +326,10 @@ input.user_entry_wf_sm{
         </div><!--/span left navigation-->    
         
    	<!-- workflow table list span -->
-		<div id="wf_table" class="span9">       
-
+		<div class="span9">
+            <div style="height: 40px;"><div id="message" ></div></div>      
+            <div id="wf_table">   
+            </div> 
     	</div> <!-- end of span9 -->
     
     

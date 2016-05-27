@@ -172,11 +172,37 @@ if not USING_UWSGI:
     PRODUCTION_API_PREFIX+="api"
 PRODUCTION_API_PREFIX+="/"+MPO_API_VERSION
 
-
 @app.route('/')
 def index():
     everything={"username":USERNAME,"db_server":DB_SERVER}
     return render_template('index.html', **everything)
+
+
+@app.route('/cart')
+def cart():
+
+    #using asynchronous requests now
+    global s
+    #optionally use grouped requests:
+    groupedrequests=False
+
+    print('WEBSERVER: workflows timestamp start index',stime.time() )
+    if webdebug: print('WEBSERVER: workflows thread count START : ', threading.active_count() )
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    #Set dn for API session
+    s.headers={'Real-User-DN':dn, 'Connection':'close' }
+
+    #Get all collections
+    collection_list=(s.get("%s/collection"%(API_PREFIX))).result().json()
+   # collection_list=(s.get("%s/collection"%(API_PREFIX))).result()
+
+    everything={"username":USERNAME,"db_server":DB_SERVER,"collection_list":collection_list}
+    return render_template('cart.html', **everything)
 
 
 @app.route('/workflows')
@@ -334,9 +360,34 @@ def get_ontology_count():
         ont_list=s.get("%s/ontology/term/count/workflow?%s"%(API_PREFIX,wf_query))
 
     return jsonify(ont_list = ont_list.result().json())
+
+
+@app.route('/get_collections')
+def get_collections():
+
+    #using asynchronous requests now
+    global s
+    #optionally use grouped requests:
+    groupedrequests=False
+
+    print('WEBSERVER: workflows timestamp start index',stime.time() )
+    if webdebug: print('WEBSERVER: workflows thread count START : ', threading.active_count() )
+    #Need to get the latest information from MPO database here
+    #and pass it to index.html template
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+
+    #Set dn for API session
+    s.headers={'Real-User-DN':dn, 'Connection':'close' }
+    
+    #Get all collections
+    collection_list=s.get("%s/collection"%(API_PREFIX,wf_query))
+
+    return jsonify(collection_list = collection_list.result().json())
     
 
-@app.route('/get_workflows')
+@app.route('/get_workflows', methods=['POST'])
 def get_workflows():
     #using asynchronous requests now
     global s
@@ -452,8 +503,8 @@ def get_workflows():
         rmax=rpp
 
     if webdebug: print('web debug rjson',rjson, rmin, rmax)
-    rjson=rjson[rmin-1:rmax]
     num_wf=len(rjson)
+    rjson=rjson[rmin-1:rmax]
     #calculate number of pages
     num_pages=int(math.ceil(float(num_wf)/float(rpp)))
 
@@ -589,6 +640,10 @@ def get_workflows():
     page_created = "%s" %((str(begin_to_end))[:6])
     
     if display=="table":
+        print ""
+        print ""
+        print ""
+        print "NUM WF is ",num_wf
         everything={"username":USERNAME,"db_server":DB_SERVER,"results":results,"page_created":page_created,
                     "rpp":rpp,"current_page":current_page,"num_pages":num_pages, "num_wf":num_wf}
         return render_template('get_workflows.html', **everything)
@@ -1195,6 +1250,24 @@ def ontology_instance():
     response.headers['Content-Type'] = 'text/plain'
     return response
 
+@app.route('/create_collection', methods=['POST'])
+def create_collection():
+    dn = get_user_dn(request)
+    certargs={'cert':(MPO_WEB_CLIENT_CERT, MPO_WEB_CLIENT_KEY),
+              'verify':False, 'headers':{'Real-User-DN':dn}}
+    try:
+        data = request.form.to_dict()
+        data['elements']=request.form.getlist('elements[]')
+        submit = requests.post("%s/collection"%API_PREFIX, json.dumps(data), **certargs)
+    
+        if submit.status_code == 401:
+            return "401"
+        return "200"
+    except:
+        pass
+    return ''
+
+
 @app.route('/add_to_collection', methods=['GET','POST'])
 def add_to_collection():
     dn = get_user_dn(request)
@@ -1206,7 +1279,6 @@ def add_to_collection():
         data['elements']=data['oid']
         r=json.dumps(data)
         cid=data['cid']
-        oid=data['oid']
         response=requests.post("%s/collection/%s/element"%(API_PREFIX,cid), r, **certargs)
         if response.status_code == 401:
             return "401"
@@ -1578,7 +1650,8 @@ def dataobject(uid=False):
     return render_template('dataobject.html',  **everything)
 
 
-@app.route('/get_server_data', methods=['GET'])
+
+@app.route('/get_server_data', methods=['POST'])
 def get_server_data(uid=False):
     global s
     dn = get_user_dn(request)
@@ -1589,14 +1662,16 @@ def get_server_data(uid=False):
 
     #Get request values - this should match up with the order of columns in HTML
     columns=["uid", "name", "description", "uri", "source_uid", "username", "time"]
-    start=int(request.args.get('start'))
-    length=int(request.args.get('length'))
+
+    form = request.form.to_dict() #gets POSTed form fields as dict
+    start=int(form['start'])
+    length=int(form['length'])
     end=start+length
-    draw=int(request.args.get('draw'))
-    order_by=int(request.args.get('order[0][column]'))
-    order_dir=request.args.get('order[0][dir]')
+    draw=int(form['draw'])
+    order_by=int(form['order[0][column]'])
+    order_dir=(form['order[0][dir]'])
     #overall serach value
-    search_str=request.args.get('search[value]')
+    search_str=(form['search[value]'])
     i=0;
 
     #search per column - columnsx4][search][value]

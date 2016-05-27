@@ -11,7 +11,10 @@ $(document).ready(function() {
 		"processing": true,
         "serverSide": true,
 		"bFilter": false,
-        "ajax": "{{ url_for("get_server_data") }}",
+		"ajax": {
+            "url": "{{ url_for("get_server_data") }}",
+            "type": "POST"
+        },
         "columns": [
             { 
 				"data": "uid",
@@ -32,7 +35,14 @@ $(document).ready(function() {
               },
 			},
             { "data": "username" },
-            { "data": "time" }
+            { "data": "time" },
+            { 
+			  "data": "cart", 
+			  "render": function ( data, type, row ) {
+					r='<span class="icon-shopping-cart link" id="'+row.uid+'_cart" onclick="addToCart(\'dataobject\', \''+row.uid+'\', \''+row.name+'\', \''+row.description+'\')"></span>';
+					return r;
+			   },
+			}
         ]
     });	
 } );
@@ -158,6 +168,7 @@ ul li input.user_time_wf {
 		<!-- left navigation menu span -->
         <div class="span12"><br />
         <h4>MPO Data Objects</h4>
+        <div style="height: 40px;"><div id="message" ></div></div>  
 {% if coll_list %}
         	<div id="workflow_tbl">
             <!-- workflow list table -->
@@ -171,6 +182,7 @@ ul li input.user_time_wf {
                         <th>Source</th>
                         <th>Username</th>
                         <th>Time </th>
+                        <th>Cart </th>
 					</tr>
 				</thead>
                 <tfoot>
@@ -181,7 +193,8 @@ ul li input.user_time_wf {
                         <th>URI</th>
                         <th>Source</th>
                         <th>Username</th>
-                        <th>Time </th>   
+                        <th>Time </th>
+                        <th>Cart </th>   
                 	</tr>
         		</tfoot>
            </table>
