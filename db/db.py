@@ -250,7 +250,7 @@ def getRecord(table,queryargs={}, dn=None):
         if key == 'time': continue
         if queryargs.has_key(key):
             qa=processArgument(queryargs[key])
-            if qa == 'None':
+            if not qa or qa == 'None':
                 q+=" and CAST("+qm[key]+" as text) is Null"
             else:
                 q+=" and CAST("+qm[key]+" as text) ILIKE %s"
