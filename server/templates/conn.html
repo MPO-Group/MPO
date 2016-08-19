@@ -192,7 +192,7 @@ $(document).ready(function () {
 				dataElements[tmp['uid']]="";
 				if(tmp3['description'])
 					dataElements[tmp['uid']]+=tmp3['description'];
-				else if(tmp3['do_info']['description'])
+				else if('do_info' in tmp3 && tmp3['do_info']['description'])
 					dataElements[tmp['uid']]+=tmp3['do_info']['description'];
 				if(tmp3['time']) {
 					dataElements[tmp['uid']]+= "<div><small>"+tmp3['time']+"</small></div>";
@@ -201,7 +201,7 @@ $(document).ready(function () {
 					if(tmpDateTime > lastUpdate)
 						lastUpdate=tmpDateTime
 				}
-				else if(tmp3['do_info']['time']) {
+				else if('do_info' in tmp3 && tmp3['do_info']['time']) {
 					dataElements[tmp['uid']]+= "<div><small>"+tmp3['do_info']['time']+"</small></div>";
 					//store latest workflow update time
 					tmpDateTime=new Date(tmp3['do_info']['time'].replace(" ","T"));
@@ -567,7 +567,7 @@ $(document).ready(function () {
 			if (data=="200") {
 				//remove used from dropdown
 				loadCollectionDropdown();  
-				coll_url="https://mpo-new.gat.com/api/v0/collection/"+coll_id; 
+				coll_url=document.location.origin+"/"+api+"/v0/collection/"+coll_id; 
 				
 				$.getJSON(coll_url,{},function(data)
 				{
@@ -634,8 +634,8 @@ $(document).ready(function () {
  *function created list of available collections as a dropdown options
  */
 function loadCollectionDropdown() {
-	url="https://mpo-new.gat.com/api/v0/collection";
-	this_coll_list="https://mpo-new.gat.com/test-api/v0/collection?element_uid="+this_uid;		
+	url=document.location.origin+"/"+api+"/v0/collection";
+	this_coll_list=document.location.origin+"/"+api+"/v0/collection?element_uid="+this_uid;		
 	var used_coll_ids = [];
 	$.getJSON(this_coll_list,{},function(data)
     {
@@ -1142,7 +1142,10 @@ function buildPageElements(wfID) {
                                 <td><span class="icon-dataobject-blue"></span> 
                             {% endif %}
                         	{% if n.data[0] %}
-                        		{{ n.data[0].do_info.name }}</td><td>
+                                        {% if n.data[0].do_info %}
+                        		{{ n.data[0].do_info.name }}</td>
+                                        {% endif %}
+                                         <td>
                         		{{ n.data[0].time[:19] }}
                             {% endif %}
                         {% else %}
@@ -1206,11 +1209,12 @@ function buildPageElements(wfID) {
                                     <ul class="details-list"> 
                                     
                                     <!-- description -->
-                                    {% if n.type == "dataobject_instance" %}
-                                    <li><font class="bold">Description:</font> {{ n.data[0].do_info.description }}
+                                    {% if n.type == "dataobject_instance" and n.data[0].do_info %}
+                                    <li><font class="bold">Description:</font> 
+                                    {{ n.data[0].do_info.description }}
                                     {{ n.data[0].do_info.uri }} </li>
                                     <li><strong></strong><font class="bold">UID:</font> <input type="text" value="{{ n.data[0].uid }}" class="small copy" readonly /></li>
-                                    {% else %}
+                                    {% elif n.type != "dataobject_instance" %}
                                     <li><font class="bold">Description:</font> {{ n.data[0].description }}
                                     <font color="#ED8454"><em>{{ n.data[0].uri }}</em></font> </li>
                                     <li><strong></strong><font class="bold"> UID:</font> <input type="text" value="{{ n.data[0].uid }}" class="small copy" readonly /></li>
