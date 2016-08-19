@@ -84,16 +84,6 @@ var wid = ""; //store workflow wid
 var lastUpdate = ""; //store last update time
 var rightScrollHeight='700px';
 var this_uid="{{ wid }}";
-var api="test-api";
-{% if db_server=="test" %}
-   api="test-api";
-{% elif db_server=="prod" %}
-   api="api";
-{% endif %}
-if(document.location.pathname.substr(0,5)=="/demo") {
-  api="demo-api"
-}
-
 
 function formatDate(date) {
     var d=new Date(date);
