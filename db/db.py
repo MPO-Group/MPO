@@ -256,13 +256,16 @@ def getRecord(table,queryargs={}, dn=None):
                 q+=" and CAST("+qm[key]+" as text) ILIKE %s"
                 v+=('%'+qa+'%',)
     if queryargs.has_key('time'):
-        (start,end)=tuple(queryargs['time'].split(','))
-        if start:
-            q+=' and a.creation_time >= %s'
-            v+=(start,)
-        if end:
-            q+=' and a.creation_time <= %s'
-            v+=(end,)
+        try:
+            (start,end)=tuple(queryargs['time'].split(','))
+            if start:
+                q+=' and a.creation_time >= %s'
+                v+=(start,)
+            if end:
+                q+=' and a.creation_time <= %s'
+                v+=(end,)
+        except ValueError:
+            pass
 
     ##ONTOLOGY/TERMS handling
     ontology_terms = []
@@ -391,14 +394,17 @@ def getOntologyTermCount(table=None,queryargs={},dn=None):
             q+=' and CAST(b.'+query_map['mpousers'][key]+' as text) ilike %s'
             v+=('%'+queryargs[key]+'%',)
     if queryargs.has_key('time'):
-        (start,end)=tuple(queryargs['time'].split(','))
-        t='d' if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances') else 'c'
-        if start:
-            q+=' and '+t+'.creation_time >= %s'
-            v+=(start,)
-        if end:
-            q+=' and '+t+'.creation_time <= %s'
-            v+=(end,)
+        try:
+            (start,end)=tuple(queryargs['time'].split(','))
+            t='d' if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances') else 'c'
+            if start:
+                q+=' and '+t+'.creation_time >= %s'
+                v+=(start,)
+            if end:
+                q+=' and '+t+'.creation_time <= %s'
+                v+=(end,)
+        except ValueError:
+            pass
     if queryargs.has_key('term'):
         (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
         q+=' and target_guid in '+s
@@ -712,13 +718,16 @@ def getWorkflow(queryargs={},dn=None):
             q+=' and CAST(a.'+query_map['workflow'][key]+' as text) iLIKE %s'
             v+= ('%'+qa+'%',)
     if queryargs.has_key('time'):
-        (start,end)=tuple(queryargs['time'].split(','))
-        if start:
-            q+=' and a.creation_time >= %s'
-            v+=(start,)
-        if end:
-            q+=' and a.creation_time <= %s'
-            v+=(end,)
+        try:
+            (start,end)=tuple(queryargs['time'].split(','))
+            if start:
+                q+=' and a.creation_time >= %s'
+                v+=(start,)
+            if end:
+                q+=' and a.creation_time <= %s'
+                v+=(end,)
+        except ValueError:
+            pass
 
     if queryargs.has_key('alias'):  #handle composite id queries
     #logic here to extract composite_seq,user, and workflow name from composite ID
