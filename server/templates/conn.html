@@ -537,7 +537,7 @@ $(document).ready(function () {
 		event.preventDefault();
 	});
 	// end of Submit comment
-    $("#coll_dropdown").hide()
+   /* $("#coll_dropdown").hide()
     $("#collection_tbl").hide()
 	$("#toggle-coll-list").click(function(event){
 	    $("#coll_dropdown").toggle();
@@ -547,7 +547,7 @@ $(document).ready(function () {
 		else 
 			$("#toggle-coll-list").html("[Display]");
 		event.preventDefault();
-	});
+	});*/
    /**
 	*
 	/*function handles collection addition
@@ -947,7 +947,7 @@ function buildPageElements(wfID) {
             <strong>Workflow State:</strong> 
             <font class="{{ wf_state|lower|replace(" ","-") }}"> {{ wf_state }}</font> &nbsp;&nbsp;
             {% endif %}
-            <strong>UID: </strong><input type="text" value="{{ wid }}" class="small copy" readonly /> 
+            <strong>UID: </strong><input type="text" value="{{ wid }}" class="small copy" readonly /> <br />
             
             <!-- End title and desc -->
         </div><!-- end of span12 -->
@@ -1074,43 +1074,7 @@ function buildPageElements(wfID) {
             </div><!-- accordion-body -->
             </div>
             <!-- End comment -->
-<!-- collections -->
-			
- 			<h5><span class="icon-list-alt"></span> Associated Collections
-            <a href="#" id="toggle-coll-list">[Display]</a>
-            
-             <div class="dropdown" style="float:right">
-              <select id="coll_dropdown" class="btn btn-info" >
-              <option value="">Add to selected collection</option>
-              </select>
-              <br />
-            </div>
-              
-              </h5>
-            <!-- workflow list table -->
-        	<div id="collection_tbl">
-            {% if coll_list %}
-            <!-- workflow list table -->
-            <table class="main table table-hover table-striped" id="collection_table">
-            	<tr>
-                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th><th></th>
-              	</tr>
-            	{% for item in coll_list %}
-                	<tr id="collection_{{ item.collection_uid }}">
-                	<td><a href="{{ url_for("collections", uid=item.collection_uid) }}">{{ item.name }}</a></td>
-                    <td>{{ item.description }} </td>
-                    <td>{{ item.username }} </td>
-                    <td>{{ item.time }} </td>
-                    <td><a href="" id="coll-delete_{{ item.collection_uid }} " class="coll-delete-btn btn btn-mini btn-warning" id="remove"  title="Remove from Collection">[-]</a></td>
-                    </tr>
-                {% endfor %}
-               </table>
-           {% else %}
-               	<p><em>There are no associated collections.</em></p>
-           {% endif %}  
-			 </span>
-    		</div> <!--end workflow table div -->     
-<!-- /collections -->
+
                 <div class="table-container">             
                 <table class="main table" id="coltab2">
                 	<thead>
@@ -1281,6 +1245,61 @@ function buildPageElements(wfID) {
              </div> <!-- end row-fluid -->
         </div> <!-- end span12 -->
         
+        
+                
+            <div class="row-fluid">   
+             <!-- collections -->	            
+            <hr />		
+ 			<h5>Associated Collections: </h5><!-- <a href="#" id="toggle-coll-list"><small>[Display]</small></a>-->
+            <!-- <div class="dropdown" style="float:right">
+              <select id="coll_dropdown" class="btn btn-info" >
+              <option value="">Add to selected collection</option>
+              </select>
+              <br /> 
+            </div> -->
+            <!-- collections list table -->
+        	<div id="collection_tbl">
+            {% if coll_list %}
+            <!-- collections list table -->
+            <table class="main table table-hover table-striped" id="collection_table">
+            	<tr>
+                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th><th></th>
+              	</tr>
+            	{% for item in coll_list %}
+                	<tr id="collection_{{ item.collection_uid }}">
+                	<td><a href="{{ url_for("collections", uid=item.collection_uid) }}">{{ item.name }}</a></td>
+                    <td>{{ item.description }} </td>
+                    <td>{{ item.username }} </td>
+                    <td>{{ item.time }} </td>
+                    <td><a href="" id="coll-delete_{{ item.collection_uid }} " class="coll-delete-btn btn btn-mini btn-warning" id="remove"  title="Remove from Collection">[-]</a></td>
+                    </tr>
+                {% endfor %}
+               </table>
+           {% else %}
+               	<p><em>There are no associated collections.</em></p>
+           {% endif %}  
+			 </span>
+    		</div> <!--end workflow table div -->     
+			<!-- /collections -->
+           {% if wid_info[0].type == "SWIM" %}
+            <hr />
+            <h5>{{ wid_info[0].type }} Simulation Log</h5>
+             {% if swimdata %}
+             <table class="main table table-hover table-striped" id="simulation_table">
+                <tr class="warning"><th><strong>Time</strong></th><th><strong>Seq Num</strong></th><th><strong>Event Type</strong></th><th><strong>Code</strong></th><th><strong>State</strong></th><th><strong>Wall Time</strong></th><th><strong>Phys Timestamp</strong></th><th><strong>Comment</strong></th></tr>
+	    		{% for item in swimdata %}
+                <tr>
+	                {% for a in item %}
+                    <td>{{ a }} </td>  
+                    {% endfor %}                    
+                </tr>
+                {% endfor %}                               
+            </table>
+              {% else %}
+               	<p><em>There are no associated simulation logs.</em></p>
+              {% endif %}                
+            {% endif %}  
+            </div>
         <!-- end collections_table -->
         
     </div><!-- end row-fluid -->
