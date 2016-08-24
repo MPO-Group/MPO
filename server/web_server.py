@@ -17,6 +17,7 @@ from authentication import get_user_dn, parse_dn
 import urllib
 from collections import OrderedDict
 import ast
+import MySQLdb
 
 
 try:
@@ -25,8 +26,6 @@ try:
 except ImportError:
     print("MPO Web server error, could not import memcache, page loads may be slower.")
     memcache_loaded=False
-
-
 
 if memcache_loaded:
     mc = memcache.Client(['127.0.0.1:11211'], debug=0)
@@ -89,6 +88,12 @@ CONN_TYPE = ''
 USERNAME = ''
 
 USING_UWSGI = os.environ.get('UWSGI_ORIGINAL_PROC_NAME')
+
+#SWIM connection informationa
+SWIM_DB_HOST = os.environ.get('SWIM_DB_HOST')
+SWIM_DB_NAME = os.environ.get('SWIM_DB_NAME')
+SWIM_DB_USER = os.environ.get('SWIM_DB_USER')
+SWIM_DB_PW = os.environ.get('SWIM_DB_PASSWORD')
 
 
 #Establish some asychronous request workers
@@ -171,6 +176,20 @@ PRODUCTION_API_PREFIX=MPO_API_SERVER+"/"
 if not USING_UWSGI:
     PRODUCTION_API_PREFIX+="api"
 PRODUCTION_API_PREFIX+="/"+MPO_API_VERSION
+
+
+def swimdata_connect():
+    if SWIM_DB_HOST<>"" and SWIM_DB_USER<>"" and SWIM_DB_PW<>"" and SWIM_DB_NAME:
+        conn = MySQLdb.connect(host=SWIM_DB_HOST,
+                               user=SWIM_DB_USER,
+                               passwd=SWIM_DB_PW,
+                               db=SWIM_DB_NAME)
+        c = conn.cursor()
+        return c, conn
+
+def swimdata_close(conn):
+    conn.close()
+
 
 @app.route('/')
 def index():
@@ -798,6 +817,8 @@ def getwfstate(wid):
             if item['parent_uid'] == wid:
                 return item['value']
 
+
+
 @app.route('/connections', methods=['GET'])
 @app.route('/connections/<wid>', methods=['GET'])
 def connections(wid=""):
@@ -860,6 +881,7 @@ def connections(wid=""):
     #get workflow info/alias
     wid_req=requests.get("%s/workflow/%s"%(API_PREFIX,wid,), **certargs)
     wid_info=wid_req.json() #JCW Item 1
+    wid_type=wid_info[0]['type']
 
     #get all data of each activity and dataobject of workflow <wid>
 
@@ -944,7 +966,28 @@ def connections(wid=""):
 
     nodes=wf_objects
     evserver=MPO_EVENT_SERVER
-    everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info, "wf_state":wfstate,
+    swimdata=""
+    runId=""
+    if wid_type=="SWIM":
+       #grab SWIM runid 
+       r=requests.get("%s/metadata"%(API_PREFIX), **certargs)
+       if(r):
+          meta_list=r.json()
+          for mitem in meta_list:
+             if wid==mitem['parent_uid'] and "RunID" in mitem['key']:
+                runId=mitem['value']
+ 
+       if runId!="":
+          try:
+              c, conn = swimdata_connect()
+              if c and conn:
+                  c.execute("SELECT date, seqnum, eventtype, code, state, walltime, phystimestamp, comment FROM monitor_simulation where portal_runid='"+runId+"' order by seqnum desc")
+                  swimdata=c.fetchall()
+                  swimdata_close(conn)
+          except Exception as e:
+              pass
+
+    everything = {"username":USERNAME, "db_server":DB_SERVER, "wid_info":wid_info, "wf_state":wfstate, "swimdata": swimdata,
                   "nodes": nodes, "wid": wid, "svg": svg,  "evserver": evserver, "graphname":graphname, "coll_list":collections}
     if memcache_loaded:
         mc.set(cache_id, everything, time=600)
