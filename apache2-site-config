@@ -44,3 +44,9 @@ Alias /mpo/doc /var/www/mposvn/doc/
 	Redirect /mdsplusEvents /mdsplusWsgi/event
 
 #Second argument to WSGIScriptAlias gets set back apache to env SCRIPT_FILENAME
+
+#SWIM database connection information stored as apache2 env var and passed to Flask
+        PassEnv SWIM_DB_HOST
+        PassEnv SWIM_DB_NAME
+        PassEnv SWIM_DB_USER
+        PassEnv SWIM_DB_PASSWORD
