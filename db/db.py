@@ -1043,12 +1043,15 @@ def addMetadata(json_request,dn):
     q=textwrap.dedent("""\
              SELECT w_guid  AS uid, 'workflow'   AS type FROM workflow   WHERE w_guid=%s UNION
              SELECT a_guid  AS uid, 'activity'   AS type FROM activity   WHERE a_guid=%s UNION
-             SELECT doi_guid AS uid, 'dataobject_instance' AS type FROM dataobject_instance WHERE doi_guid=%s
+             SELECT do_guid  AS uid, 'dataobject' AS type FROM dataobject   WHERE do_guid=%s UNION
+             SELECT doi_guid AS uid, 'dataobject_instance' AS type FROM dataobject_instance
+             WHERE doi_guid=%s
               """)
     pid=objs['parent_uid']
-    v=(pid,pid,pid)
+    v=(pid,pid,pid,pid)
     cursor.execute(q,v)
     records = cursor.fetchone()
+    if not records: raise ValueError('No record found for adding metadata.')
 
     #insert record
     md_guid = str(uuid.uuid4())
