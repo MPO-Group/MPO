@@ -1682,12 +1682,16 @@ def dataobject(uid=False):
     worktreeroot = wf_type_req.result().json()
 
 
+    r=s.get("%s/metadata?parent_uid=%s"%(API_PREFIX,uid))
+    if(r):
+        metadata=r.result().json()
+
     #close the connection
     s.close()
 
     everything={"username":USERNAME,"db_server":DB_SERVER, "workflows":workflows,
                 "rpp":rpp, "coll_list":collections,
-                "name":name, "desc":desc,
+                "name":name, "desc":desc, "metadata": metadata,
                 "username":username, "time":time, "uri":uri, "uid":uid  }
 
     return render_template('dataobject.html',  **everything)

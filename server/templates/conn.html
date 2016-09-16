@@ -1175,7 +1175,8 @@ function buildPageElements(wfID) {
                                     <!-- description -->
                                     {% if n.type == "dataobject_instance" and n.data[0].do_info %}
                                     <li><font class="bold">Description:</font> 
-                                    {{ n.data[0].do_info.description }}
+                                    {{ n.data[0].do_info.description }} </li>
+                                    <li><font class="bold">URI:</font> 
                                     {{ n.data[0].do_info.uri }} </li>
                                     <li><strong></strong><font class="bold">UID:</font> <input type="text" value="{{ n.data[0].uid }}" class="small copy" readonly /></li>
                                     {% elif n.type != "dataobject_instance" %}
