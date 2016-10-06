@@ -250,19 +250,22 @@ def getRecord(table,queryargs={}, dn=None):
         if key == 'time': continue
         if queryargs.has_key(key):
             qa=processArgument(queryargs[key])
-            if qa == 'None':
+            if not qa or qa == 'None':
                 q+=" and CAST("+qm[key]+" as text) is Null"
             else:
                 q+=" and CAST("+qm[key]+" as text) ILIKE %s"
                 v+=('%'+qa+'%',)
     if queryargs.has_key('time'):
-        (start,end)=tuple(queryargs['time'].split(','))
-        if start:
-            q+=' and a.creation_time >= %s'
-            v+=(start,)
-        if end:
-            q+=' and a.creation_time <= %s'
-            v+=(end,)
+        try:
+            (start,end)=tuple(queryargs['time'].split(','))
+            if start:
+                q+=' and a.creation_time >= %s'
+                v+=(start,)
+            if end:
+                q+=' and a.creation_time <= %s'
+                v+=(end,)
+        except ValueError:
+            pass
 
     ##ONTOLOGY/TERMS handling
     ontology_terms = []
@@ -391,14 +394,17 @@ def getOntologyTermCount(table=None,queryargs={},dn=None):
             q+=' and CAST(b.'+query_map['mpousers'][key]+' as text) ilike %s'
             v+=('%'+queryargs[key]+'%',)
     if queryargs.has_key('time'):
-        (start,end)=tuple(queryargs['time'].split(','))
-        t='d' if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances') else 'c'
-        if start:
-            q+=' and '+t+'.creation_time >= %s'
-            v+=(start,)
-        if end:
-            q+=' and '+t+'.creation_time <= %s'
-            v+=(end,)
+        try:
+            (start,end)=tuple(queryargs['time'].split(','))
+            t='d' if table and query_map.has_key(table) and table not in ('ontology_terms','mpousers','ontology_instances') else 'c'
+            if start:
+                q+=' and '+t+'.creation_time >= %s'
+                v+=(start,)
+            if end:
+                q+=' and '+t+'.creation_time <= %s'
+                v+=(end,)
+        except ValueError:
+            pass
     if queryargs.has_key('term'):
         (s,t) = getSelectionByTerms(json.loads(queryargs['term']))
         q+=' and target_guid in '+s
@@ -712,13 +718,16 @@ def getWorkflow(queryargs={},dn=None):
             q+=' and CAST(a.'+query_map['workflow'][key]+' as text) iLIKE %s'
             v+= ('%'+qa+'%',)
     if queryargs.has_key('time'):
-        (start,end)=tuple(queryargs['time'].split(','))
-        if start:
-            q+=' and a.creation_time >= %s'
-            v+=(start,)
-        if end:
-            q+=' and a.creation_time <= %s'
-            v+=(end,)
+        try:
+            (start,end)=tuple(queryargs['time'].split(','))
+            if start:
+                q+=' and a.creation_time >= %s'
+                v+=(start,)
+            if end:
+                q+=' and a.creation_time <= %s'
+                v+=(end,)
+        except ValueError:
+            pass
 
     if queryargs.has_key('alias'):  #handle composite id queries
     #logic here to extract composite_seq,user, and workflow name from composite ID
@@ -1034,12 +1043,15 @@ def addMetadata(json_request,dn):
     q=textwrap.dedent("""\
              SELECT w_guid  AS uid, 'workflow'   AS type FROM workflow   WHERE w_guid=%s UNION
              SELECT a_guid  AS uid, 'activity'   AS type FROM activity   WHERE a_guid=%s UNION
-             SELECT doi_guid AS uid, 'dataobject_instance' AS type FROM dataobject_instance WHERE doi_guid=%s
+             SELECT do_guid  AS uid, 'dataobject' AS type FROM dataobject   WHERE do_guid=%s UNION
+             SELECT doi_guid AS uid, 'dataobject_instance' AS type FROM dataobject_instance
+             WHERE doi_guid=%s
               """)
     pid=objs['parent_uid']
-    v=(pid,pid,pid)
+    v=(pid,pid,pid,pid)
     cursor.execute(q,v)
     records = cursor.fetchone()
+    if not records: raise ValueError('No record found for adding metadata.')
 
     #insert record
     md_guid = str(uuid.uuid4())

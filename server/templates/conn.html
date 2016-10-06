@@ -192,7 +192,7 @@ $(document).ready(function () {
 				dataElements[tmp['uid']]="";
 				if(tmp3['description'])
 					dataElements[tmp['uid']]+=tmp3['description'];
-				else if(tmp3['do_info']['description'])
+				else if('do_info' in tmp3 && tmp3['do_info']['description'])
 					dataElements[tmp['uid']]+=tmp3['do_info']['description'];
 				if(tmp3['time']) {
 					dataElements[tmp['uid']]+= "<div><small>"+tmp3['time']+"</small></div>";
@@ -201,7 +201,7 @@ $(document).ready(function () {
 					if(tmpDateTime > lastUpdate)
 						lastUpdate=tmpDateTime
 				}
-				else if(tmp3['do_info']['time']) {
+				else if('do_info' in tmp3 && tmp3['do_info']['time']) {
 					dataElements[tmp['uid']]+= "<div><small>"+tmp3['do_info']['time']+"</small></div>";
 					//store latest workflow update time
 					tmpDateTime=new Date(tmp3['do_info']['time'].replace(" ","T"));
@@ -537,7 +537,7 @@ $(document).ready(function () {
 		event.preventDefault();
 	});
 	// end of Submit comment
-    $("#coll_dropdown").hide()
+   /* $("#coll_dropdown").hide()
     $("#collection_tbl").hide()
 	$("#toggle-coll-list").click(function(event){
 	    $("#coll_dropdown").toggle();
@@ -547,7 +547,7 @@ $(document).ready(function () {
 		else 
 			$("#toggle-coll-list").html("[Display]");
 		event.preventDefault();
-	});
+	});*/
    /**
 	*
 	/*function handles collection addition
@@ -567,7 +567,7 @@ $(document).ready(function () {
 			if (data=="200") {
 				//remove used from dropdown
 				loadCollectionDropdown();  
-				coll_url="https://mpo-new.gat.com/api/v0/collection/"+coll_id; 
+				coll_url=document.location.origin+"/"+api+"/v0/collection/"+coll_id; 
 				
 				$.getJSON(coll_url,{},function(data)
 				{
@@ -634,8 +634,8 @@ $(document).ready(function () {
  *function created list of available collections as a dropdown options
  */
 function loadCollectionDropdown() {
-	url="https://mpo-new.gat.com/api/v0/collection";
-	this_coll_list="https://mpo-new.gat.com/test-api/v0/collection?element_uid="+this_uid;		
+	url=document.location.origin+"/"+api+"/v0/collection";
+	this_coll_list=document.location.origin+"/"+api+"/v0/collection?element_uid="+this_uid;		
 	var used_coll_ids = [];
 	$.getJSON(this_coll_list,{},function(data)
     {
@@ -947,7 +947,7 @@ function buildPageElements(wfID) {
             <strong>Workflow State:</strong> 
             <font class="{{ wf_state|lower|replace(" ","-") }}"> {{ wf_state }}</font> &nbsp;&nbsp;
             {% endif %}
-            <strong>UID: </strong><input type="text" value="{{ wid }}" class="small copy" readonly /> 
+            <strong>UID: </strong><input type="text" value="{{ wid }}" class="small copy" readonly /> <br />
             
             <!-- End title and desc -->
         </div><!-- end of span12 -->
@@ -1074,43 +1074,7 @@ function buildPageElements(wfID) {
             </div><!-- accordion-body -->
             </div>
             <!-- End comment -->
-<!-- collections -->
-			
- 			<h5><span class="icon-list-alt"></span> Associated Collections
-            <a href="#" id="toggle-coll-list">[Display]</a>
-            
-             <div class="dropdown" style="float:right">
-              <select id="coll_dropdown" class="btn btn-info" >
-              <option value="">Add to selected collection</option>
-              </select>
-              <br />
-            </div>
-              
-              </h5>
-            <!-- workflow list table -->
-        	<div id="collection_tbl">
-            {% if coll_list %}
-            <!-- workflow list table -->
-            <table class="main table table-hover table-striped" id="collection_table">
-            	<tr>
-                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th><th></th>
-              	</tr>
-            	{% for item in coll_list %}
-                	<tr id="collection_{{ item.collection_uid }}">
-                	<td><a href="{{ url_for("collections", uid=item.collection_uid) }}">{{ item.name }}</a></td>
-                    <td>{{ item.description }} </td>
-                    <td>{{ item.username }} </td>
-                    <td>{{ item.time }} </td>
-                    <td><a href="" id="coll-delete_{{ item.collection_uid }} " class="coll-delete-btn btn btn-mini btn-warning" id="remove"  title="Remove from Collection">[-]</a></td>
-                    </tr>
-                {% endfor %}
-               </table>
-           {% else %}
-               	<p><em>There are no associated collections.</em></p>
-           {% endif %}  
-			 </span>
-    		</div> <!--end workflow table div -->     
-<!-- /collections -->
+
                 <div class="table-container">             
                 <table class="main table" id="coltab2">
                 	<thead>
@@ -1142,7 +1106,10 @@ function buildPageElements(wfID) {
                                 <td><span class="icon-dataobject-blue"></span> 
                             {% endif %}
                         	{% if n.data[0] %}
-                        		{{ n.data[0].do_info.name }}</td><td>
+                                        {% if n.data[0].do_info %}
+                        		{{ n.data[0].do_info.name }}</td>
+                                        {% endif %}
+                                         <td>
                         		{{ n.data[0].time[:19] }}
                             {% endif %}
                         {% else %}
@@ -1206,11 +1173,13 @@ function buildPageElements(wfID) {
                                     <ul class="details-list"> 
                                     
                                     <!-- description -->
-                                    {% if n.type == "dataobject_instance" %}
-                                    <li><font class="bold">Description:</font> {{ n.data[0].do_info.description }}
+                                    {% if n.type == "dataobject_instance" and n.data[0].do_info %}
+                                    <li><font class="bold">Description:</font> 
+                                    {{ n.data[0].do_info.description }} </li>
+                                    <li><font class="bold">URI:</font> 
                                     {{ n.data[0].do_info.uri }} </li>
                                     <li><strong></strong><font class="bold">UID:</font> <input type="text" value="{{ n.data[0].uid }}" class="small copy" readonly /></li>
-                                    {% else %}
+                                    {% elif n.type != "dataobject_instance" %}
                                     <li><font class="bold">Description:</font> {{ n.data[0].description }}
                                     <font color="#ED8454"><em>{{ n.data[0].uri }}</em></font> </li>
                                     <li><strong></strong><font class="bold"> UID:</font> <input type="text" value="{{ n.data[0].uid }}" class="small copy" readonly /></li>
@@ -1277,6 +1246,61 @@ function buildPageElements(wfID) {
              </div> <!-- end row-fluid -->
         </div> <!-- end span12 -->
         
+        
+                
+            <div class="row-fluid">   
+             <!-- collections -->	            
+            <hr />		
+ 			<h5>Associated Collections: </h5><!-- <a href="#" id="toggle-coll-list"><small>[Display]</small></a>-->
+            <!-- <div class="dropdown" style="float:right">
+              <select id="coll_dropdown" class="btn btn-info" >
+              <option value="">Add to selected collection</option>
+              </select>
+              <br /> 
+            </div> -->
+            <!-- collections list table -->
+        	<div id="collection_tbl">
+            {% if coll_list %}
+            <!-- collections list table -->
+            <table class="main table table-hover table-striped" id="collection_table">
+            	<tr>
+                	<th>Name</th><th>Description</th><th>Username</th><th>Creation Time</th></th><th></th>
+              	</tr>
+            	{% for item in coll_list %}
+                	<tr id="collection_{{ item.collection_uid }}">
+                	<td><a href="{{ url_for("collections", uid=item.collection_uid) }}">{{ item.name }}</a></td>
+                    <td>{{ item.description }} </td>
+                    <td>{{ item.username }} </td>
+                    <td>{{ item.time }} </td>
+                    <td><a href="" id="coll-delete_{{ item.collection_uid }} " class="coll-delete-btn btn btn-mini btn-warning" id="remove"  title="Remove from Collection">[-]</a></td>
+                    </tr>
+                {% endfor %}
+               </table>
+           {% else %}
+               	<p><em>There are no associated collections.</em></p>
+           {% endif %}  
+			 </span>
+    		</div> <!--end workflow table div -->     
+			<!-- /collections -->
+           {% if wid_info[0].type == "SWIM" %}
+            <hr />
+            <h5>{{ wid_info[0].type }} Simulation Log</h5>
+             {% if swimdata %}
+             <table class="main table table-hover table-striped" id="simulation_table">
+                <tr class="warning"><th><strong>Time</strong></th><th><strong>Seq Num</strong></th><th><strong>Event Type</strong></th><th><strong>Code</strong></th><th><strong>State</strong></th><th><strong>Wall Time</strong></th><th><strong>Phys Timestamp</strong></th><th><strong>Comment</strong></th></tr>
+	    		{% for item in swimdata %}
+                <tr>
+	                {% for a in item %}
+                    <td>{{ a }} </td>  
+                    {% endfor %}                    
+                </tr>
+                {% endfor %}                               
+            </table>
+              {% else %}
+               	<p><em>There are no associated simulation logs.</em></p>
+              {% endif %}                
+            {% endif %}  
+            </div>
         <!-- end collections_table -->
         
     </div><!-- end row-fluid -->

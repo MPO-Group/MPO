@@ -56,6 +56,16 @@ var icons={'workflow': '<img src="/static/img/images/_icon_workflow.png"/>',
 'dataobject': '<img src="/static/img/images/_icon_dataobject.png"/>',
 'collection': '<span class="icon-list-alt"></span>'};
 
+var api="test-api";
+{% if db_server=="test" %}
+   api="test-api";
+{% elif db_server=="prod" %}
+   api="api";
+{% endif %}
+if(document.location.pathname.substr(0,5)=="/demo") {
+  api="demo-api"
+}
+
 $(document).ready(function() {
 	$("input.copy:text").click(function() { $(this).select();  } );
 	$("input.copy:text").css( 'cursor', 'pointer' );
