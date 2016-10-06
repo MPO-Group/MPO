@@ -1,0 +1,31 @@
+#!/bin/sh
+#specify MPO server address. The API will read this value.
+#defaults are used if environment is not set
+if ! [ -n "${MPO_HOST:+x}" ]
+then
+  export MPO_HOST=https://localhost:8443
+fi
+
+
+if ! [ -n "${MPO_VERSION:+x}" ]
+then
+  export MPO_VERSION=v0
+fi
+
+
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+  echo MPO_HOME not defined, exitting
+  exit
+fi
+
+if ! [ -n "${MPO:+x}" ]
+then
+  export MPO="$MPO_HOME/client/python/mpo_arg.py"
+fi
+echo Loading top ontology for MPO $MPO_HOST using $MPO
+#use API methods to create a workflow
+oid0a=`$MPO ontology_term Workflow --desc="Ontology terms for workflow entries"`
+oid0b=`$MPO ontology_term Activity --desc="Ontology terms for activity entries"`
+oid0c=`$MPO ontology_term Generic --desc="Ontology terms for generic entries"`
+oid1a=`$MPO ontology_term Type --desc="Terms that describe the workflow types" -p $oid0a -t 'string' -s`
