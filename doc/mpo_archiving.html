@@ -166,61 +166,61 @@ $ </code></pre>
 <ul>
 <li><p>Getting a workflow UUID from an alias and vice-versa</p>
 <p><code>mpo --format=pretty get workflow -p uid=37d86ba6-d4ad-4437-87a0-c62e3ba0263e</code><br /> The response contains the composite sequence, type, and<br /> user. Together these form the composite id, /user/type/composite_seq</p>
-<pre class="sourceCode json"><code class="sourceCode json"> [
- {
-    <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;john&quot;</span>,
-    <span class="dt">&quot;description&quot;</span>:<span class="st">&quot;EFIT equilbrium. Testing mode coupling for COMSOL.  Resolving singular behavior near edges&quot;</span>,
-    <span class="dt">&quot;composite_seq&quot;</span>:<span class="dv">1</span>,
-    <span class="dt">&quot;user&quot;</span>:{
-        <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;john&quot;</span>,
-        <span class="dt">&quot;lastname&quot;</span>:<span class="st">&quot;Wright&quot;</span>,
-        <span class="dt">&quot;userid&quot;</span>:<span class="st">&quot;6f0b016c-2952-4d8c-9876-a86f73a04808&quot;</span>,
-        <span class="dt">&quot;firstname&quot;</span>:<span class="st">&quot;John&quot;</span>
-    },
-    <span class="dt">&quot;time&quot;</span>:<span class="st">&quot;2014-11-07 16:19:27.646942&quot;</span>,
-    <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;37d86ba6-d4ad-4437-87a0-c62e3ba0263e&quot;</span>,
-    <span class="dt">&quot;type&quot;</span>:<span class="st">&quot;TORIC&quot;</span>,
-    <span class="dt">&quot;name&quot;</span>:<span class="st">&quot;r505&quot;</span>
- }
- ]</code></pre>
+<pre class="sourceCode json"><code class="sourceCode json"> <span class="ot">[</span>
+ <span class="fu">{</span>
+    <span class="dt">&quot;username&quot;</span><span class="fu">:</span><span class="st">&quot;john&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;EFIT equilbrium. Testing mode coupling for COMSOL.  Resolving singular behavior near edges&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;composite_seq&quot;</span><span class="fu">:</span><span class="dv">1</span><span class="fu">,</span>
+    <span class="dt">&quot;user&quot;</span><span class="fu">:{</span>
+        <span class="dt">&quot;username&quot;</span><span class="fu">:</span><span class="st">&quot;john&quot;</span><span class="fu">,</span>
+        <span class="dt">&quot;lastname&quot;</span><span class="fu">:</span><span class="st">&quot;Wright&quot;</span><span class="fu">,</span>
+        <span class="dt">&quot;userid&quot;</span><span class="fu">:</span><span class="st">&quot;6f0b016c-2952-4d8c-9876-a86f73a04808&quot;</span><span class="fu">,</span>
+        <span class="dt">&quot;firstname&quot;</span><span class="fu">:</span><span class="st">&quot;John&quot;</span>
+    <span class="fu">},</span>
+    <span class="dt">&quot;time&quot;</span><span class="fu">:</span><span class="st">&quot;2014-11-07 16:19:27.646942&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;uid&quot;</span><span class="fu">:</span><span class="st">&quot;37d86ba6-d4ad-4437-87a0-c62e3ba0263e&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;TORIC&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;name&quot;</span><span class="fu">:</span><span class="st">&quot;r505&quot;</span>
+ <span class="fu">}</span>
+ <span class="ot">]</span></code></pre>
 <p>The user does not have to construct the composite sequence (or alias)<br />themselves though; the <code>alias</code> subroute of <code>workflow</code> will do that.<br /><code>mpo --format=pretty get workflow/37d86ba6-d4ad-4437-87a0-c62e3ba0263e/alias</code></p>
-<pre class="sourceCode json"><code class="sourceCode json">{
-<span class="dt">&quot;alias&quot;</span>:<span class="st">&quot;john/TORIC/1&quot;</span>,
-<span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;37d86ba6-d4ad-4437-87a0-c62e3ba0263e&quot;</span>
-}</code></pre>
+<pre class="sourceCode json"><code class="sourceCode json"><span class="fu">{</span>
+<span class="dt">&quot;alias&quot;</span><span class="fu">:</span><span class="st">&quot;john/TORIC/1&quot;</span><span class="fu">,</span>
+<span class="dt">&quot;uid&quot;</span><span class="fu">:</span><span class="st">&quot;37d86ba6-d4ad-4437-87a0-c62e3ba0263e&quot;</span>
+<span class="fu">}</span></code></pre>
 <p>Finally, if your friend told you the alias, you can use that to<br />retrieve the workflow id.<br /> <code>mpo --format=pretty get workflow -p alias=john/TORIC/1</code></p></li>
 <li><p>Adding a type to the ontology for use in a creating a workflow for a new code.</p>
 <p>GET uuid of workflow types in the ontology.<br />term_id=`mpo get ontology/term -p path=Workflow/Type`</p>
-<pre class="sourceCode json"><code class="sourceCode json">{
- <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;mpodemo&quot;</span>,
- <span class="dt">&quot;user_uid&quot;</span>:<span class="st">&quot;f223db41-d1c5-41db-b8af-fde6c0a16f76&quot;</span>,
- <span class="dt">&quot;description&quot;</span>:<span class="st">&quot;Terms that describe the workflow types&quot;</span>,
- <span class="dt">&quot;name&quot;</span>:<span class="st">&quot;Type&quot;</span>,
- <span class="dt">&quot;specified&quot;</span>:<span class="dv">true</span>,
- <span class="dt">&quot;units&quot;</span>:<span class="dv">null</span>,
- <span class="dt">&quot;date_added&quot;</span>:<span class="st">&quot;2014-07-09 17:38:26.506827&quot;</span>,
- <span class="dt">&quot;type&quot;</span>:<span class="st">&quot;string&quot;</span>,
- <span class="dt">&quot;parent_uid&quot;</span>:<span class="st">&quot;58c19102-b1b7-4f8d-8202-18fde0a88bad&quot;</span>,
- <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;ee39ae67-139e-433e-b666-441437faa413&quot;</span>,
- <span class="dt">&quot;url&quot;</span>:<span class="st">&quot;https://mpo.psfc.mit.edu/api/v0/ontology/term?path=Workflow/Type&quot;</span>
-}</code></pre>
+<pre class="sourceCode json"><code class="sourceCode json"><span class="fu">{</span>
+ <span class="dt">&quot;username&quot;</span><span class="fu">:</span><span class="st">&quot;mpodemo&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;user_uid&quot;</span><span class="fu">:</span><span class="st">&quot;f223db41-d1c5-41db-b8af-fde6c0a16f76&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;Terms that describe the workflow types&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;name&quot;</span><span class="fu">:</span><span class="st">&quot;Type&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;specified&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span>
+ <span class="dt">&quot;units&quot;</span><span class="fu">:</span><span class="kw">null</span><span class="fu">,</span>
+ <span class="dt">&quot;date_added&quot;</span><span class="fu">:</span><span class="st">&quot;2014-07-09 17:38:26.506827&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;string&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;parent_uid&quot;</span><span class="fu">:</span><span class="st">&quot;58c19102-b1b7-4f8d-8202-18fde0a88bad&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;uid&quot;</span><span class="fu">:</span><span class="st">&quot;ee39ae67-139e-433e-b666-441437faa413&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;url&quot;</span><span class="fu">:</span><span class="st">&quot;https://mpo.psfc.mit.edu/api/v0/ontology/term?path=Workflow/Type&quot;</span>
+<span class="fu">}</span></code></pre>
 <p>POST a new type of workflow<br /><code>mpo define TORLH -p $term_id -s -d &quot;code for fullwave lower hybrid simulations&quot; -t string</code></p></li>
 <li><p>Setting the 'ratings' quality of a work flow.</p>
 <p>GET uuid of quality status.<br />term_id=`mpo get ontology/term -p path=Generic/Status/quality`</p>
 <p>Result:</p>
-<pre class="sourceCode json"><code class="sourceCode json">{
- <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;mpodemo&quot;</span>,
- <span class="dt">&quot;user_uid&quot;</span>:<span class="st">&quot;f223db41-d1c5-41db-b8af-fde6c0a16f76&quot;</span>,
- <span class="dt">&quot;description&quot;</span>:<span class="st">&quot;Fitness of an object for a particular purpose&quot;</span>,
- <span class="dt">&quot;name&quot;</span>:<span class="st">&quot;quality&quot;</span>,
- <span class="dt">&quot;specified&quot;</span>:<span class="dv">true</span>,
- <span class="dt">&quot;units&quot;</span>:<span class="dv">null</span>,
- <span class="dt">&quot;date_added&quot;</span>:<span class="st">&quot;2014-09-04 14:22:44.350747&quot;</span>,
- <span class="dt">&quot;type&quot;</span>:<span class="st">&quot;string&quot;</span>,
- <span class="dt">&quot;parent_uid&quot;</span>:<span class="st">&quot;34f6f31b-45d2-460e-b557-7363107d8e93&quot;</span>,
- <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;29a8a81a-a7f8-45ea-ac55-c960786ed5d6&quot;</span>,
- <span class="dt">&quot;url&quot;</span>:<span class="st">&quot;https://mpo.psfc.mit.edu/api/v0/ontology/term?path=Generic/Status/quality&quot;</span>
-}</code></pre>
+<pre class="sourceCode json"><code class="sourceCode json"><span class="fu">{</span>
+ <span class="dt">&quot;username&quot;</span><span class="fu">:</span><span class="st">&quot;mpodemo&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;user_uid&quot;</span><span class="fu">:</span><span class="st">&quot;f223db41-d1c5-41db-b8af-fde6c0a16f76&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;Fitness of an object for a particular purpose&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;name&quot;</span><span class="fu">:</span><span class="st">&quot;quality&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;specified&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span>
+ <span class="dt">&quot;units&quot;</span><span class="fu">:</span><span class="kw">null</span><span class="fu">,</span>
+ <span class="dt">&quot;date_added&quot;</span><span class="fu">:</span><span class="st">&quot;2014-09-04 14:22:44.350747&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;string&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;parent_uid&quot;</span><span class="fu">:</span><span class="st">&quot;34f6f31b-45d2-460e-b557-7363107d8e93&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;uid&quot;</span><span class="fu">:</span><span class="st">&quot;29a8a81a-a7f8-45ea-ac55-c960786ed5d6&quot;</span><span class="fu">,</span>
+ <span class="dt">&quot;url&quot;</span><span class="fu">:</span><span class="st">&quot;https://mpo.psfc.mit.edu/api/v0/ontology/term?path=Generic/Status/quality&quot;</span>
+<span class="fu">}</span></code></pre>
 <p>Previous step shows the entry, but is not needed to actually set<br />the value, you can just use the path. You do need the uuid of the<br />workflow.</p>
 <p>wid=`mpo get workflow -p alias=jwright/EFIT/4`</p>
 <p>POST a rating<br /> <code>mpo --format=pretty ontology_instance $wid -p vocabulary=/Generic/Status/quality 1</code></p></li>
@@ -239,30 +239,30 @@ $ </code></pre>
 <li><p>Grouping requests.<br /> Most routes support grouped requests by uid.</p>
 <pre><code>mpo --format=pretty get metadata/c87ba801-8c0f-4cdd-bd2c-968849b03d19,a0168813-a75f-4bd7-89c3-358e909d8a15</code></pre>
 <p>rather than two separate requests. The response is a dictionary of dictionaries keyed by <code>uuid</code>:</p>
-<pre class="sourceCode json"><code class="sourceCode json">{
-  <span class="dt">&quot;a0168813-a75f-4bd7-89c3-358e909d8a15&quot;</span>:{
-    <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;d3dauto&quot;</span>,
-    <span class="dt">&quot;key_uid&quot;</span>:<span class="st">&quot;text&quot;</span>,
-    <span class="dt">&quot;user_uid&quot;</span>:<span class="st">&quot;84dd4463-23e0-4f85-b1d4-06d7aa7b36a9&quot;</span>,
-    <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;a0168813-a75f-4bd7-89c3-358e909d8a15&quot;</span>,
-    <span class="dt">&quot;parent_type&quot;</span>:<span class="st">&quot;activity&quot;</span>,
-    <span class="dt">&quot;value&quot;</span>:<span class="st">&quot;2013-06-05&quot;</span>,
-    <span class="dt">&quot;key&quot;</span>:<span class="st">&quot;compilation_date&quot;</span>,
-    <span class="dt">&quot;time&quot;</span>:<span class="st">&quot;2014-07-31 11:01:19.320238&quot;</span>,
-    <span class="dt">&quot;parent_uid&quot;</span>:<span class="st">&quot;8cca7ccd-bdd9-4df5-8bf1-1976a61b8db2&quot;</span>
-},
-  <span class="dt">&quot;c87ba801-8c0f-4cdd-bd2c-968849b03d19&quot;</span>:{
-    <span class="dt">&quot;username&quot;</span>:<span class="st">&quot;d3dauto&quot;</span>,
-    <span class="dt">&quot;key_uid&quot;</span>:<span class="st">&quot;text&quot;</span>,
-    <span class="dt">&quot;user_uid&quot;</span>:<span class="st">&quot;84dd4463-23e0-4f85-b1d4-06d7aa7b36a9&quot;</span>,
-    <span class="dt">&quot;uid&quot;</span>:<span class="st">&quot;c87ba801-8c0f-4cdd-bd2c-968849b03d19&quot;</span>,
-    <span class="dt">&quot;parent_type&quot;</span>:<span class="st">&quot;dataobject&quot;</span>,
-    <span class="dt">&quot;value&quot;</span>:<span class="st">&quot;/link/efit/fitweight.dat&quot;</span>,
-    <span class="dt">&quot;key&quot;</span>:<span class="st">&quot;Fitting weight data&quot;</span>,
-    <span class="dt">&quot;time&quot;</span>:<span class="st">&quot;2014-07-31 11:01:16.925728&quot;</span>,
-    <span class="dt">&quot;parent_uid&quot;</span>:<span class="st">&quot;3be0813a-5f89-47d0-8f1b-4b932b824534&quot;</span>
- }
-}</code></pre>
+<pre class="sourceCode json"><code class="sourceCode json"><span class="fu">{</span>
+  <span class="dt">&quot;a0168813-a75f-4bd7-89c3-358e909d8a15&quot;</span><span class="fu">:{</span>
+    <span class="dt">&quot;username&quot;</span><span class="fu">:</span><span class="st">&quot;d3dauto&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;key_uid&quot;</span><span class="fu">:</span><span class="st">&quot;text&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;user_uid&quot;</span><span class="fu">:</span><span class="st">&quot;84dd4463-23e0-4f85-b1d4-06d7aa7b36a9&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;uid&quot;</span><span class="fu">:</span><span class="st">&quot;a0168813-a75f-4bd7-89c3-358e909d8a15&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;parent_type&quot;</span><span class="fu">:</span><span class="st">&quot;activity&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;value&quot;</span><span class="fu">:</span><span class="st">&quot;2013-06-05&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;key&quot;</span><span class="fu">:</span><span class="st">&quot;compilation_date&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;time&quot;</span><span class="fu">:</span><span class="st">&quot;2014-07-31 11:01:19.320238&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;parent_uid&quot;</span><span class="fu">:</span><span class="st">&quot;8cca7ccd-bdd9-4df5-8bf1-1976a61b8db2&quot;</span>
+<span class="fu">},</span>
+  <span class="dt">&quot;c87ba801-8c0f-4cdd-bd2c-968849b03d19&quot;</span><span class="fu">:{</span>
+    <span class="dt">&quot;username&quot;</span><span class="fu">:</span><span class="st">&quot;d3dauto&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;key_uid&quot;</span><span class="fu">:</span><span class="st">&quot;text&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;user_uid&quot;</span><span class="fu">:</span><span class="st">&quot;84dd4463-23e0-4f85-b1d4-06d7aa7b36a9&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;uid&quot;</span><span class="fu">:</span><span class="st">&quot;c87ba801-8c0f-4cdd-bd2c-968849b03d19&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;parent_type&quot;</span><span class="fu">:</span><span class="st">&quot;dataobject&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;value&quot;</span><span class="fu">:</span><span class="st">&quot;/link/efit/fitweight.dat&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;key&quot;</span><span class="fu">:</span><span class="st">&quot;Fitting weight data&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;time&quot;</span><span class="fu">:</span><span class="st">&quot;2014-07-31 11:01:16.925728&quot;</span><span class="fu">,</span>
+    <span class="dt">&quot;parent_uid&quot;</span><span class="fu">:</span><span class="st">&quot;3be0813a-5f89-47d0-8f1b-4b932b824534&quot;</span>
+ <span class="fu">}</span>
+<span class="fu">}</span></code></pre>
 <p>The ontology/instance route instead groups along the parent_uid query argument so that one may get a group<br /> of ontology instances attached to different objects.</p></li>
 </ul>
 <p>Some examples for language specific interfaces.</p>
