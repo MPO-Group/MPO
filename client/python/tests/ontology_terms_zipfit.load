@@ -1,0 +1,36 @@
+#!/bin/sh
+#specify MPO server address. The API will read this value.
+#defaults are used if environment is not set
+if ! [ -n "${MPO_HOST:+x}" ]
+then
+  export MPO_HOST=https://localhost:8443
+fi
+
+
+if ! [ -n "${MPO_VERSION:+x}" ]
+then
+  export MPO_VERSION=v0
+fi
+
+
+if ! [ -n "${MPO_HOME:+x}" ]
+then
+  echo MPO_HOME not defined, exitting
+  exit
+fi
+
+if ! [ -n "${MPO:+x}" ]
+then
+  export MPO="$MPO_HOME/client/python/mpo_arg.py --user=$USER"
+fi
+
+#use API methods to create a workflow
+oid0=`$MPO get 'ontology/term' --params='path=/Workflow/Type'`
+
+if [ -z $oid0 ]
+then
+    echo Ontology term /Workflow/Type doesn\'t exist.
+    exit
+fi
+
+oid1=`$MPO ontology_term Zipfit --desc="Ontology terms for workflows of type Zipfit" -p $oid0 -t 'string' -s`
