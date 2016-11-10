@@ -1450,9 +1450,13 @@ def collections(uid=False):
 
             if((len(info))>1):
                 info[0]=info
+                r=s.get("%s/metadata?parent_uid=%s"%(API_PREFIX,info[0]['uid']))
+                info[0]['metadata']=r.result().json()
             if len(info)!=0:
                 thetime=info[0]['time'][:19]
                 info[0]['time']=thetime
+                r=s.get("%s/metadata?parent_uid=%s"%(API_PREFIX,info[0]['uid']))
+                info[0]['metadata']=r.result().json()
             else:
                 info={}
             results[index]['citem']=info
