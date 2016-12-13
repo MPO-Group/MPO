@@ -2,6 +2,8 @@
 
 drop database if exists mpodbdev; */
 
+create extension if not exists "pgcrypto";
+
 drop role if exists mpoadmin;
 create user mpoadmin with password 'mpo2013';
 
@@ -23,8 +25,8 @@ create table mpousers
 );
 /*insert into mpousers values ('romosan','bc789de3-7484-49dc-a498-3b5a3aad3c80', 'Alexander', 'Romosan', 'romosan@opteron05@lbl.gov','LBL','555-555-1234','xxx' );*/
 /*insert into mpousers values ('mdsadmin', 'a8bc7b5a-b4f5-49ec-87fb-20e5bddfa1af'); */
-insert into mpousers (username,uuid,creation_time) values ('mpoadmin', 'ddc315a1-6310-41e7-a84d-886bc904f3b2',now());
-insert into mpousers (username,uuid,firstname,lastname,email,organization,dn,creation_time) values ('mpodemo', 'f223db41-d1c5-41db-b8af-fde6c0a16f76', 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', 'emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US',now());
+insert into mpousers (username,uuid,creation_time) values ('mpoadmin', gen_random_uuid(),now());
+insert into mpousers (username,uuid,firstname,lastname,email,organization,dn,creation_time) values ('mpodemo', gen_random_uuid(), 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', 'emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US',now());
 alter table mpousers OWNER TO mpoadmin;
 
 drop table if exists mpoauth cascade;
@@ -34,8 +36,8 @@ create table mpoauth
   read boolean,
   write boolean
 );
-insert into mpoauth (u_guid, read, write) values ('bc789de3-7484-49dc-a498-3b5a3aad3c80', true, true);
-insert into mpoauth (u_guid, read, write) values ('f223db41-d1c5-41db-b8af-fde6c0a16f76', true, true);
+insert into mpoauth (u_guid, read, write) values (gen_random_uuid(), true, true);
+insert into mpoauth (u_guid, read, write) values (gen_random_uuid(), true, true);
 alter table mpoauth OWNER TO mpoadmin;
 
 drop table if exists collection cascade;
@@ -192,6 +194,33 @@ create table ontology_terms
   reviewed_by uuid,
   date_reviewed timestamp
 );
+/* create top level nodes*/
+insert into ontology_terms (ot_guid,name,description,added_by,date_added) values( gen_random_uuid(),'Workflow', 'Ontology terms for workflow entries',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values (gen_random_uuid(),'Type','Terms that describe the workflow types',getTermUidByPath('/Workflow'),'string',true,getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values (gen_random_uuid(),'Status','Indicate status of a workflow',getTermUidByPath('/Workflow'),'string',true,getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values (gen_random_uuid(),'State','Indicate state of progress of a workflow',getTermUidByPath('/Workflow/Status'),'string',true,getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'In Progress','Workflow has started but has not completed',getTermUidByPath('/Workflow/Status/State'),'string',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'Complete','Workflow has completed',getTermUidByPath('/Workflow/Status/State'),'string',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'Non Standard Completion','Workflow has failed or completed with errors',getTermUidByPath('/Workflow/Status/State'),'string',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'Ready for Review','Workflow is ready for review',getTermUidByPath('/Workflow/Status/State'),'string',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,added_by,date_added) values( gen_random_uuid(),'Activity', 'Ontology terms for activity entries',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values (gen_random_uuid(),'Status','Indicate status of an activity',getTermUidByPath('/Activity'),'string',true,getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values (gen_random_uuid(),'State','Indicate state of progress of an activity',getTermUidByPath('/ActivityStatus'),'string',true,getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'In Progress','Activity has started but has not completed',getTermUidByPath('/Activity/Status/State'),'string',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'Complete','Activity has completed',getTermUidByPath('/Activity/Status/State'),'string',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'Non Standard Completion','Activity has failed or completed with errors',getTermUidByPath('/Activity/Status/State'),'string',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,added_by,date_added) values( gen_random_uuid(),'Dataobject', 'Ontology terms for dataobject entries',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values (gen_random_uuid(),'Status','Indicate status of a dataobject',getTermUidByPath('/Dataobject'),'string',true,getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values (gen_random_uuid(),'State','Indicate state of progress of a dataobject',getTermUidByPath('/Dataobject/Status'),'string',true,getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'Ready for Review','Data object is ready for review',getTermUidByPath('/Dataobject/Status/State'),'string',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'Review Complete','Data object review is complete',getTermUidByPath('/Dataobject/Status/State'),'string',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,added_by,date_added) values( gen_random_uuid(),'Generic', 'Ontology terms for generic entries',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values (gen_random_uuid(),'Status','Generic status terms',getTermUidByPath('/Generic'),'string',true,getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,specified,added_by,date_added) values (gen_random_uuid(),'quality','Fitness of an object for a particular purpose',getTermUidByPath('/Generic/Status'),'string',true,getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'1','Low quality: Object should not be used for additional purposes',getTermUidByPath('/Generic/Status/quality'),'int',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'2','Medium quality: Object may be useful for some purposes',getTermUidByPath('/Generic/Status/quality'),'int',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'3','High quality: Object is broadly useful',getTermUidByPath('/Generic/Status/quality'),'int',getAdminUid(),now());
+insert into ontology_terms (ot_guid,name,description,parent_guid,value_type,added_by,date_added) values (gen_random_uuid(),'4','Notable quality: Object is of special importance or interest',getTermUidByPath('/Generic/Status/quality'),'int',getAdminUid(),now());
 ALTER TABLE ontology_terms OWNER TO mpoadmin;
 
 drop table if exists ontology_instances;
@@ -229,6 +258,16 @@ begin
 end;
 $$ LANGUAGE plpgsql;
 alter function getWID(cid uuid) OWNER TO mpoadmin;
+
+create or replace function getAdminUid() returns uuid as $$
+declare
+  auid uuid;
+begin
+  select uuid from mpousers where username='mpoadmin' into auid;
+
+  return auid;
+end;
+$$ LANGUAGE plpgsql;
 
 create or replace function getTermUidByPath(text) returns uuid as $$
 declare
