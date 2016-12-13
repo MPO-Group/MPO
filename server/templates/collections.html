@@ -442,7 +442,7 @@ function setWfQuality(wfid,numq) {
             <!-- workflow list table -->
             <table class="main table table-hover table-striped" id="collection_table">
                 <tr>
-                <th width="2%">&nbsp;</th><th width="25%">Name</th><th width="35%">Description</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th width="3%"></th>
+                <th width="2%">&nbsp;</th><th width="15%">Name</th><th width="25%">Description</th><th width="15%">Metadata</th><th width="12%">Creation Time</th><th width="8%">Comments</th><th width="3%"></th>
               </tr>
     		{% for item in results %}
                 <div id="accordion2" class="accordion">
@@ -477,16 +477,15 @@ function setWfQuality(wfid,numq) {
                   		{{ item.citem[0].description }} <br />
                         <small><strong>UID: </strong></small><input size="2" type="text" value="{{ item.citem[0].uid }}" class="small copy" readonly />
                       {% endif %} <br />
-                      
-                      
+                  </td>
+                  <td>
+                      {% for m in item.citem[0].metadata %} 
+                      	 <span class="icon-plus lighter"></span> <strong>{{m.key}}</strong>: {{m.value}}<br />
+	                  {% endfor %} 
                   </td>
                     	
                   <td class="xsmall">
-                  {% if item.type == "dataobject_instance" %}
-                   	{{ item.time }} 
-                  {% else %}
-                   	{{ item.citem[0].time }} 
-                  {% endif %}              
+                   	<small>{{ item.citem[0].time }} </small>
                   </td>
                     	
                     <!-- <td>{{ item.username }}</td> -->
@@ -506,7 +505,7 @@ function setWfQuality(wfid,numq) {
                 </td>               
                 <td>
                 <a href="" id="coll-delete_{{ item.uid }} " class="coll-delete-btn btn btn-mini btn-warning" id="remove" title="Remove from Collection">
-                [-]</a>
+                -</a>
                 </td>
               </tr>
               <tr>

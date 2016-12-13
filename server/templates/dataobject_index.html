@@ -39,7 +39,7 @@ $(document).ready(function() {
             { 
 			  "data": "cart", 
 			  "render": function ( data, type, row ) {
-					r='<span class="icon-shopping-cart link" id="'+row.uid+'_cart" onclick="addToCart(\'dataobject\', \''+row.uid+'\', \''+row.name+'\', \''+row.description+'\')"></span>';
+					r='<span class="icon-shopping-cart link" id="'+row.uid+'_cart" onclick="addToCart(\'dataobject\', \''+row.uid.replace(/(['"])/g, "\\$1")+'\', \''+row.name.replace(/(['"])/g, "\\$1")+'\', \''+row.description.replace(/(['"])/g, "\\$1")+'\')"></span>';
 					return r;
 			   },
 			}

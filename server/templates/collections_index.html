@@ -137,7 +137,7 @@ ul li input.user_time_wf {
                     <td>{{ item.description }} </td>
                     <td>{{ item.username }} </td>
                     <td>{{ item.time }} </td>
-                    <td><span class="icon-shopping-cart link" id="{{ item.uid }}_cart" onclick="addToCart('collection', '{{ item.uid }}', '{{ item.name }}', '{{ item.description }}')"></span></td>
+                    <td><span class="icon-shopping-cart link" id="{{ item.uid }}_cart" onclick="addToCart('collection', '{{ item.uid|replace("'","\\'") }}', '{{ item.name|replace("'","\\'") }}', '{{ item.description|replace("'","\\'") }}')"></span></td>
                     </tr>
                 {% endfor %}
                </table> 

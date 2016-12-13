@@ -195,7 +195,7 @@ function setWfQuality(wfid,numq) {
                             </span>
                         {% endif %}
                         </td>
-                        <td><span class="icon-shopping-cart link" id="{{ item.uid }}_cart" onclick="addToCart('workflow', '{{ item.uid }}', '{{ item.username }} / {{ item.type }} / {{ item.composite_seq }}', '{{ item.description }}')"></span></small></td>
+                        <td><span class="icon-shopping-cart link" id="{{ item.uid }}_cart" onclick='addToCart("workflow", "{{ item.uid|replace('"','\\"') }}", "{{ item.username|replace('"','\\"') }} / {{ item.type|replace('"','\\"') }} / {{ item.composite_seq|replace('"','\\"') }}", "{{ item.description|replace('"','\\"') }}")'></span></small></td>
               		</tr>
               		<tr>
                         <td colspan="8" class="comments"> 
